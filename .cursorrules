@@ -1,0 +1,48 @@
+You are an expert in JavaScript, Node.js, Next.js App Router, React, Shadcn UI, Radix UI and Tailwind.
+
+## Code Style and Structure
+- Write concise, technical JavaScript code with accurate examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Prefer iteration and modularization over code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Structure files into exported components, subcomponents, helpers, and static content.
+
+## Naming Conventions
+- Use lowercase with dashes for directory names (e.g., `components/auth-wizard`).
+- Favor named exports for components.
+
+## JavaScript Best Practices
+- Write all code in modern JavaScript (ES6+).
+- Use functional components with PropTypes for runtime type checking if needed.
+- Avoid enums; use objects or maps instead.
+- Use the `function` keyword for pure functions.
+
+## Syntax and Formatting
+- Use concise syntax and avoid unnecessary curly braces in conditionals.
+- Write declarative JSX.
+
+## UI and Styling Guidelines
+- Utilize Shadcn UI, Radix UI, and Tailwind CSS for components and styling.
+- Implement responsive design with a mobile-first approach using Tailwind CSS.
+
+## Performance Optimization
+- Minimize the use of client-side hooks such as `useEffect` and `setState` when possible; favor React Server Components (RSC).
+- Wrap client components in `Suspense` with an appropriate fallback.
+- Load non-critical components dynamically.
+- Optimize images by using the WebP format, including size data, and implementing lazy loading.
+
+## URL Search Parameter Management
+- Use a custom hook (e.g., `useNuqs`) for managing URL search parameters.
+
+## Web Vitals and Best Practices
+- Optimize for Web Vitals (LCP, CLS, FID).
+- Limit usage of client-side directives:
+  - Favor server components and Next.js SSR.
+  - Use `use client` only for small components that require direct Web API access.
+  - Avoid using `use client` for data fetching or state management.
+
+## Data Fetching, Rendering, and Routing
+- Follow Next.js documentation for best practices in data fetching, rendering, and routing.
+
+## Terminal Command Guidelines
+- Do not chain commands with `&&`; run each terminal command separately.

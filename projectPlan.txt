@@ -1,0 +1,80 @@
+# FeedTune Proje Planı
+
+## Proje Yapısı
+- src/
+  - app/
+    - layout.js
+    - page.js
+  - components/
+    - ui/
+    - layout/
+    - features/
+  - lib/
+  - styles/
+  - utils/
+
+## Özellikler
+1. Kullanıcı Arayüzü
+   - Responsive tasarım
+   - Modern ve temiz arayüz
+   - Kolay navigasyon
+   - Dark/Light tema desteği
+
+2. Ana Özellikler
+   - RSS feed okuyucu
+   - Feed kategorileri
+   - Favori feedler
+   - Okunmamış/Okunmuş takibi
+   - Feed arama
+   - Feed paylaşma
+
+3. Kullanıcı Yönetimi
+   - Kullanıcı kaydı
+   - Oturum yönetimi
+   - Profil yönetimi
+   - Feed tercihleri
+
+4. Teknik Özellikler
+   - Next.js App Router
+   - Tailwind CSS
+   - Modern JavaScript
+   - ESLint
+   - Responsive Design
+   - SEO optimizasyonu
+
+## Teknoloji Yığını
+- Next.js
+- React
+- Tailwind CSS
+- ESLint
+- RSS Parser
+- Local Storage/Database
+
+## Geliştirme Aşamaları
+1. Temel Yapı
+   - Proje kurulumu
+   - Dizin yapısı
+   - Temel bileşenler
+   - Stil yapılandırması
+
+2. Temel Özellikler
+   - RSS feed okuma
+   - Feed listeleme
+   - Temel UI
+
+3. Gelişmiş Özellikler
+   - Kullanıcı yönetimi
+   - Favori sistemi
+   - Kategoriler
+   - Arama
+
+4. Optimizasyon
+   - Performans
+   - SEO
+   - Erişilebilirlik
+   - Test
+
+5. Yayın
+   - Son testler
+   - Dökümantasyon
+   - Deployment 
