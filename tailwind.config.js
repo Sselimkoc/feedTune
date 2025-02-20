@@ -2,9 +2,10 @@
 module.exports = {
   darkMode: ["class"],
   content: [
-    "./src/pages/**/*.{js,jsx}",
-    "./src/components/**/*.{js,jsx}",
-    "./src/app/**/*.{js,jsx}",
+    "./pages/**/*.{js,jsx}",
+    "./components/**/*.{js,jsx}",
+    "./app/**/*.{js,jsx}",
+    "./src/**/*.{js,jsx}",
   ],
   theme: {
     container: {
@@ -64,10 +65,21 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
+        "slide-from-right": {
+          "0%": { transform: "translateX(100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        "slide-to-right": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "slide-from-right":
+          "slide-from-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        "slide-to-right": "slide-to-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       },
     },
   },

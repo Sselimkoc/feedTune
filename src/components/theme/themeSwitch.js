@@ -2,7 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useSettingsStore } from "@/store/settings-store";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { Moon } from "lucide-react";
 
 export function ThemeSwitch() {
