@@ -1,11 +1,11 @@
 "use client";
 
-import { useTheme } from "@/components/theme/theme-provider";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useSettingsStore } from "@/store/settings-store";
 
 export function ThemeSwitch() {
-  const { theme, setTheme } = useTheme();
+  const { settings, toggleTheme } = useSettingsStore();
 
   return (
     <div className="flex items-center justify-between">
@@ -15,10 +15,10 @@ export function ThemeSwitch() {
           Toggle between light and dark themes
         </p>
       </div>
-      <Switch 
-        checked={theme === "dark"}
-        onCheckedChange={() => setTheme(theme === "dark" ? "light" : "dark")}
+      <Switch
+        checked={settings.theme === "dark"}
+        onCheckedChange={toggleTheme}
       />
     </div>
   );
-} 
+}

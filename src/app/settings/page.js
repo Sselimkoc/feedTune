@@ -1,6 +1,5 @@
 "use client";
 
-import { useTheme } from "@/components/theme/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -20,9 +18,11 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ThemeSwitch } from "@/components/theme/theme-switch";
+import { useSettingsStore } from "@/store/settings-store";
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useTheme();
+  const { settings, updateSetting, resetSettings } = useSettingsStore();
+
   return (
     <main className="p-8">
       <div className="max-w-2xl mx-auto">
@@ -41,7 +41,10 @@ export default function SettingsPage() {
               <ThemeSwitch />
               <div className="space-y-2">
                 <Label>Language</Label>
-                <Select defaultValue="en">
+                <Select
+                  value={settings.language}
+                  onValueChange={(value) => updateSetting("language", value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
@@ -65,7 +68,12 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Update Interval</Label>
-                <Select defaultValue="30">
+                <Select
+                  value={settings.updateInterval}
+                  onValueChange={(value) =>
+                    updateSetting("updateInterval", value)
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select interval" />
                   </SelectTrigger>
@@ -83,7 +91,12 @@ export default function SettingsPage() {
                     Automatically mark articles as read when opened
                   </p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={settings.autoMarkAsRead}
+                  onCheckedChange={(checked) =>
+                    updateSetting("autoMarkAsRead", checked)
+                  }
+                />
               </div>
             </CardContent>
           </Card>
@@ -104,7 +117,12 @@ export default function SettingsPage() {
                     Receive notifications for new articles
                   </p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={settings.pushNotifications}
+                  onCheckedChange={(checked) =>
+                    updateSetting("pushNotifications", checked)
+                  }
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
@@ -113,13 +131,20 @@ export default function SettingsPage() {
                     Receive daily digest emails
                   </p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={settings.emailNotifications}
+                  onCheckedChange={(checked) =>
+                    updateSetting("emailNotifications", checked)
+                  }
+                />
               </div>
             </CardContent>
           </Card>
 
           <div className="flex justify-end gap-4">
-            <Button variant="outline">Reset to Defaults</Button>
+            <Button variant="outline" onClick={resetSettings}>
+              Reset to Defaults
+            </Button>
             <Button>Save Changes</Button>
           </div>
         </div>
