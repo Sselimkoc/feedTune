@@ -31,6 +31,41 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
 
     setIsLoading(true);
     try {
+      console.log("Fetching channel info for:", channelId);
+
+      // Get channel info first
+      const channelResponse = await fetch(
+        `/api/proxy/youtube/channel?channelId=${encodeURIComponent(channelId)}`,
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const channelData = await channelResponse.json();
+
+      if (!channelResponse.ok) {
+        throw new Error(channelData.error || "Failed to fetch channel info");
+      }
+
+      if (!channelData.items?.[0]) {
+        throw new Error("Channel not found");
+      }
+
+      const channelInfo = channelData.items[0];
+      const channelTitle = channelInfo.snippet.title;
+      const channelAvatar = channelInfo.snippet.thumbnails.default.url;
+
+      console.log("Channel info fetched:", {
+        title: channelTitle,
+        avatar: channelAvatar,
+      });
+
+      // Get videos
+      console.log("Fetching videos for channel:", channelId);
+
       const response = await fetch(
         `/api/proxy/youtube?channelId=${encodeURIComponent(channelId)}`,
         {
@@ -47,32 +82,55 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
         throw new Error(data.error || "Failed to fetch videos");
       }
 
-      if (data.items?.length > 0) {
-        const channelTitle = data.items[0].snippet?.channelTitle;
-        const formattedData = {
-          type: "youtube",
-          title: channelTitle || "YouTube Channel",
-          link: `https://www.youtube.com/channel/${channelId}`,
-          description: `Latest videos from ${channelTitle}`,
-          items: data.items.map((item) => ({
-            title: item.snippet?.title,
-            link: `https://www.youtube.com/watch?v=${item.snippet?.resourceId?.videoId}`,
-            description: item.snippet?.description,
-            publishedAt: item.snippet?.publishedAt,
-            thumbnail: item.snippet?.thumbnails?.default?.url,
-          })),
-        };
-
-        await feedStore.addFeed(formattedData, session?.user?.id);
-        setChannelId("");
-        toast.success(`Added channel: ${formattedData.title}`);
-        onSuccess?.();
-      } else {
-        toast.warning("No videos found for this channel");
+      if (!data.items?.length) {
+        throw new Error("No videos found for this channel");
       }
+
+      console.log(`Found ${data.items.length} videos`);
+
+      // Filter out shorts and format items
+      const videos = data.items.map((item) => {
+        const videoId = item.snippet.resourceId.videoId;
+        return {
+          id: item.id,
+          title: item.snippet.title,
+          link: `https://www.youtube.com/watch?v=${videoId}`,
+          description: item.snippet.description,
+          published_at: item.snippet.publishedAt,
+          thumbnail:
+            item.snippet.thumbnails?.maxres?.url ||
+            item.snippet.thumbnails?.standard?.url ||
+            item.snippet.thumbnails?.high?.url ||
+            item.snippet.thumbnails?.medium?.url ||
+            item.snippet.thumbnails?.default?.url,
+          is_read: false,
+          is_favorite: false,
+        };
+      });
+
+      // Create feed for videos
+      const videoFeed = {
+        type: "youtube",
+        title: channelTitle,
+        link: `https://www.youtube.com/channel/${channelId}`,
+        description: `Latest videos from ${channelTitle}`,
+        channel_avatar: channelAvatar,
+        items: videos,
+      };
+
+      console.log("Adding feed to store:", {
+        type: videoFeed.type,
+        title: videoFeed.title,
+        itemCount: videos.length,
+      });
+
+      await feedStore.addFeed(videoFeed, session?.user?.id);
+      setChannelId("");
+      toast.success(`Added channel: ${channelTitle}`);
+      onSuccess?.();
     } catch (error) {
-      console.error("Error fetching videos:", error);
-      toast.error(error.message || "Failed to fetch videos");
+      console.error("Error adding YouTube feed:", error);
+      toast.error(error.message || "Failed to add YouTube feed");
     } finally {
       setIsLoading(false);
     }

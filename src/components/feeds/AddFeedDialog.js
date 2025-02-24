@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +51,10 @@ export function AddFeedDialog() {
     },
   ];
 
+  const SelectedComponent = selectedPlatform
+    ? platforms.find((p) => p.id === selectedPlatform.id)?.component
+    : null;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -91,14 +95,14 @@ export function AddFeedDialog() {
               <Label htmlFor="keep-adding">Keep adding feeds</Label>
             </div>
           </>
-        ) : (
+        ) : SelectedComponent ? (
           <div>
-            <selectedPlatform.component
+            <SelectedComponent
               onBack={() => setSelectedPlatform(null)}
               onSuccess={handleClose}
             />
           </div>
-        )}
+        ) : null}
       </DialogContent>
     </Dialog>
   );

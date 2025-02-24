@@ -3,6 +3,9 @@ import { persist } from "zustand/middleware";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
+const CACHE_KEY = "feed-cache";
+const CACHE_EXPIRY = 1000 * 60 * 30; // 30 dakika
+
 export const useFeedStore = create(
   persist(
     (set, get) => ({
@@ -11,11 +14,31 @@ export const useFeedStore = create(
       searchQuery: "",
       lastUpdated: null,
       isUpdating: false,
+      lastCacheUpdate: null,
 
-      // Load user's feeds from Supabase
+      // Load user's feeds from cache first, then update in background
       loadFeeds: async (userId) => {
         try {
-          // Önce feed'leri yükle
+          // Cache kontrolü
+          const cache = localStorage.getItem(CACHE_KEY);
+          const cacheData = cache ? JSON.parse(cache) : null;
+          const now = Date.now();
+
+          // Cache varsa ve güncel ise kullan
+          if (cacheData && now - cacheData.timestamp < CACHE_EXPIRY) {
+            set({
+              feeds: cacheData.feeds,
+              feedItems: cacheData.feedItems,
+              lastCacheUpdate: cacheData.timestamp,
+              lastUpdated: cacheData.timestamp,
+            });
+
+            // Arka planda güncelleme yap
+            get().updateInBackground(userId);
+            return;
+          }
+
+          // Cache yok veya güncel değilse database'den yükle
           const { data: feeds, error: feedError } = await supabase
             .from("feeds")
             .select("*")
@@ -23,7 +46,6 @@ export const useFeedStore = create(
 
           if (feedError) throw feedError;
 
-          // Son 50 feed item'ı yükle
           const { data: items, error: itemsError } = await supabase
             .from("feed_items")
             .select("*")
@@ -31,14 +53,23 @@ export const useFeedStore = create(
               "feed_id",
               feeds.map((f) => f.id)
             )
-            .order("published_at", { ascending: false })
-            .limit(50);
+            .order("published_at", { ascending: false });
 
           if (itemsError) throw itemsError;
+
+          // Cache'i güncelle
+          const cachePayload = {
+            feeds: feeds || [],
+            feedItems: items || [],
+            timestamp: now,
+          };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
 
           set({
             feeds: feeds || [],
             feedItems: items || [],
+            lastCacheUpdate: now,
+            lastUpdated: now,
           });
         } catch (error) {
           console.error("Error loading feeds:", error);
@@ -46,7 +77,64 @@ export const useFeedStore = create(
         }
       },
 
-      // Add a new feed
+      // Background update function
+      updateInBackground: async (userId) => {
+        try {
+          set({ isUpdating: true });
+
+          const { data: feeds, error: feedError } = await supabase
+            .from("feeds")
+            .select("*")
+            .eq("user_id", userId);
+
+          if (feedError) throw feedError;
+
+          const { data: items, error: itemsError } = await supabase
+            .from("feed_items")
+            .select("*")
+            .in(
+              "feed_id",
+              feeds.map((f) => f.id)
+            )
+            .order("published_at", { ascending: false });
+
+          if (itemsError) throw itemsError;
+
+          const now = Date.now();
+
+          // Cache'i güncelle
+          const cachePayload = {
+            feeds: feeds || [],
+            feedItems: items || [],
+            timestamp: now,
+          };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+
+          set({
+            feeds: feeds || [],
+            feedItems: items || [],
+            lastCacheUpdate: now,
+            lastUpdated: now,
+            isUpdating: false,
+          });
+
+          // Yeni içerik varsa bildirim göster
+          const currentItems = get().feedItems;
+          const newItems = items.filter(
+            (newItem) =>
+              !currentItems.some((currentItem) => currentItem.id === newItem.id)
+          );
+
+          if (newItems.length > 0) {
+            toast.success(`${newItems.length} yeni içerik bulundu`);
+          }
+        } catch (error) {
+          console.error("Background update error:", error);
+          set({ isUpdating: false });
+        }
+      },
+
+      // Add a new feed with cache update
       addFeed: async (feed, userId) => {
         try {
           const feeds = get().feeds;
@@ -57,7 +145,14 @@ export const useFeedStore = create(
             return;
           }
 
-          // Feed'i ekle
+          console.log("Adding feed:", {
+            type: feed.type,
+            title: feed.title,
+            link: feed.link,
+            description: feed.description,
+            channel_avatar: feed.channel_avatar,
+          });
+
           const { data: newFeed, error: feedError } = await supabase
             .from("feeds")
             .insert([
@@ -67,46 +162,91 @@ export const useFeedStore = create(
                 title: feed.title,
                 link: feed.link,
                 description: feed.description,
+                channel_avatar: feed.channel_avatar,
                 last_fetched_at: new Date().toISOString(),
               },
             ])
             .select()
             .single();
 
-          if (feedError) throw feedError;
+          if (feedError) {
+            console.error("Feed insert error:", feedError);
+            throw feedError;
+          }
 
-          // Feed item'ları ekle
+          if (!newFeed) {
+            throw new Error("No feed data returned after insert");
+          }
+
+          console.log("Feed added successfully:", newFeed);
+
           if (feed.items?.length > 0) {
-            const feedItems = feed.items.map((item) => ({
+            console.log(
+              `Adding ${feed.items.length} items for feed:`,
+              newFeed.id
+            );
+
+            const initialItems = feed.items.map((item) => ({
               feed_id: newFeed.id,
               title: item.title,
               link: item.link,
               description: item.description,
-              published_at: item.publishedAt || new Date().toISOString(),
+              published_at: item.published_at || new Date().toISOString(),
               thumbnail: item.thumbnail,
+              is_read: false,
+              is_favorite: false,
             }));
 
-            const { error: itemsError } = await supabase
+            const { data: insertedItems, error: itemsError } = await supabase
               .from("feed_items")
-              .insert(feedItems);
+              .insert(initialItems)
+              .select();
 
-            if (itemsError) throw itemsError;
+            if (itemsError) {
+              console.error("Items insert error:", itemsError);
+              throw itemsError;
+            }
+
+            console.log(
+              `${insertedItems?.length || 0} items added successfully`
+            );
+
+            // Update local state and cache
+            const now = Date.now();
+            const updatedFeeds = [...feeds, newFeed];
+            const updatedItems = [...get().feedItems, ...insertedItems];
+
+            const cachePayload = {
+              feeds: updatedFeeds,
+              feedItems: updatedItems,
+              timestamp: now,
+            };
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+
+            set({
+              feeds: updatedFeeds,
+              feedItems: updatedItems,
+              lastCacheUpdate: now,
+              lastUpdated: now,
+            });
           }
 
-          // Store'u güncelle
-          set((state) => ({
-            feeds: [...state.feeds, newFeed],
-            feedItems: [...state.feedItems, ...feed.items],
-          }));
-
-          toast.success("Feed added successfully");
+          toast.success(`Added feed: ${feed.title}`);
         } catch (error) {
-          console.error("Error adding feed:", error);
-          toast.error("Failed to add feed");
+          console.error("Error adding feed:", {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+          });
+          toast.error(
+            `Failed to add feed: ${error.message || "Unknown error"}`
+          );
+          throw error; // Yeniden fırlat ki üst katmanda da hata yönetilebilsin
         }
       },
 
-      // Remove a feed
+      // Remove feed with cache update
       removeFeed: async (feedId) => {
         try {
           const { error } = await supabase
@@ -116,12 +256,26 @@ export const useFeedStore = create(
 
           if (error) throw error;
 
-          set((state) => ({
-            feeds: state.feeds.filter((feed) => feed.id !== feedId),
-            feedItems: state.feedItems.filter(
-              (item) => item.feed_id !== feedId
-            ),
-          }));
+          const updatedFeeds = get().feeds.filter((feed) => feed.id !== feedId);
+          const updatedItems = get().feedItems.filter(
+            (item) => item.feed_id !== feedId
+          );
+
+          // Update cache
+          const now = Date.now();
+          const cachePayload = {
+            feeds: updatedFeeds,
+            feedItems: updatedItems,
+            timestamp: now,
+          };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+
+          set({
+            feeds: updatedFeeds,
+            feedItems: updatedItems,
+            lastCacheUpdate: now,
+            lastUpdated: now,
+          });
 
           toast.success("Feed removed successfully");
         } catch (error) {
@@ -130,86 +284,7 @@ export const useFeedStore = create(
         }
       },
 
-      // Update feed items
-      updateFeedItems: async (feedId) => {
-        try {
-          const feed = get().feeds.find((f) => f.id === feedId);
-          if (!feed) return false;
-
-          let response;
-          if (feed.type === "youtube") {
-            const channelId = feed.link.split("/").pop();
-            response = await fetch(`/api/proxy/youtube?channelId=${channelId}`);
-          } else {
-            response = await fetch(
-              `/api/proxy?url=${encodeURIComponent(feed.link)}`
-            );
-          }
-
-          const data = await response.json();
-          if (!response.ok)
-            throw new Error(data.error || "Failed to update feed");
-
-          // Yeni item'ları formatla
-          const newItems = (data.items || []).map((item) => ({
-            feed_id: feed.id,
-            title: item.title,
-            link: item.link,
-            description: item.description,
-            published_at: item.publishedAt || new Date().toISOString(),
-            thumbnail: item.thumbnail,
-          }));
-
-          // Mevcut item'ları kontrol et ve sadece yenileri ekle
-          const { data: existingItems } = await supabase
-            .from("feed_items")
-            .select("link")
-            .eq("feed_id", feed.id);
-
-          const existingLinks = new Set(existingItems.map((item) => item.link));
-          const itemsToAdd = newItems.filter(
-            (item) => !existingLinks.has(item.link)
-          );
-
-          if (itemsToAdd.length > 0) {
-            const { error: insertError } = await supabase
-              .from("feed_items")
-              .insert(itemsToAdd);
-
-            if (insertError) throw insertError;
-          }
-
-          // Feed'in son güncelleme zamanını güncelle
-          const { error: updateError } = await supabase
-            .from("feeds")
-            .update({ last_fetched_at: new Date().toISOString() })
-            .eq("id", feed.id);
-
-          if (updateError) throw updateError;
-
-          // Store'u güncelle
-          const { data: updatedItems } = await supabase
-            .from("feed_items")
-            .select("*")
-            .eq("feed_id", feed.id)
-            .order("published_at", { ascending: false })
-            .limit(50);
-
-          set((state) => ({
-            feedItems: [
-              ...state.feedItems.filter((item) => item.feed_id !== feed.id),
-              ...updatedItems,
-            ],
-          }));
-
-          return true;
-        } catch (error) {
-          console.error(`Error updating feed items:`, error);
-          return false;
-        }
-      },
-
-      // Mark item as read/unread
+      // Toggle item read status with cache update
       toggleItemRead: async (itemId, isRead) => {
         try {
           const { error } = await supabase
@@ -219,18 +294,30 @@ export const useFeedStore = create(
 
           if (error) throw error;
 
-          set((state) => ({
-            feedItems: state.feedItems.map((item) =>
-              item.id === itemId ? { ...item, is_read: isRead } : item
-            ),
-          }));
+          const updatedItems = get().feedItems.map((item) =>
+            item.id === itemId ? { ...item, is_read: isRead } : item
+          );
+
+          // Update cache
+          const now = Date.now();
+          const cachePayload = {
+            feeds: get().feeds,
+            feedItems: updatedItems,
+            timestamp: now,
+          };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+
+          set({
+            feedItems: updatedItems,
+            lastCacheUpdate: now,
+          });
         } catch (error) {
           console.error("Error updating item read status:", error);
           toast.error("Failed to update item status");
         }
       },
 
-      // Toggle item favorite status
+      // Toggle item favorite status with cache update
       toggleItemFavorite: async (itemId, isFavorite) => {
         try {
           const { error } = await supabase
@@ -240,49 +327,32 @@ export const useFeedStore = create(
 
           if (error) throw error;
 
-          set((state) => ({
-            feedItems: state.feedItems.map((item) =>
-              item.id === itemId ? { ...item, is_favorite: isFavorite } : item
-            ),
-          }));
+          const updatedItems = get().feedItems.map((item) =>
+            item.id === itemId ? { ...item, is_favorite: isFavorite } : item
+          );
+
+          // Update cache
+          const now = Date.now();
+          const cachePayload = {
+            feeds: get().feeds,
+            feedItems: updatedItems,
+            timestamp: now,
+          };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+
+          set({
+            feedItems: updatedItems,
+            lastCacheUpdate: now,
+          });
         } catch (error) {
           console.error("Error updating item favorite status:", error);
           toast.error("Failed to update favorite status");
         }
       },
 
-      // Update all feeds
-      updateAllFeeds: async () => {
-        const state = get();
-        if (state.isUpdating) return;
-
-        set({ isUpdating: true });
-        let updatedCount = 0;
-        let failedCount = 0;
-
-        for (const feed of state.feeds) {
-          const success = await state.updateFeedItems(feed.id);
-          if (success) updatedCount++;
-          else failedCount++;
-        }
-
-        set({
-          isUpdating: false,
-          lastUpdated: new Date().toISOString(),
-        });
-
-        if (updatedCount > 0) {
-          toast.success(`Updated ${updatedCount} feeds successfully`);
-        }
-        if (failedCount > 0) {
-          toast.error(`Failed to update ${failedCount} feeds`);
-        }
-      },
-
-      // Set search query
+      // Utility functions
       setSearchQuery: (query) => set({ searchQuery: query }),
 
-      // Get filtered feeds
       getFilteredFeeds: () => {
         const { feeds, searchQuery } = get();
         if (!searchQuery) return feeds;
@@ -292,14 +362,12 @@ export const useFeedStore = create(
         );
       },
 
-      // Get feed items
       getFeedItems: (feedId, options = {}) => {
         const { feedItems } = get();
         let items = feedId
           ? feedItems.filter((item) => item.feed_id === feedId)
           : feedItems;
 
-        // Filtreleme seçenekleri
         if (options.onlyUnread) {
           items = items.filter((item) => !item.is_read);
         }
@@ -307,16 +375,22 @@ export const useFeedStore = create(
           items = items.filter((item) => item.is_favorite);
         }
 
-        // Tarihe göre sırala
         return items.sort(
           (a, b) => new Date(b.published_at) - new Date(a.published_at)
         );
+      },
+
+      getFavoriteItems: () => {
+        const { feedItems } = get();
+        return feedItems
+          .filter((item) => item.is_favorite)
+          .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
       },
     }),
     {
       name: "feed-storage",
       partialize: (state) => ({
-        feeds: state.feeds,
+        lastCacheUpdate: state.lastCacheUpdate,
         lastUpdated: state.lastUpdated,
       }),
     }

@@ -21,13 +21,6 @@ export async function GET(request) {
       error: sessionError,
     } = await supabase.auth.getSession();
 
-    // Debug session check
-    console.log("RSS API Route - Session Check:", {
-      hasSession: !!session,
-      sessionError,
-      sessionToken: session?.access_token,
-    });
-
     if (!session) {
       console.log("RSS API Route - No session found");
       return Response.json({ error: "No session found" }, { status: 401 });
@@ -41,8 +34,24 @@ export async function GET(request) {
     }
 
     try {
-      const feed = await parser.parseURL(url);
-      return Response.json(feed);
+      const response = await fetch(url);
+      const text = await response.text();
+      const feed = await parser.parseString(text);
+
+      return Response.json({
+        feed: {
+          title: feed.title,
+          link: feed.link,
+          description: feed.description,
+        },
+        items: feed.items.map((item) => ({
+          title: item.title,
+          link: item.link,
+          description: item.contentSnippet || item.content,
+          published_at: item.pubDate || item.isoDate,
+          thumbnail: item.thumbnail?.url || item.media?.url || null,
+        })),
+      });
     } catch (error) {
       console.error("RSS Parser Error:", error);
       return Response.json(
