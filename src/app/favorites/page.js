@@ -46,9 +46,11 @@ export default function FavoritesPage() {
                   <Image
                     src={item.thumbnail}
                     alt={item.title}
-                    width={120}
+                    width={160}
                     height={90}
-                    className="object-cover rounded"
+                    className="object-cover rounded w-[120px] h-auto"
+                    sizes="(max-width: 640px) 120px, (max-width: 1024px) 160px, 200px"
+                    placeholder="blur"
                   />
                 )}
                 <div className="flex-1 min-w-0">

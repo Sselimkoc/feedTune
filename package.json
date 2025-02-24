@@ -18,6 +18,8 @@
     "@radix-ui/react-toast": "^1.2.6",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.49.1",
+    "@tanstack/react-query": "^5.66.9",
+    "@tanstack/react-query-devtools": "^5.66.9",
     "axios": "^1.7.9",
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.0.0",
