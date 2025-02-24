@@ -1,102 +1,68 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useAuthStore } from "@/store/useAuthStore";
+import { AuthModal } from "@/components/auth/AuthModal";
 import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-export default function Home() {
-    return (
-        <main className="p-8">
-            <div className="max-w-6xl mx-auto">
-                <h1 className="text-4xl font-bold mb-8">Welcome 👋</h1>
+export default function HomePage() {
+  const { user, checkSession } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Add RSS Feed</CardTitle>
-                            <CardDescription>
-                                Enter the RSS feed URL you want to follow
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Input
-                                placeholder="RSS feed URL"
-                                className="mb-4"
-                            />
-                            <Button variant="default" className="w-full">
-                                Add Feed
-                            </Button>
-                        </CardContent>
-                    </Card>
+  useEffect(() => {
+    checkSession().finally(() => setIsLoading(false));
+  }, [checkSession]);
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Quick Start</CardTitle>
-                            <CardDescription>
-                                Start with popular RSS feeds
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            <Button
-                                variant="outline"
-                                className="w-full justify-start bg-transparent"
-                            >
-                                🌐 Tech News
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="w-full justify-start bg-transparent"
-                            >
-                                📚 Blog Posts
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="w-full justify-start bg-transparent"
-                            >
-                                🎮 Gaming News
-                            </Button>
-                        </CardContent>
-                    </Card>
+  if (isLoading) {
+    return null;
+  }
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Statistics</CardTitle>
-                            <CardDescription>
-                                Your feed tracking statistics
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <span>Total Feeds</span>
-                                    <span className="font-bold">0</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span>Unread</span>
-                                    <span className="font-bold">0</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span>Categories</span>
-                                    <span className="font-bold">0</span>
-                                </div>
-                            </div>
-                        </CardContent>
-                        <CardFooter>
-                            <Button
-                                variant="outline"
-                                className="w-full bg-transparent"
-                            >
-                                Detailed Statistics
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </div>
+  return (
+    <div className="relative min-h-screen">
+      <div className={user ? "" : "filter blur-sm"}>
+        <div className="container py-12">
+          <div className="max-w-3xl mx-auto text-center space-y-8">
+            <h1 className="text-4xl font-bold tracking-tight">
+              Welcome to FeedTune
+            </h1>
+            <p className="text-xl text-muted-foreground">
+              Your personal RSS feed reader. Stay updated with your favorite
+              content creators, blogs, and news sources in one place.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-6 rounded-lg border bg-card">
+                <h3 className="text-lg font-semibold mb-2">RSS Feeds</h3>
+                <p className="text-muted-foreground">
+                  Add and manage RSS feeds from your favorite websites
+                </p>
+              </div>
+              <div className="p-6 rounded-lg border bg-card">
+                <h3 className="text-lg font-semibold mb-2">YouTube Channels</h3>
+                <p className="text-muted-foreground">
+                  Follow YouTube channels and never miss new videos
+                </p>
+              </div>
+              <div className="p-6 rounded-lg border bg-card">
+                <h3 className="text-lg font-semibold mb-2">Auto Updates</h3>
+                <p className="text-muted-foreground">
+                  Content updates automatically at your preferred interval
+                </p>
+              </div>
             </div>
-        </main>
-    );
+          </div>
+        </div>
+      </div>
+
+      {!user && <AuthModal isOpen={true} />}
+    </div>
+  );
 }

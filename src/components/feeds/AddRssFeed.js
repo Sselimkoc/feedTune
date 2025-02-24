@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export function AddRssFeed({ onBack, onSuccess }) {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const feedStore = useFeedStore();
+  const { session, checkSession } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,12 +21,31 @@ export function AddRssFeed({ onBack, onSuccess }) {
       return;
     }
 
+    // Ensure session is current
+    await checkSession();
+
+    if (!session?.access_token) {
+      toast.error("Please sign in to add an RSS feed");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
+      const response = await fetch(
+        `/api/proxy?url=${encodeURIComponent(url)}`,
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || "Failed to fetch feed");
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch feed");
+      }
 
       if (data && data.items) {
         const formattedData = {
@@ -39,7 +60,7 @@ export function AddRssFeed({ onBack, onSuccess }) {
           })),
         };
 
-        feedStore.addFeed(formattedData);
+        await feedStore.addFeed(formattedData, session?.user?.id);
         setUrl("");
         toast.success(`Added feed: ${formattedData.title}`);
         onSuccess?.();

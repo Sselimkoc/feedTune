@@ -2,19 +2,25 @@
 
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import { Home, Library, Settings, Star } from "lucide-react";
+import { Home, Library, Settings, Star, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export function Navigation() {
   const pathname = usePathname();
+  const { user, signOut } = useAuthStore();
 
   const menuItems = [
     { icon: Home, label: "Home", href: "/" },
-    { icon: Library, label: "My Feeds", href: "/feeds" },
-    { icon: Star, label: "Favorites", href: "/favorites" },
-    { icon: Settings, label: "Settings", href: "/settings" },
+    ...(user
+      ? [
+          { icon: Library, label: "My Feeds", href: "/feeds" },
+          { icon: Star, label: "Favorites", href: "/favorites" },
+          { icon: Settings, label: "Settings", href: "/settings" },
+        ]
+      : []),
   ];
 
   return (
@@ -69,10 +75,16 @@ export function Navigation() {
         </div>
 
         <div className="mt-auto pt-4 border-t">
-          <Button variant="default" className="w-full">
-            <Star className="mr-2 h-5 w-5" />
-            Upgrade to Pro
-          </Button>
+          {user ? (
+            <Button variant="outline" className="w-full" onClick={signOut}>
+              <LogOut className="mr-2 h-5 w-5" />
+              Sign Out
+            </Button>
+          ) : (
+            <Button variant="default" className="w-full" asChild>
+              <Link href="/">Sign In</Link>
+            </Button>
+          )}
         </div>
       </div>
     </nav>

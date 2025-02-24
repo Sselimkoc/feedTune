@@ -1,42 +1,57 @@
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+import Parser from "rss-parser";
+
+const parser = new Parser({
+  customFields: {
+    item: [
+      ["media:content", "media"],
+      ["media:thumbnail", "thumbnail"],
+    ],
+  },
+});
+
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const rssUrl = searchParams.get("url");
-
-  if (!rssUrl) {
-    return new Response(JSON.stringify({ error: "RSS feed URL is required" }), {
-      status: 400,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  }
-
   try {
-    const response = await fetch(
-      `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(
-        rssUrl
-      )}`
-    );
-    const data = await response.json();
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch feed");
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    // Debug session check
+    console.log("RSS API Route - Session Check:", {
+      hasSession: !!session,
+      sessionError,
+      sessionToken: session?.access_token,
+    });
+
+    if (!session) {
+      console.log("RSS API Route - No session found");
+      return Response.json({ error: "No session found" }, { status: 401 });
     }
 
-    return new Response(JSON.stringify(data), {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const { searchParams } = new URL(request.url);
+    const url = searchParams.get("url");
+
+    if (!url) {
+      return Response.json({ error: "Feed URL is required" }, { status: 400 });
+    }
+
+    try {
+      const feed = await parser.parseURL(url);
+      return Response.json(feed);
+    } catch (error) {
+      console.error("RSS Parser Error:", error);
+      return Response.json(
+        { error: error.message || "Failed to parse RSS feed" },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message || "Failed to fetch RSS feed" }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    console.error("Server Error:", error);
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

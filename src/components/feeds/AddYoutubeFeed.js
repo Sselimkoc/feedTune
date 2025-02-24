@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useAuthStore } from "@/store/useAuthStore";
 
-export function AddYoutubeFeed({ onBack }) {
+export function AddYoutubeFeed({ onBack, onSuccess }) {
   const [channelId, setChannelId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const feedStore = useFeedStore();
+  const { session, checkSession } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,9 +21,26 @@ export function AddYoutubeFeed({ onBack }) {
       return;
     }
 
+    // Ensure session is current
+    await checkSession();
+
+    if (!session?.access_token) {
+      toast.error("Please sign in to add a YouTube feed");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/proxy/youtube?channelId=${channelId}`);
+      const response = await fetch(
+        `/api/proxy/youtube?channelId=${encodeURIComponent(channelId)}`,
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -44,10 +63,10 @@ export function AddYoutubeFeed({ onBack }) {
           })),
         };
 
-        feedStore.addFeed(formattedData);
+        await feedStore.addFeed(formattedData, session?.user?.id);
         setChannelId("");
         toast.success(`Added channel: ${formattedData.title}`);
-        onBack?.();
+        onSuccess?.();
       } else {
         toast.warning("No videos found for this channel");
       }
