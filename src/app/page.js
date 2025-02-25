@@ -150,8 +150,8 @@ export default function HomePage() {
               <CardHeader>
                 <CardTitle className="text-2xl">Hemen Başlayın</CardTitle>
                 <CardDescription>
-                  FeedTune'u ücretsiz kullanmaya başlayın ve içeriklerinizi tek
-                  bir yerden yönetin.
+                  FeedTune&apos;u ücretsiz kullanmaya başlayın ve içeriklerinizi
+                  tek bir yerden yönetin.
                 </CardDescription>
               </CardHeader>
               <CardContent>
