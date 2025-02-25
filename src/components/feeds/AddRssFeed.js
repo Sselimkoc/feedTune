@@ -1,31 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { useFeedStore } from "@/store/useFeedStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useFeeds } from "@/hooks/useFeeds";
 
 export function AddRssFeed({ onBack, onSuccess }) {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const feedStore = useFeedStore();
-  const { session, checkSession } = useAuthStore();
+  const { addRssFeed, isAddingRssFeed } = useFeeds();
+  const { user } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!url) {
       toast.error("Please enter a valid RSS feed URL");
-      return;
-    }
-
-    // Ensure session is current
-    await checkSession();
-
-    if (!session?.access_token) {
-      toast.error("Please sign in to add an RSS feed");
       return;
     }
 
@@ -48,21 +40,23 @@ export function AddRssFeed({ onBack, onSuccess }) {
       }
 
       if (data && data.items) {
-        const formattedData = {
+        const feed = {
+          user_id: user.id,
           type: "rss",
           title: data.feed.title,
-          link: data.feed.link,
           description: data.feed.description,
+          feed_url: url,
           items: data.items.map((item) => ({
             title: item.title,
             link: item.link,
             description: item.description,
+            published_at: item.published_at,
           })),
         };
 
-        await feedStore.addFeed(formattedData, session?.user?.id);
+        await addRssFeed(feed);
         setUrl("");
-        toast.success(`Added feed: ${formattedData.title}`);
+        toast.success(`Added feed: ${feed.title}`);
         onSuccess?.();
       }
     } catch (error) {
@@ -88,10 +82,14 @@ export function AddRssFeed({ onBack, onSuccess }) {
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Enter RSS feed URL"
-          disabled={isLoading}
+          disabled={isLoading || isAddingRssFeed}
         />
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isLoading || isAddingRssFeed}
+        >
+          {isLoading || isAddingRssFeed ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Adding...

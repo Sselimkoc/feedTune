@@ -41,22 +41,24 @@ export default function FavoritesPage() {
         {favoriteItems.map((item) => (
           <Card key={item.id} className="group">
             <CardContent className="p-4">
-              <div className="flex items-start gap-4">
-                {item.thumbnail && (
-                  <Image
-                    src={item.thumbnail}
-                    alt={item.title}
-                    width={160}
-                    height={90}
-                    className="object-cover rounded w-[120px] h-auto"
-                    sizes="(max-width: 640px) 120px, (max-width: 1024px) 160px, 200px"
-                    placeholder="blur"
-                  />
-                )}
-                <div className="flex-1 min-w-0">
+              <div className="flex items-start gap-4 h-[120px]">
+                <div className="w-[120px] h-[90px] flex-shrink-0">
+                  {item.thumbnail && (
+                    <Image
+                      src={item.thumbnail}
+                      alt={item.title}
+                      width={160}
+                      height={90}
+                      className="object-cover rounded w-full h-full"
+                      sizes="120px"
+                      placeholder="empty"
+                    />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col h-full">
                   <div className="flex items-start justify-between gap-4">
                     <h3
-                      className={`text-lg font-medium ${
+                      className={`text-lg font-medium line-clamp-2 ${
                         item.is_read ? "text-muted-foreground" : ""
                       }`}
                     >
@@ -94,12 +96,12 @@ export default function FavoritesPage() {
                     </div>
                   </div>
                   {item.description && (
-                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2 flex-1">
                       {item.description}
                     </p>
                   )}
                   {item.published_at && (
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-xs text-muted-foreground mt-auto">
                       {new Date(item.published_at).toLocaleDateString()}
                     </p>
                   )}

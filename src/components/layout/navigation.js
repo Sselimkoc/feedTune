@@ -7,16 +7,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useFeeds } from "@/hooks/useFeeds";
 
 export function Navigation() {
   const pathname = usePathname();
   const { user, signOut } = useAuthStore();
+  const { prefetchFeeds } = useFeeds();
 
   const menuItems = [
     { icon: Home, label: "Home", href: "/" },
     ...(user
       ? [
-          { icon: Library, label: "My Feeds", href: "/feeds" },
+          {
+            icon: Library,
+            label: "My Feeds",
+            href: "/feeds",
+            onMouseEnter: () => prefetchFeeds(),
+          },
           { icon: Star, label: "Favorites", href: "/favorites" },
           { icon: Settings, label: "Settings", href: "/settings" },
         ]
@@ -51,6 +58,7 @@ export function Navigation() {
                   isActive && "bg-secondary"
                 )}
                 asChild
+                onMouseEnter={item.onMouseEnter}
               >
                 <Link href={item.href}>
                   <item.icon
@@ -77,7 +85,7 @@ export function Navigation() {
         <div className="mt-auto pt-4 border-t">
           {user ? (
             <Button variant="outline" className="w-full" onClick={signOut}>
-              <LogOut className="mr-2 h-5 w-5" />
+              <LogOut className="mr-2 h-5 w-4" />
               Sign Out
             </Button>
           ) : (

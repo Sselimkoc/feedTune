@@ -31,7 +31,7 @@
 - Daha modüler bir yapı kurulabilir
 - Custom hook'lar ayrı bir dizinde toplanabilir
 - Utility fonksiyonları gruplanabilir
-- Tip güvenliği için TypeScript eklenebilir
+
 
 
 - JSDoc ile kod dokümantasyonu eklenebilir
@@ -54,3 +54,8 @@
 - Environment yönetimi geliştirilebilir
 - Build optimizasyonları yapılabilir
 
+- klavye klavuzu eklenebilir
+use feeds hooku rss ve yt rss için farklı tablolardan data cekerken usefeedstoreda eskı tek tablodan cekmeye calısıyor
+
+ 
+addyoutuberss kodunu guncelle

@@ -1,22 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useFeedStore } from "@/store/useFeedStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { useAuthStore } from "@/store/useAuthStore";
 import { useFeeds } from "@/hooks/useFeeds";
 import { useYoutubeFeed } from "@/hooks/useYoutubeFeeds";
 import { Label } from "@/components/ui/label";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export function AddYoutubeFeed({ onBack, onSuccess }) {
   const [channelId, setChannelId] = useState("");
-  const { addFeed, isAddingFeed } = useFeeds();
+  const { addYoutubeFeed, isAddingYoutubeFeed } = useFeeds();
   const { channelData, videos, isLoading, error } = useYoutubeFeed(channelId);
-  const feedStore = useFeedStore();
-  const { session, checkSession } = useAuthStore();
+  const { user } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,25 +29,33 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
         throw new Error("Failed to fetch channel data");
       }
 
+      const channel = channelData.items[0];
       const feed = {
+        user_id: user.id,
         type: "youtube",
-        title: channelData.title,
-        description: channelData.description,
-        link: `https://www.youtube.com/channel/${channelId}`,
-        items: videos.map((video) => ({
-          title: video.title,
-          description: video.description,
-          link: `https://www.youtube.com/watch?v=${video.id}`,
-          published_at: video.publishedAt,
-          thumbnail: video.thumbnail,
+        title: channel.snippet.title,
+        description: channel.snippet.description,
+        channel_id: channelId,
+        channel_avatar: channel.snippet.thumbnails.default.url,
+        subscriber_count: channel.statistics?.subscriberCount,
+        video_count: channel.statistics?.videoCount,
+        playlist_id: channel.contentDetails?.relatedPlaylists?.uploads,
+        items: videos.items.map((video) => ({
+          title: video.snippet.title,
+          description: video.snippet.description,
+          link: `https://www.youtube.com/watch?v=${video.snippet.resourceId.videoId}`,
+          published_at: video.snippet.publishedAt,
+          video_id: video.snippet.resourceId.videoId,
+          thumbnail: video.snippet.thumbnails.medium.url,
         })),
       };
 
-      await addFeed(feed);
-      toast.success("Feed added successfully!");
+      await addYoutubeFeed(feed);
       setChannelId("");
+      toast.success(`Added channel: ${feed.title}`);
       onSuccess?.();
     } catch (error) {
+      console.error("Error adding feed:", error);
       toast.error(`Error adding feed: ${error.message}`);
     }
   };
@@ -71,7 +77,7 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
             value={channelId}
             onChange={(e) => setChannelId(e.target.value)}
             placeholder="Enter channel ID"
-            disabled={isAddingFeed}
+            disabled={isAddingYoutubeFeed}
           />
         </div>
 
@@ -79,18 +85,28 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
 
         {isLoading && <div>Loading channel data...</div>}
 
-        {channelData && (
+        {channelData?.items?.[0] && (
           <div className="p-4 border rounded">
-            <h3 className="font-bold">{channelData.title}</h3>
-            <p className="text-sm text-gray-500">{channelData.description}</p>
+            <h3 className="font-bold">{channelData.items[0].snippet.title}</h3>
+            {/* Channel logo will be added later */}
+            <p className="text-sm text-muted-foreground">
+              {channelData.items[0].snippet.description}
+            </p>
           </div>
         )}
 
         <Button
           type="submit"
-          disabled={isAddingFeed || isLoading || !channelData}
+          disabled={isAddingYoutubeFeed || isLoading || !channelData}
         >
-          {isAddingFeed ? "Adding..." : "Add Feed"}
+          {isAddingYoutubeFeed ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Adding...
+            </>
+          ) : (
+            "Add Feed"
+          )}
         </Button>
       </form>
     </div>
