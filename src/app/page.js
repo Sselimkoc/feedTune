@@ -13,10 +13,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Rss, Youtube, Bell, CheckCircle, Keyboard, Moon } from "lucide-react";
+import Link from "next/link";
 
 export default function HomePage() {
   const { user, checkSession } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     checkSession().finally(() => setIsLoading(false));
@@ -28,41 +31,140 @@ export default function HomePage() {
 
   return (
     <div className="relative min-h-screen">
-      <div className={user ? "" : "filter blur-sm"}>
-        <div className="container py-12">
-          <div className="max-w-3xl mx-auto text-center space-y-8">
-            <h1 className="text-4xl font-bold tracking-tight">
-              Welcome to FeedTune
-            </h1>
-            <p className="text-xl text-muted-foreground">
-              Your personal RSS feed reader. Stay updated with your favorite
-              content creators, blogs, and news sources in one place.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 rounded-lg border bg-card">
-                <h3 className="text-lg font-semibold mb-2">RSS Feeds</h3>
+      <div className="container py-12">
+        {/* Hero Section */}
+        <div className="max-w-3xl mx-auto text-center space-y-8 mb-16">
+          <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-transparent">
+            FeedTune ile İçeriklerinizi Yönetin
+          </h1>
+          <p className="text-xl text-muted-foreground">
+            RSS beslemeleri ve YouTube kanallarınızı tek bir yerde toplayın,
+            organize edin ve takip edin. Favori içerik üreticilerinizi
+            kaçırmayın!
+          </p>
+          {!user && (
+            <div className="flex items-center justify-center gap-4">
+              <Button size="lg" onClick={() => setShowAuthModal(true)}>
+                Giriş Yap
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setShowAuthModal(true)}
+              >
+                Hesap Oluştur
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <Card className="p-6 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <Rss className="h-12 w-12 text-primary mb-4" />
+              <CardTitle>RSS Beslemeleri</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Favori blog ve haber sitelerinizden en son içerikleri takip
+                edin. RSS beslemelerini kolayca ekleyin ve yönetin.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="p-6 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <Youtube className="h-12 w-12 text-primary mb-4" />
+              <CardTitle>YouTube Entegrasyonu</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Sevdiğiniz YouTube kanallarını takip edin. Yeni videoları anında
+                görün ve kaçırmayın.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="p-6 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <Bell className="h-12 w-12 text-primary mb-4" />
+              <CardTitle>Otomatik Güncellemeler</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                İçerikler otomatik olarak güncellenir. Siz sadece okumaya ve
+                izlemeye odaklanın.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Features List */}
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-8">Özellikler</h2>
+          <div className="grid gap-6">
+            <div className="flex items-start gap-4 hover:bg-accent/5 p-4 rounded-lg transition-colors">
+              <div className="p-2 rounded-full bg-primary/10">
+                <CheckCircle className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold mb-1">Kolay Organizasyon</h3>
                 <p className="text-muted-foreground">
-                  Add and manage RSS feeds from your favorite websites
+                  İçeriklerinizi kategorilere ayırın, favorilere ekleyin ve
+                  okundu olarak işaretleyin.
                 </p>
               </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <h3 className="text-lg font-semibold mb-2">YouTube Channels</h3>
+            </div>
+
+            <div className="flex items-start gap-4 hover:bg-accent/5 p-4 rounded-lg transition-colors">
+              <div className="p-2 rounded-full bg-primary/10">
+                <Keyboard className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold mb-1">Klavye Kısayolları</h3>
                 <p className="text-muted-foreground">
-                  Follow YouTube channels and never miss new videos
+                  Klavye kısayolları ile hızlıca gezinin ve içerikleri yönetin.
                 </p>
               </div>
-              <div className="p-6 rounded-lg border bg-card">
-                <h3 className="text-lg font-semibold mb-2">Auto Updates</h3>
+            </div>
+
+            <div className="flex items-start gap-4 hover:bg-accent/5 p-4 rounded-lg transition-colors">
+              <div className="p-2 rounded-full bg-primary/10">
+                <Moon className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold mb-1">Karanlık Mod</h3>
                 <p className="text-muted-foreground">
-                  Content updates automatically at your preferred interval
+                  Gözlerinizi yormayan karanlık mod ile gece de rahatça okuyun.
                 </p>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Call to Action */}
+        {!user && (
+          <div className="max-w-3xl mx-auto mt-16 text-center">
+            <Card className="p-8 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-2xl">Hemen Başlayın</CardTitle>
+                <CardDescription>
+                  FeedTune'u ücretsiz kullanmaya başlayın ve içeriklerinizi tek
+                  bir yerden yönetin.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button size="lg" onClick={() => setShowAuthModal(true)}>
+                  Hesap Oluştur
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
-      {!user && <AuthModal isOpen={true} />}
+      <AuthModal isOpen={showAuthModal} onOpenChange={setShowAuthModal} />
     </div>
   );
 }
