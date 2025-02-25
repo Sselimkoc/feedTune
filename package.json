@@ -22,6 +22,7 @@
     "axios": "^1.7.9",
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.0.0",
+    "chroma-js": "^3.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "fast-xml-parser": "^5.0.6",
