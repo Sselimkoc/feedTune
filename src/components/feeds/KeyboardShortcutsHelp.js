@@ -11,9 +11,16 @@ import { Keyboard } from "lucide-react";
 const shortcuts = [
   { keys: ["Tab"], description: "Feedler arası geçiş" },
   { keys: ["Shift", "Tab"], description: "Önceki feed'e geçiş" },
-  { keys: ["↑"], description: "Önceki item'a geçiş" },
-  { keys: ["↓"], description: "Sonraki item'a geçiş" },
-  { keys: ["←", "→"], description: "Sayfalar arası geçiş" },
+  { keys: ["↑"], description: "Önceki feed'e geçiş" },
+  { keys: ["↓"], description: "Sonraki feed'e geçiş" },
+  {
+    keys: ["←"],
+    description: "Önceki item'a geçiş (ilk itemde önceki sayfaya geçer)",
+  },
+  {
+    keys: ["→"],
+    description: "Sonraki item'a geçiş (son itemde sonraki sayfaya geçer)",
+  },
   { keys: ["Enter"], description: "Seçili item'ı yeni sekmede aç" },
 ];
 
