@@ -1,19 +1,9 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  ExternalLink,
-  Star,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Rss,
-} from "lucide-react";
-import Image from "next/image";
-import { motion } from "framer-motion";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { motion } from "framer-motion";
 import { useFeeds } from "@/hooks/useFeeds";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -22,40 +12,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { KeyboardShortcutsHelp } from "./KeyboardShortcutsHelp";
-import { cn } from "@/lib/utils";
-
-function FeedSkeleton() {
-  return (
-    <div className="space-y-6">
-      {[1, 2, 3].map((i) => (
-        <Card key={i}>
-          <CardHeader className="flex flex-col space-y-4 pb-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
-                <div className="h-6 w-48 bg-muted animate-pulse rounded" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-4 w-3/4 bg-muted animate-pulse rounded mb-4" />
-            <div className="space-y-4">
-              {[1, 2, 3].map((j) => (
-                <div key={j} className="flex gap-4">
-                  <div className="w-[120px] h-[68px] bg-muted animate-pulse rounded" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-5 w-3/4 bg-muted animate-pulse rounded" />
-                    <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
+import { FeedSkeleton } from "./FeedSkeleton";
+import { FeedCard } from "./FeedCard";
+import { FeedNavigation } from "./FeedNavigation";
+import { EmptyFeedState } from "./EmptyFeedState";
+import { AddFeedButton } from "./AddFeedButton";
 
 export function FeedList() {
   const [currentPages, setCurrentPages] = useState({});
@@ -417,15 +378,16 @@ export function FeedList() {
   }
 
   if (!feeds?.length) {
-    return (
-      <div className="p-4">No feeds found. Add some feeds to get started!</div>
-    );
+    return <EmptyFeedState />;
   }
 
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center gap-4">
-        <KeyboardShortcutsHelp />
+        <div className="flex items-center gap-2">
+          <KeyboardShortcutsHelp />
+          <AddFeedButton variant="outline" />
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Items per page:</span>
           <Select
@@ -449,33 +411,21 @@ export function FeedList() {
         ref={containerRef}
         className="relative h-[calc(100vh-200px)] overflow-hidden mt-8"
       >
-        {/* Navigation buttons */}
-        {feeds.length > 1 && (
-          <>
-            <button
-              onClick={() => setFocusedFeedIndex(getPreviousFeedIndex())}
-              className={cn(
-                "absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full",
-                "bg-background/80 shadow-md hover:bg-background transition-all duration-500"
-              )}
-              aria-label={`Previous feed: ${
-                getPreviousFeed()?.title || "Previous"
-              }`}
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-            <button
-              onClick={() => setFocusedFeedIndex(getNextFeedIndex())}
-              className={cn(
-                "absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full",
-                "bg-background/80 shadow-md hover:bg-background transition-all duration-500"
-              )}
-              aria-label={`Next feed: ${getNextFeed()?.title || "Next"}`}
-            >
-              <ChevronRight className="h-6 w-6" />
-            </button>
-          </>
-        )}
+        {/* Navigation buttons and indicators */}
+        <FeedNavigation
+          feeds={feeds}
+          focusedFeedIndex={focusedFeedIndex}
+          setFocusedFeedIndex={setFocusedFeedIndex}
+          getPreviousFeedIndex={getPreviousFeedIndex}
+          getNextFeedIndex={getNextFeedIndex}
+          getPreviousFeed={getPreviousFeed}
+          getNextFeed={getNextFeed}
+          isFeedActive={isFeedActive}
+          isFeedPrevious={isFeedPrevious}
+          isFeedNext={isFeedNext}
+          getIndicatorStyle={getIndicatorStyle}
+          getDotStyle={getDotStyle}
+        />
 
         {/* This is the fixed-position container for all cards */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -521,359 +471,6 @@ export function FeedList() {
           ))}
         </div>
       </div>
-
-      {/* Navigation Indicators */}
-      <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-2">
-        {feeds.map((feed, index) => {
-          // Determine feed position relative to focused feed
-          const isActive = isFeedActive(index);
-          const isPrevious = isFeedPrevious(index);
-          const isNext = isFeedNext(index);
-
-          return (
-            <button
-              key={index}
-              onClick={() => setFocusedFeedIndex(index)}
-              className={cn(
-                "flex items-center gap-2 transition-all duration-500 group",
-                getIndicatorStyle(isActive, isPrevious, isNext)
-              )}
-              aria-label={`Go to feed ${index + 1}: ${feed.title}`}
-            >
-              <div
-                className={cn(
-                  "w-2 h-2 rounded-full transition-all duration-500",
-                  getDotStyle(isActive, isPrevious, isNext)
-                )}
-              />
-              <span
-                className={cn(
-                  "text-xs whitespace-nowrap max-w-0 overflow-hidden transition-all duration-500",
-                  isActive
-                    ? "max-w-[100px] opacity-100"
-                    : "group-hover:max-w-[100px] opacity-0 group-hover:opacity-100"
-                )}
-              >
-                {feed.title}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// Extracted FeedCard component to avoid repetition
-function FeedCard({
-  feed,
-  index,
-  isFocused,
-  focusedFeedIndex,
-  focusedItemIndex,
-  currentPages,
-  itemsPerPage,
-  getItemsForPage,
-  getTotalPages,
-  prevPage,
-  nextPage,
-  toggleItemRead,
-  toggleItemFavorite,
-  deleteFeed,
-  setFocusedFeedIndex,
-  focusedItemRef,
-  position = "other",
-}) {
-  if (!feed) return null;
-
-  const items = feed.items || [];
-  const currentPage = currentPages[feed.id] || 0;
-  const totalPages = getTotalPages(items);
-  const currentItems = getItemsForPage(items, feed.id);
-
-  return (
-    <div className="w-full transition-all duration-500">
-      <Card
-        tabIndex={0}
-        className={cn(
-          "outline-none transition-all duration-500",
-          isFocused
-            ? "ring-2 ring-primary ring-offset-4 shadow-xl bg-card"
-            : position === "top" || position === "bottom"
-            ? "bg-card/95 hover:bg-card shadow-lg"
-            : "bg-card/90 hover:bg-card/95 shadow-md"
-        )}
-        onClick={() => setFocusedFeedIndex(index)}
-      >
-        <CardHeader className="flex flex-col space-y-4 pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {feed.type === "youtube" && feed.channel_avatar && (
-                <Image
-                  src={feed.channel_avatar}
-                  alt={feed.title}
-                  width={40}
-                  height={40}
-                  className="rounded-full"
-                  priority
-                  placeholder="empty"
-                />
-              )}
-              {feed.type === "rss" && feed.site_favicon && (
-                <Image
-                  src={feed.site_favicon}
-                  alt={feed.title}
-                  width={24}
-                  height={24}
-                  className="rounded"
-                  placeholder="empty"
-                />
-              )}
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-lg font-semibold truncate">
-                  {feed.title}
-                </CardTitle>
-                <span className="text-sm text-muted-foreground">
-                  ({items.length} items)
-                </span>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteFeed(feed.id);
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4"
-              >
-                <path d="M3 6h18" />
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-              </svg>
-            </Button>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-            {feed.description}
-          </p>
-          <div className="flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative">
-              {currentItems.map((item, itemIndex) => (
-                <div
-                  key={item.id}
-                  ref={
-                    focusedFeedIndex === index &&
-                    focusedItemIndex === itemIndex &&
-                    focusedItemRef
-                      ? focusedItemRef
-                      : null
-                  }
-                  className={cn(
-                    "group flex flex-col bg-card rounded-lg shadow-md hover:shadow-xl transition-all duration-500 overflow-hidden",
-                    focusedFeedIndex === index && focusedItemIndex === itemIndex
-                      ? "ring-2 ring-primary ring-offset-4 shadow-xl scale-[1.02] z-10"
-                      : ""
-                  )}
-                >
-                  {/* Thumbnail Section */}
-                  <div
-                    className="relative w-full"
-                    style={{ minHeight: "200px" }}
-                  >
-                    {feed.type === "youtube" && item.thumbnail ? (
-                      <div className="relative aspect-video w-full">
-                        <Image
-                          src={item.thumbnail}
-                          alt={item.title}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                          priority
-                        />
-                      </div>
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-gradient-to-br from-accent/5 via-accent/10 to-background">
-                        <div className="flex flex-col items-center text-center space-y-4">
-                          {feed.type === "rss" && feed.site_favicon ? (
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-background p-2 shadow-sm">
-                              <Image
-                                src={feed.site_favicon}
-                                alt={feed.title}
-                                width={48}
-                                height={48}
-                                className="object-contain"
-                                priority
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <Rss className="h-6 w-6 text-primary" />
-                            </div>
-                          )}
-                          <div className="space-y-1">
-                            <h4 className="text-sm font-medium text-foreground/80">
-                              {feed.title}
-                            </h4>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(item.published_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                  </div>
-
-                  {/* Content Section */}
-                  <div className="flex flex-col flex-1 p-6">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3
-                        className={cn(
-                          "text-base font-medium line-clamp-2",
-                          item.is_read
-                            ? "text-muted-foreground"
-                            : "text-foreground"
-                        )}
-                      >
-                        {item.title}
-                      </h3>
-                    </div>
-
-                    {item.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
-                        {item.description}
-                      </p>
-                    )}
-
-                    <div className="flex items-center justify-between mt-6 pt-6 border-t">
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            "h-8 px-3 transition-all duration-200",
-                            item.is_favorite
-                              ? "bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500"
-                              : "hover:bg-yellow-500/10 hover:text-yellow-500"
-                          )}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toggleItemFavorite(item.id, !item.is_favorite);
-                          }}
-                        >
-                          <Star
-                            className={cn(
-                              "h-4 w-4 mr-1.5 transition-all",
-                              item.is_favorite ? "fill-yellow-500" : "fill-none"
-                            )}
-                          />
-                          <span className="text-sm">
-                            {item.is_favorite
-                              ? "Favorilerde"
-                              : "Favorilere Ekle"}
-                          </span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            "h-8 px-3 transition-all duration-200",
-                            item.is_read
-                              ? "bg-green-500/10 hover:bg-green-500/20 text-green-500"
-                              : "hover:bg-green-500/10 hover:text-green-500"
-                          )}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toggleItemRead(item.id, !item.is_read);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "h-4 w-4 mr-1.5",
-                              item.is_read ? "text-green-500" : ""
-                            )}
-                          />
-                          <span className="text-sm">
-                            {item.is_read ? "Okundu" : "Okunmadı"}
-                          </span>
-                        </Button>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 hover:bg-primary/5 transition-colors duration-200"
-                        asChild
-                      >
-                        <a
-                          href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleItemRead(item.id, !item.is_read);
-                          }}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-1.5" />
-                          <span className="text-sm">Oku</span>
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Feed Card Pagination Controls */}
-            {items.length > itemsPerPage && (
-              <div className="flex justify-between items-center gap-4 mt-6 pt-6 border-t">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    prevPage(feed.id);
-                  }}
-                  disabled={currentPage === 0}
-                  className="flex items-center gap-2"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  Page {currentPage + 1} of {totalPages}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    nextPage(feed.id, items);
-                  }}
-                  disabled={currentPage === totalPages - 1}
-                  className="flex items-center gap-2"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

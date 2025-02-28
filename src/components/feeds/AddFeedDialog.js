@@ -27,16 +27,16 @@ const TRANSLATIONS = {
     retry: "Tekrar dene",
     generic: "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
     loadingError: "Feed yüklenirken bir hata oluştu.",
-    networkError: "Bağlantı hatası. İnternet bağlantınızı kontrol edin."
+    networkError: "Bağlantı hatası. İnternet bağlantınızı kontrol edin.",
   },
   rss: {
     name: "RSS Feed",
-    title: "RSS Feed Ekle"
+    title: "RSS Feed Ekle",
   },
   youtube: {
     name: "YouTube Kanalı",
-    title: "YouTube Kanalı Ekle"
-  }
+    title: "YouTube Kanalı Ekle",
+  },
 };
 
 const FEED_PLATFORMS = {
@@ -51,12 +51,12 @@ const FEED_PLATFORMS = {
     name: TRANSLATIONS.youtube.name,
     icon: Youtube,
     component: AddYoutubeFeed,
-  }
+  },
 };
 
 function handleError(error, info) {
   console.error("Feed Dialog Error:", error, info);
-  
+
   if (error.name === "NetworkError") {
     toast.error(TRANSLATIONS.error.networkError);
   } else if (error.name === "LoadingError") {
@@ -77,13 +77,13 @@ function AddFeedErrorBoundary({ children }) {
     <ErrorBoundary
       fallback={
         <div className="text-center p-4 space-y-4">
-          <p className="text-lg font-medium text-destructive">{TRANSLATIONS.error.title}</p>
-          <p className="text-sm text-muted-foreground">{TRANSLATIONS.error.generic}</p>
-          <Button 
-            variant="outline" 
-            onClick={handleReset}
-            className="mt-4"
-          >
+          <p className="text-lg font-medium text-destructive">
+            {TRANSLATIONS.error.title}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {TRANSLATIONS.error.generic}
+          </p>
+          <Button variant="outline" onClick={handleReset} className="mt-4">
             {TRANSLATIONS.error.retry}
           </Button>
         </div>
@@ -103,59 +103,59 @@ AddFeedErrorBoundary.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-export function AddFeedDialog({ onSuccess, defaultPlatform }) {
+export function AddFeedDialog({ onSuccess, defaultPlatform, children }) {
   const [state, setState] = useState({
     open: false,
     selectedPlatform: defaultPlatform ? FEED_PLATFORMS[defaultPlatform] : null,
     keepAdding: false,
-    isLoading: false
+    isLoading: false,
   });
 
   const handleClose = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       selectedPlatform: null,
       open: prev.keepAdding,
-      isLoading: false
+      isLoading: false,
     }));
     onSuccess?.();
   }, [onSuccess]);
 
   const handleOpenChange = useCallback((isOpen) => {
     if (!isOpen) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         selectedPlatform: null,
         keepAdding: false,
-        isLoading: false
+        isLoading: false,
       }));
     } else {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         open: true,
-        isLoading: false
+        isLoading: false,
       }));
     }
   }, []);
 
   const handlePlatformSelect = useCallback((platform) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       selectedPlatform: platform,
-      isLoading: true
+      isLoading: true,
     }));
 
     // Simüle edilmiş yükleme durumu - gerçek uygulamada kaldırılabilir
     setTimeout(() => {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
-        isLoading: false
+        isLoading: false,
       }));
     }, 500);
   }, []);
 
-  const SelectedComponent = useMemo(() => 
-    state.selectedPlatform?.component || null,
+  const SelectedComponent = useMemo(
+    () => state.selectedPlatform?.component || null,
     [state.selectedPlatform]
   );
 
@@ -163,19 +163,21 @@ export function AddFeedDialog({ onSuccess, defaultPlatform }) {
     <AddFeedErrorBoundary>
       <Dialog open={state.open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-          <Button 
-            disabled={state.isLoading}
-            aria-label={TRANSLATIONS.addNewFeed}
-          >
-            {state.isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <PlusCircle className="mr-2 h-4 w-4" />
-            )}
-            {TRANSLATIONS.addNewFeed}
-          </Button>
+          {children || (
+            <Button
+              disabled={state.isLoading}
+              aria-label={TRANSLATIONS.addNewFeed}
+            >
+              {state.isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <PlusCircle className="mr-2 h-4 w-4" />
+              )}
+              {TRANSLATIONS.addNewFeed}
+            </Button>
+          )}
         </DialogTrigger>
-        <DialogContent 
+        <DialogContent
           className="sm:max-w-[425px]"
           aria-labelledby="dialog-title"
         >
@@ -188,7 +190,11 @@ export function AddFeedDialog({ onSuccess, defaultPlatform }) {
           </DialogHeader>
           {!state.selectedPlatform ? (
             <>
-              <div className="grid grid-cols-2 gap-4" role="group" aria-label={TRANSLATIONS.selectPlatform}>
+              <div
+                className="grid grid-cols-2 gap-4"
+                role="group"
+                aria-label={TRANSLATIONS.selectPlatform}
+              >
                 {Object.values(FEED_PLATFORMS).map((platform) => (
                   <Button
                     key={platform.id}
@@ -212,8 +218,8 @@ export function AddFeedDialog({ onSuccess, defaultPlatform }) {
                 <Switch
                   id="keep-adding"
                   checked={state.keepAdding}
-                  onCheckedChange={(checked) => 
-                    setState(prev => ({ ...prev, keepAdding: checked }))
+                  onCheckedChange={(checked) =>
+                    setState((prev) => ({ ...prev, keepAdding: checked }))
                   }
                   aria-label={TRANSLATIONS.keepAdding}
                 />
@@ -223,11 +229,13 @@ export function AddFeedDialog({ onSuccess, defaultPlatform }) {
           ) : SelectedComponent ? (
             <div>
               <SelectedComponent
-                onBack={() => setState(prev => ({ 
-                  ...prev, 
-                  selectedPlatform: null, 
-                  isLoading: false 
-                }))}
+                onBack={() =>
+                  setState((prev) => ({
+                    ...prev,
+                    selectedPlatform: null,
+                    isLoading: false,
+                  }))
+                }
                 onSuccess={handleClose}
                 isLoading={state.isLoading}
               />
@@ -242,4 +250,5 @@ export function AddFeedDialog({ onSuccess, defaultPlatform }) {
 AddFeedDialog.propTypes = {
   onSuccess: PropTypes.func,
   defaultPlatform: PropTypes.oneOf(Object.keys(FEED_PLATFORMS)),
+  children: PropTypes.node,
 };
