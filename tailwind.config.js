@@ -15,6 +15,9 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -72,6 +75,21 @@ module.exports = {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(100%)" },
         },
+        pulse: {
+          "0%, 100%": { opacity: "var(--tw-opacity)", transform: "scale(1)" },
+          "50%": {
+            opacity: "calc(var(--tw-opacity) * 0.8)",
+            transform: "scale(1.05)",
+          },
+        },
+        "fade-in": {
+          "0%": { opacity: 0 },
+          "100%": { opacity: 1 },
+        },
+        "fade-out": {
+          "0%": { opacity: 1 },
+          "100%": { opacity: 0 },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -79,8 +97,30 @@ module.exports = {
         "slide-from-right":
           "slide-from-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         "slide-to-right": "slide-to-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        pulse: "pulse 8s ease-in-out infinite",
+        "fade-in": "fade-in 0.5s ease-out",
+        "fade-out": "fade-out 0.5s ease-out",
+      },
+      transitionDelay: {
+        0: "0ms",
+        2000: "2000ms",
+        4000: "4000ms",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    function ({ addUtilities, theme, e }) {
+      const animationDelayUtilities = Object.entries(
+        theme("transitionDelay", {})
+      ).map(([key, value]) => {
+        return {
+          [`.${e(`animation-delay-${key}`)}`]: {
+            "animation-delay": value,
+          },
+        };
+      });
+      addUtilities(animationDelayUtilities);
+    },
+  ],
 };

@@ -31,19 +31,19 @@ export default function HomePage() {
 
   return (
     <div className="relative min-h-screen">
-      <div className="container py-12">
+      <div className="container py-6 px-4 lg:py-12">
         {/* Hero Section */}
-        <div className="max-w-3xl mx-auto text-center space-y-8 mb-16">
-          <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-transparent">
+        <div className="max-w-3xl mx-auto text-center space-y-6 lg:space-y-8 mb-12 lg:mb-16">
+          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-transparent">
             FeedTune ile İçeriklerinizi Yönetin
           </h1>
-          <p className="text-xl text-muted-foreground">
+          <p className="text-lg lg:text-xl text-muted-foreground">
             RSS beslemeleri ve YouTube kanallarınızı tek bir yerde toplayın,
             organize edin ve takip edin. Favori içerik üreticilerinizi
             kaçırmayın!
           </p>
           {!user && (
-            <div className="flex items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="lg" onClick={() => setShowAuthModal(true)}>
                 Giriş Yap
               </Button>
@@ -59,7 +59,7 @@ export default function HomePage() {
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12 lg:mb-16">
           <Card className="p-6 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <Rss className="h-12 w-12 text-primary mb-4" />
@@ -102,8 +102,10 @@ export default function HomePage() {
 
         {/* Features List */}
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-8">Özellikler</h2>
-          <div className="grid gap-6">
+          <h2 className="text-2xl lg:text-3xl font-bold text-center mb-6 lg:mb-8">
+            Özellikler
+          </h2>
+          <div className="grid gap-4 lg:gap-6">
             <div className="flex items-start gap-4 hover:bg-accent/5 p-4 rounded-lg transition-colors">
               <div className="p-2 rounded-full bg-primary/10">
                 <CheckCircle className="h-6 w-6 text-primary" />
@@ -145,10 +147,12 @@ export default function HomePage() {
 
         {/* Call to Action */}
         {!user && (
-          <div className="max-w-3xl mx-auto mt-16 text-center">
-            <Card className="p-8 bg-primary/5">
+          <div className="max-w-3xl mx-auto mt-12 lg:mt-16 text-center px-4">
+            <Card className="p-6 lg:p-8 bg-primary/5">
               <CardHeader>
-                <CardTitle className="text-2xl">Hemen Başlayın</CardTitle>
+                <CardTitle className="text-xl lg:text-2xl">
+                  Hemen Başlayın
+                </CardTitle>
                 <CardDescription>
                   FeedTune&apos;u ücretsiz kullanmaya başlayın ve içeriklerinizi
                   tek bir yerden yönetin.

@@ -10,8 +10,10 @@ export function ThemeProvider({ children }) {
   return (
     <NextThemesProvider
       attribute="class"
+      defaultTheme="system"
       enableSystem={settings.theme === "system"}
-      disableTransitionOnChange
+      disableTransitionOnChange={false}
+      themes={["light", "dark"]}
     >
       {children}
     </NextThemesProvider>

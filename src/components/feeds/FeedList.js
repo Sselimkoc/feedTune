@@ -11,6 +11,7 @@ import {
   Rss,
 } from "lucide-react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useFeeds } from "@/hooks/useFeeds";
 import {
@@ -61,7 +62,14 @@ export function FeedList() {
   const [focusedFeedIndex, setFocusedFeedIndex] = useState(0);
   const [focusedItemIndex, setFocusedItemIndex] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(3);
-  const { feeds, isLoading, error, deleteFeed, updateFeedItem } = useFeeds();
+  const {
+    feeds,
+    isLoading,
+    error,
+    deleteFeed,
+    toggleItemRead,
+    toggleItemFavorite,
+  } = useFeeds();
 
   // Refs for the focused item and feed card
   const focusedItemRef = useRef(null);
@@ -307,10 +315,7 @@ export function FeedList() {
           const focusedItem = currentItems[focusedItemIndex];
           if (focusedItem) {
             window.open(focusedItem.link, "_blank");
-            updateFeedItem({
-              itemId: focusedItem.id,
-              updates: { is_read: true },
-            });
+            toggleItemRead(focusedItem.id, !focusedItem.is_read);
           }
           break;
       }
@@ -328,7 +333,7 @@ export function FeedList() {
     getTotalPages,
     nextPage,
     prevPage,
-    updateFeedItem,
+    toggleItemRead,
     pendingFocusLastItem,
   ]);
 
@@ -367,22 +372,35 @@ export function FeedList() {
 
   const visibleFeeds = getVisibleFeeds();
 
-  // Helper function to get card position styles
-  const getCardPositionStyles = useCallback((position) => {
+  // Helper function to get card position styles with circular animation
+  const getCardPositionStyles = useCallback((position, index, total) => {
+    const radius = 300;
+    const angle = (index / total) * Math.PI * 2;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+
     const baseStyles =
-      "absolute w-full max-w-4xl opacity-70 scale-75 z-0 hover:opacity-90 transition-all duration-500";
+      "absolute w-full max-w-4xl transition-all duration-300 ease-out";
 
     switch (position) {
       case "top":
-        return cn(baseStyles, "top-0 left-0 transform -translate-y-1/2");
+        return cn(baseStyles, "opacity-70 hover:opacity-100 hover:scale-90", {
+          transform: `translate(${x}px, ${y}px) scale(0.75) rotate(${
+            angle * (180 / Math.PI)
+          }deg)`,
+        });
       case "bottom":
-        return cn(baseStyles, "bottom-0 right-0 transform translate-y-1/2");
+        return cn(baseStyles, "opacity-70 hover:opacity-100 hover:scale-90", {
+          transform: `translate(${x}px, ${y}px) scale(0.75) rotate(${
+            angle * (180 / Math.PI)
+          }deg)`,
+        });
       case "center":
         return cn(
-          "w-full max-w-4xl z-10 shadow-lg transition-all duration-500"
+          "w-full max-w-4xl z-10 shadow-xl scale-100 transition-all duration-300 ease-in-out"
         );
       default:
-        return cn(baseStyles, "opacity-40 scale-50");
+        return cn(baseStyles, "opacity-40 scale-50 hover:scale-60");
     }
   }, []);
 
@@ -405,8 +423,8 @@ export function FeedList() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center gap-2">
+    <div className="space-y-8">
+      <div className="flex justify-between items-center gap-4">
         <KeyboardShortcutsHelp />
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Items per page:</span>
@@ -429,7 +447,7 @@ export function FeedList() {
       {/* Fixed-position carousel container */}
       <div
         ref={containerRef}
-        className="relative h-[calc(100vh-200px)] overflow-hidden"
+        className="relative h-[calc(100vh-200px)] overflow-hidden mt-8"
       >
         {/* Navigation buttons */}
         {feeds.length > 1 && (
@@ -459,14 +477,24 @@ export function FeedList() {
           </>
         )}
 
-        {/* This is the fixed-position container for all three cards */}
+        {/* This is the fixed-position container for all cards */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {/* Render all visible feeds */}
-          {visibleFeeds.map((feedData) => (
-            <div
+          {visibleFeeds.map((feedData, index) => (
+            <motion.div
               key={feedData.index}
-              className={getCardPositionStyles(feedData.position)}
+              className={getCardPositionStyles(
+                feedData.position,
+                index,
+                visibleFeeds.length
+              )}
               ref={feedData.position === "center" ? focusedFeedRef : null}
+              initial={{ scale: 0.8, opacity: 0.5 }}
+              animate={{
+                scale: feedData.position === "center" ? 1 : 0.75,
+                opacity: feedData.position === "center" ? 1 : 0.7,
+              }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
             >
               <FeedCard
                 feed={feedData.feed}
@@ -480,7 +508,8 @@ export function FeedList() {
                 getTotalPages={getTotalPages}
                 prevPage={prevPage}
                 nextPage={nextPage}
-                updateFeedItem={updateFeedItem}
+                toggleItemRead={toggleItemRead}
+                toggleItemFavorite={toggleItemFavorite}
                 deleteFeed={deleteFeed}
                 setFocusedFeedIndex={setFocusedFeedIndex}
                 focusedItemRef={
@@ -488,7 +517,7 @@ export function FeedList() {
                 }
                 position={feedData.position}
               />
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -548,7 +577,8 @@ function FeedCard({
   getTotalPages,
   prevPage,
   nextPage,
-  updateFeedItem,
+  toggleItemRead,
+  toggleItemFavorite,
   deleteFeed,
   setFocusedFeedIndex,
   focusedItemRef,
@@ -568,10 +598,10 @@ function FeedCard({
         className={cn(
           "outline-none transition-all duration-500",
           isFocused
-            ? "ring-2 ring-primary ring-offset-2 shadow-lg bg-card"
+            ? "ring-2 ring-primary ring-offset-4 shadow-xl bg-card"
             : position === "top" || position === "bottom"
-            ? "bg-card/95 hover:bg-card"
-            : "bg-card/90 hover:bg-card/95"
+            ? "bg-card/95 hover:bg-card shadow-lg"
+            : "bg-card/90 hover:bg-card/95 shadow-md"
         )}
         onClick={() => setFocusedFeedIndex(index)}
       >
@@ -639,7 +669,7 @@ function FeedCard({
             {feed.description}
           </p>
           <div className="flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative">
               {currentItems.map((item, itemIndex) => (
                 <div
                   key={item.id}
@@ -651,9 +681,9 @@ function FeedCard({
                       : null
                   }
                   className={cn(
-                    "group flex flex-col bg-card rounded-lg shadow-sm hover:shadow-md transition-all duration-500 overflow-hidden",
+                    "group flex flex-col bg-card rounded-lg shadow-md hover:shadow-xl transition-all duration-500 overflow-hidden",
                     focusedFeedIndex === index && focusedItemIndex === itemIndex
-                      ? "ring-2 ring-primary ring-offset-2 shadow-lg scale-[1.02] z-10"
+                      ? "ring-2 ring-primary ring-offset-4 shadow-xl scale-[1.02] z-10"
                       : ""
                   )}
                 >
@@ -707,12 +737,15 @@ function FeedCard({
                   </div>
 
                   {/* Content Section */}
-                  <div className="flex flex-col flex-1 p-4">
+                  <div className="flex flex-col flex-1 p-6">
                     <div className="flex items-start justify-between gap-2">
                       <h3
-                        className={`text-base font-medium line-clamp-2 ${
-                          item.is_read ? "text-muted-foreground" : ""
-                        }`}
+                        className={cn(
+                          "text-base font-medium line-clamp-2",
+                          item.is_read
+                            ? "text-muted-foreground"
+                            : "text-foreground"
+                        )}
                       >
                         {item.title}
                       </h3>
@@ -724,63 +757,80 @@ function FeedCard({
                       </p>
                     )}
 
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between mt-6 pt-6 border-t">
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="sm"
+                          className={cn(
+                            "h-8 px-3 transition-all duration-200",
+                            item.is_favorite
+                              ? "bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500"
+                              : "hover:bg-yellow-500/10 hover:text-yellow-500"
+                          )}
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
-                            updateFeedItem({
-                              itemId: item.id,
-                              updates: {
-                                is_favorite: !item.is_favorite,
-                              },
-                            });
+                            toggleItemFavorite(item.id, !item.is_favorite);
                           }}
                         >
                           <Star
-                            className={`h-4 w-4 ${
-                              item.is_favorite
-                                ? "fill-yellow-400 text-yellow-400"
-                                : ""
-                            }`}
+                            className={cn(
+                              "h-4 w-4 mr-1.5 transition-all",
+                              item.is_favorite ? "fill-yellow-500" : "fill-none"
+                            )}
                           />
+                          <span className="text-sm">
+                            {item.is_favorite
+                              ? "Favorilerde"
+                              : "Favorilere Ekle"}
+                          </span>
                         </Button>
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="sm"
+                          className={cn(
+                            "h-8 px-3 transition-all duration-200",
+                            item.is_read
+                              ? "bg-green-500/10 hover:bg-green-500/20 text-green-500"
+                              : "hover:bg-green-500/10 hover:text-green-500"
+                          )}
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
-                            updateFeedItem({
-                              itemId: item.id,
-                              updates: { is_read: !item.is_read },
-                            });
+                            toggleItemRead(item.id, !item.is_read);
                           }}
                         >
                           <Check
-                            className={`h-4 w-4 ${
+                            className={cn(
+                              "h-4 w-4 mr-1.5",
                               item.is_read ? "text-green-500" : ""
-                            }`}
+                            )}
                           />
-                        </Button>
-                        <Button variant="ghost" size="icon" asChild>
-                          <a
-                            href={item.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateFeedItem({
-                                itemId: item.id,
-                                updates: { is_read: true },
-                              });
-                            }}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
+                          <span className="text-sm">
+                            {item.is_read ? "Okundu" : "Okunmadı"}
+                          </span>
                         </Button>
                       </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 hover:bg-primary/5 transition-colors duration-200"
+                        asChild
+                      >
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleItemRead(item.id, !item.is_read);
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-1.5" />
+                          <span className="text-sm">Oku</span>
+                        </a>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -789,7 +839,7 @@ function FeedCard({
 
             {/* Feed Card Pagination Controls */}
             {items.length > itemsPerPage && (
-              <div className="flex justify-between items-center gap-4 mt-4 pt-4 border-t">
+              <div className="flex justify-between items-center gap-4 mt-6 pt-6 border-t">
                 <Button
                   variant="ghost"
                   size="sm"
