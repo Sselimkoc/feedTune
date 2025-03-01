@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { toast } from "sonner";
 
 export function LogoMigrationProvider({ children }) {
   const [migrationComplete, setMigrationComplete] = useState(false);
@@ -11,36 +10,38 @@ export function LogoMigrationProvider({ children }) {
   useEffect(() => {
     const migrateLogos = async () => {
       try {
-        // Kullanıcı oturumunu kontrol et
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData.session) return;
-
-        // Daha önce migrate edilmiş mi kontrol et
-        const { data: migrationData } = await supabase
-          .from("settings")
-          .select("*")
-          .eq("key", "logo_migration_completed")
-          .single();
-
-        if (migrationData) {
+        // Check if migration was already completed
+        if (localStorage.getItem("logo_migration_completed") === "true") {
           setMigrationComplete(true);
           return;
         }
 
-        // YouTube feed'lerini ve ilgili logoları al
+        // Check user session
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          setMigrationComplete(true);
+          return;
+        }
+
+        // Simplify the approach - just try to fetch YouTube feeds directly
+        // If the table doesn't exist, it will fail gracefully
         const { data: youtubeFeeds, error: feedsError } = await supabase
           .from("youtube_feeds")
           .select("id, channel_avatar");
 
+        // If there's an error (table doesn't exist or no permission), just mark as complete
         if (feedsError) {
-          console.error("Error fetching YouTube feeds:", feedsError);
+          console.log(
+            "Logo migration skipped: YouTube feeds table not accessible"
+          );
+          localStorage.setItem("logo_migration_completed", "true");
+          setMigrationComplete(true);
           return;
         }
 
-        // Her YouTube feed için logo bilgisini feeds tablosuna aktar
+        // If we have YouTube feeds with avatars, update the feeds table
         let updatedCount = 0;
-
-        for (const feed of youtubeFeeds) {
+        for (const feed of youtubeFeeds || []) {
           if (feed.channel_avatar) {
             const { error: updateError } = await supabase
               .from("feeds")
@@ -53,21 +54,16 @@ export function LogoMigrationProvider({ children }) {
           }
         }
 
-        // Migration tamamlandı olarak işaretle
-        await supabase
-          .from("settings")
-          .insert([{ key: "logo_migration_completed", value: "true" }]);
-
+        // Mark migration as complete
+        localStorage.setItem("logo_migration_completed", "true");
         setMigrationComplete(true);
 
-        if (updatedCount > 0) {
-          toast.success(`${updatedCount} YouTube feed logosu güncellendi.`, {
-            id: "logo-migration",
-            duration: 3000,
-          });
-        }
+        console.log(`Logo migration completed: ${updatedCount} feeds updated`);
       } catch (error) {
         console.error("Logo migration error:", error);
+        // Mark as complete even on error to prevent repeated attempts
+        localStorage.setItem("logo_migration_completed", "true");
+        setMigrationComplete(true);
       }
     };
 

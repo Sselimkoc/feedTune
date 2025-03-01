@@ -44,13 +44,46 @@ const FeedCardComponent = ({
     : new Date();
   const timeAgo = formatDistanceToNow(publishedAt, { addSuffix: true });
 
+  const handleToggleRead = (e) => {
+    e.stopPropagation();
+    if (typeof onToggleRead === "function") {
+      onToggleRead(item.id, !item.is_read);
+    } else {
+      console.error("onToggleRead is not a function", onToggleRead);
+    }
+  };
+
+  const handleToggleFavorite = (e) => {
+    e.stopPropagation();
+    if (typeof onToggleFavorite === "function") {
+      onToggleFavorite(item.id, !item.is_favorite);
+    } else {
+      console.error("onToggleFavorite is not a function", onToggleFavorite);
+    }
+  };
+
+  const handleOpenLink = (e) => {
+    e.stopPropagation();
+    if (typeof onOpenLink === "function") {
+      onOpenLink(item.link);
+      if (!item.is_read && typeof onToggleRead === "function") {
+        onToggleRead(item.id, true);
+      }
+    } else {
+      console.error("onOpenLink is not a function", onOpenLink);
+      // Fallback to opening the link directly
+      window.open(item.link, "_blank");
+    }
+  };
+
   return (
     <Card
       className={cn(
-        "transition-all duration-150 hover:scale-[1.01] hover:shadow-md",
+        "transition-all duration-150 hover:scale-[1.01] hover:shadow-md cursor-pointer",
         item.is_read ? "bg-muted/30" : "bg-card",
         isFocused ? "ring-2 ring-primary" : ""
       )}
+      onClick={handleOpenLink}
     >
       <CardContent className="p-3 sm:p-4">
         <div className="flex gap-3">
@@ -141,63 +174,66 @@ const FeedCardComponent = ({
             )}
 
             {/* Butonlar */}
-            <div className="flex items-center gap-1 mt-auto">
+            <div className="flex items-center gap-2 mt-auto">
               <Button
-                variant="ghost"
+                variant={item.is_read ? "secondary" : "outline"}
                 size="sm"
-                onClick={() => onToggleRead(item.id, !item.is_read)}
-                className="h-7 w-7 p-0 rounded-full"
-                title={item.is_read ? "Mark as unread" : "Mark as read"}
+                onClick={handleToggleRead}
+                className={cn(
+                  "h-8 px-2 rounded-full transition-all",
+                  item.is_read ? "bg-green-500/10 hover:bg-green-500/20" : ""
+                )}
+                title={
+                  item.is_read
+                    ? "Okunmadı olarak işaretle"
+                    : "Okundu olarak işaretle"
+                }
               >
                 <CheckIcon
                   className={cn(
-                    "h-3.5 w-3.5",
+                    "h-4 w-4 mr-1",
                     item.is_read ? "text-green-500" : "text-muted-foreground"
                   )}
                 />
-                <span className="sr-only">
-                  {item.is_read ? "Mark as unread" : "Mark as read"}
+                <span className="text-xs">
+                  {item.is_read ? "Okundu" : "Okunmadı"}
                 </span>
               </Button>
 
               <Button
-                variant="ghost"
+                variant={item.is_favorite ? "secondary" : "outline"}
                 size="sm"
-                onClick={() => onToggleFavorite(item.id, !item.is_favorite)}
-                className="h-7 w-7 p-0 rounded-full"
-                title={
+                onClick={handleToggleFavorite}
+                className={cn(
+                  "h-8 px-2 rounded-full transition-all",
                   item.is_favorite
-                    ? "Remove from favorites"
-                    : "Add to favorites"
+                    ? "bg-yellow-500/10 hover:bg-yellow-500/20"
+                    : ""
+                )}
+                title={
+                  item.is_favorite ? "Favorilerden çıkar" : "Favorilere ekle"
                 }
               >
                 <StarIcon
                   className={cn(
-                    "h-3.5 w-3.5",
+                    "h-4 w-4 mr-1",
                     item.is_favorite
                       ? "text-yellow-500 fill-yellow-500"
                       : "text-muted-foreground"
                   )}
                 />
-                <span className="sr-only">
-                  {item.is_favorite
-                    ? "Remove from favorites"
-                    : "Add to favorites"}
+                <span className="text-xs">
+                  {item.is_favorite ? "Favori" : "Favorilere Ekle"}
                 </span>
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  onOpenLink(item.link);
-                  if (!item.is_read) {
-                    onToggleRead(item.id, true);
-                  }
-                }}
-                className="h-7 px-2 ml-auto text-xs rounded-full"
+                onClick={handleOpenLink}
+                className="h-8 px-3 ml-auto text-xs rounded-full"
               >
-                <ExternalLinkIcon className="h-3.5 w-3.5 mr-1" />
+                <ExternalLinkIcon className="h-4 w-4 mr-1.5" />
                 Aç
               </Button>
             </div>

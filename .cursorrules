@@ -46,5 +46,3 @@ You are an expert in JavaScript, Node.js, Next.js App Router, React, Shadcn UI, 
 
 ## Terminal Command Guidelines
 - Do not chain commands with `&&`; run each terminal command separately.
-- When using new modules, always install them with `npm install` 
-- Use PascalCase for the component name.

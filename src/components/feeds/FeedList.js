@@ -310,20 +310,37 @@ export function FeedList() {
   // Memoized item action handlers
   const handleToggleRead = useCallback(
     (id, isRead) => {
-      toggleItemRead(id, isRead);
+      console.log("Toggling read status:", id, isRead);
+      if (typeof toggleItemRead === "function") {
+        toggleItemRead({ itemId: id, isRead });
+      } else {
+        console.error("toggleItemRead is not a function", toggleItemRead);
+      }
     },
     [toggleItemRead]
   );
 
   const handleToggleFavorite = useCallback(
     (id, isFavorite) => {
-      toggleItemFavorite(id, isFavorite);
+      console.log("Toggling favorite status:", id, isFavorite);
+      if (typeof toggleItemFavorite === "function") {
+        toggleItemFavorite({ itemId: id, isFavorite });
+      } else {
+        console.error(
+          "toggleItemFavorite is not a function",
+          toggleItemFavorite
+        );
+      }
     },
     [toggleItemFavorite]
   );
 
   const handleOpenLink = useCallback((link) => {
-    window.open(link, "_blank");
+    if (link) {
+      window.open(link, "_blank");
+    } else {
+      console.error("No link provided");
+    }
   }, []);
 
   // Aktif filtre sayısını hesapla
@@ -434,8 +451,8 @@ export function FeedList() {
                     item={item}
                     feed={feeds.find((f) => f.id === item.feed_id)}
                     isCompact={compactMode}
-                    onToggleRead={toggleItemRead}
-                    onToggleFavorite={toggleItemFavorite}
+                    onToggleRead={handleToggleRead}
+                    onToggleFavorite={handleToggleFavorite}
                     onOpenLink={handleOpenLink}
                     isFocused={
                       index === focusedItemIndex &&

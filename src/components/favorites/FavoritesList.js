@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Star, Check, ExternalLink } from "lucide-react";
+import { Check, Star, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export function FavoritesList({ initialItems }) {
   const [items, setItems] = useState(initialItems);
@@ -14,6 +15,8 @@ export function FavoritesList({ initialItems }) {
 
   const toggleItemRead = async (itemId, isRead) => {
     try {
+      console.log("Toggling read status in FavoritesList:", itemId, isRead);
+
       // Optimistic update
       setItems((currentItems) =>
         currentItems.map((item) =>
@@ -28,18 +31,26 @@ export function FavoritesList({ initialItems }) {
 
       if (error) throw error;
     } catch (error) {
+      console.error("Error toggling read status:", error);
+
       // Rollback on error
       setItems((currentItems) =>
         currentItems.map((item) =>
           item.id === itemId ? { ...item, is_read: !isRead } : item
         )
       );
-      toast.error("Failed to update item status");
+      toast.error("Öğe durumu güncellenirken hata oluştu");
     }
   };
 
   const toggleItemFavorite = async (itemId, isFavorite) => {
     try {
+      console.log(
+        "Toggling favorite status in FavoritesList:",
+        itemId,
+        isFavorite
+      );
+
       // Optimistic update
       setItems((currentItems) =>
         currentItems.map((item) =>
@@ -61,20 +72,33 @@ export function FavoritesList({ initialItems }) {
         );
       }
     } catch (error) {
+      console.error("Error toggling favorite status:", error);
+
       // Rollback on error
       setItems((currentItems) =>
         currentItems.map((item) =>
           item.id === itemId ? { ...item, is_favorite: !isFavorite } : item
         )
       );
-      toast.error("Failed to update favorite status");
+      toast.error("Favori durumu güncellenirken hata oluştu");
+    }
+  };
+
+  const handleOpenLink = (link) => {
+    if (link) {
+      window.open(link, "_blank");
+    } else {
+      console.error("No link provided");
     }
   };
 
   if (items.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-10">
-        <p>No favorite items yet. Star items in your feeds to see them here.</p>
+        <p>
+          Henüz favori öğeniz yok. Beslemelerinizdeki öğeleri yıldızlayarak
+          burada görüntüleyebilirsiniz.
+        </p>
       </div>
     );
   }
@@ -82,7 +106,16 @@ export function FavoritesList({ initialItems }) {
   return (
     <div className="grid gap-4">
       {items.map((item) => (
-        <Card key={item.id} className="group">
+        <Card
+          key={item.id}
+          className="group hover:shadow-md transition-shadow cursor-pointer"
+          onClick={(e) => {
+            handleOpenLink(item.link);
+            if (!item.is_read) {
+              toggleItemRead(item.id, true);
+            }
+          }}
+        >
           <CardContent className="p-4">
             <div className="flex items-start gap-4 h-[120px]">
               {item.thumbnail && (
@@ -108,47 +141,72 @@ export function FavoritesList({ initialItems }) {
                   </h2>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() =>
-                        toggleItemFavorite(item.id, !item.is_favorite)
-                      }
-                      aria-label={
-                        item.is_favorite
-                          ? "Remove from favorites"
-                          : "Add to favorites"
-                      }
-                    >
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => toggleItemRead(item.id, !item.is_read)}
-                      aria-label={
-                        item.is_read ? "Mark as unread" : "Mark as read"
+                      variant={item.is_read ? "secondary" : "outline"}
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleItemRead(item.id, !item.is_read);
+                      }}
+                      className={cn(
+                        "h-8 px-2 rounded-full transition-all",
+                        item.is_read
+                          ? "bg-green-500/10 hover:bg-green-500/20"
+                          : ""
+                      )}
+                      title={
+                        item.is_read
+                          ? "Okunmadı olarak işaretle"
+                          : "Okundu olarak işaretle"
                       }
                     >
                       <Check
-                        className={`h-4 w-4 ${
-                          item.is_read ? "text-green-500" : ""
-                        }`}
+                        className={cn(
+                          "h-4 w-4 mr-1",
+                          item.is_read
+                            ? "text-green-500"
+                            : "text-muted-foreground"
+                        )}
                       />
+                      <span className="text-xs">
+                        {item.is_read ? "Okundu" : "Okunmadı"}
+                      </span>
                     </Button>
-                    <a
-                      href={item.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center rounded-md w-8 h-8 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                      aria-label="Open in new tab"
+
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleItemFavorite(item.id, !item.is_favorite);
+                      }}
+                      className="h-8 px-2 rounded-full bg-yellow-500/10 hover:bg-yellow-500/20"
+                      title="Favorilerden çıkar"
                     >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
+                      <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-500" />
+                      <span className="text-xs">Favori</span>
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenLink(item.link);
+                        if (!item.is_read) {
+                          toggleItemRead(item.id, true);
+                        }
+                      }}
+                      className="h-8 px-3 text-xs rounded-full"
+                      title="Yeni sekmede aç"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1.5" />
+                      Aç
+                    </Button>
                   </div>
                 </div>
                 {item.description && (
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-2 flex-1">
-                    {item.description}
+                    {item.description.replace(/<[^>]*>/g, "")}
                   </p>
                 )}
                 {item.published_at && (
