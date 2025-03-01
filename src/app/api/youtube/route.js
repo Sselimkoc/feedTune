@@ -30,19 +30,54 @@ export async function GET(request) {
     // URL parametrelerini al
     const { searchParams } = new URL(request.url);
     const channelId = searchParams.get("channelId");
+    const handle = searchParams.get("handle");
 
-    if (!channelId) {
+    if (!channelId && !handle) {
       return Response.json(
-        { error: "Channel ID is required" },
+        { error: "Channel ID or handle is required" },
         { status: 400 }
       );
+    }
+
+    // Handle varsa, önce kanal ID'sini bul
+    let targetChannelId = channelId;
+    if (handle) {
+      try {
+        const handleResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${handle}&key=${YOUTUBE_API_KEY}`
+        );
+
+        if (!handleResponse.ok) {
+          const errorData = await handleResponse.json();
+          throw new Error(
+            errorData.error?.message || "Failed to fetch channel from handle"
+          );
+        }
+
+        const handleData = await handleResponse.json();
+        if (!handleData.items || handleData.items.length === 0) {
+          return Response.json(
+            { error: "Channel not found with given handle" },
+            { status: 404 }
+          );
+        }
+
+        // İlk eşleşen kanalı al
+        targetChannelId = handleData.items[0].id.channelId;
+      } catch (error) {
+        console.error("Error fetching channel from handle:", error);
+        return Response.json(
+          { error: "Failed to fetch channel from handle" },
+          { status: 500 }
+        );
+      }
     }
 
     // YouTube API istekleri
     try {
       // 1. Kanal bilgilerini al
       const channelResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${channelId}&key=${YOUTUBE_API_KEY}`
+        `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${targetChannelId}&key=${YOUTUBE_API_KEY}`
       );
 
       if (!channelResponse.ok) {
@@ -83,13 +118,14 @@ export async function GET(request) {
       // 3. Yanıtı formatla
       const formattedResponse = {
         channel: {
-          id: channelId,
+          id: targetChannelId,
           title: channelInfo.snippet.title,
           description: channelInfo.snippet.description,
           thumbnail:
             channelInfo.snippet.thumbnails?.default?.url ||
             channelInfo.snippet.thumbnails?.medium?.url ||
             channelInfo.snippet.thumbnails?.high?.url,
+          handle: channelInfo.snippet.customUrl,
           statistics: {
             subscriberCount: channelInfo.statistics?.subscriberCount,
             videoCount: channelInfo.statistics?.videoCount,

@@ -14,9 +14,29 @@ import Image from "next/image";
 // YouTube channel ID validation regex
 const CHANNEL_ID_REGEX = /^UC[\w-]{21}[AQgw]$/;
 
+// YouTube URL patterns
+const URL_PATTERNS = [
+  {
+    pattern: /youtube\.com\/channel\/(UC[\w-]{21}[AQgw])/,
+    type: "channel",
+  },
+  {
+    pattern: /youtube\.com\/@([\w-]+)/,
+    type: "handle",
+  },
+  {
+    pattern: /@([\w-]+)/,
+    type: "handle",
+  },
+  {
+    pattern: /(UC[\w-]{21}[AQgw])/,
+    type: "id",
+  },
+];
+
 export function AddYoutubeFeed({ onBack, onSuccess }) {
   const [formState, setFormState] = useState({
-    channelId: "",
+    input: "",
     error: "",
     isSubmitting: false,
   });
@@ -27,32 +47,79 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
     videos,
     isLoading: isLoadingChannel,
     error: channelError,
-  } = useYoutubeFeed(formState.channelId);
+  } = useYoutubeFeed(formState.input);
   const { user } = useAuthStore();
 
-  const validateChannelId = (channelId) => {
-    if (!channelId) return "Kanal ID zorunludur";
-    if (!CHANNEL_ID_REGEX.test(channelId))
-      return "Geçerli bir YouTube Kanal ID giriniz";
-    return "";
+  const extractChannelInfo = (input) => {
+    // Boş input kontrolü
+    if (!input) return { error: "Kanal ID, URL veya kullanıcı adı zorunludur" };
+
+    // URL'den veya handle'dan bilgi çıkarma denemesi
+    for (const { pattern, type } of URL_PATTERNS) {
+      const match = input.match(pattern);
+      if (match) {
+        if (type === "handle") {
+          // Handle için direkt olarak handle'ı döndür
+          return { input: `@${match[1]}` };
+        }
+        return { input: match[1] }; // Channel ID
+      }
+    }
+
+    // Direkt ID kontrolü
+    if (CHANNEL_ID_REGEX.test(input)) {
+      return { input };
+    }
+
+    // Eğer @ ile başlıyorsa handle olarak kabul et
+    if (input.startsWith("@")) {
+      return { input };
+    }
+
+    return {
+      error:
+        "Geçerli bir YouTube kanal URL'si, ID'si veya kullanıcı adı (@kullanıcıadı) giriniz",
+    };
   };
 
-  const handleChannelIdChange = (e) => {
-    const channelId = e.target.value;
+  const handleInputChange = (e) => {
+    const value = e.target.value;
     setFormState((prev) => ({
       ...prev,
-      channelId,
-      error: validateChannelId(channelId),
+      input: value,
     }));
+
+    if (!value) {
+      setFormState((prev) => ({
+        ...prev,
+        error: "Kanal ID, URL veya kullanıcı adı zorunludur",
+      }));
+      return;
+    }
+
+    const result = extractChannelInfo(value);
+    if (result.error) {
+      setFormState((prev) => ({
+        ...prev,
+        error: result.error,
+      }));
+    } else {
+      setFormState((prev) => ({
+        ...prev,
+        input: result.input,
+        error: "",
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const error = validateChannelId(formState.channelId);
-    if (error) {
-      setFormState((prev) => ({ ...prev, error }));
-      toast.error(error);
+    if (!formState.input) {
+      setFormState((prev) => ({
+        ...prev,
+        error: "Kanal ID, URL veya kullanıcı adı zorunludur",
+      }));
       return;
     }
 
@@ -61,15 +128,20 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
       return;
     }
 
+    if (!channelData) {
+      toast.error("Channel information could not be loaded");
+      return;
+    }
+
     setFormState((prev) => ({ ...prev, isSubmitting: true }));
 
     try {
       await addYoutubeFeed({
-        channelId: formState.channelId,
+        channelId: channelData.id,
         userId: user.id,
       });
 
-      setFormState((prev) => ({ ...prev, channelId: "" }));
+      setFormState((prev) => ({ ...prev, input: "" }));
       toast.success("YouTube channel added successfully");
       onSuccess?.();
     } catch (error) {
@@ -94,12 +166,12 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="channelId">YouTube Channel ID</Label>
+          <Label htmlFor="channelInput">YouTube Channel</Label>
           <Input
-            id="channelId"
-            value={formState.channelId}
-            onChange={handleChannelIdChange}
-            placeholder="Enter channel ID (starts with UC)"
+            id="channelInput"
+            value={formState.input}
+            onChange={handleInputChange}
+            placeholder="Enter channel URL, @handle, or ID"
             disabled={isLoading}
             aria-invalid={!!formState.error}
             className={formState.error ? "border-red-500" : ""}
@@ -107,6 +179,13 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
           {formState.error && (
             <p className="text-sm text-red-500">{formState.error}</p>
           )}
+          <p className="text-xs text-muted-foreground">
+            Example formats:
+            <br />• @channelname
+            <br />• youtube.com/@channelname
+            <br />• youtube.com/channel/UC...
+            <br />• UC... (Channel ID)
+          </p>
         </div>
 
         {channelError && (
