@@ -1,13 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,36 +19,19 @@ const FeedCardComponent = ({
   onOpenLink,
   isFocused,
 }) => {
-  // Erken dönüş öncesinde useMemo kullanımı
+  // useMemo hook'unu erken dönüşten önce tanımlıyoruz
   const truncatedDescription = useMemo(() => {
-    if (!item || !feed) return "";
+    if (!item || !feed || !item.description) return "";
 
-    const itemDescription = item.description || "";
-    const isYoutube = feed.type === "youtube";
+    const cleanDescription = item.description
+      .replace(/<[^>]*>/g, "") // HTML etiketlerini kaldır
+      .replace(/&nbsp;/g, " ") // HTML boşluklarını temizle
+      .trim();
 
-    if (!itemDescription) return "";
-
-    // YouTube descriptions are often longer and contain links/timestamps
-    if (isYoutube) {
-      // Remove common YouTube description patterns
-      const cleanDescription = itemDescription
-        .split("\n")[0] // Take only first paragraph
-        .replace(/(?:https?|ftp):\/\/[\n\S]+/g, "") // Remove URLs
-        .replace(/\[.*?\]/g, "") // Remove timestamps
-        .trim();
-
-      return cleanDescription.length > 100
-        ? cleanDescription.substring(0, 100) + "..."
-        : cleanDescription;
-    }
-
-    // Regular RSS feed description truncation
-    return isCompact
-      ? itemDescription.length > 150
-        ? itemDescription.substring(0, 150) + "..."
-        : itemDescription
-      : itemDescription;
-  }, [item, feed, isCompact]);
+    return cleanDescription.length > 120
+      ? cleanDescription.substring(0, 120) + "..."
+      : cleanDescription;
+  }, [item, feed]);
 
   // Erken dönüş kontrolü
   if (!item || !feed) return null;
@@ -70,163 +47,163 @@ const FeedCardComponent = ({
   return (
     <Card
       className={cn(
-        "transition-all duration-150 ease-in-out will-change-transform",
-        item.is_read ? "bg-muted/50" : "bg-card",
-        isFocused ? "ring-2 ring-primary ring-offset-2" : "",
-        "hover:shadow-md"
+        "transition-all duration-150 hover:scale-[1.01] hover:shadow-md",
+        item.is_read ? "bg-muted/30" : "bg-card",
+        isFocused ? "ring-2 ring-primary" : ""
       )}
     >
-      <CardHeader className="pb-2 space-y-3">
-        <div className="flex justify-between items-start gap-2">
-          <div className="flex items-center gap-2">
-            {feed.site_favicon ? (
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex gap-3">
+          {/* Thumbnail veya Avatar */}
+          {item.thumbnail ? (
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-md overflow-hidden">
               <Image
-                src={feed.site_favicon}
-                alt={feedTitle}
-                width={24}
-                height={24}
-                className={cn(
-                  "rounded",
-                  isYoutube ? "rounded-full" : "rounded"
-                )}
-                unoptimized
+                src={item.thumbnail}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 64px, 80px"
+                priority={false}
               />
-            ) : (
-              <Avatar className="h-6 w-6">
-                <AvatarFallback>
-                  {feedTitle.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            )}
-            <span className="text-sm font-medium text-muted-foreground">
-              {feedTitle}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            {isYoutube && (
-              <Badge variant="outline" className="text-xs">
-                YouTube
-              </Badge>
-            )}
-            <Badge variant="outline" className="text-xs">
-              {timeAgo}
-            </Badge>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <h3
-            className={cn(
-              "font-semibold leading-tight flex-1",
-              item.is_read ? "text-muted-foreground" : "text-foreground"
-            )}
-          >
-            {itemTitle}
-          </h3>
-          <div className="flex gap-2 ml-3">
-            <Button
-              variant={item.is_read ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => onToggleRead(item.id, !item.is_read)}
-              className={cn(
-                "h-8 w-8 p-0 relative group hover:scale-105 transition-transform",
-                item.is_read
-                  ? "bg-primary/10 hover:bg-primary/20"
-                  : "hover:bg-primary/10"
+            </div>
+          ) : (
+            <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-muted rounded-md flex-shrink-0">
+              {feed.site_favicon ? (
+                <Image
+                  src={feed.site_favicon}
+                  alt={feedTitle}
+                  width={32}
+                  height={32}
+                  className={cn(isYoutube ? "rounded-full" : "rounded")}
+                  unoptimized
+                />
+              ) : (
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>
+                    {feedTitle.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
               )}
-              title={item.is_read ? "Mark as unread" : "Mark as read"}
-            >
-              <CheckIcon
-                className={cn(
-                  "h-4 w-4 transition-colors",
-                  item.is_read
-                    ? "text-primary"
-                    : "text-muted-foreground group-hover:text-primary"
-                )}
-              />
-              <span className="sr-only">
-                {item.is_read ? "Read" : "Unread"}
-              </span>
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                {item.is_read ? "Mark as unread" : "Mark as read"}
-              </span>
-            </Button>
-
-            <Button
-              variant={item.is_favorite ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => onToggleFavorite(item.id, !item.is_favorite)}
-              className={cn(
-                "h-8 w-8 p-0 relative group hover:scale-105 transition-transform",
-                item.is_favorite
-                  ? "bg-yellow-500/10 hover:bg-yellow-500/20"
-                  : "hover:bg-yellow-500/10"
-              )}
-              title={
-                item.is_favorite ? "Remove from favorites" : "Add to favorites"
-              }
-            >
-              <StarIcon
-                className={cn(
-                  "h-4 w-4 transition-colors",
-                  item.is_favorite
-                    ? "text-yellow-500 fill-yellow-500"
-                    : "text-muted-foreground group-hover:text-yellow-500 group-hover:fill-yellow-500"
-                )}
-              />
-              <span className="sr-only">
-                {item.is_favorite ? "Favorited" : "Favorite"}
-              </span>
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                {item.is_favorite
-                  ? "Remove from favorites"
-                  : "Add to favorites"}
-              </span>
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="py-2">
-        {item.thumbnail && (
-          <div className="mb-2 rounded-md overflow-hidden">
-            <Image
-              src={item.thumbnail}
-              alt={itemTitle}
-              className="w-full h-auto object-cover"
-              loading="lazy"
-              width={320}
-              height={180}
-              unoptimized
-            />
-          </div>
-        )}
-        <p
-          className={cn(
-            "text-sm",
-            item.is_read ? "text-muted-foreground/80" : "text-muted-foreground"
+            </div>
           )}
-        >
-          {truncatedDescription}
-        </p>
-      </CardContent>
 
-      <CardFooter className="pt-2 flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            onOpenLink(item.link);
-            if (!item.is_read) {
-              onToggleRead(item.id, true);
-            }
-          }}
-          className="h-8 hover:scale-105 transition-transform"
-        >
-          <ExternalLinkIcon className="h-4 w-4 mr-1" />
-          <span className="text-xs">Open</span>
-        </Button>
-      </CardFooter>
+          {/* İçerik */}
+          <div className="flex-1 min-w-0 flex flex-col">
+            {/* Üst Bilgi Satırı */}
+            <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center">
+                {feed.site_favicon && !item.thumbnail && (
+                  <Image
+                    src={feed.site_favicon}
+                    alt={feedTitle}
+                    width={16}
+                    height={16}
+                    className={cn(
+                      "mr-1.5",
+                      isYoutube ? "rounded-full" : "rounded"
+                    )}
+                    unoptimized
+                  />
+                )}
+                <span className="text-xs font-medium text-muted-foreground truncate max-w-[120px]">
+                  {feedTitle}
+                </span>
+              </div>
+              <span className="text-muted-foreground/60 text-xs">•</span>
+              <span className="text-xs text-muted-foreground/60">
+                {timeAgo}
+              </span>
+              {isYoutube && (
+                <>
+                  <span className="text-muted-foreground/60 text-xs">•</span>
+                  <Badge variant="outline" className="text-[10px] py-0 h-4">
+                    YouTube
+                  </Badge>
+                </>
+              )}
+            </div>
+
+            {/* Başlık */}
+            <h3
+              className={cn(
+                "font-medium text-sm sm:text-base line-clamp-2 mb-1",
+                item.is_read ? "text-muted-foreground" : "text-foreground"
+              )}
+            >
+              {itemTitle}
+            </h3>
+
+            {/* Açıklama */}
+            {truncatedDescription && (
+              <p className="text-xs text-muted-foreground/80 line-clamp-2 mb-2">
+                {truncatedDescription}
+              </p>
+            )}
+
+            {/* Butonlar */}
+            <div className="flex items-center gap-1 mt-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onToggleRead(item.id, !item.is_read)}
+                className="h-7 w-7 p-0 rounded-full"
+                title={item.is_read ? "Mark as unread" : "Mark as read"}
+              >
+                <CheckIcon
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    item.is_read ? "text-green-500" : "text-muted-foreground"
+                  )}
+                />
+                <span className="sr-only">
+                  {item.is_read ? "Mark as unread" : "Mark as read"}
+                </span>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onToggleFavorite(item.id, !item.is_favorite)}
+                className="h-7 w-7 p-0 rounded-full"
+                title={
+                  item.is_favorite
+                    ? "Remove from favorites"
+                    : "Add to favorites"
+                }
+              >
+                <StarIcon
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    item.is_favorite
+                      ? "text-yellow-500 fill-yellow-500"
+                      : "text-muted-foreground"
+                  )}
+                />
+                <span className="sr-only">
+                  {item.is_favorite
+                    ? "Remove from favorites"
+                    : "Add to favorites"}
+                </span>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onOpenLink(item.link);
+                  if (!item.is_read) {
+                    onToggleRead(item.id, true);
+                  }
+                }}
+                className="h-7 px-2 ml-auto text-xs rounded-full"
+              >
+                <ExternalLinkIcon className="h-3.5 w-3.5 mr-1" />
+                Aç
+              </Button>
+            </div>
+          </div>
+        </div>
+      </CardContent>
     </Card>
   );
 };
