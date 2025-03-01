@@ -235,6 +235,7 @@ export function useFeeds() {
             link: channelUrl,
             description: data.channel.description,
             last_fetched_at: new Date().toISOString(),
+            site_favicon: data.channel.thumbnail,
           },
         ])
         .select()
@@ -277,7 +278,6 @@ export function useFeeds() {
           {
             id: newFeed.id,
             channel_id: channelId,
-            channel_avatar: data.channel.thumbnail,
             subscriber_count: data.channel.statistics.subscriberCount,
             video_count: data.channel.statistics.videoCount,
             playlist_id: data.channel.uploadsPlaylistId,

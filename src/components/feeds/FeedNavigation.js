@@ -3,17 +3,16 @@
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { memo, useMemo } from "react";
+import Image from "next/image";
 
 export const FeedNavigation = memo(function FeedNavigation({
-  feeds,
+  feeds = [],
   selectedFeedId,
   onFeedSelect,
 }) {
-  if (!feeds || feeds.length <= 1) return null;
-
-  // Find the current feed index
+  // Find the current feed index - useMemo her zaman çağrılmalı
   const currentFeedIndex = useMemo(() => {
-    if (!selectedFeedId) return -1;
+    if (!feeds || feeds.length <= 0 || !selectedFeedId) return -1;
     return feeds.findIndex((feed) => feed.id === selectedFeedId);
   }, [feeds, selectedFeedId]);
 
@@ -37,6 +36,9 @@ export const FeedNavigation = memo(function FeedNavigation({
     return feeds[getNextFeedIndex()];
   };
 
+  // Erken dönüş kontrolü
+  if (!feeds || feeds.length <= 1) return null;
+
   return (
     <div className="flex justify-between items-center mb-4">
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
@@ -45,12 +47,27 @@ export const FeedNavigation = memo(function FeedNavigation({
             key={feed.id}
             onClick={() => onFeedSelect(feed.id)}
             className={cn(
-              "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
+              "px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-2",
               feed.id === selectedFeedId
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted hover:bg-muted/80"
             )}
           >
+            {feed.site_favicon && (
+              <div className="relative w-4 h-4 flex-shrink-0">
+                <Image
+                  src={feed.site_favicon}
+                  alt=""
+                  width={16}
+                  height={16}
+                  className={cn(
+                    "object-cover",
+                    feed.type === "youtube" ? "rounded-full" : "rounded"
+                  )}
+                  unoptimized
+                />
+              </div>
+            )}
             {feed.title}
           </button>
         ))}

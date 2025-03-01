@@ -36,7 +36,7 @@ export async function GET(request) {
 
     try {
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         return Response.json(
           { error: "Failed to fetch feed" },
@@ -58,7 +58,8 @@ export async function GET(request) {
             title: item.title || "",
             link: item.link || "",
             description: item.contentEncoded || item.description || "",
-            published_at: item.pubDate || item.isoDate || new Date().toISOString(),
+            published_at:
+              item.pubDate || item.isoDate || new Date().toISOString(),
             thumbnail: item.thumbnail?.url || item.media?.url || null,
           })),
         });

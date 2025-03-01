@@ -25,19 +25,13 @@ const FeedCardComponent = ({
   onOpenLink,
   isFocused,
 }) => {
-  if (!item || !feed) return null;
-
-  const isYoutube = feed.type === "youtube";
-  const feedTitle = feed.title || "Unknown Feed";
-  const itemTitle = item.title || "Untitled";
-  const itemDescription = item.description || "";
-  const publishedAt = item.published_at
-    ? new Date(item.published_at)
-    : new Date();
-  const timeAgo = formatDistanceToNow(publishedAt, { addSuffix: true });
-
-  // Enhanced description truncation
+  // Erken dönüş öncesinde useMemo kullanımı
   const truncatedDescription = useMemo(() => {
+    if (!item || !feed) return "";
+
+    const itemDescription = item.description || "";
+    const isYoutube = feed.type === "youtube";
+
     if (!itemDescription) return "";
 
     // YouTube descriptions are often longer and contain links/timestamps
@@ -60,7 +54,18 @@ const FeedCardComponent = ({
         ? itemDescription.substring(0, 150) + "..."
         : itemDescription
       : itemDescription;
-  }, [itemDescription, isYoutube, isCompact]);
+  }, [item, feed, isCompact]);
+
+  // Erken dönüş kontrolü
+  if (!item || !feed) return null;
+
+  const isYoutube = feed.type === "youtube";
+  const feedTitle = feed.title || "Unknown Feed";
+  const itemTitle = item.title || "Untitled";
+  const publishedAt = item.published_at
+    ? new Date(item.published_at)
+    : new Date();
+  const timeAgo = formatDistanceToNow(publishedAt, { addSuffix: true });
 
   return (
     <Card
@@ -74,22 +79,16 @@ const FeedCardComponent = ({
       <CardHeader className="pb-2 space-y-3">
         <div className="flex justify-between items-start gap-2">
           <div className="flex items-center gap-2">
-            {feed.channel_avatar ? (
-              <Image
-                src={feed.channel_avatar}
-                alt={feedTitle}
-                width={24}
-                height={24}
-                className="rounded-full"
-                unoptimized
-              />
-            ) : feed.site_favicon ? (
+            {feed.site_favicon ? (
               <Image
                 src={feed.site_favicon}
                 alt={feedTitle}
                 width={24}
                 height={24}
-                className="rounded"
+                className={cn(
+                  "rounded",
+                  isYoutube ? "rounded-full" : "rounded"
+                )}
                 unoptimized
               />
             ) : (
