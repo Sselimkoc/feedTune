@@ -1,34 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
 
 export function useYoutubeFeed(channelId) {
-  // Fetch channel info
-  const channelQuery = useQuery({
-    queryKey: ["youtube", "channel", channelId],
+  // Fetch channel and videos info in a single request
+  const youtubeQuery = useQuery({
+    queryKey: ["youtube", channelId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/proxy/youtube/channel?channelId=${channelId}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch channel");
-      return response.json();
-    },
-    enabled: !!channelId,
-  });
-
-  // Fetch videos
-  const videosQuery = useQuery({
-    queryKey: ["youtube", "videos", channelId],
-    queryFn: async () => {
-      const response = await fetch(`/api/proxy/youtube?channelId=${channelId}`);
-      if (!response.ok) throw new Error("Failed to fetch videos");
+      const response = await fetch(`/api/youtube?channelId=${channelId}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to fetch YouTube data");
+      }
       return response.json();
     },
     enabled: !!channelId,
   });
 
   return {
-    channelData: channelQuery.data,
-    videos: videosQuery.data,
-    isLoading: channelQuery.isLoading || videosQuery.isLoading,
-    error: channelQuery.error || videosQuery.error,
+    channelData: youtubeQuery.data?.channel,
+    videos: youtubeQuery.data?.videos,
+    isLoading: youtubeQuery.isLoading,
+    error: youtubeQuery.error,
   };
 }

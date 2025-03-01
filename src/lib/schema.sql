@@ -4,10 +4,11 @@ CREATE TABLE feeds (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   type VARCHAR(20) NOT NULL CHECK (type IN ('rss', 'youtube')),
   title TEXT NOT NULL,
+  link TEXT NOT NULL,
   description TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   last_fetched_at TIMESTAMP WITH TIME ZONE,
-  UNIQUE(user_id, type, title)
+  UNIQUE(user_id, type, link)
 );
 
 -- RSS feedleri için özel tablo
@@ -45,10 +46,13 @@ CREATE TABLE feed_items (
   duration TEXT,
   view_count INTEGER,
   thumbnail TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(feed_id, link)
 );
 
 -- İndeksler
 CREATE INDEX feed_items_feed_id_idx ON feed_items(feed_id);
 CREATE INDEX feed_items_published_at_idx ON feed_items(published_at DESC);
-CREATE INDEX feed_items_is_favorite_idx ON feed_items(is_favorite) WHERE is_favorite = true; 
+CREATE INDEX feed_items_is_favorite_idx ON feed_items(is_favorite) WHERE is_favorite = true;
+CREATE INDEX feeds_user_id_idx ON feeds(user_id);
+CREATE INDEX feeds_link_idx ON feeds(link); 

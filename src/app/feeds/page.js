@@ -1,14 +1,15 @@
-import { AddFeedDialog } from "@/components/Feeds/AddFeedDialog";
-import { FeedList } from "@/components/Feeds/FeedList";
+import { Suspense } from "react";
+import { FeedContent } from "@/components/feeds/FeedContent";
+
+export const dynamic = "force-dynamic";
 
 export default function FeedsPage() {
   return (
-    <div className="container py-6">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">My Feeds</h1>
-        <AddFeedDialog />
-      </div>
-      <FeedList />
-    </div>
+    <main className="container py-6">
+      <h1 className="text-3xl font-bold mb-8">My Feeds</h1>
+      <Suspense fallback={<div>Loading...</div>}>
+        <FeedContent />
+      </Suspense>
+    </main>
   );
 }

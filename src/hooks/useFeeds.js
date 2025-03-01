@@ -1,344 +1,441 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
-import { useAuthStore } from "@/store/useAuthStore";
 import { useCallback } from "react";
+import { useAuthStore } from "@/store/useAuthStore";
+
+// Sabitler
+const STALE_TIME = 1000 * 60 * 5; // 5 dakika
+const CACHE_TIME = 1000 * 60 * 30; // 30 dakika
+const MAX_ITEMS_PER_FEED = 50; // Her feed için maksimum öğe sayısı
+
+// Yardımcı fonksiyonlar
+const limitItemsPerFeed = (feeds, items) => {
+  if (!feeds || !items) return { feeds: [], items: [] };
+
+  const itemsByFeed = items.reduce((acc, item) => {
+    if (!acc[item.feed_id]) {
+      acc[item.feed_id] = [];
+    }
+    acc[item.feed_id].push(item);
+    return acc;
+  }, {});
+
+  const limitedItems = [];
+  Object.entries(itemsByFeed).forEach(([feedId, feedItems]) => {
+    limitedItems.push(...feedItems.slice(0, MAX_ITEMS_PER_FEED));
+  });
+
+  return { feeds, items: limitedItems };
+};
 
 export function useFeeds() {
   const supabase = createClientComponentClient();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
-  // Prefetch function for feeds
+  // Feeds için prefetch fonksiyonu
   const prefetchFeeds = useCallback(async () => {
-    if (!user) return;
+    try {
+      if (!user) return;
 
-    await queryClient.prefetchQuery({
-      queryKey: ["feeds", user.id],
-      queryFn: async () => {
-        const { data: feedsData, error: feedsError } = await supabase
-          .from("feeds")
-          .select(
-            `
-            *,
-            rss_feeds (*),
-            youtube_feeds (*),
-            feed_items (*)
-          `
-          )
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
+      // Feeds için sorgu
+      await queryClient.prefetchQuery({
+        queryKey: ["feeds", user.id],
+        queryFn: async () => {
+          const { data: feeds, error: feedError } = await supabase
+            .from("feeds")
+            .select("*")
+            .eq("user_id", user.id);
 
-        if (feedsError) throw feedsError;
+          if (feedError) throw feedError;
 
-        return feedsData.map((feed) => ({
-          ...feed,
-          items: feed.feed_items || [],
-          ...(feed.type === "rss" ? feed.rss_feeds[0] : {}),
-          ...(feed.type === "youtube" ? feed.youtube_feeds[0] : {}),
-        }));
-      },
-    });
-  }, [user, queryClient, supabase]);
+          const { data: items, error: itemsError } = await supabase
+            .from("feed_items")
+            .select("*")
+            .in(
+              "feed_id",
+              feeds.map((f) => f.id)
+            )
+            .order("published_at", { ascending: false });
 
-  const {
-    data: feeds = [],
-    isLoading,
-    error,
-  } = useQuery({
+          if (itemsError) throw itemsError;
+
+          // Veri boyutunu sınırla
+          const limitedItems = limitItemsPerFeed(feeds, items);
+
+          return {
+            feeds: limitedItems.feeds || [],
+            items: limitedItems.items || [],
+          };
+        },
+        staleTime: STALE_TIME,
+        cacheTime: CACHE_TIME,
+      });
+    } catch (error) {
+      console.error("Error prefetching feeds:", error);
+    }
+  }, [supabase, queryClient, user]);
+
+  // Ana feed sorgusu
+  const feedsQuery = useQuery({
     queryKey: ["feeds", user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) throw new Error("User not authenticated");
 
-      // Ana feeds tablosundan verileri çek
-      const { data: feedsData, error: feedsError } = await supabase
+      const { data: feeds, error: feedsError } = await supabase
         .from("feeds")
-        .select(
-          `
-          *,
-          rss_feeds (*),
-          youtube_feeds (*),
-          feed_items (*)
-        `
-        )
+        .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (feedsError) throw feedsError;
 
-      // Feed türüne göre verileri düzenle
-      return feedsData.map((feed) => ({
-        ...feed,
-        items: feed.feed_items || [],
-        ...(feed.type === "rss" ? feed.rss_feeds[0] : {}),
-        ...(feed.type === "youtube" ? feed.youtube_feeds[0] : {}),
-      }));
-    },
-    enabled: !!user, // Sadece user varsa query'yi çalıştır
-  });
-
-  const addRssFeed = async (feedData) => {
-    const { data: feed, error: feedError } = await supabase
-      .from("feeds")
-      .insert({
-        user_id: feedData.user_id,
-        type: "rss",
-        title: feedData.title,
-        description: feedData.description,
-      })
-      .select()
-      .single();
-
-    if (feedError) throw feedError;
-
-    // RSS feed detaylarını ekle
-    const { error: rssError } = await supabase.from("rss_feeds").insert({
-      id: feed.id,
-      feed_url: feedData.feed_url,
-      site_favicon: feedData.site_favicon,
-    });
-
-    if (rssError) throw rssError;
-
-    // Feed itemlarını ekle
-    if (feedData.items?.length > 0) {
-      const { error: itemsError } = await supabase.from("feed_items").insert(
-        feedData.items.map((item) => ({
-          feed_id: feed.id,
-          title: item.title,
-          link: item.link,
-          description: item.description,
-          published_at: item.published_at,
-        }))
-      );
+      const { data: items, error: itemsError } = await supabase
+        .from("feed_items")
+        .select("*")
+        .in(
+          "feed_id",
+          feeds.map((f) => f.id)
+        )
+        .order("published_at", { ascending: false });
 
       if (itemsError) throw itemsError;
+
+      return limitItemsPerFeed(feeds, items);
+    },
+    enabled: !!user?.id,
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+  });
+
+  // RSS feed ekleme
+  const addRssFeed = async ({ url, userId }) => {
+    if (!url || !userId) {
+      throw new Error("URL and user ID are required");
     }
 
-    return feed;
-  };
+    try {
+      // Önce feed'in zaten var olup olmadığını kontrol et
+      const { data: existingFeeds } = await supabase
+        .from("feeds")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("link", url)
+        .eq("type", "rss");
 
-  const addYoutubeFeed = async (feedData) => {
-    const { data: feed, error: feedError } = await supabase
-      .from("feeds")
-      .insert({
-        user_id: feedData.user_id,
-        type: "youtube",
-        title: feedData.title,
-        description: feedData.description,
-      })
-      .select()
-      .single();
+      if (existingFeeds && existingFeeds.length > 0) {
+        throw new Error("This feed is already in your list");
+      }
 
-    if (feedError) throw feedError;
+      // RSS feed'i ayrıştır
+      const response = await fetch(
+        `/api/proxy?url=${encodeURIComponent(url)}&type=rss`
+      );
 
-    // YouTube feed detaylarını ekle
-    const { error: ytError } = await supabase.from("youtube_feeds").insert({
-      id: feed.id,
-      channel_id: feedData.channel_id,
-      channel_avatar: feedData.channel_avatar,
-      subscriber_count: feedData.subscriber_count,
-      video_count: feedData.video_count,
-      playlist_id: feedData.playlist_id,
-    });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to parse RSS feed");
+      }
 
-    if (ytError) throw ytError;
+      const { feed, items } = await response.json();
 
-    // Feed itemlarını ekle
-    if (feedData.items?.length > 0) {
-      const { error: itemsError } = await supabase.from("feed_items").insert(
-        feedData.items.map((item) => ({
-          feed_id: feed.id,
-          title: item.title,
-          link: item.link,
-          description: item.description,
-          published_at: item.published_at,
-          video_id: item.video_id,
+      // Feed'i veritabanına ekle
+      const { data: newFeed, error: feedError } = await supabase
+        .from("feeds")
+        .insert([
+          {
+            user_id: userId,
+            type: "rss",
+            title: feed.title || "Untitled Feed",
+            link: url,
+            description: feed.description || "",
+            last_fetched_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (feedError) throw feedError;
+
+      // Feed öğelerini sınırla ve veritabanına ekle
+      if (items && items.length > 0) {
+        const feedItems = items.slice(0, MAX_ITEMS_PER_FEED).map((item) => ({
+          feed_id: newFeed.id,
+          title: item.title || "",
+          link: item.link || "",
+          description: item.description || "",
+          published_at: item.published_at || new Date().toISOString(),
           thumbnail: item.thumbnail,
-        }))
-      );
+          is_read: false,
+          is_favorite: false,
+        }));
 
-      if (itemsError) throw itemsError;
+        const { error: itemsError } = await supabase
+          .from("feed_items")
+          .insert(feedItems);
+
+        if (itemsError) {
+          console.error("Error adding feed items:", itemsError);
+          // Don't throw here, as the feed was already added
+        }
+      }
+
+      // Sorguyu geçersiz kıl ve yeniden getir
+      await queryClient.invalidateQueries({ queryKey: ["feeds"] });
+
+      return newFeed;
+    } catch (error) {
+      console.error("Error adding RSS feed:", error);
+      throw error;
+    }
+  };
+
+  // YouTube feed ekleme
+  const addYoutubeFeed = async ({ channelId, userId }) => {
+    if (!channelId || !userId) {
+      throw new Error("Channel ID and user ID are required");
     }
 
-    return feed;
-  };
+    try {
+      // Önce feed'in zaten var olup olmadığını kontrol et
+      const channelUrl = `https://www.youtube.com/channel/${channelId}`;
 
-  const deleteFeed = async (feedId) => {
-    const { error } = await supabase.from("feeds").delete().eq("id", feedId);
+      const { data: existingFeeds } = await supabase
+        .from("feeds")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("type", "youtube")
+        .eq("link", channelUrl);
 
-    if (error) throw error;
-  };
-
-  const toggleItemRead = async (itemId, isRead) => {
-    const { error } = await supabase
-      .from("feed_items")
-      .update({ is_read: isRead })
-      .eq("id", itemId);
-
-    if (error) throw error;
-  };
-
-  const toggleItemFavorite = async (itemId, isFavorite) => {
-    const { error } = await supabase
-      .from("feed_items")
-      .update({ is_favorite: isFavorite })
-      .eq("id", itemId);
-
-    if (error) throw error;
-  };
-
-  const addFeedMutation = useMutation({
-    mutationFn: async (feedData) => {
-      if (!user) throw new Error("You must be logged in to add a feed");
-
-      if (feedData.type === "rss") {
-        return await addRssFeed(feedData);
-      } else if (feedData.type === "youtube") {
-        return await addYoutubeFeed(feedData);
-      } else {
-        throw new Error("Invalid feed type");
+      if (existingFeeds && existingFeeds.length > 0) {
+        throw new Error("This YouTube channel is already in your list");
       }
-    },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["feeds", user?.id] });
-      toast.success(
-        `${
-          variables.type === "rss" ? "RSS feed" : "YouTube channel"
-        } added successfully`
+
+      // YouTube API'den kanal ve video bilgilerini al
+      const response = await fetch(
+        `/api/youtube?channelId=${encodeURIComponent(channelId)}`
       );
-    },
-    onError: (error) => {
-      let errorMessage = "Failed to add feed";
 
-      if (error.message.includes("duplicate")) {
-        errorMessage = "This feed is already in your list";
-      } else if (error.message.includes("auth")) {
-        errorMessage = "Please login to add feeds";
-      } else if (error.message.includes("Invalid feed type")) {
-        errorMessage = "Invalid feed type selected";
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch YouTube channel");
       }
 
-      toast.error(errorMessage);
-      console.error("Feed addition error:", error);
-    },
-  });
+      const data = await response.json();
 
-  const deleteFeedMutation = useMutation({
+      // Feed'i veritabanına ekle
+      const { data: newFeed, error: feedError } = await supabase
+        .from("feeds")
+        .insert([
+          {
+            user_id: userId,
+            type: "youtube",
+            title: data.channel.title,
+            link: channelUrl,
+            description: data.channel.description,
+            last_fetched_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (feedError) throw feedError;
+
+      // Feed öğelerini sınırla ve veritabanına ekle
+      if (data.videos && data.videos.length > 0) {
+        const feedItems = data.videos
+          .slice(0, MAX_ITEMS_PER_FEED)
+          .map((video) => ({
+            feed_id: newFeed.id,
+            title: video.title,
+            link: video.link,
+            description: video.description,
+            published_at: video.publishedAt,
+            thumbnail: video.thumbnail,
+            video_id: video.id,
+            is_read: false,
+            is_favorite: false,
+          }));
+
+        const { error: itemsError } = await supabase
+          .from("feed_items")
+          .insert(feedItems);
+
+        if (itemsError) {
+          console.error("Error adding feed items:", itemsError);
+          // Feed'i sil
+          await supabase.from("feeds").delete().eq("id", newFeed.id);
+          throw new Error("Failed to add feed items");
+        }
+      }
+
+      // YouTube kanalı detaylarını kaydet
+      const { error: youtubeError } = await supabase
+        .from("youtube_feeds")
+        .insert([
+          {
+            id: newFeed.id,
+            channel_id: channelId,
+            channel_avatar: data.channel.thumbnail,
+            subscriber_count: data.channel.statistics.subscriberCount,
+            video_count: data.channel.statistics.videoCount,
+            playlist_id: data.channel.uploadsPlaylistId,
+          },
+        ]);
+
+      if (youtubeError) {
+        console.error("Error adding YouTube feed details:", youtubeError);
+        // Feed'i ve feed öğelerini sil
+        await supabase.from("feeds").delete().eq("id", newFeed.id);
+        throw new Error("Failed to add YouTube feed details");
+      }
+
+      // Sorguyu geçersiz kıl ve yeniden getir
+      await queryClient.invalidateQueries({ queryKey: ["feeds"] });
+
+      return newFeed;
+    } catch (error) {
+      console.error("Error adding YouTube feed:", error);
+      throw error;
+    }
+  };
+
+  // Feed silme
+  const deleteFeed = useMutation({
     mutationFn: async (feedId) => {
-      if (!user) throw new Error("You must be logged in to delete a feed");
-      return await deleteFeed(feedId);
-    },
-    onMutate: async (feedId) => {
-      // Önceki sorguları iptal et
-      await queryClient.cancelQueries({ queryKey: ["feeds", user?.id] });
+      const { error } = await supabase
+        .from("feeds")
+        .delete()
+        .match({ id: feedId });
 
-      // Önceki state'i kaydet
-      const previousFeeds = queryClient.getQueryData(["feeds", user?.id]);
-
-      // Optimistic update - feed'i hemen kaldır
-      queryClient.setQueryData(["feeds", user?.id], (old) => {
-        return old.filter((feed) => feed.id !== feedId);
-      });
-
-      return { previousFeeds };
+      if (error) throw error;
+      return feedId;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["feeds", user?.id] });
-      toast.success("Feed deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["feeds"] });
+      toast.success("Feed removed successfully");
     },
-    onError: (error, feedId, context) => {
-      // Hata durumunda önceki state'e geri dön
-      queryClient.setQueryData(["feeds", user?.id], context.previousFeeds);
+    onError: (error) => {
+      console.error("Error deleting feed:", error);
 
-      let errorMessage = "Failed to delete feed";
-
-      if (error.message.includes("auth")) {
-        errorMessage = "Please login to delete feeds";
-      } else if (error.message.includes("not found")) {
-        errorMessage = "Feed not found";
+      if (error.code === "PGRST116") {
+        toast.error("You need to be logged in to delete feeds");
+      } else if (error.code === "23503") {
+        toast.error("Feed not found or already deleted");
+      } else {
+        toast.error(
+          `Failed to delete feed: ${error.message || "Unknown error"}`
+        );
       }
-
-      toast.error(errorMessage);
-      console.error("Feed deletion error:", error);
     },
   });
 
+  // Öğe okundu durumunu değiştirme
   const toggleItemReadMutation = useMutation({
-    mutationFn: ({ itemId, isRead }) => toggleItemRead(itemId, isRead),
+    mutationFn: async ({ itemId, isRead }) => {
+      const { error } = await supabase
+        .from("feed_items")
+        .update({ is_read: isRead })
+        .eq("id", itemId);
+
+      if (error) throw error;
+      return { itemId, isRead };
+    },
     onMutate: async ({ itemId, isRead }) => {
       // Önceki sorguları iptal et
-      await queryClient.cancelQueries({ queryKey: ["feeds", user?.id] });
+      await queryClient.cancelQueries({ queryKey: ["feeds"] });
 
-      // Önceki state'i kaydet
-      const previousFeeds = queryClient.getQueryData(["feeds", user?.id]);
+      // Önceki verileri kaydet
+      const previousData = queryClient.getQueryData(["feeds"]);
 
-      // Optimistic update
-      queryClient.setQueryData(["feeds", user?.id], (old) => {
-        return old.map((feed) => ({
-          ...feed,
-          items: feed.items.map((item) =>
+      // Verileri iyimser bir şekilde güncelle
+      queryClient.setQueryData(["feeds"], (old) => {
+        if (!old) return { feeds: [], items: [] };
+
+        return {
+          ...old,
+          items: old.items.map((item) =>
             item.id === itemId ? { ...item, is_read: isRead } : item
           ),
-        }));
+        };
       });
 
-      // Önceki state'i rollback için döndür
-      return { previousFeeds };
+      return { previousData };
     },
     onError: (err, variables, context) => {
-      // Hata durumunda önceki state'e geri dön
-      queryClient.setQueryData(["feeds", user?.id], context.previousFeeds);
+      // Hata durumunda önceki verileri geri yükle
+      if (context?.previousData) {
+        queryClient.setQueryData(["feeds"], context.previousData);
+      }
       toast.error("Failed to update item status");
     },
     onSettled: () => {
-      // İşlem bittiğinde query'yi yenile
-      queryClient.invalidateQueries({ queryKey: ["feeds", user?.id] });
+      // Sorguyu geçersiz kıl ve yeniden getir
+      queryClient.invalidateQueries({ queryKey: ["feeds"] });
     },
   });
 
+  // Öğe favori durumunu değiştirme
   const toggleItemFavoriteMutation = useMutation({
-    mutationFn: ({ itemId, isFavorite }) =>
-      toggleItemFavorite(itemId, isFavorite),
-    onMutate: async ({ itemId, isFavorite }) => {
-      await queryClient.cancelQueries({ queryKey: ["feeds", user?.id] });
-      const previousFeeds = queryClient.getQueryData(["feeds", user?.id]);
+    mutationFn: async ({ itemId, isFavorite }) => {
+      const { error } = await supabase
+        .from("feed_items")
+        .update({ is_favorite: isFavorite })
+        .eq("id", itemId);
 
-      queryClient.setQueryData(["feeds", user?.id], (old) => {
-        return old.map((feed) => ({
-          ...feed,
-          items: feed.items.map((item) =>
+      if (error) throw error;
+      return { itemId, isFavorite };
+    },
+    onMutate: async ({ itemId, isFavorite }) => {
+      // Önceki sorguları iptal et
+      await queryClient.cancelQueries({ queryKey: ["feeds"] });
+
+      // Önceki verileri kaydet
+      const previousData = queryClient.getQueryData(["feeds"]);
+
+      // Verileri iyimser bir şekilde güncelle
+      queryClient.setQueryData(["feeds"], (old) => {
+        if (!old) return { feeds: [], items: [] };
+
+        return {
+          ...old,
+          items: old.items.map((item) =>
             item.id === itemId ? { ...item, is_favorite: isFavorite } : item
           ),
-        }));
+        };
       });
 
-      return { previousFeeds };
+      return { previousData };
     },
     onError: (err, variables, context) => {
-      queryClient.setQueryData(["feeds", user?.id], context.previousFeeds);
+      // Hata durumunda önceki verileri geri yükle
+      if (context?.previousData) {
+        queryClient.setQueryData(["feeds"], context.previousData);
+      }
       toast.error("Failed to update favorite status");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["feeds", user?.id] });
+      // Sorguyu geçersiz kıl ve yeniden getir
+      queryClient.invalidateQueries({ queryKey: ["feeds"] });
     },
   });
 
   return {
-    feeds,
-    isLoading,
-    error,
+    feeds: feedsQuery.data?.feeds || [],
+    items: feedsQuery.data?.items || [],
+    isLoading: feedsQuery.isLoading,
+    isError: feedsQuery.isError,
+    error: feedsQuery.error,
+    refetch: feedsQuery.refetch,
     prefetchFeeds,
-    addRssFeed: (data) => addFeedMutation.mutateAsync({ ...data, type: "rss" }),
-    addYoutubeFeed: (data) =>
-      addFeedMutation.mutateAsync({ ...data, type: "youtube" }),
-    deleteFeed: deleteFeedMutation.mutate,
-    toggleItemRead: (itemId, isRead) =>
-      toggleItemReadMutation.mutate({ itemId, isRead }),
-    toggleItemFavorite: (itemId, isFavorite) =>
-      toggleItemFavoriteMutation.mutate({ itemId, isFavorite }),
-    isAddingRssFeed: addFeedMutation.isPending,
-    isAddingYoutubeFeed: addFeedMutation.isPending,
-    isDeletingFeed: deleteFeedMutation.isPending,
+    addRssFeed,
+    addYoutubeFeed,
+    deleteFeed: deleteFeed.mutate,
+    isDeleting: deleteFeed.isLoading,
+    toggleItemRead: toggleItemReadMutation.mutate,
+    isTogglingRead: toggleItemReadMutation.isLoading,
+    toggleItemFavorite: toggleItemFavoriteMutation.mutate,
+    isTogglingFavorite: toggleItemFavoriteMutation.isLoading,
   };
 }

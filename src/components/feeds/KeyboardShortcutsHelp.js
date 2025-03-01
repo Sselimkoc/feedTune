@@ -55,7 +55,8 @@ export function KeyboardShortcutsHelp() {
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Feed'ler arasında gezinmek ve içerikleri okumak için aşağıdaki klavye kısayollarını kullanabilirsiniz.
+            Feed'ler arasında gezinmek ve içerikleri okumak için aşağıdaki
+            klavye kısayollarını kullanabilirsiniz.
           </p>
           <div className="grid gap-2">
             {shortcuts.map((shortcut) => (
@@ -63,7 +64,9 @@ export function KeyboardShortcutsHelp() {
                 key={shortcut.key}
                 className="flex items-center justify-between py-2"
               >
-                <span className="text-sm font-medium">{shortcut.description}</span>
+                <span className="text-sm font-medium">
+                  {shortcut.description}
+                </span>
                 <kbd className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted rounded border">
                   {shortcut.key}
                 </kbd>

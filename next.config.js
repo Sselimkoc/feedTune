@@ -1,7 +1,27 @@
 /** @type {import('next').NextConfig} */
 const config = {
   images: {
-    domains: ["i.ytimg.com", "img.youtube.com", "yt3.ggpht.com"],
+    domains: [
+      "i.ytimg.com",
+      "img.youtube.com",
+      "yt3.ggpht.com",
+      "yt3.googleusercontent.com",
+      "lh3.googleusercontent.com",
+    ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.ytimg.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.ggpht.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.googleusercontent.com",
+      },
+    ],
   },
   webpack: (config) => {
     config.resolve.alias = {

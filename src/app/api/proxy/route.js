@@ -7,6 +7,7 @@ const parser = new Parser({
     item: [
       ["media:content", "media"],
       ["media:thumbnail", "thumbnail"],
+      ["content:encoded", "contentEncoded"],
     ],
   },
 });
@@ -22,40 +23,52 @@ export async function GET(request) {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      console.log("RSS API Route - No session found");
       return Response.json({ error: "No session found" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const url = searchParams.get("url");
+    const type = searchParams.get("type") || "rss"; // rss veya youtube
 
     if (!url) {
-      return Response.json({ error: "Feed URL is required" }, { status: 400 });
+      return Response.json({ error: "URL is required" }, { status: 400 });
     }
 
     try {
       const response = await fetch(url);
-      const text = await response.text();
-      const feed = await parser.parseString(text);
+      
+      if (!response.ok) {
+        return Response.json(
+          { error: "Failed to fetch feed" },
+          { status: response.status }
+        );
+      }
 
-      return Response.json({
-        feed: {
-          title: feed.title,
-          link: feed.link,
-          description: feed.description,
-        },
-        items: feed.items.map((item) => ({
-          title: item.title,
-          link: item.link,
-          description: item.contentSnippet || item.content,
-          published_at: item.pubDate || item.isoDate,
-          thumbnail: item.thumbnail?.url || item.media?.url || null,
-        })),
-      });
+      if (type === "rss") {
+        const text = await response.text();
+        const feed = await parser.parseString(text);
+
+        return Response.json({
+          feed: {
+            title: feed.title || "",
+            link: feed.link || url,
+            description: feed.description || "",
+          },
+          items: (feed.items || []).map((item) => ({
+            title: item.title || "",
+            link: item.link || "",
+            description: item.contentEncoded || item.description || "",
+            published_at: item.pubDate || item.isoDate || new Date().toISOString(),
+            thumbnail: item.thumbnail?.url || item.media?.url || null,
+          })),
+        });
+      }
+
+      return Response.json(await response.json());
     } catch (error) {
-      console.error("RSS Parser Error:", error);
+      console.error("Feed Parser Error:", error);
       return Response.json(
-        { error: error.message || "Failed to parse RSS feed" },
+        { error: error.message || "Failed to parse feed" },
         { status: 500 }
       );
     }

@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useFeeds } from "@/hooks/useFeeds";
+import { useFeedStore } from "@/store/useFeedStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -17,460 +20,357 @@ import { FeedCard } from "./FeedCard";
 import { FeedNavigation } from "./FeedNavigation";
 import { EmptyFeedState } from "./EmptyFeedState";
 import { AddFeedButton } from "./AddFeedButton";
+import { FeedPagination } from "./FeedPagination";
+import { Loader2 } from "lucide-react";
 
+// Constants
+const ITEMS_PER_PAGE = 10;
+
+// Helper functions
+const getPageCount = (totalItems, itemsPerPage) => {
+  return Math.ceil(totalItems / itemsPerPage);
+};
+
+// Main component
 export function FeedList() {
-  const [currentPages, setCurrentPages] = useState({});
-  const [focusedFeedIndex, setFocusedFeedIndex] = useState(0);
-  const [focusedItemIndex, setFocusedItemIndex] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(3);
+  // Hooks and stores
+  const { user } = useAuthStore();
   const {
     feeds,
+    items,
     isLoading,
-    error,
-    deleteFeed,
+    refetch,
     toggleItemRead,
     toggleItemFavorite,
+    deleteFeed,
   } = useFeeds();
+  const {
+    showUnreadOnly,
+    showFavoritesOnly,
+    compactMode,
+    enableKeyboardNavigation,
+  } = useSettingsStore();
 
-  // Refs for the focused item and feed card
-  const focusedItemRef = useRef(null);
-  const focusedFeedRef = useRef(null);
-  const containerRef = useRef(null);
+  // State management
+  const [selectedFeedId, setSelectedFeedId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedItemIndex, setSelectedItemIndex] = useState(0);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
-  // Sayfa değişikliği sonrası odaklanılacak item için state
-  const [pendingFocusLastItem, setPendingFocusLastItem] = useState(false);
+  // References
+  const listRef = useRef(null);
+  const selectedItemRef = useRef(null);
 
-  // Helper functions for navigation - defined before any early returns
-  const getPreviousFeedIndex = useCallback(() => {
-    if (!feeds || feeds.length === 0) return 0;
-    return focusedFeedIndex === 0 ? feeds.length - 1 : focusedFeedIndex - 1;
-  }, [focusedFeedIndex, feeds]);
-
-  const getNextFeedIndex = useCallback(() => {
-    if (!feeds || feeds.length === 0) return 0;
-    return focusedFeedIndex === feeds.length - 1 ? 0 : focusedFeedIndex + 1;
-  }, [focusedFeedIndex, feeds]);
-
-  const getPreviousFeed = useCallback(() => {
-    if (!feeds || feeds.length === 0) return null;
-    const prevIndex = getPreviousFeedIndex();
-    return feeds[prevIndex];
-  }, [feeds, getPreviousFeedIndex]);
-
-  const getNextFeed = useCallback(() => {
-    if (!feeds || feeds.length === 0) return null;
-    const nextIndex = getNextFeedIndex();
-    return feeds[nextIndex];
-  }, [feeds, getNextFeedIndex]);
-
-  // Helper functions for feed position determination
-  const isFeedPrevious = useCallback(
-    (index) => {
-      if (!feeds || feeds.length === 0) return false;
-      return (
-        (focusedFeedIndex === 0 && index === feeds.length - 1) ||
-        index === focusedFeedIndex - 1
-      );
-    },
-    [feeds, focusedFeedIndex]
-  );
-
-  const isFeedNext = useCallback(
-    (index) => {
-      if (!feeds || feeds.length === 0) return false;
-      return (
-        (focusedFeedIndex === feeds.length - 1 && index === 0) ||
-        index === focusedFeedIndex + 1
-      );
-    },
-    [feeds, focusedFeedIndex]
-  );
-
-  const isFeedActive = useCallback(
-    (index) => {
-      return focusedFeedIndex === index;
-    },
-    [focusedFeedIndex]
-  );
-
-  // Style helper functions
-  const getIndicatorStyle = useCallback((isActive, isPrevious, isNext) => {
-    if (isActive) return "opacity-100";
-    if (isPrevious || isNext) return "opacity-70 hover:opacity-90";
-    return "opacity-50 hover:opacity-80";
-  }, []);
-
-  const getDotStyle = useCallback((isActive, isPrevious, isNext) => {
-    if (isActive) return "bg-primary w-3 h-3";
-    if (isPrevious || isNext)
-      return "bg-muted-foreground/50 group-hover:bg-muted-foreground/70";
-    return "bg-muted-foreground/30 group-hover:bg-muted-foreground/50";
-  }, []);
-
-  // Memoize functions with useCallback
-  const getItemsForPage = useCallback(
-    (items, feedId) => {
-      const currentPage = currentPages[feedId] || 0;
-      return items
-        .sort((a, b) => new Date(b.published_at) - new Date(a.published_at))
-        .slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-    },
-    [currentPages, itemsPerPage]
-  );
-
-  const getTotalPages = useCallback(
-    (items) => {
-      return Math.ceil(items.length / itemsPerPage);
-    },
-    [itemsPerPage]
-  );
-
-  const nextPage = useCallback(
-    (feedId, totalItems) => {
-      const totalPages = getTotalPages(totalItems);
-      const currentPage = currentPages[feedId] || 0;
-      if (currentPage < totalPages - 1) {
-        setCurrentPages((prev) => ({
-          ...prev,
-          [feedId]: currentPage + 1,
-        }));
+  // Memoized values
+  const filteredFeeds = useMemo(() => {
+    return feeds.filter((feed) => {
+      if (showUnreadOnly) {
+        return items.some((item) => item.feed_id === feed.id && !item.is_read);
       }
-    },
-    [currentPages, getTotalPages]
-  );
-
-  const prevPage = useCallback(
-    (feedId) => {
-      const currentPage = currentPages[feedId] || 0;
-      if (currentPage > 0) {
-        setCurrentPages((prev) => ({
-          ...prev,
-          [feedId]: currentPage - 1,
-        }));
+      if (showFavoritesOnly) {
+        return items.some(
+          (item) => item.feed_id === feed.id && item.is_favorite
+        );
       }
-    },
-    [currentPages]
-  );
+      return true;
+    });
+  }, [feeds, items, showUnreadOnly, showFavoritesOnly]);
 
-  // Scroll to focused feed when it changes
-  useEffect(() => {
-    if (focusedFeedRef.current) {
-      focusedFeedRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-        inline: "center",
-      });
+  const currentItems = useMemo(() => {
+    let filtered = items;
+    if (selectedFeedId) {
+      filtered = filtered.filter((item) => item.feed_id === selectedFeedId);
     }
-  }, [focusedFeedIndex]);
-
-  // Scroll to focused item when it changes
-  useEffect(() => {
-    if (focusedItemRef.current) {
-      focusedItemRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "nearest",
-      });
+    if (showUnreadOnly) {
+      filtered = filtered.filter((item) => !item.is_read);
     }
-  }, [focusedItemIndex, focusedFeedIndex]);
-
-  // Sayfa değişikliği sonrası son iteme odaklanma
-  useEffect(() => {
-    if (pendingFocusLastItem) {
-      const currentFeed = feeds[focusedFeedIndex];
-      if (currentFeed) {
-        const items = currentFeed.items || [];
-        const currentItems = getItemsForPage(items, currentFeed.id);
-        setFocusedItemIndex(currentItems.length - 1);
-        setPendingFocusLastItem(false);
-      }
+    if (showFavoritesOnly) {
+      filtered = filtered.filter((item) => item.is_favorite);
     }
-  }, [
-    currentPages,
-    pendingFocusLastItem,
-    feeds,
-    focusedFeedIndex,
-    getItemsForPage,
-  ]);
+    return filtered;
+  }, [items, selectedFeedId, showUnreadOnly, showFavoritesOnly]);
 
-  const handleItemsPerPageChange = useCallback((value) => {
-    setItemsPerPage(Number(value));
-    setCurrentPages({});
-  }, []);
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return currentItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [currentItems, currentPage]);
 
-  // Keyboard navigation effect with all dependencies
+  const pageCount = useMemo(() => {
+    return getPageCount(currentItems.length, ITEMS_PER_PAGE);
+  }, [currentItems]);
+
+  // Load data when user changes
   useEffect(() => {
-    function handleKeyDown(e) {
-      const currentFeed = feeds[focusedFeedIndex];
-      if (!currentFeed) return;
+    if (user) {
+      refetch();
+    }
+  }, [user, refetch]);
 
-      const items = currentFeed.items || [];
-      const currentPage = currentPages[currentFeed.id] || 0;
-      const currentItems = getItemsForPage(items, currentFeed.id);
-      const totalPages = getTotalPages(items);
+  // Reset selected item when page changes
+  useEffect(() => {
+    setSelectedItemIndex(0);
+  }, [currentPage, selectedFeedId]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!enableKeyboardNavigation) return;
+
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+        return;
 
       switch (e.key) {
-        case "Tab":
-          e.preventDefault();
-          setFocusedFeedIndex((prev) =>
-            e.shiftKey
-              ? (prev - 1 + feeds.length) % feeds.length
-              : (prev + 1) % feeds.length
-          );
-          setFocusedItemIndex(0);
-          break;
-
-        case "ArrowUp":
-          e.preventDefault();
-          setFocusedFeedIndex((prevIndex) =>
-            prevIndex === null || prevIndex === 0
-              ? feeds.length - 1
-              : prevIndex - 1
-          );
-          setFocusedItemIndex(0);
-          break;
-
         case "ArrowDown":
           e.preventDefault();
-          setFocusedFeedIndex((prevIndex) =>
-            prevIndex === null || prevIndex === feeds.length - 1
-              ? 0
-              : prevIndex + 1
+          setSelectedItemIndex((prev) =>
+            Math.min(prev + 1, paginatedItems.length - 1)
           );
-          setFocusedItemIndex(0);
+          setIsNavigating(true);
           break;
-
-        case "ArrowRight":
+        case "ArrowUp":
           e.preventDefault();
-          if (currentItems.length > 0) {
-            if (focusedItemIndex === currentItems.length - 1) {
-              if (currentPage < totalPages - 1) {
-                nextPage(currentFeed.id, items);
-                setFocusedItemIndex(0);
-              } else {
-                setFocusedItemIndex(0);
-              }
-            } else {
-              setFocusedItemIndex((prevIndex) => prevIndex + 1);
-            }
-          }
+          setSelectedItemIndex((prev) => Math.max(prev - 1, 0));
+          setIsNavigating(true);
           break;
-
-        case "ArrowLeft":
-          e.preventDefault();
-          if (currentItems.length > 0) {
-            if (focusedItemIndex === 0) {
-              if (currentPage > 0) {
-                prevPage(currentFeed.id);
-                setPendingFocusLastItem(true);
-              } else {
-                setFocusedItemIndex(currentItems.length - 1);
-              }
-            } else {
-              setFocusedItemIndex((prevIndex) => prevIndex - 1);
-            }
-          }
-          break;
-
         case "Enter":
-          const focusedItem = currentItems[focusedItemIndex];
-          if (focusedItem) {
-            window.open(focusedItem.link, "_blank");
-            toggleItemRead(focusedItem.id, !focusedItem.is_read);
+          e.preventDefault();
+          if (paginatedItems[selectedItemIndex]) {
+            const item = paginatedItems[selectedItemIndex];
+            window.open(item.link, "_blank");
+            toggleItemRead(item.id, true);
           }
+          break;
+        case "r":
+          e.preventDefault();
+          if (paginatedItems[selectedItemIndex]) {
+            const item = paginatedItems[selectedItemIndex];
+            toggleItemRead(item.id, !item.is_read);
+          }
+          break;
+        case "f":
+          e.preventDefault();
+          if (paginatedItems[selectedItemIndex]) {
+            const item = paginatedItems[selectedItemIndex];
+            toggleItemFavorite(item.id, !item.is_favorite);
+          }
+          break;
+        case "?":
+          e.preventDefault();
+          setShowKeyboardHelp((prev) => !prev);
+          break;
+        case "Escape":
+          e.preventDefault();
+          if (showKeyboardHelp) {
+            setShowKeyboardHelp(false);
+          }
+          break;
+        case "c":
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            refetch();
+          }
+          break;
+        case "PageDown":
+          e.preventDefault();
+          if (currentPage < pageCount) {
+            handlePageChange(currentPage + 1);
+          }
+          break;
+        case "PageUp":
+          e.preventDefault();
+          if (currentPage > 1) {
+            handlePageChange(currentPage - 1);
+          }
+          break;
+        case "Home":
+          e.preventDefault();
+          setSelectedItemIndex(0);
+          setIsNavigating(true);
+          break;
+        case "End":
+          e.preventDefault();
+          setSelectedItemIndex(paginatedItems.length - 1);
+          setIsNavigating(true);
+          break;
+        default:
           break;
       }
-    }
+    };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
-    feeds,
-    focusedFeedIndex,
-    focusedItemIndex,
-    currentPages,
-    itemsPerPage,
-    getItemsForPage,
-    getTotalPages,
-    nextPage,
-    prevPage,
+    enableKeyboardNavigation,
+    paginatedItems,
+    selectedItemIndex,
     toggleItemRead,
-    pendingFocusLastItem,
+    toggleItemFavorite,
+    showKeyboardHelp,
+    refetch,
+    currentPage,
+    pageCount,
   ]);
 
-  // Determine which feeds to show (always 3 feeds)
-  const getVisibleFeeds = useCallback(() => {
-    if (!feeds || feeds.length === 0) return [];
-
-    if (feeds.length <= 3) {
-      // If we have 3 or fewer feeds, show all of them
-      return feeds.map((feed, index) => ({
-        feed,
-        index,
-        position:
-          index === focusedFeedIndex
-            ? "center"
-            : index < focusedFeedIndex
-            ? "top"
-            : "bottom",
-      }));
+  // Scroll to selected item
+  useEffect(() => {
+    if (isNavigating && selectedItemRef.current) {
+      selectedItemRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+      setIsNavigating(false);
     }
+  }, [selectedItemIndex, isNavigating]);
 
-    // For any feed, show the previous feed above and the next feed below
-    const prevIndex = getPreviousFeedIndex();
-    const nextIndex = getNextFeedIndex();
-
-    return [
-      { feed: feeds[prevIndex], index: prevIndex, position: "top" },
-      {
-        feed: feeds[focusedFeedIndex],
-        index: focusedFeedIndex,
-        position: "center",
-      },
-      { feed: feeds[nextIndex], index: nextIndex, position: "bottom" },
-    ];
-  }, [feeds, focusedFeedIndex, getPreviousFeedIndex, getNextFeedIndex]);
-
-  const visibleFeeds = getVisibleFeeds();
-
-  // Helper function to get card position styles with circular animation
-  const getCardPositionStyles = useCallback((position, index, total) => {
-    const radius = 300;
-    const angle = (index / total) * Math.PI * 2;
-    const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-
-    const baseStyles =
-      "absolute w-full max-w-4xl transition-all duration-300 ease-out";
-
-    switch (position) {
-      case "top":
-        return cn(baseStyles, "opacity-70 hover:opacity-100 hover:scale-90", {
-          transform: `translate(${x}px, ${y}px) scale(0.75) rotate(${
-            angle * (180 / Math.PI)
-          }deg)`,
-        });
-      case "bottom":
-        return cn(baseStyles, "opacity-70 hover:opacity-100 hover:scale-90", {
-          transform: `translate(${x}px, ${y}px) scale(0.75) rotate(${
-            angle * (180 / Math.PI)
-          }deg)`,
-        });
-      case "center":
-        return cn(
-          "w-full max-w-4xl z-10 shadow-xl scale-100 transition-all duration-300 ease-in-out"
-        );
-      default:
-        return cn(baseStyles, "opacity-40 scale-50 hover:scale-60");
+  // Page change handlers
+  const handlePageChange = useCallback((page) => {
+    setCurrentPage(page);
+    if (listRef.current) {
+      listRef.current.scrollTop = 0;
     }
   }, []);
 
-  if (isLoading) {
-    return <FeedSkeleton />;
-  }
+  const handlePrevPage = useCallback(() => {
+    if (currentPage > 1) {
+      handlePageChange(currentPage - 1);
+    }
+  }, [currentPage, handlePageChange]);
 
-  if (error) {
+  const handleNextPage = useCallback(() => {
+    if (currentPage < pageCount) {
+      handlePageChange(currentPage + 1);
+    }
+  }, [currentPage, pageCount, handlePageChange]);
+
+  // Feed selection handler
+  const handleFeedSelect = useCallback(
+    (feedId) => {
+      setSelectedFeedId(feedId === selectedFeedId ? null : feedId);
+      setCurrentPage(1);
+    },
+    [selectedFeedId]
+  );
+
+  // Memoized item action handlers
+  const handleToggleRead = useCallback(
+    (id, isRead) => {
+      toggleItemRead(id, isRead);
+    },
+    [toggleItemRead]
+  );
+
+  const handleToggleFavorite = useCallback(
+    (id, isFavorite) => {
+      toggleItemFavorite(id, isFavorite);
+    },
+    [toggleItemFavorite]
+  );
+
+  const handleOpenLink = useCallback((link) => {
+    window.open(link, "_blank");
+  }, []);
+
+  // Loading state
+  if (isLoading) {
     return (
-      <div className="p-4 text-red-500">
-        Error loading feeds: {error.message}
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (!feeds?.length) {
+  // Empty state
+  if (!feeds.length) {
     return <EmptyFeedState />;
   }
 
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center gap-4">
-        <div className="flex items-center gap-2">
-          <KeyboardShortcutsHelp />
-          <AddFeedButton variant="outline" />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Items per page:</span>
-          <Select
-            value={itemsPerPage.toString()}
-            onValueChange={handleItemsPerPageChange}
-          >
-            <SelectTrigger className="w-[100px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="3">3</SelectItem>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-            </SelectContent>
-          </Select>
+  // Empty items list
+  if (currentItems.length === 0) {
+    return (
+      <div className="space-y-6">
+        <FeedNavigation
+          feeds={filteredFeeds}
+          selectedFeedId={selectedFeedId}
+          onFeedSelect={handleFeedSelect}
+        />
+        <div className="bg-card rounded-lg p-8 text-center">
+          <h3 className="text-xl font-semibold mb-2">No items found</h3>
+          <p className="text-muted-foreground mb-4">
+            {showUnreadOnly
+              ? "You've read all items in this feed. Adjust your filters to see more."
+              : showFavoritesOnly
+              ? "No favorite items found. Mark some items as favorites to see them here."
+              : "No items found in this feed."}
+          </p>
         </div>
       </div>
+    );
+  }
 
-      {/* Fixed-position carousel container */}
+  return (
+    <div className="space-y-6">
+      <AnimatePresence>
+        {showKeyboardHelp && (
+          <KeyboardShortcutsHelp onClose={() => setShowKeyboardHelp(false)} />
+        )}
+      </AnimatePresence>
+
+      <FeedNavigation
+        feeds={filteredFeeds}
+        selectedFeedId={selectedFeedId}
+        onFeedSelect={handleFeedSelect}
+      />
+
       <div
-        ref={containerRef}
-        className="relative h-[calc(100vh-200px)] overflow-hidden mt-8"
+        ref={listRef}
+        className="space-y-4 will-change-transform content-visibility-auto"
       >
-        {/* Navigation buttons and indicators */}
-        <FeedNavigation
-          feeds={feeds}
-          focusedFeedIndex={focusedFeedIndex}
-          setFocusedFeedIndex={setFocusedFeedIndex}
-          getPreviousFeedIndex={getPreviousFeedIndex}
-          getNextFeedIndex={getNextFeedIndex}
-          getPreviousFeed={getPreviousFeed}
-          getNextFeed={getNextFeed}
-          isFeedActive={isFeedActive}
-          isFeedPrevious={isFeedPrevious}
-          isFeedNext={isFeedNext}
-          getIndicatorStyle={getIndicatorStyle}
-          getDotStyle={getDotStyle}
-        />
-
-        {/* This is the fixed-position container for all cards */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {/* Render all visible feeds */}
-          {visibleFeeds.map((feedData, index) => (
+        <AnimatePresence initial={false}>
+          {paginatedItems.map((item, index) => (
             <motion.div
-              key={feedData.index}
-              className={getCardPositionStyles(
-                feedData.position,
-                index,
-                visibleFeeds.length
+              key={item.id}
+              ref={index === selectedItemIndex ? selectedItemRef : null}
+              className={cn(
+                "transition-all duration-150 ease-in-out",
+                index === selectedItemIndex &&
+                  enableKeyboardNavigation &&
+                  "ring-2 ring-primary ring-offset-2"
               )}
-              ref={feedData.position === "center" ? focusedFeedRef : null}
-              initial={{ scale: 0.8, opacity: 0.5 }}
-              animate={{
-                scale: feedData.position === "center" ? 1 : 0.75,
-                opacity: feedData.position === "center" ? 1 : 0.7,
-              }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              layout
             >
-              <FeedCard
-                feed={feedData.feed}
-                index={feedData.index}
-                isFocused={feedData.position === "center"}
-                focusedFeedIndex={focusedFeedIndex}
-                focusedItemIndex={focusedItemIndex}
-                currentPages={currentPages}
-                itemsPerPage={itemsPerPage}
-                getItemsForPage={getItemsForPage}
-                getTotalPages={getTotalPages}
-                prevPage={prevPage}
-                nextPage={nextPage}
-                toggleItemRead={toggleItemRead}
-                toggleItemFavorite={toggleItemFavorite}
-                deleteFeed={deleteFeed}
-                setFocusedFeedIndex={setFocusedFeedIndex}
-                focusedItemRef={
-                  feedData.position === "center" ? focusedItemRef : null
+              <FeedCardMemo
+                item={item}
+                feed={feeds.find((f) => f.id === item.feed_id)}
+                isCompact={compactMode}
+                onToggleRead={toggleItemRead}
+                onToggleFavorite={toggleItemFavorite}
+                onOpenLink={handleOpenLink}
+                isFocused={
+                  index === selectedItemIndex && enableKeyboardNavigation
                 }
-                position={feedData.position}
               />
             </motion.div>
           ))}
-        </div>
+        </AnimatePresence>
       </div>
+
+      {pageCount > 1 && (
+        <FeedPagination
+          currentPage={currentPage}
+          pageCount={pageCount}
+          onPageChange={handlePageChange}
+          onPrevPage={handlePrevPage}
+          onNextPage={handleNextPage}
+        />
+      )}
     </div>
   );
 }
+
+// Memoized FeedCard component
+const FeedCardMemo = memo(FeedCard);

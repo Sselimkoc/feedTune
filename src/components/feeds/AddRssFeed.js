@@ -46,6 +46,11 @@ export function AddRssFeed({ onBack, onSuccess }) {
       return;
     }
 
+    if (!user?.id) {
+      toast.error("You must be logged in to add feeds");
+      return;
+    }
+
     setFormState((prev) => ({ ...prev, isSubmitting: true }));
 
     try {
@@ -59,32 +64,19 @@ export function AddRssFeed({ onBack, onSuccess }) {
         }
       );
 
-      const data = await response.json();
-
       if (!response.ok) {
+        const data = await response.json();
         throw new Error(data.error || "Failed to fetch feed");
       }
 
-      if (data && data.items) {
-        const feed = {
-          user_id: user.id,
-          type: "rss",
-          title: data.feed.title,
-          description: data.feed.description,
-          feed_url: formState.url,
-          items: data.items.map((item) => ({
-            title: item.title,
-            link: item.link,
-            description: item.description,
-            published_at: item.published_at,
-          })),
-        };
+      await addRssFeed({
+        url: formState.url,
+        userId: user.id
+      });
 
-        await addRssFeed(feed);
-        setFormState((prev) => ({ ...prev, url: "" }));
-        toast.success(`Added feed: ${feed.title}`);
-        onSuccess?.();
-      }
+      setFormState((prev) => ({ ...prev, url: "" }));
+      toast.success("Feed added successfully");
+      onSuccess?.();
     } catch (error) {
       console.error("Error fetching feed:", error);
       toast.error(error.message || "Failed to fetch RSS feed");

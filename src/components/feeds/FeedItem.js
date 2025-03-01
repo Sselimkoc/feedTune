@@ -4,8 +4,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Star, Check, ExternalLink, Rss } from "lucide-react";
 import Image from "next/image";
+import { memo } from "react";
 
-export function FeedItem({
+export const FeedItem = memo(function FeedItem({
   item,
   feed,
   isActive,
@@ -19,11 +20,14 @@ export function FeedItem({
     <div
       ref={itemRef}
       className={cn(
-        "group flex flex-col bg-card rounded-lg shadow-md hover:shadow-xl transition-all duration-500 overflow-hidden",
+        "group flex flex-col bg-card rounded-lg shadow-md hover:shadow-lg will-change-transform",
         isActive
-          ? "ring-2 ring-primary ring-offset-4 shadow-xl scale-[1.02] z-10"
+          ? "ring-2 ring-primary ring-offset-2 shadow-lg scale-[1.01] z-10"
           : ""
       )}
+      style={{
+        transition: "transform 0.15s ease-out, box-shadow 0.15s ease-out",
+      }}
     >
       {/* Thumbnail Section */}
       <div className="relative w-full" style={{ minHeight: "200px" }}>
@@ -68,7 +72,10 @@ export function FeedItem({
             </div>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100"
+          style={{ transition: "opacity 0.15s ease-out" }}
+        />
       </div>
 
       {/* Content Section */}
@@ -96,7 +103,7 @@ export function FeedItem({
               variant="ghost"
               size="sm"
               className={cn(
-                "h-8 px-3 transition-all duration-200",
+                "h-8 px-3",
                 item.is_favorite
                   ? "bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500"
                   : "hover:bg-yellow-500/10 hover:text-yellow-500"
@@ -109,7 +116,7 @@ export function FeedItem({
             >
               <Star
                 className={cn(
-                  "h-4 w-4 mr-1.5 transition-all",
+                  "h-4 w-4 mr-1.5",
                   item.is_favorite ? "fill-yellow-500" : "fill-none"
                 )}
               />
@@ -121,7 +128,7 @@ export function FeedItem({
               variant="ghost"
               size="sm"
               className={cn(
-                "h-8 px-3 transition-all duration-200",
+                "h-8 px-3",
                 item.is_read
                   ? "bg-green-500/10 hover:bg-green-500/20 text-green-500"
                   : "hover:bg-green-500/10 hover:text-green-500"
@@ -146,7 +153,7 @@ export function FeedItem({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 hover:bg-primary/5 transition-colors duration-200"
+            className="h-8 hover:bg-primary/5"
             asChild
           >
             <a
@@ -166,4 +173,4 @@ export function FeedItem({
       </div>
     </div>
   );
-}
+});

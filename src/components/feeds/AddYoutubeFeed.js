@@ -21,7 +21,7 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
     isSubmitting: false,
   });
 
-  const { addYoutubeFeed, isAddingYoutubeFeed } = useFeeds();
+  const { addYoutubeFeed } = useFeeds();
   const {
     channelData,
     videos,
@@ -56,49 +56,32 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
       return;
     }
 
+    if (!user?.id) {
+      toast.error("You must be logged in to add feeds");
+      return;
+    }
+
     setFormState((prev) => ({ ...prev, isSubmitting: true }));
 
     try {
-      if (!channelData || !videos) {
-        throw new Error("Kanal bilgileri alınamadı");
-      }
+      await addYoutubeFeed({
+        channelId: formState.channelId,
+        userId: user.id,
+      });
 
-      const channel = channelData.items[0];
-      const feed = {
-        user_id: user.id,
-        type: "youtube",
-        title: channel.snippet.title,
-        description: channel.snippet.description,
-        channel_id: formState.channelId,
-        channel_avatar: channel.snippet.thumbnails.default.url,
-        subscriber_count: channel.statistics?.subscriberCount,
-        video_count: channel.statistics?.videoCount,
-        playlist_id: channel.contentDetails?.relatedPlaylists?.uploads,
-        items: videos.items.map((video) => ({
-          title: video.snippet.title,
-          description: video.snippet.description,
-          link: `https://www.youtube.com/watch?v=${video.snippet.resourceId.videoId}`,
-          published_at: video.snippet.publishedAt,
-          video_id: video.snippet.resourceId.videoId,
-          thumbnail: video.snippet.thumbnails.medium.url,
-        })),
-      };
-
-      await addYoutubeFeed(feed);
       setFormState((prev) => ({ ...prev, channelId: "" }));
-      toast.success(`Added channel: ${feed.title}`);
+      toast.success("YouTube channel added successfully");
       onSuccess?.();
     } catch (error) {
-      console.error("Error adding feed:", error);
-      toast.error(`Error adding feed: ${error.message}`);
+      console.error("Error adding YouTube feed:", error);
+      toast.error(error.message || "Failed to add YouTube channel");
       setFormState((prev) => ({ ...prev, error: error.message }));
     } finally {
       setFormState((prev) => ({ ...prev, isSubmitting: false }));
     }
   };
 
-  const isLoading =
-    formState.isSubmitting || isAddingYoutubeFeed || isLoadingChannel;
+  const isLoading = formState.isSubmitting || isLoadingChannel;
 
   return (
     <div className="space-y-4">
@@ -116,7 +99,7 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
             id="channelId"
             value={formState.channelId}
             onChange={handleChannelIdChange}
-            placeholder="Enter channel ID"
+            placeholder="Enter channel ID (starts with UC)"
             disabled={isLoading}
             aria-invalid={!!formState.error}
             className={formState.error ? "border-red-500" : ""}
@@ -134,14 +117,14 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
           </div>
         )}
 
-        {channelData?.items?.[0] && (
+        {channelData && (
           <div className="p-4 border rounded-md bg-card">
             <div className="flex items-center gap-4">
-              {channelData.items[0].snippet.thumbnails?.default?.url && (
+              {channelData.thumbnail && (
                 <div className="relative w-12 h-12 rounded-full overflow-hidden">
                   <Image
-                    src={channelData.items[0].snippet.thumbnails.default.url}
-                    alt={channelData.items[0].snippet.title}
+                    src={channelData.thumbnail}
+                    alt={channelData.title}
                     width={48}
                     height={48}
                     className="object-cover"
@@ -149,12 +132,25 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
                   />
                 </div>
               )}
-              <div>
-                <h3 className="font-bold">
-                  {channelData.items[0].snippet.title}
-                </h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {channelData.items[0].snippet.description}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold truncate">{channelData.title}</h3>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>
+                    {parseInt(
+                      channelData.statistics.subscriberCount
+                    ).toLocaleString()}{" "}
+                    subscribers
+                  </span>
+                  <span>•</span>
+                  <span>
+                    {parseInt(
+                      channelData.statistics.videoCount
+                    ).toLocaleString()}{" "}
+                    videos
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                  {channelData.description}
                 </p>
               </div>
             </div>

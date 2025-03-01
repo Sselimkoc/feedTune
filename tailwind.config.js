@@ -92,19 +92,24 @@ module.exports = {
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "accordion-down": "accordion-down 0.15s ease-out",
+        "accordion-up": "accordion-up 0.15s ease-out",
         "slide-from-right":
-          "slide-from-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        "slide-to-right": "slide-to-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          "slide-from-right 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        "slide-to-right": "slide-to-right 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
         pulse: "pulse 8s ease-in-out infinite",
-        "fade-in": "fade-in 0.5s ease-out",
-        "fade-out": "fade-out 0.5s ease-out",
+        "fade-in": "fade-in 0.2s ease-out",
+        "fade-out": "fade-out 0.2s ease-out",
       },
       transitionDelay: {
         0: "0ms",
         2000: "2000ms",
         4000: "4000ms",
+      },
+      transitionDuration: {
+        0: "0ms",
+        200: "200ms",
+        400: "400ms",
       },
     },
   },
@@ -121,6 +126,34 @@ module.exports = {
         };
       });
       addUtilities(animationDelayUtilities);
+
+      // Add content-visibility utilities for performance
+      addUtilities({
+        ".content-visibility-auto": {
+          "content-visibility": "auto",
+        },
+        ".content-visibility-hidden": {
+          "content-visibility": "hidden",
+        },
+        ".content-visibility-visible": {
+          "content-visibility": "visible",
+        },
+        // Add will-change utilities
+        ".will-change-auto": {
+          "will-change": "auto",
+        },
+        ".will-change-contents": {
+          "will-change": "contents",
+        },
+        ".will-change-scroll-position": {
+          "will-change": "scroll-position",
+        },
+        // Add GPU acceleration utilities
+        ".gpu-accelerated": {
+          transform: "translateZ(0)",
+          "backface-visibility": "hidden",
+        },
+      });
     },
   ],
 };

@@ -2,8 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { memo } from "react";
 
-export function FeedPagination({
+export const FeedPagination = memo(function FeedPagination({
   currentPage,
   totalPages,
   prevPage,
@@ -46,4 +47,4 @@ export function FeedPagination({
       </Button>
     </div>
   );
-}
+});

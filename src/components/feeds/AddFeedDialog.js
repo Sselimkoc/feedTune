@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -67,188 +68,123 @@ function handleError(error, info) {
 }
 
 function AddFeedErrorBoundary({ children }) {
-  const [hasError, setHasError] = useState(false);
-
-  const handleReset = useCallback(() => {
-    setHasError(false);
-  }, []);
-
   return (
     <ErrorBoundary
-      fallback={
-        <div className="text-center p-4 space-y-4">
-          <p className="text-lg font-medium text-destructive">
+      fallbackRender={({ error, resetErrorBoundary }) => (
+        <div className="p-4 text-center">
+          <h3 className="text-lg font-semibold mb-2">
             {TRANSLATIONS.error.title}
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {error.message || TRANSLATIONS.error.generic}
           </p>
-          <p className="text-sm text-muted-foreground">
-            {TRANSLATIONS.error.generic}
-          </p>
-          <Button variant="outline" onClick={handleReset} className="mt-4">
+          <Button onClick={resetErrorBoundary}>
             {TRANSLATIONS.error.retry}
           </Button>
         </div>
-      }
-      onError={(error, info) => {
-        setHasError(true);
-        handleError(error, info);
-      }}
-      onReset={handleReset}
+      )}
+      onError={handleError}
     >
       {children}
     </ErrorBoundary>
   );
 }
 
-AddFeedErrorBoundary.propTypes = {
-  children: PropTypes.node.isRequired,
-};
+export function AddFeedDialog({ onSuccess, defaultPlatform = "rss" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState(defaultPlatform);
+  const [keepAdding, setKeepAdding] = useState(false);
 
-export function AddFeedDialog({ onSuccess, defaultPlatform, children }) {
-  const [state, setState] = useState({
-    open: false,
-    selectedPlatform: defaultPlatform ? FEED_PLATFORMS[defaultPlatform] : null,
-    keepAdding: false,
-    isLoading: false,
-  });
-
-  const handleClose = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      selectedPlatform: null,
-      open: prev.keepAdding,
-      isLoading: false,
-    }));
-    onSuccess?.();
-  }, [onSuccess]);
-
-  const handleOpenChange = useCallback((isOpen) => {
-    if (!isOpen) {
-      setState((prev) => ({
-        ...prev,
-        selectedPlatform: null,
-        keepAdding: false,
-        isLoading: false,
-      }));
-    } else {
-      setState((prev) => ({
-        ...prev,
-        open: true,
-        isLoading: false,
-      }));
+  const handleSuccess = useCallback(() => {
+    if (!keepAdding) {
+      setIsOpen(false);
     }
-  }, []);
+    onSuccess?.();
+  }, [keepAdding, onSuccess]);
 
   const handlePlatformSelect = useCallback((platform) => {
-    setState((prev) => ({
-      ...prev,
-      selectedPlatform: platform,
-      isLoading: true,
-    }));
-
-    // Simüle edilmiş yükleme durumu - gerçek uygulamada kaldırılabilir
-    setTimeout(() => {
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-      }));
-    }, 500);
+    setSelectedPlatform(platform);
   }, []);
 
-  const SelectedComponent = useMemo(
-    () => state.selectedPlatform?.component || null,
-    [state.selectedPlatform]
+  const ActiveComponent = useMemo(
+    () => FEED_PLATFORMS[selectedPlatform]?.component,
+    [selectedPlatform]
+  );
+
+  const handleOpenChange = useCallback(
+    (open) => {
+      setIsOpen(open);
+      if (!open) {
+        setSelectedPlatform(defaultPlatform);
+      }
+    },
+    [defaultPlatform]
   );
 
   return (
-    <AddFeedErrorBoundary>
-      <Dialog open={state.open} onOpenChange={handleOpenChange}>
-        <DialogTrigger asChild>
-          {children || (
-            <Button
-              disabled={state.isLoading}
-              aria-label={TRANSLATIONS.addNewFeed}
-            >
-              {state.isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <PlusCircle className="mr-2 h-4 w-4" />
-              )}
-              {TRANSLATIONS.addNewFeed}
-            </Button>
-          )}
-        </DialogTrigger>
-        <DialogContent
-          className="sm:max-w-[425px]"
-          aria-labelledby="dialog-title"
-        >
-          <DialogHeader>
-            <DialogTitle id="dialog-title">
-              {state.selectedPlatform
-                ? state.selectedPlatform.name
-                : TRANSLATIONS.selectPlatform}
-            </DialogTitle>
-          </DialogHeader>
-          {!state.selectedPlatform ? (
-            <>
-              <div
-                className="grid grid-cols-2 gap-4"
-                role="group"
-                aria-label={TRANSLATIONS.selectPlatform}
-              >
-                {Object.values(FEED_PLATFORMS).map((platform) => (
-                  <Button
-                    key={platform.id}
-                    variant="outline"
-                    className="h-24 flex-col gap-2 relative"
-                    onClick={() => handlePlatformSelect(platform)}
-                    disabled={state.isLoading}
-                    aria-label={platform.name}
-                  >
-                    {state.isLoading ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-background/80">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                      </div>
-                    ) : null}
-                    <platform.icon className="h-8 w-8" />
-                    {platform.name}
-                  </Button>
-                ))}
-              </div>
-              <div className="flex items-center space-x-2 pt-4">
-                <Switch
-                  id="keep-adding"
-                  checked={state.keepAdding}
-                  onCheckedChange={(checked) =>
-                    setState((prev) => ({ ...prev, keepAdding: checked }))
-                  }
-                  aria-label={TRANSLATIONS.keepAdding}
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button>
+          <PlusCircle className="w-4 h-4 mr-2" />
+          {TRANSLATIONS.addNewFeed}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{TRANSLATIONS.addNewFeed}</DialogTitle>
+          <DialogDescription>
+            RSS beslemesi veya YouTube kanalı ekleyerek içerikleri takip edin.
+          </DialogDescription>
+        </DialogHeader>
+
+        <AddFeedErrorBoundary>
+          <div className="space-y-6">
+            {!ActiveComponent ? (
+              <>
+                <div className="text-lg font-semibold mb-4">
+                  {TRANSLATIONS.selectPlatform}
+                </div>
+                <div className="grid gap-4">
+                  {Object.values(FEED_PLATFORMS).map((platform) => {
+                    const Icon = platform.icon;
+                    return (
+                      <Button
+                        key={platform.id}
+                        variant="outline"
+                        className="justify-start"
+                        onClick={() => handlePlatformSelect(platform.id)}
+                      >
+                        <Icon className="w-4 h-4 mr-2" />
+                        {platform.name}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <>
+                <ActiveComponent
+                  onBack={() => setSelectedPlatform(null)}
+                  onSuccess={handleSuccess}
                 />
-                <Label htmlFor="keep-adding">{TRANSLATIONS.keepAdding}</Label>
-              </div>
-            </>
-          ) : SelectedComponent ? (
-            <div>
-              <SelectedComponent
-                onBack={() =>
-                  setState((prev) => ({
-                    ...prev,
-                    selectedPlatform: null,
-                    isLoading: false,
-                  }))
-                }
-                onSuccess={handleClose}
-                isLoading={state.isLoading}
-              />
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
-    </AddFeedErrorBoundary>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="keep-adding"
+                    checked={keepAdding}
+                    onCheckedChange={setKeepAdding}
+                  />
+                  <Label htmlFor="keep-adding">{TRANSLATIONS.keepAdding}</Label>
+                </div>
+              </>
+            )}
+          </div>
+        </AddFeedErrorBoundary>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 AddFeedDialog.propTypes = {
   onSuccess: PropTypes.func,
   defaultPlatform: PropTypes.oneOf(Object.keys(FEED_PLATFORMS)),
-  children: PropTypes.node,
 };

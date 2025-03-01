@@ -2,85 +2,80 @@
 
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { memo, useMemo } from "react";
 
-export function FeedNavigation({
+export const FeedNavigation = memo(function FeedNavigation({
   feeds,
-  focusedFeedIndex,
-  setFocusedFeedIndex,
-  getPreviousFeedIndex,
-  getNextFeedIndex,
-  getPreviousFeed,
-  getNextFeed,
-  isFeedActive,
-  isFeedPrevious,
-  isFeedNext,
-  getIndicatorStyle,
-  getDotStyle,
+  selectedFeedId,
+  onFeedSelect,
 }) {
   if (!feeds || feeds.length <= 1) return null;
 
+  // Find the current feed index
+  const currentFeedIndex = useMemo(() => {
+    if (!selectedFeedId) return -1;
+    return feeds.findIndex((feed) => feed.id === selectedFeedId);
+  }, [feeds, selectedFeedId]);
+
+  // Helper functions for navigation
+  const getPreviousFeedIndex = () => {
+    if (currentFeedIndex <= 0) return feeds.length - 1;
+    return currentFeedIndex - 1;
+  };
+
+  const getNextFeedIndex = () => {
+    if (currentFeedIndex === -1 || currentFeedIndex === feeds.length - 1)
+      return 0;
+    return currentFeedIndex + 1;
+  };
+
+  const getPreviousFeed = () => {
+    return feeds[getPreviousFeedIndex()];
+  };
+
+  const getNextFeed = () => {
+    return feeds[getNextFeedIndex()];
+  };
+
   return (
-    <>
-      {/* Navigation buttons */}
-      <button
-        onClick={() => setFocusedFeedIndex(getPreviousFeedIndex())}
-        className={cn(
-          "absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full",
-          "bg-background/80 shadow-md hover:bg-background transition-all duration-500"
-        )}
-        aria-label={`Previous feed: ${getPreviousFeed()?.title || "Previous"}`}
-      >
-        <ChevronLeft className="h-6 w-6" />
-      </button>
-      <button
-        onClick={() => setFocusedFeedIndex(getNextFeedIndex())}
-        className={cn(
-          "absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full",
-          "bg-background/80 shadow-md hover:bg-background transition-all duration-500"
-        )}
-        aria-label={`Next feed: ${getNextFeed()?.title || "Next"}`}
-      >
-        <ChevronRight className="h-6 w-6" />
-      </button>
-
-      {/* Navigation Indicators */}
-      <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-2">
-        {feeds.map((feed, index) => {
-          // Determine feed position relative to focused feed
-          const isActive = isFeedActive(index);
-          const isPrevious = isFeedPrevious(index);
-          const isNext = isFeedNext(index);
-
-          return (
-            <button
-              key={index}
-              onClick={() => setFocusedFeedIndex(index)}
-              className={cn(
-                "flex items-center gap-2 transition-all duration-500 group",
-                getIndicatorStyle(isActive, isPrevious, isNext)
-              )}
-              aria-label={`Go to feed ${index + 1}: ${feed.title}`}
-            >
-              <div
-                className={cn(
-                  "w-2 h-2 rounded-full transition-all duration-500",
-                  getDotStyle(isActive, isPrevious, isNext)
-                )}
-              />
-              <span
-                className={cn(
-                  "text-xs whitespace-nowrap max-w-0 overflow-hidden transition-all duration-500",
-                  isActive
-                    ? "max-w-[100px] opacity-100"
-                    : "group-hover:max-w-[100px] opacity-0 group-hover:opacity-100"
-                )}
-              >
-                {feed.title}
-              </span>
-            </button>
-          );
-        })}
+    <div className="flex justify-between items-center mb-4">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+        {feeds.map((feed) => (
+          <button
+            key={feed.id}
+            onClick={() => onFeedSelect(feed.id)}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
+              feed.id === selectedFeedId
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted hover:bg-muted/80"
+            )}
+          >
+            {feed.title}
+          </button>
+        ))}
       </div>
-    </>
+
+      {feeds.length > 1 && (
+        <div className="flex gap-1">
+          <button
+            onClick={() => onFeedSelect(getPreviousFeed().id)}
+            className="p-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+            aria-label={`Previous feed: ${
+              getPreviousFeed()?.title || "Previous"
+            }`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => onFeedSelect(getNextFeed().id)}
+            className="p-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+            aria-label={`Next feed: ${getNextFeed()?.title || "Next"}`}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
   );
-}
+});
