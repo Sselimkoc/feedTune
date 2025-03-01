@@ -19,9 +19,13 @@ import { FeedSkeleton } from "./FeedSkeleton";
 import { FeedCard } from "./FeedCard";
 import { FeedNavigation } from "./FeedNavigation";
 import { EmptyFeedState } from "./EmptyFeedState";
+import { EmptyFilterState } from "./EmptyFilterState";
 import { AddFeedButton } from "./AddFeedButton";
 import { FeedPagination } from "./FeedPagination";
-import { Loader2 } from "lucide-react";
+import { Loader2, Filter } from "lucide-react";
+import { FilterDialog } from "./FilterDialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 // Constants
 const ITEMS_PER_PAGE = 10;
@@ -48,13 +52,19 @@ export function FeedList() {
     showUnreadOnly,
     showFavoritesOnly,
     compactMode,
-    enableKeyboardNavigation,
-  } = useSettingsStore();
+    selectedFeedId,
+    setSelectedFeedId,
+    filters,
+    setFilters,
+  } = useFeedStore();
+  const { settings } = useSettingsStore();
 
   // State management
-  const [selectedFeedId, setSelectedFeedId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedItemIndex, setSelectedItemIndex] = useState(0);
+  const [focusedItemIndex, setFocusedItemIndex] = useState(0);
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const itemRefs = useRef({});
+  const containerRef = useRef(null);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
 
@@ -63,42 +73,94 @@ export function FeedList() {
   const selectedItemRef = useRef(null);
 
   // Memoized values
-  const filteredFeeds = useMemo(() => {
-    return feeds.filter((feed) => {
-      if (showUnreadOnly) {
-        return items.some((item) => item.feed_id === feed.id && !item.is_read);
-      }
-      if (showFavoritesOnly) {
-        return items.some(
-          (item) => item.feed_id === feed.id && item.is_favorite
+  const filteredItems = useMemo(() => {
+    if (!items || items.length === 0) return [];
+
+    let result = [...items];
+
+    // Feed ID'ye göre filtrele
+    if (selectedFeedId) {
+      result = result.filter((item) => item.feed_id === selectedFeedId);
+    }
+
+    // Feed türüne göre filtrele
+    if (!filters.feedTypes.rss || !filters.feedTypes.youtube) {
+      const feedTypeMap = feeds.reduce((acc, feed) => {
+        acc[feed.id] = feed.type;
+        return acc;
+      }, {});
+
+      result = result.filter((item) => {
+        const feedType = feedTypeMap[item.feed_id];
+        return (
+          (feedType === "rss" && filters.feedTypes.rss) ||
+          (feedType === "youtube" && filters.feedTypes.youtube)
         );
-      }
-      return true;
-    });
-  }, [feeds, items, showUnreadOnly, showFavoritesOnly]);
+      });
+    }
+
+    // Okunma durumuna göre filtrele
+    if (!filters.showRead && !filters.showUnread) {
+      return []; // Hiçbir şey gösterme
+    } else if (!filters.showRead) {
+      result = result.filter((item) => !item.is_read);
+    } else if (!filters.showUnread) {
+      result = result.filter((item) => item.is_read);
+    }
+
+    // Sıralama
+    switch (filters.sortBy) {
+      case "oldest":
+        result.sort(
+          (a, b) =>
+            new Date(a.published_at).getTime() -
+            new Date(b.published_at).getTime()
+        );
+        break;
+      case "unread":
+        result.sort((a, b) => {
+          if (a.is_read === b.is_read) {
+            return (
+              new Date(b.published_at).getTime() -
+              new Date(a.published_at).getTime()
+            );
+          }
+          return a.is_read ? 1 : -1;
+        });
+        break;
+      case "favorites":
+        result.sort((a, b) => {
+          if (a.is_favorite === b.is_favorite) {
+            return (
+              new Date(b.published_at).getTime() -
+              new Date(a.published_at).getTime()
+            );
+          }
+          return a.is_favorite ? -1 : 1;
+        });
+        break;
+      case "newest":
+      default:
+        result.sort(
+          (a, b) =>
+            new Date(b.published_at).getTime() -
+            new Date(a.published_at).getTime()
+        );
+        break;
+    }
+
+    return result;
+  }, [items, feeds, selectedFeedId, filters]);
 
   const currentItems = useMemo(() => {
-    let filtered = items;
-    if (selectedFeedId) {
-      filtered = filtered.filter((item) => item.feed_id === selectedFeedId);
-    }
-    if (showUnreadOnly) {
-      filtered = filtered.filter((item) => !item.is_read);
-    }
-    if (showFavoritesOnly) {
-      filtered = filtered.filter((item) => item.is_favorite);
-    }
-    return filtered;
-  }, [items, selectedFeedId, showUnreadOnly, showFavoritesOnly]);
-
-  const paginatedItems = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return currentItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [currentItems, currentPage]);
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredItems.slice(startIndex, endIndex);
+  }, [filteredItems, currentPage]);
 
   const pageCount = useMemo(() => {
-    return getPageCount(currentItems.length, ITEMS_PER_PAGE);
-  }, [currentItems]);
+    return getPageCount(filteredItems.length, ITEMS_PER_PAGE);
+  }, [filteredItems]);
 
   // Load data when user changes
   useEffect(() => {
@@ -109,12 +171,12 @@ export function FeedList() {
 
   // Reset selected item when page changes
   useEffect(() => {
-    setSelectedItemIndex(0);
+    setFocusedItemIndex(0);
   }, [currentPage, selectedFeedId]);
 
   // Keyboard navigation
   useEffect(() => {
-    if (!enableKeyboardNavigation) return;
+    if (!settings.enableKeyboardNavigation) return;
 
     const handleKeyDown = (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
@@ -123,35 +185,35 @@ export function FeedList() {
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
-          setSelectedItemIndex((prev) =>
-            Math.min(prev + 1, paginatedItems.length - 1)
+          setFocusedItemIndex((prev) =>
+            Math.min(prev + 1, filteredItems.length - 1)
           );
           setIsNavigating(true);
           break;
         case "ArrowUp":
           e.preventDefault();
-          setSelectedItemIndex((prev) => Math.max(prev - 1, 0));
+          setFocusedItemIndex((prev) => Math.max(prev - 1, 0));
           setIsNavigating(true);
           break;
         case "Enter":
           e.preventDefault();
-          if (paginatedItems[selectedItemIndex]) {
-            const item = paginatedItems[selectedItemIndex];
+          if (filteredItems[focusedItemIndex]) {
+            const item = filteredItems[focusedItemIndex];
             window.open(item.link, "_blank");
             toggleItemRead(item.id, true);
           }
           break;
         case "r":
           e.preventDefault();
-          if (paginatedItems[selectedItemIndex]) {
-            const item = paginatedItems[selectedItemIndex];
+          if (filteredItems[focusedItemIndex]) {
+            const item = filteredItems[focusedItemIndex];
             toggleItemRead(item.id, !item.is_read);
           }
           break;
         case "f":
           e.preventDefault();
-          if (paginatedItems[selectedItemIndex]) {
-            const item = paginatedItems[selectedItemIndex];
+          if (filteredItems[focusedItemIndex]) {
+            const item = filteredItems[focusedItemIndex];
             toggleItemFavorite(item.id, !item.is_favorite);
           }
           break;
@@ -174,23 +236,23 @@ export function FeedList() {
         case "PageDown":
           e.preventDefault();
           if (currentPage < pageCount) {
-            handlePageChange(currentPage + 1);
+            setCurrentPage(currentPage + 1);
           }
           break;
         case "PageUp":
           e.preventDefault();
           if (currentPage > 1) {
-            handlePageChange(currentPage - 1);
+            setCurrentPage(currentPage - 1);
           }
           break;
         case "Home":
           e.preventDefault();
-          setSelectedItemIndex(0);
+          setFocusedItemIndex(0);
           setIsNavigating(true);
           break;
         case "End":
           e.preventDefault();
-          setSelectedItemIndex(paginatedItems.length - 1);
+          setFocusedItemIndex(filteredItems.length - 1);
           setIsNavigating(true);
           break;
         default:
@@ -201,9 +263,9 @@ export function FeedList() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
-    enableKeyboardNavigation,
-    paginatedItems,
-    selectedItemIndex,
+    settings.enableKeyboardNavigation,
+    filteredItems,
+    focusedItemIndex,
     toggleItemRead,
     toggleItemFavorite,
     showKeyboardHelp,
@@ -221,27 +283,20 @@ export function FeedList() {
       });
       setIsNavigating(false);
     }
-  }, [selectedItemIndex, isNavigating]);
+  }, [focusedItemIndex, isNavigating]);
 
   // Page change handlers
-  const handlePageChange = useCallback((page) => {
-    setCurrentPage(page);
-    if (listRef.current) {
-      listRef.current.scrollTop = 0;
-    }
-  }, []);
-
-  const handlePrevPage = useCallback(() => {
+  const handlePreviousPage = useCallback(() => {
     if (currentPage > 1) {
-      handlePageChange(currentPage - 1);
+      setCurrentPage(currentPage - 1);
     }
-  }, [currentPage, handlePageChange]);
+  }, [currentPage]);
 
   const handleNextPage = useCallback(() => {
     if (currentPage < pageCount) {
-      handlePageChange(currentPage + 1);
+      setCurrentPage(currentPage + 1);
     }
-  }, [currentPage, pageCount, handlePageChange]);
+  }, [currentPage, pageCount]);
 
   // Feed selection handler
   const handleFeedSelect = useCallback(
@@ -249,7 +304,7 @@ export function FeedList() {
       setSelectedFeedId(feedId === selectedFeedId ? null : feedId);
       setCurrentPage(1);
     },
-    [selectedFeedId]
+    [selectedFeedId, setSelectedFeedId]
   );
 
   // Memoized item action handlers
@@ -271,43 +326,20 @@ export function FeedList() {
     window.open(link, "_blank");
   }, []);
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // Aktif filtre sayısını hesapla
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
 
-  // Empty state
-  if (!feeds.length) {
-    return <EmptyFeedState />;
-  }
+    if (filters.sortBy !== "newest") count++;
+    if (!filters.showRead) count++;
+    if (!filters.showUnread) count++;
+    if (!filters.feedTypes.rss) count++;
+    if (!filters.feedTypes.youtube) count++;
 
-  // Empty items list
-  if (currentItems.length === 0) {
-    return (
-      <div className="space-y-6">
-        <FeedNavigation
-          feeds={filteredFeeds}
-          selectedFeedId={selectedFeedId}
-          onFeedSelect={handleFeedSelect}
-        />
-        <div className="bg-card rounded-lg p-8 text-center">
-          <h3 className="text-xl font-semibold mb-2">No items found</h3>
-          <p className="text-muted-foreground mb-4">
-            {showUnreadOnly
-              ? "You've read all items in this feed. Adjust your filters to see more."
-              : showFavoritesOnly
-              ? "No favorite items found. Mark some items as favorites to see them here."
-              : "No items found in this feed."}
-          </p>
-        </div>
-      </div>
-    );
-  }
+    return count;
+  }, [filters]);
 
+  // Render
   return (
     <div className="space-y-6">
       <AnimatePresence>
@@ -316,57 +348,115 @@ export function FeedList() {
         )}
       </AnimatePresence>
 
-      <FeedNavigation
-        feeds={filteredFeeds}
-        selectedFeedId={selectedFeedId}
-        onFeedSelect={handleFeedSelect}
-      />
+      {/* Feed Navigation */}
+      {feeds.length > 0 && (
+        <FeedNavigation
+          feeds={feeds}
+          selectedFeedId={selectedFeedId}
+          onFeedSelect={setSelectedFeedId}
+          onOpenFilters={() => setIsFilterDialogOpen(true)}
+        />
+      )}
 
-      <div
-        ref={listRef}
-        className="space-y-4 will-change-transform content-visibility-auto"
-      >
-        <AnimatePresence initial={false}>
-          {paginatedItems.map((item, index) => (
-            <motion.div
-              key={item.id}
-              ref={index === selectedItemIndex ? selectedItemRef : null}
-              className={cn(
-                "transition-all duration-150 ease-in-out",
-                index === selectedItemIndex &&
-                  enableKeyboardNavigation &&
-                  "ring-2 ring-primary ring-offset-2"
-              )}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              layout
-            >
-              <FeedCardMemo
-                item={item}
-                feed={feeds.find((f) => f.id === item.feed_id)}
-                isCompact={compactMode}
-                onToggleRead={toggleItemRead}
-                onToggleFavorite={toggleItemFavorite}
-                onOpenLink={handleOpenLink}
-                isFocused={
-                  index === selectedItemIndex && enableKeyboardNavigation
-                }
-              />
-            </motion.div>
-          ))}
-        </AnimatePresence>
+      {/* Filter Button (Mobile) */}
+      <div className="flex justify-between items-center mb-4 lg:hidden">
+        <h2 className="text-xl font-semibold">
+          {selectedFeedId
+            ? feeds.find((f) => f.id === selectedFeedId)?.title || "Feed"
+            : "Tüm Beslemeler"}
+        </h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsFilterDialogOpen(true)}
+          className="h-8 rounded-full"
+        >
+          <Filter className="h-3.5 w-3.5 mr-1" />
+          <span className="text-xs">Filtrele</span>
+          {activeFilterCount > 0 && (
+            <Badge variant="secondary" className="ml-1 h-5 px-1">
+              {activeFilterCount}
+            </Badge>
+          )}
+        </Button>
       </div>
 
-      {pageCount > 1 && (
-        <FeedPagination
-          currentPage={currentPage}
-          pageCount={pageCount}
-          onPageChange={handlePageChange}
-          onPrevPage={handlePrevPage}
-          onNextPage={handleNextPage}
-        />
+      {/* Filter Dialog */}
+      <FilterDialog
+        isOpen={isFilterDialogOpen}
+        onOpenChange={setIsFilterDialogOpen}
+        filters={filters}
+        onApplyFilters={setFilters}
+      />
+
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : feeds.length === 0 ? (
+        // Empty State - No Feeds
+        <div className="space-y-6">
+          <EmptyFeedState />
+          <AddFeedButton />
+        </div>
+      ) : filteredItems.length === 0 ? (
+        // Empty State - No Items Match Filters
+        <EmptyFilterState onOpenFilters={() => setIsFilterDialogOpen(true)} />
+      ) : (
+        // Feed Items
+        <div className="space-y-6">
+          <div ref={containerRef} className="space-y-4">
+            <AnimatePresence>
+              {currentItems.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  ref={(el) => {
+                    if (el) itemRefs.current[index] = el;
+                    if (index === focusedItemIndex)
+                      selectedItemRef.current = el;
+                  }}
+                  className={cn(
+                    "transition-all duration-150 ease-in-out",
+                    index === focusedItemIndex &&
+                      settings.enableKeyboardNavigation &&
+                      "ring-2 ring-primary ring-offset-2"
+                  )}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{
+                    duration: 0.2,
+                    delay: index * 0.05,
+                  }}
+                >
+                  <FeedCard
+                    item={item}
+                    feed={feeds.find((f) => f.id === item.feed_id)}
+                    isCompact={compactMode}
+                    onToggleRead={toggleItemRead}
+                    onToggleFavorite={toggleItemFavorite}
+                    onOpenLink={handleOpenLink}
+                    isFocused={
+                      index === focusedItemIndex &&
+                      settings.enableKeyboardNavigation
+                    }
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {pageCount > 1 && (
+            <FeedPagination
+              currentPage={currentPage}
+              pageCount={pageCount}
+              onPageChange={setCurrentPage}
+              onPreviousPage={handlePreviousPage}
+              onNextPage={handleNextPage}
+            />
+          )}
+        </div>
       )}
     </div>
   );

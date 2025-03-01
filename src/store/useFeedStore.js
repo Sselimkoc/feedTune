@@ -73,6 +73,20 @@ export const useFeedStore = create(
       lastCacheUpdate: null,
       isLoading: false,
       error: null,
+      selectedFeedId: null,
+      showUnreadOnly: false,
+      showFavoritesOnly: false,
+      compactMode: false,
+      filters: {
+        sortBy: "newest",
+        showRead: true,
+        showUnread: true,
+        showFavorites: true,
+        feedTypes: {
+          rss: true,
+          youtube: true,
+        },
+      },
 
       // Load user's feeds from cache first, then update in background
       loadFeeds: async (userId) => {
@@ -467,6 +481,25 @@ export const useFeedStore = create(
         });
         toast.success("Cache cleared successfully");
       },
+
+      setSelectedFeedId: (id) => set({ selectedFeedId: id }),
+      setShowUnreadOnly: (value) => set({ showUnreadOnly: value }),
+      setShowFavoritesOnly: (value) => set({ showFavoritesOnly: value }),
+      setCompactMode: (value) => set({ compactMode: value }),
+      setFilters: (filters) => set({ filters }),
+      resetFilters: () =>
+        set({
+          filters: {
+            sortBy: "newest",
+            showRead: true,
+            showUnread: true,
+            showFavorites: true,
+            feedTypes: {
+              rss: true,
+              youtube: true,
+            },
+          },
+        }),
     }),
     {
       name: "feed-storage",

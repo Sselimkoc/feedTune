@@ -6,43 +6,36 @@ import { memo } from "react";
 
 export const FeedPagination = memo(function FeedPagination({
   currentPage,
-  totalPages,
-  prevPage,
-  nextPage,
-  feedId,
-  items,
+  pageCount,
+  onPageChange,
+  onPreviousPage,
+  onNextPage,
 }) {
-  if (totalPages <= 1) return null;
+  if (pageCount <= 1) return null;
 
   return (
     <div className="flex justify-between items-center gap-4 mt-6 pt-6 border-t">
       <Button
         variant="ghost"
         size="sm"
-        onClick={(e) => {
-          e.stopPropagation();
-          prevPage(feedId);
-        }}
-        disabled={currentPage === 0}
+        onClick={onPreviousPage}
+        disabled={currentPage === 1}
         className="flex items-center gap-2"
       >
         <ChevronLeft className="h-4 w-4" />
-        Previous
+        Önceki
       </Button>
       <span className="text-sm text-muted-foreground">
-        Page {currentPage + 1} of {totalPages}
+        Sayfa {currentPage} / {pageCount}
       </span>
       <Button
         variant="ghost"
         size="sm"
-        onClick={(e) => {
-          e.stopPropagation();
-          nextPage(feedId, items);
-        }}
-        disabled={currentPage === totalPages - 1}
+        onClick={onNextPage}
+        disabled={currentPage === pageCount}
         className="flex items-center gap-2"
       >
-        Next
+        Sonraki
         <ChevronRight className="h-4 w-4" />
       </Button>
     </div>

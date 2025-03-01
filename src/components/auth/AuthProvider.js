@@ -19,24 +19,25 @@ export function AuthProvider({ children }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event);
 
-      if (event === "TOKEN_REFRESHED" && session) {
-        await setSession(session);
-      }
-
-      if (event === "SIGNED_OUT") {
-        router.replace("/");
-      }
-
       if (session) {
         await setSession(session);
+
+        // Force a refresh of the current route to update UI components
+        if (event === "SIGNED_IN") {
+          router.refresh();
+        }
       } else {
+        await setSession(null);
+
         // Oturum yoksa ve korumalı sayfadaysak ana sayfaya yönlendir
         const protectedRoutes = ["/settings", "/feeds", "/favorites"];
         const isProtectedRoute = protectedRoutes.some((route) =>
           pathname.startsWith(route)
         );
 
-        if (isProtectedRoute) {
+        if (event === "SIGNED_OUT") {
+          router.replace("/");
+        } else if (isProtectedRoute) {
           router.replace("/");
         }
       }

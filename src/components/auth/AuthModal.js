@@ -13,27 +13,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function AuthModal({ isOpen, onOpenChange, initialMode = "login" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(initialMode === "signup");
+  const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuthStore();
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
     try {
       if (isSignUp) {
-        await signUp(email, password);
-        toast.success("Hesabınız başarıyla oluşturuldu!");
+        const result = await signUp(email, password);
+        if (result.success) {
+          toast.success("Hesabınız başarıyla oluşturuldu!");
+          onOpenChange?.(false);
+        }
       } else {
-        await signIn(email, password);
-        toast.success("Başarıyla giriş yaptınız!");
+        const result = await signIn(email, password);
+        if (result.success) {
+          toast.success("Başarıyla giriş yaptınız!");
+          onOpenChange?.(false);
+          // Force a refresh of the current page to update UI
+          router.refresh();
+        }
       }
-      onOpenChange?.(false);
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || "Bir hata oluştu");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -41,6 +54,7 @@ export function AuthModal({ isOpen, onOpenChange, initialMode = "login" }) {
     if (!open) {
       setEmail("");
       setPassword("");
+      setIsLoading(false);
     }
     onOpenChange?.(open);
   };
@@ -66,6 +80,7 @@ export function AuthModal({ isOpen, onOpenChange, initialMode = "login" }) {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="ornek@email.com"
               required
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -77,16 +92,22 @@ export function AuthModal({ isOpen, onOpenChange, initialMode = "login" }) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              disabled={isLoading}
             />
           </div>
           <div className="flex flex-col gap-4">
-            <Button type="submit">
-              {isSignUp ? "Hesap Oluştur" : "Giriş Yap"}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading
+                ? "İşleniyor..."
+                : isSignUp
+                ? "Hesap Oluştur"
+                : "Giriş Yap"}
             </Button>
             <Button
               type="button"
               variant="ghost"
               onClick={() => setIsSignUp(!isSignUp)}
+              disabled={isLoading}
             >
               {isSignUp
                 ? "Zaten hesabınız var mı? Giriş yapın"

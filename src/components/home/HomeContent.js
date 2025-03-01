@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,10 +12,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Rss, Youtube, Bell, CheckCircle, Keyboard, Moon } from "lucide-react";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export function HomeContent({ initialSession }) {
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const user = initialSession?.user;
+  const { user: authUser } = useAuthStore();
+  const [user, setUser] = useState(initialSession?.user);
+
+  // Update user state when authUser changes
+  useEffect(() => {
+    setUser(authUser || initialSession?.user);
+  }, [authUser, initialSession?.user]);
 
   return (
     <div className="relative min-h-screen">

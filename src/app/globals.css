@@ -136,3 +136,51 @@
     @apply bg-muted rounded-full hover:bg-muted-foreground transition-colors;
   }
 }
+
+/* Tema geçiş animasyonları */
+@keyframes theme-fade {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-theme-fade {
+  animation: theme-fade 0.8s ease-in-out;
+}
+
+.theme-transition::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(var(--primary-rgb), 0.15), transparent 60%);
+  z-index: -1;
+  opacity: 0;
+  animation: theme-pulse 0.8s ease-in-out;
+}
+
+@keyframes theme-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Tema değişikliğinde yumuşak geçiş */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
