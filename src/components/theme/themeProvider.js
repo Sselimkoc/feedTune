@@ -8,24 +8,45 @@ export function ThemeProvider({ children }) {
   const { settings } = useSettingsStore();
   const [mounted, setMounted] = React.useState(false);
   const [themeTransition, setThemeTransition] = React.useState(false);
+  const [currentTheme, setCurrentTheme] = React.useState(null);
 
   // Tema değişikliğini izle
-  const handleThemeChange = React.useCallback(() => {
-    setThemeTransition(true);
-    const timer = setTimeout(() => {
-      setThemeTransition(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+  const handleThemeChange = React.useCallback(
+    (newTheme) => {
+      if (currentTheme !== newTheme && mounted) {
+        setThemeTransition(true);
+
+        // Tema değişim animasyonunu göster
+        const timer = setTimeout(() => {
+          setThemeTransition(false);
+        }, 800);
+
+        // Mevcut temayı güncelle
+        setCurrentTheme(newTheme);
+
+        return () => clearTimeout(timer);
+      }
+    },
+    [currentTheme, mounted]
+  );
 
   // Komponent mount olduktan sonra
   React.useEffect(() => {
     setMounted(true);
 
-    // Tema değişikliğini dinle
-    window.addEventListener("theme-change", handleThemeChange);
-    return () => window.removeEventListener("theme-change", handleThemeChange);
-  }, [handleThemeChange]);
+    // Başlangıç temasını al
+    const initialTheme = document.documentElement.classList.contains("dark")
+      ? "dark"
+      : document.documentElement.classList.contains("light")
+      ? "light"
+      : "system";
+
+    setCurrentTheme(initialTheme);
+
+    return () => {
+      // Cleanup
+    };
+  }, []);
 
   return (
     <NextThemesProvider
@@ -34,9 +55,9 @@ export function ThemeProvider({ children }) {
       enableSystem={settings.theme === "system"}
       disableTransitionOnChange={false}
       themes={["light", "dark"]}
-      onChangeTheme={() => {
-        // Tema değişikliği olduğunda özel event tetikle
-        window.dispatchEvent(new Event("theme-change"));
+      onChangeTheme={(theme) => {
+        // Tema değişikliği olduğunda animasyonu tetikle
+        handleThemeChange(theme);
       }}
     >
       {/* Tema geçiş efekti */}

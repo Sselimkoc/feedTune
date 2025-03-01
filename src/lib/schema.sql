@@ -41,6 +41,7 @@ CREATE TABLE feed_items (
   published_at TIMESTAMP WITH TIME ZONE,
   is_read BOOLEAN DEFAULT FALSE,
   is_favorite BOOLEAN DEFAULT FALSE,
+  is_read_later BOOLEAN DEFAULT FALSE, -- Okuma listesi için yeni alan
   -- YouTube'a özel alanlar
   video_id TEXT,
   duration TEXT,
@@ -54,5 +55,6 @@ CREATE TABLE feed_items (
 CREATE INDEX feed_items_feed_id_idx ON feed_items(feed_id);
 CREATE INDEX feed_items_published_at_idx ON feed_items(published_at DESC);
 CREATE INDEX feed_items_is_favorite_idx ON feed_items(is_favorite) WHERE is_favorite = true;
+CREATE INDEX feed_items_is_read_later_idx ON feed_items(is_read_later) WHERE is_read_later = true; -- Okuma listesi için yeni indeks
 CREATE INDEX feeds_user_id_idx ON feeds(user_id);
 CREATE INDEX feeds_link_idx ON feeds(link); 

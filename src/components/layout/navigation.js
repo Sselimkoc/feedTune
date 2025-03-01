@@ -12,7 +12,7 @@ import {
   Menu,
   X,
   Rss,
-  Bell,
+  BookmarkCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -42,6 +42,7 @@ export function Navigation() {
             onMouseEnter: () => prefetchFeeds(),
           },
           { icon: Star, label: "Favorites", href: "/favorites" },
+          { icon: BookmarkCheck, label: "Okuma Listem", href: "/read-later" },
           { icon: Settings, label: "Settings", href: "/settings" },
         ]
       : []),

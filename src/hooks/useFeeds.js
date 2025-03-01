@@ -421,6 +421,59 @@ export function useFeeds() {
     },
   });
 
+  // Öğe okuma listesi durumunu değiştirme
+  const toggleItemReadLaterMutation = useMutation({
+    mutationFn: async ({ itemId, isReadLater }) => {
+      console.log("useFeeds: toggleItemReadLaterMutation called with", {
+        itemId,
+        isReadLater,
+      });
+      const { error } = await supabase
+        .from("feed_items")
+        .update({ is_read_later: isReadLater })
+        .eq("id", itemId);
+
+      if (error) {
+        console.error("Error in toggleItemReadLaterMutation:", error);
+        throw error;
+      }
+      console.log("useFeeds: toggleItemReadLaterMutation successful");
+      return { itemId, isReadLater };
+    },
+    onMutate: async ({ itemId, isReadLater }) => {
+      // Önceki sorguları iptal et
+      await queryClient.cancelQueries({ queryKey: ["feeds"] });
+
+      // Önceki verileri kaydet
+      const previousData = queryClient.getQueryData(["feeds"]);
+
+      // Verileri iyimser bir şekilde güncelle
+      queryClient.setQueryData(["feeds"], (old) => {
+        if (!old) return { feeds: [], items: [] };
+
+        return {
+          ...old,
+          items: old.items.map((item) =>
+            item.id === itemId ? { ...item, is_read_later: isReadLater } : item
+          ),
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      // Hata durumunda önceki verileri geri yükle
+      if (context?.previousData) {
+        queryClient.setQueryData(["feeds"], context.previousData);
+      }
+      toast.error("Failed to update read later status");
+    },
+    onSettled: () => {
+      // Sorguyu geçersiz kıl ve yeniden getir
+      queryClient.invalidateQueries({ queryKey: ["feeds"] });
+    },
+  });
+
   return {
     feeds: feedsQuery.data?.feeds || [],
     items: feedsQuery.data?.items || [],
@@ -437,5 +490,7 @@ export function useFeeds() {
     isTogglingRead: toggleItemReadMutation.isLoading,
     toggleItemFavorite: toggleItemFavoriteMutation.mutate,
     isTogglingFavorite: toggleItemFavoriteMutation.isLoading,
+    toggleItemReadLater: toggleItemReadLaterMutation.mutate,
+    isTogglingReadLater: toggleItemReadLaterMutation.isLoading,
   };
 }

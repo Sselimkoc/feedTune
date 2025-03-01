@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Star, ExternalLink } from "lucide-react";
+import {
+  Check,
+  Star,
+  ExternalLink,
+  BookmarkPlus,
+  BookmarkCheck,
+} from "lucide-react";
 import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
@@ -81,6 +87,40 @@ export function FavoritesList({ initialItems }) {
         )
       );
       toast.error("Favori durumu güncellenirken hata oluştu");
+    }
+  };
+
+  const toggleItemReadLater = async (itemId, isReadLater) => {
+    try {
+      console.log(
+        "Toggling read later status in FavoritesList:",
+        itemId,
+        isReadLater
+      );
+
+      // Optimistic update
+      setItems((currentItems) =>
+        currentItems.map((item) =>
+          item.id === itemId ? { ...item, is_read_later: isReadLater } : item
+        )
+      );
+
+      const { error } = await supabase
+        .from("feed_items")
+        .update({ is_read_later: isReadLater })
+        .eq("id", itemId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error toggling read later status:", error);
+
+      // Rollback on error
+      setItems((currentItems) =>
+        currentItems.map((item) =>
+          item.id === itemId ? { ...item, is_read_later: !isReadLater } : item
+        )
+      );
+      toast.error("Okuma listesi durumu güncellenirken hata oluştu");
     }
   };
 
@@ -184,6 +224,35 @@ export function FavoritesList({ initialItems }) {
                     >
                       <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-500" />
                       <span className="text-xs">Favori</span>
+                    </Button>
+
+                    <Button
+                      variant={item.is_read_later ? "secondary" : "outline"}
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleItemReadLater(item.id, !item.is_read_later);
+                      }}
+                      className={cn(
+                        "h-8 px-2 rounded-full transition-all",
+                        item.is_read_later
+                          ? "bg-blue-500/10 hover:bg-blue-500/20"
+                          : ""
+                      )}
+                      title={
+                        item.is_read_later
+                          ? "Okuma listesinden çıkar"
+                          : "Okuma listesine ekle"
+                      }
+                    >
+                      {item.is_read_later ? (
+                        <BookmarkCheck className="h-4 w-4 mr-1 text-blue-500" />
+                      ) : (
+                        <BookmarkPlus className="h-4 w-4 mr-1 text-muted-foreground" />
+                      )}
+                      <span className="text-xs">
+                        {item.is_read_later ? "Listedeki" : "Listeye Ekle"}
+                      </span>
                     </Button>
 
                     <Button

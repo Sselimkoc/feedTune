@@ -1,14 +1,21 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CheckIcon, ExternalLinkIcon, StarIcon } from "lucide-react";
+import {
+  Check,
+  Star,
+  ExternalLink,
+  BookmarkPlus,
+  BookmarkCheck,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 const FeedCardComponent = ({
   item,
@@ -16,9 +23,12 @@ const FeedCardComponent = ({
   isCompact,
   onToggleRead,
   onToggleFavorite,
+  onToggleReadLater,
   onOpenLink,
   isFocused,
 }) => {
+  const cardRef = useRef(null);
+
   // useMemo hook'unu erken dönüşten önce tanımlıyoruz
   const truncatedDescription = useMemo(() => {
     if (!item || !feed || !item.description) return "";
@@ -49,7 +59,7 @@ const FeedCardComponent = ({
     if (typeof onToggleRead === "function") {
       onToggleRead(item.id, !item.is_read);
     } else {
-      console.error("onToggleRead is not a function", onToggleRead);
+      console.error("onToggleRead is not a function");
     }
   };
 
@@ -58,19 +68,56 @@ const FeedCardComponent = ({
     if (typeof onToggleFavorite === "function") {
       onToggleFavorite(item.id, !item.is_favorite);
     } else {
-      console.error("onToggleFavorite is not a function", onToggleFavorite);
+      console.error("onToggleFavorite is not a function");
+    }
+  };
+
+  const handleToggleReadLater = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    console.log("FeedCard: handleToggleReadLater called", {
+      itemId: item.id,
+      currentValue: item.is_read_later,
+      newValue: !item.is_read_later,
+      onToggleReadLater: typeof onToggleReadLater,
+    });
+
+    if (typeof onToggleReadLater === "function") {
+      console.log("onToggleReadLater is a function, calling it now");
+      try {
+        onToggleReadLater(item.id, !item.is_read_later);
+      } catch (error) {
+        console.error("Error in handleToggleReadLater:", error);
+      }
+    } else {
+      console.error("onToggleReadLater is not a function", onToggleReadLater);
+      // Fallback olarak doğrudan veritabanına yazalım
+      try {
+        const supabase = createClientComponentClient();
+        supabase
+          .from("feed_items")
+          .update({ is_read_later: !item.is_read_later })
+          .eq("id", item.id)
+          .then(({ error }) => {
+            if (error) {
+              console.error("Error updating read later status:", error);
+            } else {
+              console.log("Successfully updated read later status directly");
+            }
+          });
+      } catch (error) {
+        console.error("Error in fallback update:", error);
+      }
     }
   };
 
   const handleOpenLink = (e) => {
     e.stopPropagation();
     if (typeof onOpenLink === "function") {
-      onOpenLink(item.link);
-      if (!item.is_read && typeof onToggleRead === "function") {
-        onToggleRead(item.id, true);
-      }
+      onOpenLink(item.link, item.id);
     } else {
-      console.error("onOpenLink is not a function", onOpenLink);
+      console.error("onOpenLink is not a function");
       // Fallback to opening the link directly
       window.open(item.link, "_blank");
     }
@@ -79,14 +126,19 @@ const FeedCardComponent = ({
   return (
     <Card
       className={cn(
-        "transition-all duration-150 hover:scale-[1.01] hover:shadow-md cursor-pointer",
-        item.is_read ? "bg-muted/30" : "bg-card",
-        isFocused ? "ring-2 ring-primary" : ""
+        "group hover:shadow-md transition-shadow cursor-pointer",
+        isFocused && "ring-2 ring-primary ring-offset-2",
+        isCompact ? "h-auto" : "h-[180px]"
       )}
       onClick={handleOpenLink}
     >
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex gap-3">
+      <CardContent className="p-4">
+        <div
+          className={cn(
+            "flex items-start gap-4",
+            isCompact ? "h-auto" : "h-full"
+          )}
+        >
           {/* Thumbnail veya Avatar */}
           {item.thumbnail ? (
             <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-md overflow-hidden">
@@ -121,7 +173,7 @@ const FeedCardComponent = ({
           )}
 
           {/* İçerik */}
-          <div className="flex-1 min-w-0 flex flex-col">
+          <div className="flex-1 min-w-0 flex flex-col h-full">
             {/* Üst Bilgi Satırı */}
             <div className="flex items-center gap-2 mb-1">
               <div className="flex items-center">
@@ -174,7 +226,7 @@ const FeedCardComponent = ({
             )}
 
             {/* Butonlar */}
-            <div className="flex items-center gap-2 mt-auto">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button
                 variant={item.is_read ? "secondary" : "outline"}
                 size="sm"
@@ -189,7 +241,7 @@ const FeedCardComponent = ({
                     : "Okundu olarak işaretle"
                 }
               >
-                <CheckIcon
+                <Check
                   className={cn(
                     "h-4 w-4 mr-1",
                     item.is_read ? "text-green-500" : "text-muted-foreground"
@@ -214,16 +266,42 @@ const FeedCardComponent = ({
                   item.is_favorite ? "Favorilerden çıkar" : "Favorilere ekle"
                 }
               >
-                <StarIcon
+                <Star
                   className={cn(
                     "h-4 w-4 mr-1",
                     item.is_favorite
-                      ? "text-yellow-500 fill-yellow-500"
+                      ? "fill-yellow-400 text-yellow-500"
                       : "text-muted-foreground"
                   )}
                 />
                 <span className="text-xs">
-                  {item.is_favorite ? "Favori" : "Favorilere Ekle"}
+                  {item.is_favorite ? "Favori" : "Favorile"}
+                </span>
+              </Button>
+
+              <Button
+                variant={item.is_read_later ? "secondary" : "outline"}
+                size="sm"
+                onClick={handleToggleReadLater}
+                className={cn(
+                  "h-8 px-2 rounded-full transition-all",
+                  item.is_read_later
+                    ? "bg-blue-500/10 hover:bg-blue-500/20"
+                    : ""
+                )}
+                title={
+                  item.is_read_later
+                    ? "Okuma listesinden çıkar"
+                    : "Okuma listesine ekle"
+                }
+              >
+                {item.is_read_later ? (
+                  <BookmarkCheck className="h-4 w-4 mr-1 text-blue-500" />
+                ) : (
+                  <BookmarkPlus className="h-4 w-4 mr-1 text-muted-foreground" />
+                )}
+                <span className="text-xs">
+                  {item.is_read_later ? "Listedeki" : "Listeye Ekle"}
                 </span>
               </Button>
 
@@ -231,9 +309,10 @@ const FeedCardComponent = ({
                 variant="ghost"
                 size="sm"
                 onClick={handleOpenLink}
-                className="h-8 px-3 ml-auto text-xs rounded-full"
+                className="h-8 px-3 text-xs rounded-full"
+                title="Yeni sekmede aç"
               >
-                <ExternalLinkIcon className="h-4 w-4 mr-1.5" />
+                <ExternalLink className="h-4 w-4 mr-1.5" />
                 Aç
               </Button>
             </div>
@@ -251,6 +330,7 @@ export const FeedCard = memo(FeedCardComponent, (prevProps, nextProps) => {
     prevProps.item?.id === nextProps.item?.id &&
     prevProps.item?.is_read === nextProps.item?.is_read &&
     prevProps.item?.is_favorite === nextProps.item?.is_favorite &&
+    prevProps.item?.is_read_later === nextProps.item?.is_read_later &&
     prevProps.isCompact === nextProps.isCompact &&
     prevProps.isFocused === nextProps.isFocused
   );

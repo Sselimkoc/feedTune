@@ -11,16 +11,30 @@ export function ThemeToggle() {
   const { settings, updateSettings } = useSettingsStore();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
+  const [isChanging, setIsChanging] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
   const toggleTheme = () => {
+    if (isChanging) return; // Prevent rapid changes
+
+    setIsChanging(true);
+
     const nextTheme =
       theme === "dark" ? "light" : theme === "light" ? "system" : "dark";
-    setTheme(nextTheme);
-    updateSettings({ theme: nextTheme });
+
+    // Animate icon before changing theme
+    setTimeout(() => {
+      setTheme(nextTheme);
+      updateSettings({ theme: nextTheme });
+
+      // Allow changes after animation completes
+      setTimeout(() => {
+        setIsChanging(false);
+      }, 800);
+    }, 150);
   };
 
   if (!mounted) {
@@ -36,7 +50,11 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      className="relative overflow-hidden"
+      disabled={isChanging}
+      className={cn(
+        "relative overflow-hidden transition-all duration-300",
+        isChanging && "opacity-70"
+      )}
     >
       {/* Sun icon */}
       <Sun

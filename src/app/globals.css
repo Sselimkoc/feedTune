@@ -33,6 +33,10 @@
     --unread-hover: 221 83% 96%;
     --favorite: 48 96% 89%;
     --favorite-hover: 48 96% 86%;
+
+    /* Tema geçişleri için değişkenler */
+    --theme-transition-duration: 800ms;
+    --theme-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
@@ -83,8 +87,8 @@
   /* Smooth transitions for theme changes */
   *, *::before, *::after {
     transition-property: background-color, border-color, color, fill, stroke;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
+    transition-duration: var(--theme-transition-duration);
+    transition-timing-function: var(--theme-transition-timing);
   }
 }
 
@@ -143,7 +147,7 @@
     opacity: 0;
   }
   50% {
-    opacity: 0.8;
+    opacity: 0.15;
   }
   100% {
     opacity: 0;
@@ -151,30 +155,33 @@
 }
 
 .animate-theme-fade {
-  animation: theme-fade 0.8s ease-in-out;
+  animation: theme-fade var(--theme-transition-duration) var(--theme-transition-timing);
 }
 
+/* Tema geçiş overlay'i */
 .theme-transition::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(var(--primary-rgb), 0.15), transparent 60%);
-  z-index: -1;
+  background: radial-gradient(circle at center, var(--primary) 0%, transparent 70%);
   opacity: 0;
-  animation: theme-pulse 0.8s ease-in-out;
+  animation: theme-pulse var(--theme-transition-duration) var(--theme-transition-timing);
+  pointer-events: none;
+  z-index: 9999;
 }
 
 @keyframes theme-pulse {
   0% {
-    transform: scale(0.8);
     opacity: 0;
+    transform: scale(0.8);
   }
   50% {
-    opacity: 1;
+    opacity: 0.15;
+    transform: scale(1);
   }
   100% {
-    transform: scale(1.5);
     opacity: 0;
+    transform: scale(1.2);
   }
 }
 

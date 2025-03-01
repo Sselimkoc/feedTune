@@ -26,6 +26,8 @@ import { Loader2, Filter } from "lucide-react";
 import { FilterDialog } from "./FilterDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Constants
 const ITEMS_PER_PAGE = 10;
@@ -46,6 +48,7 @@ export function FeedList() {
     refetch,
     toggleItemRead,
     toggleItemFavorite,
+    toggleItemReadLater,
     deleteFeed,
   } = useFeeds();
   const {
@@ -58,6 +61,7 @@ export function FeedList() {
     setFilters,
   } = useFeedStore();
   const { settings } = useSettingsStore();
+  const queryClient = useQueryClient();
 
   // State management
   const [currentPage, setCurrentPage] = useState(1);
@@ -309,39 +313,140 @@ export function FeedList() {
 
   // Memoized item action handlers
   const handleToggleRead = useCallback(
-    (id, isRead) => {
-      console.log("Toggling read status:", id, isRead);
+    (itemId, isRead) => {
+      console.log("Toggling read status:", itemId, isRead);
       if (typeof toggleItemRead === "function") {
-        toggleItemRead({ itemId: id, isRead });
+        toggleItemRead({ itemId, isRead });
       } else {
-        console.error("toggleItemRead is not a function", toggleItemRead);
+        console.error("toggleItemRead is not a function");
       }
     },
     [toggleItemRead]
   );
 
   const handleToggleFavorite = useCallback(
-    (id, isFavorite) => {
-      console.log("Toggling favorite status:", id, isFavorite);
+    (itemId, isFavorite) => {
+      console.log("Toggling favorite status:", itemId, isFavorite);
       if (typeof toggleItemFavorite === "function") {
-        toggleItemFavorite({ itemId: id, isFavorite });
+        toggleItemFavorite({ itemId, isFavorite });
       } else {
-        console.error(
-          "toggleItemFavorite is not a function",
-          toggleItemFavorite
-        );
+        console.error("toggleItemFavorite is not a function");
       }
     },
     [toggleItemFavorite]
   );
 
-  const handleOpenLink = useCallback((link) => {
-    if (link) {
+  const handleToggleReadLater = useCallback(
+    (itemId, isReadLater) => {
+      console.log("FeedList: Toggling read later status:", itemId, isReadLater);
+
+      // Optimistic update
+      queryClient.setQueryData(["feeds"], (old) => {
+        if (!old) return { feeds: [], items: [] };
+
+        return {
+          ...old,
+          items: old.items.map((item) =>
+            item.id === itemId ? { ...item, is_read_later: isReadLater } : item
+          ),
+        };
+      });
+
+      if (typeof toggleItemReadLater === "function") {
+        console.log("toggleItemReadLater function exists, calling it now");
+        try {
+          toggleItemReadLater({ itemId, isReadLater });
+        } catch (error) {
+          console.error("Error calling toggleItemReadLater:", error);
+
+          // Fallback to direct database update
+          try {
+            const supabase = createClientComponentClient();
+            supabase
+              .from("feed_items")
+              .update({ is_read_later: isReadLater })
+              .eq("id", itemId)
+              .then(({ error: updateError }) => {
+                if (updateError) {
+                  console.error("Error in fallback update:", updateError);
+                  // Rollback optimistic update
+                  queryClient.setQueryData(["feeds"], (old) => {
+                    if (!old) return { feeds: [], items: [] };
+
+                    return {
+                      ...old,
+                      items: old.items.map((item) =>
+                        item.id === itemId
+                          ? { ...item, is_read_later: !isReadLater }
+                          : item
+                      ),
+                    };
+                  });
+                } else {
+                  console.log(
+                    "Successfully updated read later status directly"
+                  );
+                }
+              });
+          } catch (fallbackError) {
+            console.error("Error in fallback update:", fallbackError);
+          }
+        }
+      } else {
+        console.error(
+          "toggleItemReadLater is not a function",
+          toggleItemReadLater
+        );
+
+        // Direct database update
+        try {
+          const supabase = createClientComponentClient();
+          supabase
+            .from("feed_items")
+            .update({ is_read_later: isReadLater })
+            .eq("id", itemId)
+            .then(({ error: updateError }) => {
+              if (updateError) {
+                console.error("Error updating directly:", updateError);
+                // Rollback optimistic update
+                queryClient.setQueryData(["feeds"], (old) => {
+                  if (!old) return { feeds: [], items: [] };
+
+                  return {
+                    ...old,
+                    items: old.items.map((item) =>
+                      item.id === itemId
+                        ? { ...item, is_read_later: !isReadLater }
+                        : item
+                    ),
+                  };
+                });
+              } else {
+                console.log("Successfully updated read later status directly");
+              }
+            });
+        } catch (directError) {
+          console.error("Error in direct update:", directError);
+        }
+      }
+    },
+    [toggleItemReadLater, queryClient]
+  );
+
+  const handleOpenLink = useCallback(
+    (link, itemId) => {
+      if (!link) {
+        console.error("No link provided");
+        return;
+      }
       window.open(link, "_blank");
-    } else {
-      console.error("No link provided");
-    }
-  }, []);
+      // Automatically mark as read when opened
+      if (itemId && typeof toggleItemRead === "function") {
+        toggleItemRead({ itemId, isRead: true });
+      }
+    },
+    [toggleItemRead]
+  );
 
   // Aktif filtre sayısını hesapla
   const activeFilterCount = useMemo(() => {
@@ -453,6 +558,7 @@ export function FeedList() {
                     isCompact={compactMode}
                     onToggleRead={handleToggleRead}
                     onToggleFavorite={handleToggleFavorite}
+                    onToggleReadLater={handleToggleReadLater}
                     onOpenLink={handleOpenLink}
                     isFocused={
                       index === focusedItemIndex &&
