@@ -29,6 +29,34 @@ const limitItemsPerFeed = (feeds, items) => {
   return { feeds, items: limitedItems };
 };
 
+const fetchFeeds = async (userId) => {
+  const { data, error } = await supabase
+    .from("feeds")
+    .select("*")
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+const fetchFavorites = async (userId) => {
+  const { data, error } = await supabase
+    .from("favorites")
+    .select("*")
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+const fetchReadLaterItems = async (userId) => {
+  const { data, error } = await supabase
+    .from("feed_items")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_read_later", true);
+  if (error) throw new Error(error.message);
+  return data;
+};
+
 export function useFeeds() {
   const supabase = createClientComponentClient();
   const queryClient = useQueryClient();

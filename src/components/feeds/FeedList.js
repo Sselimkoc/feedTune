@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useFeeds } from "@/hooks/useFeeds";
+import {
+  useFeeds,
+  fetchFeeds,
+  fetchFavorites,
+  fetchReadLaterItems,
+} from "@/hooks/useFeeds";
 import { useFeedStore } from "@/store/useFeedStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -170,8 +175,11 @@ export function FeedList() {
   useEffect(() => {
     if (user) {
       refetch();
+      queryClient.prefetchQuery(["feeds", user.id], fetchFeeds);
+      queryClient.prefetchQuery(["favorites", user.id], fetchFavorites);
+      queryClient.prefetchQuery(["read-later", user.id], fetchReadLaterItems);
     }
-  }, [user, refetch]);
+  }, [user, refetch, queryClient]);
 
   // Reset selected item when page changes
   useEffect(() => {
