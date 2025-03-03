@@ -29,7 +29,7 @@ const limitItemsPerFeed = (feeds, items) => {
   return { feeds, items: limitedItems };
 };
 
-const fetchFeeds = async (userId) => {
+export const fetchFeeds = async (userId) => {
   const { data, error } = await supabase
     .from("feeds")
     .select("*")
@@ -38,7 +38,7 @@ const fetchFeeds = async (userId) => {
   return data;
 };
 
-const fetchFavorites = async (userId) => {
+export const fetchFavorites = async (userId) => {
   const { data, error } = await supabase
     .from("favorites")
     .select("*")
@@ -47,7 +47,7 @@ const fetchFavorites = async (userId) => {
   return data;
 };
 
-const fetchReadLaterItems = async (userId) => {
+export const fetchReadLaterItems = async (userId) => {
   const { data, error } = await supabase
     .from("feed_items")
     .select("*")

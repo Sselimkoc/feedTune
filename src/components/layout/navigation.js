@@ -17,11 +17,11 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useAuthStore, fetchUser } from "@/store/useAuthStore";
+import { useAuthStore, } from "@/store/useAuthStore";
 
 export function Navigation() {
   const pathname = usePathname();
-  const { user, signOut, setUser } = useAuthStore();
+  const { user,fetchUser , signOut, setUser } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
