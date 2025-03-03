@@ -71,7 +71,7 @@ export function AddRssFeed({ onBack, onSuccess }) {
 
       await addRssFeed({
         url: formState.url,
-        userId: user.id
+        userId: user.id,
       });
 
       setFormState((prev) => ({ ...prev, url: "" }));

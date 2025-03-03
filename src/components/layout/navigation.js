@@ -17,19 +17,22 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useFeeds } from "@/hooks/useFeeds";
+import { useAuthStore, fetchUser } from "@/store/useAuthStore";
 
 export function Navigation() {
   const pathname = usePathname();
-  const { user, signOut } = useAuthStore();
-  const { prefetchFeeds } = useFeeds();
+  const { user, signOut, setUser } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    const getUser = async () => {
+      const userData = await fetchUser();
+      setUser(userData);
+    };
+    getUser();
     setMounted(true);
-  }, []);
+  }, [setUser]);
 
   const menuItems = [
     { icon: Home, label: "Home", href: "/" },
@@ -39,7 +42,6 @@ export function Navigation() {
             icon: Library,
             label: "My Feeds",
             href: "/feeds",
-            onMouseEnter: () => prefetchFeeds(),
           },
           { icon: Star, label: "Favorites", href: "/favorites" },
           { icon: BookmarkCheck, label: "Okuma Listem", href: "/read-later" },

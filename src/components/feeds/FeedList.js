@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useQueryClient } from "@tanstack/react-query";
+import { createClient } from "@supabase/supabase-js";
 
 // Constants
 const ITEMS_PER_PAGE = 10;
@@ -40,6 +41,36 @@ const ITEMS_PER_PAGE = 10;
 // Helper functions
 const getPageCount = (totalItems, itemsPerPage) => {
   return Math.ceil(totalItems / itemsPerPage);
+};
+
+// Supabase client'ını oluştur
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Kullanıcı kimliğini almak için bir fonksiyon
+const getUserIdFromJWT = async () => {
+  const { user } = await supabase.auth.getUser();
+  return user ? user.id : null;
+};
+
+// toggleItemRead fonksiyonunu güncelle
+const toggleItemRead = async (itemId) => {
+  const userId = await getUserIdFromJWT();
+  if (userId) {
+    // Veritabanı işlemlerini burada yapın
+    const { data, error } = await supabase
+      .from("your_table_name")
+      .update({ isRead: true })
+      .eq("id", itemId)
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("Error updating item:", error);
+    } else {
+      console.log("Item updated:", data);
+    }
+  }
 };
 
 // Main component
