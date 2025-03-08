@@ -23,12 +23,6 @@ const config = {
       },
     ],
   },
-  // CSS optimizasyonu ayarları
-  optimizeFonts: true,
-  experimental: {
-    optimizeCss: true,
-    optimizePackageImports: ["framer-motion", "@radix-ui/react-dialog"],
-  },
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,

@@ -6,7 +6,6 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { LogoMigrationProvider } from "@/components/providers/LogoMigrationProvider";
-import Head from "next/head";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -18,9 +17,6 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning className="scroll-smooth">
-      <head>
-        {/* Preload CSS dosyalarını kaldırıyoruz, Next.js otomatik olarak yönetecek */}
-      </head>
       <body
         className={`${inter.variable} font-sans h-full antialiased`}
         style={{

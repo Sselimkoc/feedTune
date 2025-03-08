@@ -28,8 +28,6 @@ export const useAuthStore = create(
         loading: false,
         lastChecked: null,
 
-        setUser: (user) => set({ user }),
-
         setSession: async (session) => {
           try {
             if (session) {
@@ -138,15 +136,6 @@ export const useAuthStore = create(
                 session,
                 lastChecked: new Date().toISOString(),
               });
-
-              // Sayfa yenilendiğinde UI'ın güncellenmesi için
-              if (typeof window !== "undefined") {
-                // Client tarafında olduğumuzu kontrol et
-                const event = new CustomEvent("auth-state-change", {
-                  detail: { session },
-                });
-                window.dispatchEvent(event);
-              }
             } else {
               set({
                 user: null,
@@ -160,15 +149,6 @@ export const useAuthStore = create(
             handleAuthError(error);
             return null;
           }
-        },
-
-        fetchUser: async () => {
-          const { user, error } = await supabase.auth.getUser();
-          if (error) {
-            console.error("Error fetching user:", error);
-            return null;
-          }
-          return user;
         },
       };
     },

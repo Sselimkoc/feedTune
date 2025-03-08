@@ -15,83 +15,42 @@ import {
   BookmarkCheck,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export function Navigation() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, signOut, setUser, setSession } = useAuthStore();
+  const { user, checkSession, signOut, setSession } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const supabase = createClientComponentClient();
 
-  // Sayfa yüklendiğinde ve her yenilendiğinde oturum durumunu kontrol et
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        // Supabase'den güncel oturum bilgisini al
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (session) {
-          // Oturum varsa, kullanıcı bilgilerini güncelle
-          setSession(session);
-          setUser(session.user);
-        } else if (user) {
-          // Oturum yoksa ama state'de kullanıcı varsa, state'i temizle
-          setSession(null);
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-      } finally {
-        setMounted(true);
-      }
-    };
-
-    checkAuthStatus();
-
-    // auth-state-change olayını dinle
-    const handleAuthStateChange = (event) => {
-      const { session } = event.detail;
+    const getUser = async () => {
+      const session = await checkSession();
       if (session) {
         setSession(session);
-        setUser(session.user);
-      } else {
-        setSession(null);
-        setUser(null);
       }
     };
-
-    window.addEventListener("auth-state-change", handleAuthStateChange);
-
-    return () => {
-      window.removeEventListener("auth-state-change", handleAuthStateChange);
-    };
-  }, [supabase.auth, setUser, setSession, user]);
+    getUser();
+    setMounted(true);
+  }, [checkSession, setSession]);
 
   const menuItems = [
-    { icon: Home, label: "Ana Sayfa", href: "/" },
+    { icon: Home, label: "Home", href: "/" },
     ...(user
       ? [
           {
             icon: Library,
-            label: "Beslemelerim",
+            label: "My Feeds",
             href: "/feeds",
           },
-          { icon: Star, label: "Favoriler", href: "/favorites" },
+          { icon: Star, label: "Favorites", href: "/favorites" },
           { icon: BookmarkCheck, label: "Okuma Listem", href: "/read-later" },
-          { icon: Settings, label: "Ayarlar", href: "/settings" },
+          { icon: Settings, label: "Settings", href: "/settings" },
         ]
       : []),
   ];
-
-  // Sayfa yüklenene kadar hiçbir şey gösterme
-  if (!mounted) return null;
 
   return (
     <>
@@ -164,7 +123,7 @@ export function Navigation() {
                     </span>
 
                     {/* Notification indicator example */}
-                    {item.label === "Beslemelerim" && mounted && (
+                    {item.label === "My Feeds" && mounted && (
                       <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
                         3
                       </span>

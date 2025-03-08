@@ -61,7 +61,7 @@ export const useFeedStore = create(
       lastCacheUpdate: null,
       isLoading: false,
       error: null,
-      selectedFeedIds: [],
+      selectedFeedId: null,
       showUnreadOnly: false,
       showFavoritesOnly: false,
       compactMode: false,
@@ -69,6 +69,7 @@ export const useFeedStore = create(
         sortBy: "newest",
         showRead: true,
         showUnread: true,
+        showFavorites: true,
         feedTypes: {
           rss: true,
           youtube: true,
@@ -477,37 +478,7 @@ export const useFeedStore = create(
         toast.success("Cache cleared successfully");
       },
 
-      toggleFeedSelection: (feedId) => {
-        set((state) => {
-          const isSelected = state.selectedFeedIds.includes(feedId);
-
-          if (isSelected) {
-            // Seçili ise kaldır
-            return {
-              selectedFeedIds: state.selectedFeedIds.filter(
-                (id) => id !== feedId
-              ),
-            };
-          } else {
-            // Seçili değilse ekle
-            return {
-              selectedFeedIds: [...state.selectedFeedIds, feedId],
-            };
-          }
-        });
-      },
-
-      clearFeedSelection: () => set({ selectedFeedIds: [] }),
-
-      setSelectedFeedId: (id) => {
-        console.warn(
-          "setSelectedFeedId is deprecated, use toggleFeedSelection instead"
-        );
-        set((state) => ({
-          selectedFeedIds: id ? [id] : [],
-        }));
-      },
-
+      setSelectedFeedId: (id) => set({ selectedFeedId: id }),
       setShowUnreadOnly: (value) => set({ showUnreadOnly: value }),
       setShowFavoritesOnly: (value) => set({ showFavoritesOnly: value }),
       setCompactMode: (value) => set({ compactMode: value }),
@@ -518,6 +489,7 @@ export const useFeedStore = create(
             sortBy: "newest",
             showRead: true,
             showUnread: true,
+            showFavorites: true,
             feedTypes: {
               rss: true,
               youtube: true,
@@ -531,9 +503,6 @@ export const useFeedStore = create(
       partialize: (state) => ({
         lastCacheUpdate: state.lastCacheUpdate,
         lastUpdated: state.lastUpdated,
-        selectedFeedIds: state.selectedFeedIds,
-        compactMode: state.compactMode,
-        filters: state.filters,
       }),
     }
   )

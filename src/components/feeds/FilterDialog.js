@@ -16,7 +16,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowDownAZ, ArrowUpAZ, Clock, Star, Eye, EyeOff } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
-export function FilterDialog({ open, onOpenChange, filters, onFilterChange }) {
+export function FilterDialog({
+  isOpen,
+  onOpenChange,
+  filters,
+  onApplyFilters,
+}) {
   const [localFilters, setLocalFilters] = useState(filters);
 
   // Reset local filters when dialog opens
@@ -28,7 +33,7 @@ export function FilterDialog({ open, onOpenChange, filters, onFilterChange }) {
   };
 
   const handleApplyFilters = () => {
-    onFilterChange(localFilters);
+    onApplyFilters(localFilters);
     onOpenChange(false);
   };
 
@@ -43,7 +48,7 @@ export function FilterDialog({ open, onOpenChange, filters, onFilterChange }) {
       },
     };
     setLocalFilters(defaultFilters);
-    onFilterChange(defaultFilters);
+    onApplyFilters(defaultFilters);
     onOpenChange(false);
   };
 
@@ -65,7 +70,7 @@ export function FilterDialog({ open, onOpenChange, filters, onFilterChange }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Filtrele ve Sırala</DialogTitle>

@@ -89,7 +89,12 @@ const FeedCardComponent = ({
       onClick={handleOpenLink}
       ref={cardRef}
     >
-      <CardContent className="p-4">
+      <CardContent
+        className={cn(
+          "p-4 transition-colors duration-200",
+          isFocused && "bg-primary/5 dark:bg-primary/10"
+        )}
+      >
         <div
           className={cn(
             "flex items-start gap-4",
@@ -98,7 +103,12 @@ const FeedCardComponent = ({
         >
           {/* Thumbnail veya Avatar */}
           {item.thumbnail ? (
-            <div className="feed-thumbnail relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-md overflow-hidden">
+            <div
+              className={cn(
+                "relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-md overflow-hidden transition-all duration-200",
+                isFocused && "ring-1 ring-primary shadow-sm"
+              )}
+            >
               <Image
                 src={item.thumbnail}
                 alt=""
@@ -109,7 +119,12 @@ const FeedCardComponent = ({
               />
             </div>
           ) : (
-            <div className="feed-thumbnail flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-muted rounded-md flex-shrink-0">
+            <div
+              className={cn(
+                "flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-muted rounded-md flex-shrink-0 transition-all duration-200",
+                isFocused && "ring-1 ring-primary shadow-sm"
+              )}
+            >
               {feed.site_favicon ? (
                 <Image
                   src={feed.site_favicon}
@@ -133,7 +148,12 @@ const FeedCardComponent = ({
           <div className="flex-1 min-w-0 flex flex-col h-full">
             {/* Başlık ve Kaynak Bilgisi */}
             <div className="mb-1">
-              <h3 className="font-medium line-clamp-2 text-sm sm:text-base">
+              <h3
+                className={cn(
+                  "font-medium line-clamp-2 text-sm sm:text-base transition-colors duration-200",
+                  isFocused && "text-primary dark:text-primary"
+                )}
+              >
                 {item.title}
               </h3>
               <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
@@ -164,8 +184,9 @@ const FeedCardComponent = ({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  "feed-button h-8 w-8 rounded-full",
-                  item.is_read ? "text-muted-foreground" : "text-primary"
+                  "h-8 w-8 rounded-full",
+                  item.is_read ? "text-muted-foreground" : "text-primary",
+                  isFocused && "bg-background/80"
                 )}
                 onClick={handleToggleRead}
                 title={
@@ -181,10 +202,11 @@ const FeedCardComponent = ({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  "feed-button h-8 w-8 rounded-full",
+                  "h-8 w-8 rounded-full",
                   item.is_favorite
                     ? "text-yellow-500 dark:text-yellow-400"
-                    : "text-muted-foreground"
+                    : "text-muted-foreground",
+                  isFocused && "bg-background/80"
                 )}
                 onClick={handleToggleFavorite}
                 title={
@@ -198,10 +220,11 @@ const FeedCardComponent = ({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  "feed-button h-8 w-8 rounded-full",
+                  "h-8 w-8 rounded-full",
                   item.is_read_later
                     ? "text-blue-500 dark:text-blue-400"
-                    : "text-muted-foreground"
+                    : "text-muted-foreground",
+                  isFocused && "bg-background/80"
                 )}
                 onClick={handleToggleReadLater}
                 title={
@@ -222,7 +245,10 @@ const FeedCardComponent = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="feed-button h-8 w-8 rounded-full text-muted-foreground"
+                className={cn(
+                  "h-8 w-8 rounded-full text-muted-foreground",
+                  isFocused && "bg-background/80"
+                )}
                 onClick={handleOpenLink}
                 title="Bağlantıyı aç"
               >

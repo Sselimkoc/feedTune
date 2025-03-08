@@ -1,39 +1,47 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Filter, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import { memo, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 
 export const FeedNavigation = memo(function FeedNavigation({
   feeds = [],
-  selectedFeedIds = [],
+  selectedFeedId,
   onFeedSelect,
-  onDeleteFeed,
+  onOpenFilters,
 }) {
   const scrollRef = useRef(null);
-  const selectedRefs = useRef({});
+  const selectedRef = useRef(null);
 
-  // Seçili feed'lere scroll yapma
+  // Seçili feed'e scroll yapma
   useEffect(() => {
-    if (selectedFeedIds.length > 0 && scrollRef.current) {
-      // Son seçilen feed'e scroll yap
-      const lastSelectedId = selectedFeedIds[selectedFeedIds.length - 1];
-      if (selectedRefs.current[lastSelectedId]) {
-        selectedRefs.current[lastSelectedId].scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "center",
-        });
-      }
+    if (selectedRef.current && scrollRef.current) {
+      selectedRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
     }
-  }, [selectedFeedIds]);
+  }, [selectedFeedId]);
 
   // Erken dönüş kontrolü
   if (!feeds || feeds.length === 0) return null;
+
+  // Helper functions for navigation
+  const getPreviousFeedIndex = () => {
+    const currentIndex = feeds.findIndex((feed) => feed.id === selectedFeedId);
+    if (currentIndex <= 0) return feeds.length - 1;
+    return currentIndex - 1;
+  };
+
+  const getNextFeedIndex = () => {
+    const currentIndex = feeds.findIndex((feed) => feed.id === selectedFeedId);
+    if (currentIndex === -1 || currentIndex === feeds.length - 1) return 0;
+    return currentIndex + 1;
+  };
 
   return (
     <div className="mb-6 bg-background/60 backdrop-blur-sm sticky top-0 z-10 py-2 border-b">
@@ -44,13 +52,13 @@ export const FeedNavigation = memo(function FeedNavigation({
         >
           <div className="flex space-x-2 p-1">
             {feeds.map((feed) => {
-              const isSelected = selectedFeedIds.includes(feed.id);
+              const isSelected = feed.id === selectedFeedId;
               const isYoutube = feed.type === "youtube";
 
               return (
                 <Button
                   key={feed.id}
-                  ref={(el) => (selectedRefs.current[feed.id] = el)}
+                  ref={isSelected ? selectedRef : null}
                   onClick={() => onFeedSelect(feed.id)}
                   variant={isSelected ? "default" : "ghost"}
                   size="sm"
@@ -90,23 +98,38 @@ export const FeedNavigation = memo(function FeedNavigation({
         </ScrollArea>
 
         <div className="flex items-center gap-1 flex-shrink-0">
-          {selectedFeedIds.length > 0 && (
+          {feeds.length > 1 && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onFeedSelect(feeds[getPreviousFeedIndex()].id)}
+                className="h-8 w-8 rounded-full"
+                aria-label="Previous feed"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onFeedSelect(feeds[getNextFeedIndex()].id)}
+                className="h-8 w-8 rounded-full"
+                aria-label="Next feed"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+
+          {onOpenFilters && (
             <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => onFeedSelect(null)}
-              title="Tüm seçimleri temizle"
+              variant="outline"
+              size="sm"
+              onClick={onOpenFilters}
+              className="h-8 rounded-full ml-1"
             >
-              <X className="h-4 w-4" />
-              {selectedFeedIds.length > 1 && (
-                <Badge
-                  variant="secondary"
-                  className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
-                >
-                  {selectedFeedIds.length}
-                </Badge>
-              )}
+              <Filter className="h-3.5 w-3.5 mr-1" />
+              <span className="text-xs">Filtrele</span>
             </Button>
           )}
         </div>

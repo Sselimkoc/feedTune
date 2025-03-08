@@ -1,13 +1,18 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
-import { useCallback } from "react";
+import { useCallback, useState, useMemo } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 
 // Sabitler
 const STALE_TIME = 1000 * 60 * 5; // 5 dakika
 const CACHE_TIME = 1000 * 60 * 30; // 30 dakika
-const MAX_ITEMS_PER_FEED = 50; // Her feed için maksimum öğe sayısı
+const ITEMS_PER_FEED = 10; // Her feed için maksimum öğe sayısı
 
 // Yardımcı fonksiyonlar
 export const limitItemsPerFeed = (feeds, items) => {
@@ -23,7 +28,7 @@ export const limitItemsPerFeed = (feeds, items) => {
 
   const limitedItems = [];
   Object.entries(itemsByFeed).forEach(([feedId, feedItems]) => {
-    limitedItems.push(...feedItems.slice(0, MAX_ITEMS_PER_FEED));
+    limitedItems.push(...feedItems.slice(0, ITEMS_PER_FEED));
   });
 
   return { feeds, items: limitedItems };
@@ -39,7 +44,9 @@ export const fetchFeeds = async (userId) => {
   const { data, error } = await supabase
     .from("feeds")
     .select("*")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
   return data;
@@ -49,99 +56,103 @@ export const fetchFeedItems = async (feedIds) => {
   if (!feedIds || feedIds.length === 0) return [];
 
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase
-    .from("feed_items")
-    .select("*")
-    .in("feed_id", feedIds)
-    .order("published_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
-  return data;
+  // Her feed için ayrı ayrı sorgu yap ve her birinden sadece 10 öğe al
+  const promises = feedIds.map(async (feedId) => {
+    const { data, error } = await supabase
+      .from("feed_items")
+      .select("*")
+      .eq("feed_id", feedId)
+      .order("published_at", { ascending: false })
+      .limit(ITEMS_PER_FEED);
+
+    if (error) throw new Error(error.message);
+    return data;
+  });
+
+  // Tüm sorguların sonuçlarını bekle ve birleştir
+  const results = await Promise.all(promises);
+  return results.flat();
 };
 
-export const fetchYoutubeItems = async (feedIds) => {
-  if (!feedIds || feedIds.length === 0) return [];
+export const fetchUserInteractions = async (userId, itemIds) => {
+  if (!userId || !itemIds || itemIds.length === 0) return [];
 
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
-    .from("youtube_items")
+    .from("user_item_interactions")
     .select("*")
-    .in("feed_id", feedIds)
-    .order("published_at", { ascending: false });
+    .eq("user_id", userId)
+    .in("item_id", itemIds);
 
   if (error) throw new Error(error.message);
   return data;
 };
 
 export const fetchFavorites = async (userId) => {
-  const supabase = createSupabaseClient();
-  const { data, error } = await supabase
-    .from("favorites")
-    .select("*")
-    .eq("user_id", userId);
+  if (!userId) return [];
 
-  if (error) throw new Error(error.message);
-  return data;
+  const supabase = createSupabaseClient();
+
+  // Önce favori etkileşimleri al
+  const { data: interactions, error: interactionsError } = await supabase
+    .from("user_item_interactions")
+    .select("item_id")
+    .eq("user_id", userId)
+    .eq("is_favorite", true);
+
+  if (interactionsError) throw new Error(interactionsError.message);
+
+  if (!interactions || interactions.length === 0) return [];
+
+  // Ardından bu öğelerin detaylarını al
+  const itemIds = interactions.map((interaction) => interaction.item_id);
+  const { data: items, error: itemsError } = await supabase
+    .from("feed_items")
+    .select("*")
+    .in("id", itemIds)
+    .order("published_at", { ascending: false });
+
+  if (itemsError) throw new Error(itemsError.message);
+  return items || [];
 };
 
 export const fetchReadLaterItems = async (userId) => {
+  if (!userId) return [];
+
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase
-    .from("feed_items")
-    .select("*")
+
+  // Önce okuma listesi etkileşimlerini al
+  const { data: interactions, error: interactionsError } = await supabase
+    .from("user_item_interactions")
+    .select("item_id")
     .eq("user_id", userId)
     .eq("is_read_later", true);
 
-  if (error) throw new Error(error.message);
-  return data;
+  if (interactionsError) throw new Error(interactionsError.message);
+
+  if (!interactions || interactions.length === 0) return [];
+
+  // Ardından bu öğelerin detaylarını al
+  const itemIds = interactions.map((interaction) => interaction.item_id);
+  const { data: items, error: itemsError } = await supabase
+    .from("feed_items")
+    .select("*")
+    .in("id", itemIds)
+    .order("published_at", { ascending: false });
+
+  if (itemsError) throw new Error(itemsError.message);
+  return items || [];
 };
 
+// YouTube öğeleri de feed_items tablosunda saklandığı için aynı fonksiyonu kullanabiliriz
+export const fetchYoutubeItems = fetchFeedItems;
+
+// Ana hook
 export function useFeeds() {
   const supabase = createSupabaseClient();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-
-  // Feeds için prefetch fonksiyonu
-  const prefetchFeeds = useCallback(async () => {
-    try {
-      if (!user) return;
-
-      // Feeds için sorgu
-      await queryClient.prefetchQuery({
-        queryKey: ["feeds", user.id],
-        queryFn: async () => {
-          // Tüm feed'leri çek
-          const feeds = await fetchFeeds(user.id);
-
-          // Feed türlerine göre ayır
-          const rssFeeds = feeds.filter((feed) => feed.type === "rss");
-          const youtubeFeeds = feeds.filter((feed) => feed.type === "youtube");
-
-          // RSS feed item'larını çek
-          const rssItems =
-            rssFeeds.length > 0
-              ? await fetchFeedItems(rssFeeds.map((f) => f.id))
-              : [];
-
-          // YouTube feed item'larını çek
-          const youtubeItems =
-            youtubeFeeds.length > 0
-              ? await fetchYoutubeItems(youtubeFeeds.map((f) => f.id))
-              : [];
-
-          // Tüm item'ları birleştir
-          const allItems = [...rssItems, ...youtubeItems];
-
-          // Veri boyutunu sınırla
-          return limitItemsPerFeed(feeds, allItems);
-        },
-        staleTime: STALE_TIME,
-        cacheTime: CACHE_TIME,
-      });
-    } catch (error) {
-      console.error("Error prefetching feeds:", error);
-    }
-  }, [queryClient, user]);
 
   // Ana feed sorgusu
   const feedsQuery = useQuery({
@@ -149,26 +160,39 @@ export function useFeeds() {
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
-      const { data: feeds, error: feedsError } = await supabase
-        .from("feeds")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      // Tüm feed'leri çek
+      const feeds = await fetchFeeds(user.id);
 
-      if (feedsError) throw feedsError;
+      // Tüm feed'lerin öğelerini çek
+      const allFeedIds = feeds.map((f) => f.id);
+      const allItems = await fetchFeedItems(allFeedIds);
 
-      const { data: items, error: itemsError } = await supabase
-        .from("feed_items")
-        .select("*")
-        .in(
-          "feed_id",
-          feeds.map((f) => f.id)
-        )
-        .order("published_at", { ascending: false });
+      // Kullanıcı etkileşimlerini çek
+      const allItemIds = allItems.map((item) => item.id);
+      const interactions = await fetchUserInteractions(user.id, allItemIds);
 
-      if (itemsError) throw itemsError;
+      // Etkileşimleri öğelerle birleştir
+      const itemsWithInteractions = allItems.map((item) => {
+        const interaction = interactions.find((i) => i.item_id === item.id);
+        return {
+          ...item,
+          is_read: interaction?.is_read || false,
+          is_favorite: interaction?.is_favorite || false,
+          is_read_later: interaction?.is_read_later || false,
+          read_position: interaction?.read_position || 0,
+          notes: interaction?.notes || "",
+          rating: interaction?.rating || 0,
+        };
+      });
 
-      return limitItemsPerFeed(feeds, items);
+      // Yayınlanma tarihine göre sırala
+      itemsWithInteractions.sort(
+        (a, b) =>
+          new Date(b.published_at).getTime() -
+          new Date(a.published_at).getTime()
+      );
+
+      return { feeds, items: itemsWithInteractions };
     },
     enabled: !!user?.id,
     staleTime: STALE_TIME,
@@ -216,7 +240,10 @@ export function useFeeds() {
             title: feed.title || "Untitled Feed",
             link: url,
             description: feed.description || "",
+            site_favicon: feed.favicon || "",
             last_fetched_at: new Date().toISOString(),
+            is_active: true,
+            refresh_frequency: 60, // Varsayılan 60 dakika
           },
         ])
         .select()
@@ -224,26 +251,71 @@ export function useFeeds() {
 
       if (feedError) throw feedError;
 
+      // RSS feed detaylarını ekle
+      const { error: rssError } = await supabase.from("rss_feeds").insert([
+        {
+          id: newFeed.id,
+          feed_url: url,
+          last_build_date: feed.lastBuildDate || null,
+          language: feed.language || null,
+          categories: feed.categories || [],
+        },
+      ]);
+
+      if (rssError) {
+        // Hata durumunda feed'i sil
+        await supabase.from("feeds").delete().eq("id", newFeed.id);
+        throw rssError;
+      }
+
       // Feed öğelerini sınırla ve veritabanına ekle
       if (items && items.length > 0) {
-        const feedItems = items.slice(0, MAX_ITEMS_PER_FEED).map((item) => ({
+        const feedItems = items.slice(0, ITEMS_PER_FEED).map((item) => ({
           feed_id: newFeed.id,
           title: item.title || "",
           link: item.link || "",
           description: item.description || "",
+          content: item.content || "",
+          author: item.author || "",
           published_at: item.published_at || new Date().toISOString(),
-          thumbnail: item.thumbnail,
-          is_read: false,
-          is_favorite: false,
+          updated_at: item.updated_at || null,
+          thumbnail: item.thumbnail || null,
+          media_url: item.media_url || null,
+          guid: item.guid || item.link,
         }));
 
-        const { error: itemsError } = await supabase
+        const { data: insertedItems, error: itemsError } = await supabase
           .from("feed_items")
-          .insert(feedItems);
+          .insert(feedItems)
+          .select();
 
         if (itemsError) {
           console.error("Error adding feed items:", itemsError);
-          // Don't throw here, as the feed was already added
+          // Feed'i sil
+          await supabase.from("feeds").delete().eq("id", newFeed.id);
+          throw new Error("Failed to add feed items");
+        }
+
+        // Kullanıcı etkileşimlerini oluştur
+        if (insertedItems && insertedItems.length > 0) {
+          const interactions = insertedItems.map((item) => ({
+            user_id: userId,
+            item_id: item.id,
+            is_read: false,
+            is_favorite: false,
+            is_read_later: false,
+          }));
+
+          const { error: interactionsError } = await supabase
+            .from("user_item_interactions")
+            .insert(interactions);
+
+          if (interactionsError) {
+            console.error("Error adding user interactions:", interactionsError);
+            // Hata durumunda feed'i ve öğeleri sil
+            await supabase.from("feeds").delete().eq("id", newFeed.id);
+            throw new Error("Failed to add user interactions");
+          }
         }
       }
 
@@ -300,8 +372,10 @@ export function useFeeds() {
             title: data.channel.title,
             link: channelUrl,
             description: data.channel.description,
-            last_fetched_at: new Date().toISOString(),
             site_favicon: data.channel.thumbnail,
+            last_fetched_at: new Date().toISOString(),
+            is_active: true,
+            refresh_frequency: 60, // Varsayılan 60 dakika
           },
         ])
         .select()
@@ -309,41 +383,15 @@ export function useFeeds() {
 
       if (feedError) throw feedError;
 
-      // Feed öğelerini sınırla ve veritabanına ekle
-      if (data.videos && data.videos.length > 0) {
-        const feedItems = data.videos
-          .slice(0, MAX_ITEMS_PER_FEED)
-          .map((video) => ({
-            feed_id: newFeed.id,
-            title: video.title,
-            link: video.link,
-            description: video.description,
-            published_at: video.publishedAt,
-            thumbnail: video.thumbnail,
-            video_id: video.id,
-            is_read: false,
-            is_favorite: false,
-          }));
-
-        const { error: itemsError } = await supabase
-          .from("feed_items")
-          .insert(feedItems);
-
-        if (itemsError) {
-          console.error("Error adding feed items:", itemsError);
-          // Feed'i sil
-          await supabase.from("feeds").delete().eq("id", newFeed.id);
-          throw new Error("Failed to add feed items");
-        }
-      }
-
-      // YouTube kanalı detaylarını kaydet
+      // YouTube feed detaylarını ekle
       const { error: youtubeError } = await supabase
         .from("youtube_feeds")
         .insert([
           {
             id: newFeed.id,
             channel_id: channelId,
+            channel_title: data.channel.title,
+            channel_thumbnail: data.channel.thumbnail,
             subscriber_count: data.channel.statistics.subscriberCount,
             video_count: data.channel.statistics.videoCount,
             playlist_id: data.channel.uploadsPlaylistId,
@@ -351,10 +399,84 @@ export function useFeeds() {
         ]);
 
       if (youtubeError) {
-        console.error("Error adding YouTube feed details:", youtubeError);
-        // Feed'i ve feed öğelerini sil
+        // Hata durumunda feed'i sil
         await supabase.from("feeds").delete().eq("id", newFeed.id);
-        throw new Error("Failed to add YouTube feed details");
+        throw youtubeError;
+      }
+
+      // Feed öğelerini sınırla ve veritabanına ekle
+      if (data.videos && data.videos.length > 0) {
+        const feedItems = data.videos.slice(0, ITEMS_PER_FEED).map((video) => ({
+          feed_id: newFeed.id,
+          title: video.title,
+          link: video.link,
+          description: video.description,
+          content: video.description,
+          author: data.channel.title,
+          published_at: video.publishedAt,
+          updated_at: null,
+          thumbnail: video.thumbnail,
+          media_url: `https://www.youtube.com/embed/${video.id}`,
+          guid: video.id,
+        }));
+
+        const { data: insertedItems, error: itemsError } = await supabase
+          .from("feed_items")
+          .insert(feedItems)
+          .select();
+
+        if (itemsError) {
+          console.error("Error adding feed items:", itemsError);
+          // Feed'i sil
+          await supabase.from("feeds").delete().eq("id", newFeed.id);
+          throw new Error("Failed to add feed items");
+        }
+
+        // YouTube öğe detaylarını ekle
+        if (insertedItems && insertedItems.length > 0) {
+          const youtubeDetails = insertedItems.map((item, index) => {
+            const video = data.videos[index];
+            return {
+              item_id: item.id,
+              video_id: video.id,
+              duration: video.duration || null,
+              view_count: video.viewCount || 0,
+              like_count: video.likeCount || 0,
+              comment_count: video.commentCount || 0,
+            };
+          });
+
+          const { error: detailsError } = await supabase
+            .from("youtube_item_details")
+            .insert(youtubeDetails);
+
+          if (detailsError) {
+            console.error("Error adding YouTube details:", detailsError);
+            // Hata durumunda feed'i ve öğeleri sil
+            await supabase.from("feeds").delete().eq("id", newFeed.id);
+            throw new Error("Failed to add YouTube details");
+          }
+
+          // Kullanıcı etkileşimlerini oluştur
+          const interactions = insertedItems.map((item) => ({
+            user_id: userId,
+            item_id: item.id,
+            is_read: false,
+            is_favorite: false,
+            is_read_later: false,
+          }));
+
+          const { error: interactionsError } = await supabase
+            .from("user_item_interactions")
+            .insert(interactions);
+
+          if (interactionsError) {
+            console.error("Error adding user interactions:", interactionsError);
+            // Hata durumunda feed'i ve öğeleri sil
+            await supabase.from("feeds").delete().eq("id", newFeed.id);
+            throw new Error("Failed to add user interactions");
+          }
+        }
       }
 
       // Sorguyu geçersiz kıl ve yeniden getir
@@ -400,12 +522,40 @@ export function useFeeds() {
   // Öğe okundu durumunu değiştirme
   const toggleItemReadMutation = useMutation({
     mutationFn: async ({ itemId, isRead }) => {
-      const { error } = await supabase
-        .from("feed_items")
-        .update({ is_read: isRead })
-        .eq("id", itemId);
+      // Önce etkileşim var mı kontrol et
+      const { data: existingInteraction, error: checkError } = await supabase
+        .from("user_item_interactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("item_id", itemId)
+        .single();
 
-      if (error) throw error;
+      if (checkError && checkError.code !== "PGRST116") throw checkError;
+
+      if (existingInteraction) {
+        // Etkileşim varsa güncelle
+        const { error } = await supabase
+          .from("user_item_interactions")
+          .update({ is_read: isRead })
+          .eq("user_id", user.id)
+          .eq("item_id", itemId);
+
+        if (error) throw error;
+      } else {
+        // Etkileşim yoksa oluştur
+        const { error } = await supabase.from("user_item_interactions").insert([
+          {
+            user_id: user.id,
+            item_id: itemId,
+            is_read: isRead,
+            is_favorite: false,
+            is_read_later: false,
+          },
+        ]);
+
+        if (error) throw error;
+      }
+
       return { itemId, isRead };
     },
     onMutate: async ({ itemId, isRead }) => {
@@ -445,12 +595,40 @@ export function useFeeds() {
   // Öğe favori durumunu değiştirme
   const toggleItemFavoriteMutation = useMutation({
     mutationFn: async ({ itemId, isFavorite }) => {
-      const { error } = await supabase
-        .from("feed_items")
-        .update({ is_favorite: isFavorite })
-        .eq("id", itemId);
+      // Önce etkileşim var mı kontrol et
+      const { data: existingInteraction, error: checkError } = await supabase
+        .from("user_item_interactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("item_id", itemId)
+        .single();
 
-      if (error) throw error;
+      if (checkError && checkError.code !== "PGRST116") throw checkError;
+
+      if (existingInteraction) {
+        // Etkileşim varsa güncelle
+        const { error } = await supabase
+          .from("user_item_interactions")
+          .update({ is_favorite: isFavorite })
+          .eq("user_id", user.id)
+          .eq("item_id", itemId);
+
+        if (error) throw error;
+      } else {
+        // Etkileşim yoksa oluştur
+        const { error } = await supabase.from("user_item_interactions").insert([
+          {
+            user_id: user.id,
+            item_id: itemId,
+            is_read: false,
+            is_favorite: isFavorite,
+            is_read_later: false,
+          },
+        ]);
+
+        if (error) throw error;
+      }
+
       return { itemId, isFavorite };
     },
     onMutate: async ({ itemId, isFavorite }) => {
@@ -490,20 +668,40 @@ export function useFeeds() {
   // Öğe okuma listesi durumunu değiştirme
   const toggleItemReadLaterMutation = useMutation({
     mutationFn: async ({ itemId, isReadLater }) => {
-      console.log("useFeeds: toggleItemReadLaterMutation called with", {
-        itemId,
-        isReadLater,
-      });
-      const { error } = await supabase
-        .from("feed_items")
-        .update({ is_read_later: isReadLater })
-        .eq("id", itemId);
+      // Önce etkileşim var mı kontrol et
+      const { data: existingInteraction, error: checkError } = await supabase
+        .from("user_item_interactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("item_id", itemId)
+        .single();
 
-      if (error) {
-        console.error("Error in toggleItemReadLaterMutation:", error);
-        throw error;
+      if (checkError && checkError.code !== "PGRST116") throw checkError;
+
+      if (existingInteraction) {
+        // Etkileşim varsa güncelle
+        const { error } = await supabase
+          .from("user_item_interactions")
+          .update({ is_read_later: isReadLater })
+          .eq("user_id", user.id)
+          .eq("item_id", itemId);
+
+        if (error) throw error;
+      } else {
+        // Etkileşim yoksa oluştur
+        const { error } = await supabase.from("user_item_interactions").insert([
+          {
+            user_id: user.id,
+            item_id: itemId,
+            is_read: false,
+            is_favorite: false,
+            is_read_later: isReadLater,
+          },
+        ]);
+
+        if (error) throw error;
       }
-      console.log("useFeeds: toggleItemReadLaterMutation successful");
+
       return { itemId, isReadLater };
     },
     onMutate: async ({ itemId, isReadLater }) => {
@@ -547,7 +745,6 @@ export function useFeeds() {
     isError: feedsQuery.isError,
     error: feedsQuery.error,
     refetch: feedsQuery.refetch,
-    prefetchFeeds,
     addRssFeed,
     addYoutubeFeed,
     deleteFeed: deleteFeed.mutate,

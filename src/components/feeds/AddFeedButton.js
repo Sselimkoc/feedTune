@@ -4,11 +4,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { AddFeedDialog } from "./AddFeedDialog";
 
-export function AddFeedButton({
-  defaultPlatform,
-  variant = "default",
-  size = "default",
-}) {
+export function AddFeedButton({ defaultPlatform, variant = "default" }) {
   return (
     <AddFeedDialog
       defaultPlatform={defaultPlatform}
@@ -16,7 +12,7 @@ export function AddFeedButton({
         // Başarılı ekleme sonrası yapılacak işlemler
       }}
     >
-      <Button variant={variant} size={size} className="gap-2 font-medium">
+      <Button variant={variant} className="gap-2">
         <PlusCircle className="h-4 w-4" />
         <span>Feed Ekle</span>
       </Button>

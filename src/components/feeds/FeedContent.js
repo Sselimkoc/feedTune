@@ -1,6 +1,7 @@
 "use client";
 
 import { useFeeds } from "@/hooks/useFeeds";
+import { AddFeedDialog } from "@/components/feeds/AddFeedDialog";
 import { FeedList } from "@/components/feeds/FeedList";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
@@ -69,7 +70,32 @@ export function FeedContent() {
   };
 
   return (
-    <div>
+    <div className="min-h-0">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-xl font-semibold">Tüm Beslemeler</h2>
+        <AddFeedDialog>
+          <button className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-full transition-colors">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="lucide lucide-plus-circle"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M8 12h8" />
+              <path d="M12 8v8" />
+            </svg>
+            Feed Ekle
+          </button>
+        </AddFeedDialog>
+      </div>
+
       <FeedList
         onRemoveFeed={removeFeed}
         onToggleRead={toggleItemRead}

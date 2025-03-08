@@ -13,43 +13,6 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // İlk yüklemede session kontrolü
-    const initializeAuth = async () => {
-      try {
-        const session = await supabase.auth.getSession();
-
-        if (session?.data?.session) {
-          // Oturum varsa, state'i güncelle
-          await setSession(session.data.session);
-
-          // UI'ı güncellemek için router.refresh() çağır
-          router.refresh();
-        } else {
-          // Oturum yoksa, state'i temizle
-          await setSession(null);
-
-          // Korumalı sayfadaysak ana sayfaya yönlendir
-          const protectedRoutes = [
-            "/settings",
-            "/feeds",
-            "/favorites",
-            "/read-later",
-          ];
-          const isProtectedRoute = protectedRoutes.some((route) =>
-            pathname.startsWith(route)
-          );
-
-          if (isProtectedRoute) {
-            router.replace("/");
-          }
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeAuth();
-
     // Session değişikliklerini dinle
     const {
       data: { subscription },
@@ -67,12 +30,7 @@ export function AuthProvider({ children }) {
         await setSession(null);
 
         // Oturum yoksa ve korumalı sayfadaysak ana sayfaya yönlendir
-        const protectedRoutes = [
-          "/settings",
-          "/feeds",
-          "/favorites",
-          "/read-later",
-        ];
+        const protectedRoutes = ["/settings", "/feeds", "/favorites"];
         const isProtectedRoute = protectedRoutes.some((route) =>
           pathname.startsWith(route)
         );
@@ -84,6 +42,17 @@ export function AuthProvider({ children }) {
         }
       }
     });
+
+    // İlk yüklemede session kontrolü
+    const initializeAuth = async () => {
+      try {
+        await checkSession();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
 
     // Periyodik session kontrolü (5 dakikada bir)
     const interval = setInterval(() => {

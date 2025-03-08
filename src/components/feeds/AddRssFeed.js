@@ -23,8 +23,23 @@ export function AddRssFeed({ onBack, onSuccess }) {
 
   const validateUrl = (url) => {
     if (!url) return "URL zorunludur";
+
+    // @ karakteri içeren URL'leri kabul et, doğrulama yapmadan geç
+    if (url.includes("@")) return "";
+
     if (!URL_REGEX.test(url)) return "Geçerli bir URL giriniz";
     return "";
+  };
+
+  // Debounce fonksiyonu - input değişikliklerini geciktirmek için
+  const debounce = (func, delay) => {
+    let timeoutId;
+    return function (...args) {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        func.apply(this, args);
+      }, delay);
+    };
   };
 
   const handleUrlChange = (e) => {
@@ -35,6 +50,9 @@ export function AddRssFeed({ onBack, onSuccess }) {
       error: validateUrl(url),
     }));
   };
+
+  // Debounced input değişikliği - 500ms gecikme ile
+  const debouncedUrlChange = debounce(handleUrlChange, 500);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -102,7 +120,12 @@ export function AddRssFeed({ onBack, onSuccess }) {
           <Input
             type="url"
             value={formState.url}
-            onChange={handleUrlChange}
+            onChange={(e) => {
+              // State'i hemen güncelle (UI için)
+              setFormState((prev) => ({ ...prev, url: e.target.value }));
+              // Debounced fonksiyonu çağır (doğrulama için)
+              debouncedUrlChange(e);
+            }}
             placeholder="Enter RSS feed URL"
             disabled={isLoading}
             aria-invalid={!!formState.error}
@@ -111,12 +134,15 @@ export function AddRssFeed({ onBack, onSuccess }) {
           {formState.error && (
             <p className="text-sm text-red-500">{formState.error}</p>
           )}
+          <p className="text-xs text-muted-foreground">
+            Örnek: https://ntv.com.tr/rss veya @ntv
+          </p>
         </div>
 
         <Button
           type="submit"
           className="w-full"
-          disabled={isLoading || !!formState.error}
+          disabled={isLoading || !!formState.error || !formState.url}
         >
           {isLoading ? (
             <>

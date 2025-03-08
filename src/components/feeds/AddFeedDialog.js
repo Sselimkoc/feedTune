@@ -90,7 +90,7 @@ function AddFeedErrorBoundary({ children }) {
   );
 }
 
-export function AddFeedDialog({ onSuccess, defaultPlatform = "rss" }) {
+export function AddFeedDialog({ children, onSuccess, defaultPlatform = null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState(defaultPlatform);
   const [keepAdding, setKeepAdding] = useState(false);
@@ -107,7 +107,8 @@ export function AddFeedDialog({ onSuccess, defaultPlatform = "rss" }) {
   }, []);
 
   const ActiveComponent = useMemo(
-    () => FEED_PLATFORMS[selectedPlatform]?.component,
+    () =>
+      selectedPlatform ? FEED_PLATFORMS[selectedPlatform]?.component : null,
     [selectedPlatform]
   );
 
@@ -124,39 +125,41 @@ export function AddFeedDialog({ onSuccess, defaultPlatform = "rss" }) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="w-4 h-4 mr-2" />
-          {TRANSLATIONS.addNewFeed}
-        </Button>
+        {children || (
+          <Button>
+            <PlusCircle className="w-4 h-4 mr-2" />
+            {TRANSLATIONS.addNewFeed}
+          </Button>
+        )}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{TRANSLATIONS.addNewFeed}</DialogTitle>
-          <DialogDescription>
-            RSS beslemesi veya YouTube kanalı ekleyerek içerikleri takip edin.
+          <DialogTitle className="text-center text-xl">
+            {selectedPlatform
+              ? FEED_PLATFORMS[selectedPlatform].name + " Ekle"
+              : TRANSLATIONS.addNewFeed}
+          </DialogTitle>
+          <DialogDescription className="text-center">
+            İçerikleri takip etmek için bir kaynak ekleyin.
           </DialogDescription>
         </DialogHeader>
 
         <AddFeedErrorBoundary>
-          <div className="space-y-6">
+          <div className="space-y-6 py-4">
             {!ActiveComponent ? (
               <>
-                <div className="text-lg font-semibold mb-4">
-                  {TRANSLATIONS.selectPlatform}
-                </div>
-                <div className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   {Object.values(FEED_PLATFORMS).map((platform) => {
                     const Icon = platform.icon;
                     return (
-                      <Button
+                      <button
                         key={platform.id}
-                        variant="outline"
-                        className="justify-start"
+                        className="flex flex-col items-center justify-center p-6 border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors"
                         onClick={() => handlePlatformSelect(platform.id)}
                       >
-                        <Icon className="w-4 h-4 mr-2" />
-                        {platform.name}
-                      </Button>
+                        <Icon className="w-10 h-10 mb-3 text-primary" />
+                        <span className="font-medium">{platform.name}</span>
+                      </button>
                     );
                   })}
                 </div>
@@ -167,7 +170,7 @@ export function AddFeedDialog({ onSuccess, defaultPlatform = "rss" }) {
                   onBack={() => setSelectedPlatform(null)}
                   onSuccess={handleSuccess}
                 />
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mt-4">
                   <Switch
                     id="keep-adding"
                     checked={keepAdding}

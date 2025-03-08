@@ -5,14 +5,9 @@ export const dynamic = "force-dynamic";
 
 export default function FeedsPage() {
   return (
-    <main className="container py-6">
-      <Suspense
-        fallback={
-          <div className="flex justify-center items-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          </div>
-        }
-      >
+    <main className="container py-6 min-h-0">
+      <h1 className="text-3xl font-bold mb-8">My Feeds</h1>
+      <Suspense fallback={<div>Loading...</div>}>
         <FeedContent />
       </Suspense>
     </main>
