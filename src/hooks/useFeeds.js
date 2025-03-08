@@ -10,7 +10,7 @@ const CACHE_TIME = 1000 * 60 * 30; // 30 dakika
 const MAX_ITEMS_PER_FEED = 50; // Her feed için maksimum öğe sayısı
 
 // Yardımcı fonksiyonlar
-const limitItemsPerFeed = (feeds, items) => {
+export const limitItemsPerFeed = (feeds, items) => {
   if (!feeds || !items) return { feeds: [], items: [] };
 
   const itemsByFeed = items.reduce((acc, item) => {
@@ -29,36 +29,75 @@ const limitItemsPerFeed = (feeds, items) => {
   return { feeds, items: limitedItems };
 };
 
+// Supabase client'ı oluştur
+const createSupabaseClient = () => createClientComponentClient();
+
+// Veri çekme fonksiyonları
 export const fetchFeeds = async (userId) => {
+  const supabase = createSupabaseClient();
+  // Tüm feed türlerini tek bir sorguda çek
   const { data, error } = await supabase
     .from("feeds")
     .select("*")
     .eq("user_id", userId);
+
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+export const fetchFeedItems = async (feedIds) => {
+  if (!feedIds || feedIds.length === 0) return [];
+
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("feed_items")
+    .select("*")
+    .in("feed_id", feedIds)
+    .order("published_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+export const fetchYoutubeItems = async (feedIds) => {
+  if (!feedIds || feedIds.length === 0) return [];
+
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("youtube_items")
+    .select("*")
+    .in("feed_id", feedIds)
+    .order("published_at", { ascending: false });
+
   if (error) throw new Error(error.message);
   return data;
 };
 
 export const fetchFavorites = async (userId) => {
+  const supabase = createSupabaseClient();
   const { data, error } = await supabase
     .from("favorites")
     .select("*")
     .eq("user_id", userId);
+
   if (error) throw new Error(error.message);
   return data;
 };
 
 export const fetchReadLaterItems = async (userId) => {
+  const supabase = createSupabaseClient();
   const { data, error } = await supabase
     .from("feed_items")
     .select("*")
     .eq("user_id", userId)
     .eq("is_read_later", true);
+
   if (error) throw new Error(error.message);
   return data;
 };
 
 export function useFeeds() {
-  const supabase = createClientComponentClient();
+  const supabase = createSupabaseClient();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
@@ -71,31 +110,30 @@ export function useFeeds() {
       await queryClient.prefetchQuery({
         queryKey: ["feeds", user.id],
         queryFn: async () => {
-          const { data: feeds, error: feedError } = await supabase
-            .from("feeds")
-            .select("*")
-            .eq("user_id", user.id);
+          // Tüm feed'leri çek
+          const feeds = await fetchFeeds(user.id);
 
-          if (feedError) throw feedError;
+          // Feed türlerine göre ayır
+          const rssFeeds = feeds.filter((feed) => feed.type === "rss");
+          const youtubeFeeds = feeds.filter((feed) => feed.type === "youtube");
 
-          const { data: items, error: itemsError } = await supabase
-            .from("feed_items")
-            .select("*")
-            .in(
-              "feed_id",
-              feeds.map((f) => f.id)
-            )
-            .order("published_at", { ascending: false });
+          // RSS feed item'larını çek
+          const rssItems =
+            rssFeeds.length > 0
+              ? await fetchFeedItems(rssFeeds.map((f) => f.id))
+              : [];
 
-          if (itemsError) throw itemsError;
+          // YouTube feed item'larını çek
+          const youtubeItems =
+            youtubeFeeds.length > 0
+              ? await fetchYoutubeItems(youtubeFeeds.map((f) => f.id))
+              : [];
+
+          // Tüm item'ları birleştir
+          const allItems = [...rssItems, ...youtubeItems];
 
           // Veri boyutunu sınırla
-          const limitedItems = limitItemsPerFeed(feeds, items);
-
-          return {
-            feeds: limitedItems.feeds || [],
-            items: limitedItems.items || [],
-          };
+          return limitItemsPerFeed(feeds, allItems);
         },
         staleTime: STALE_TIME,
         cacheTime: CACHE_TIME,
@@ -103,7 +141,7 @@ export function useFeeds() {
     } catch (error) {
       console.error("Error prefetching feeds:", error);
     }
-  }, [supabase, queryClient, user]);
+  }, [queryClient, user]);
 
   // Ana feed sorgusu
   const feedsQuery = useQuery({

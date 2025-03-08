@@ -138,6 +138,15 @@ export const useAuthStore = create(
                 session,
                 lastChecked: new Date().toISOString(),
               });
+
+              // Sayfa yenilendiğinde UI'ın güncellenmesi için
+              if (typeof window !== "undefined") {
+                // Client tarafında olduğumuzu kontrol et
+                const event = new CustomEvent("auth-state-change", {
+                  detail: { session },
+                });
+                window.dispatchEvent(event);
+              }
             } else {
               set({
                 user: null,

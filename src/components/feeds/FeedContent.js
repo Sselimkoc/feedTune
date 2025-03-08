@@ -1,7 +1,6 @@
 "use client";
 
 import { useFeeds } from "@/hooks/useFeeds";
-import { AddFeedDialog } from "@/components/feeds/AddFeedDialog";
 import { FeedList } from "@/components/feeds/FeedList";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
@@ -71,11 +70,6 @@ export function FeedContent() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex-1" />
-        <AddFeedDialog onAddFeed={addRssFeed} />
-      </div>
-
       <FeedList
         onRemoveFeed={removeFeed}
         onToggleRead={toggleItemRead}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -50,7 +50,7 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
   } = useYoutubeFeed(formState.input);
   const { user } = useAuthStore();
 
-  const extractChannelInfo = (input) => {
+  const extractChannelInfo = useCallback((input) => {
     // Boş input kontrolü
     if (!input) return { error: "Kanal ID, URL veya kullanıcı adı zorunludur" };
 
@@ -80,176 +80,213 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
       error:
         "Geçerli bir YouTube kanal URL'si, ID'si veya kullanıcı adı (@kullanıcıadı) giriniz",
     };
-  };
+  }, []);
 
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setFormState((prev) => ({
-      ...prev,
-      input: value,
-    }));
-
-    if (!value) {
+  const handleInputChange = useCallback(
+    (e) => {
+      const value = e.target.value;
       setFormState((prev) => ({
         ...prev,
-        error: "Kanal ID, URL veya kullanıcı adı zorunludur",
+        input: value,
       }));
-      return;
-    }
 
-    const result = extractChannelInfo(value);
-    if (result.error) {
+      if (!value) {
+        setFormState((prev) => ({
+          ...prev,
+          error: "Kanal ID, URL veya kullanıcı adı zorunludur",
+        }));
+        return;
+      }
+
+      const result = extractChannelInfo(value);
+      if (result.error) {
+        setFormState((prev) => ({
+          ...prev,
+          error: result.error,
+        }));
+      } else {
+        setFormState((prev) => ({
+          ...prev,
+          error: "",
+        }));
+      }
+    },
+    [extractChannelInfo]
+  );
+
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+
+      if (formState.isSubmitting) return;
+
+      if (!formState.input) {
+        setFormState((prev) => ({
+          ...prev,
+          error: "Kanal ID, URL veya kullanıcı adı zorunludur",
+        }));
+        return;
+      }
+
+      if (formState.error) {
+        return;
+      }
+
+      if (!channelData) {
+        setFormState((prev) => ({
+          ...prev,
+          error: "Kanal bilgileri alınamadı",
+        }));
+        return;
+      }
+
       setFormState((prev) => ({
         ...prev,
-        error: result.error,
+        isSubmitting: true,
       }));
-    } else {
-      setFormState((prev) => ({
-        ...prev,
-        input: result.input,
-        error: "",
-      }));
-    }
-  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+      try {
+        // Kanal bilgilerini hazırla
+        const feedData = {
+          title: channelData.title,
+          description: channelData.description,
+          url: channelData.url,
+          feed_url: channelData.id,
+          icon_url:
+            channelData.thumbnails?.high?.url ||
+            channelData.thumbnails?.default?.url,
+          type: "youtube",
+          user_id: user.id,
+        };
 
-    if (!formState.input) {
-      setFormState((prev) => ({
-        ...prev,
-        error: "Kanal ID, URL veya kullanıcı adı zorunludur",
-      }));
-      return;
-    }
+        // Feed'i ekle
+        await addYoutubeFeed(feedData);
 
-    if (!user?.id) {
-      toast.error("You must be logged in to add feeds");
-      return;
-    }
+        toast.success("YouTube kanalı başarıyla eklendi");
+        onSuccess?.();
+      } catch (error) {
+        console.error("Error adding YouTube feed:", error);
+        toast.error("YouTube kanalı eklenirken bir hata oluştu");
+        setFormState((prev) => ({
+          ...prev,
+          isSubmitting: false,
+          error: error.message,
+        }));
+      }
+    },
+    [formState, channelData, user, addYoutubeFeed, onSuccess]
+  );
 
-    if (!channelData) {
-      toast.error("Channel information could not be loaded");
-      return;
-    }
+  const isValidInput = useMemo(() => {
+    return formState.input && !formState.error;
+  }, [formState.input, formState.error]);
 
-    setFormState((prev) => ({ ...prev, isSubmitting: true }));
-
-    try {
-      await addYoutubeFeed({
-        channelId: channelData.id,
-        userId: user.id,
-      });
-
-      setFormState((prev) => ({ ...prev, input: "" }));
-      toast.success("YouTube channel added successfully");
-      onSuccess?.();
-    } catch (error) {
-      console.error("Error adding YouTube feed:", error);
-      toast.error(error.message || "Failed to add YouTube channel");
-      setFormState((prev) => ({ ...prev, error: error.message }));
-    } finally {
-      setFormState((prev) => ({ ...prev, isSubmitting: false }));
-    }
-  };
-
-  const isLoading = formState.isSubmitting || isLoadingChannel;
+  const channelThumbnail = useMemo(() => {
+    if (!channelData) return null;
+    return (
+      channelData.thumbnails?.high?.url ||
+      channelData.thumbnails?.medium?.url ||
+      channelData.thumbnails?.default?.url
+    );
+  }, [channelData]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={onBack} disabled={isLoading}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          className="h-8 w-8"
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-lg font-semibold">Add YouTube Channel</h2>
+        <h2 className="text-xl font-semibold">YouTube Kanalı Ekle</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="channelInput">YouTube Channel</Label>
+          <Label htmlFor="youtube-input">
+            YouTube Kanal URL&apos;si, ID&apos;si veya Kullanıcı Adı
+          </Label>
           <Input
-            id="channelInput"
+            id="youtube-input"
+            placeholder="https://youtube.com/@channelname veya @channelname"
             value={formState.input}
             onChange={handleInputChange}
-            placeholder="Enter channel URL, @handle, or ID"
-            disabled={isLoading}
-            aria-invalid={!!formState.error}
-            className={formState.error ? "border-red-500" : ""}
+            disabled={isLoadingChannel || formState.isSubmitting}
           />
           {formState.error && (
-            <p className="text-sm text-red-500">{formState.error}</p>
+            <p className="text-sm text-destructive">{formState.error}</p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Example formats:
-            <br />• @channelname
-            <br />• youtube.com/@channelname
-            <br />• youtube.com/channel/UC...
-            <br />• UC... (Channel ID)
-          </p>
         </div>
 
-        {channelError && (
-          <div className="p-4 border border-red-200 bg-red-50 dark:bg-red-900/10 rounded-md">
-            <p className="text-sm text-red-600 dark:text-red-400">
-              {channelError.message}
-            </p>
+        {isLoadingChannel && (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         )}
 
-        {channelData && (
-          <div className="p-4 border rounded-md bg-card">
-            <div className="flex items-center gap-4">
-              {channelData.thumbnail && (
-                <div className="relative w-12 h-12 rounded-full overflow-hidden">
-                  <Image
-                    src={channelData.thumbnail}
-                    alt={channelData.title}
-                    width={48}
-                    height={48}
-                    className="object-cover"
-                    priority
-                  />
-                </div>
+        {channelData && !isLoadingChannel && (
+          <div className="border rounded-lg p-4 space-y-4">
+            <div className="flex items-center gap-3">
+              {channelThumbnail && (
+                <Image
+                  src={channelThumbnail}
+                  alt={channelData.title}
+                  width={48}
+                  height={48}
+                  className="rounded-full"
+                />
               )}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold truncate">{channelData.title}</h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>
-                    {parseInt(
-                      channelData.statistics.subscriberCount
-                    ).toLocaleString()}{" "}
-                    subscribers
-                  </span>
-                  <span>•</span>
-                  <span>
-                    {parseInt(
-                      channelData.statistics.videoCount
-                    ).toLocaleString()}{" "}
-                    videos
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                  {channelData.description}
+              <div>
+                <h3 className="font-medium">{channelData.title}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {channelData.subscriberCount} abone
                 </p>
               </div>
+            </div>
+
+            <p className="text-sm line-clamp-3">{channelData.description}</p>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Son Videolar</h4>
+              <ul className="space-y-2">
+                {videos?.slice(0, 3).map((video) => (
+                  <li key={video.id} className="text-sm">
+                    {video.title}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         )}
 
-        <Button
-          type="submit"
-          disabled={isLoading || !!formState.error || !channelData}
-          className="w-full"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Adding...
-            </>
-          ) : (
-            "Add Feed"
-          )}
-        </Button>
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            disabled={formState.isSubmitting}
+          >
+            İptal
+          </Button>
+          <Button
+            type="submit"
+            disabled={
+              !isValidInput || isLoadingChannel || formState.isSubmitting
+            }
+          >
+            {formState.isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Ekleniyor...
+              </>
+            ) : (
+              "Kanalı Ekle"
+            )}
+          </Button>
+        </div>
       </form>
     </div>
   );

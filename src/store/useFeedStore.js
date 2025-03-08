@@ -1,8 +1,13 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import {
+  fetchFeeds,
+  fetchFeedItems,
+  fetchYoutubeItems,
+  limitItemsPerFeed,
+} from "@/hooks/useFeeds";
 
 // Önbellek ayarları
 const CACHE_KEY = "feed-cache";
@@ -42,25 +47,8 @@ const setCache = (data) => {
   }
 };
 
-// Veri boyutunu sınırlamak için yardımcı fonksiyon
-const limitItemsPerFeed = (feeds, items) => {
-  if (!feeds || !items) return { feeds: [], items: [] };
-
-  const itemsByFeed = items.reduce((acc, item) => {
-    if (!acc[item.feed_id]) {
-      acc[item.feed_id] = [];
-    }
-    acc[item.feed_id].push(item);
-    return acc;
-  }, {});
-
-  const limitedItems = [];
-  Object.entries(itemsByFeed).forEach(([feedId, feedItems]) => {
-    limitedItems.push(...feedItems.slice(0, MAX_ITEMS_PER_FEED));
-  });
-
-  return { feeds, items: limitedItems };
-};
+// useFeeds.js'den import edilen limitItemsPerFeed fonksiyonunu kullanıyoruz
+// Buradaki tanımı kaldırıyoruz
 
 export const useFeedStore = create(
   persist(
@@ -73,7 +61,7 @@ export const useFeedStore = create(
       lastCacheUpdate: null,
       isLoading: false,
       error: null,
-      selectedFeedId: null,
+      selectedFeedIds: [],
       showUnreadOnly: false,
       showFavoritesOnly: false,
       compactMode: false,
@@ -81,7 +69,6 @@ export const useFeedStore = create(
         sortBy: "newest",
         showRead: true,
         showUnread: true,
-        showFavorites: true,
         feedTypes: {
           rss: true,
           youtube: true,
@@ -100,52 +87,60 @@ export const useFeedStore = create(
           const cache = getCache();
           if (cache) {
             set({
-              feeds: cache.feeds,
-              items: cache.items,
-              lastUpdated: cache.lastUpdated,
+              feeds: cache.feeds || [],
+              items: cache.items || [],
+              lastCacheUpdate: new Date(),
               isLoading: false,
             });
-            return;
           }
 
-          // Fetch from database
-          const { data: feeds, error: feedsError } = await supabase
-            .from("feeds")
-            .select("*")
-            .eq("user_id", userId)
-            .order("created_at", { ascending: false });
+          // Fetch fresh data
+          // Tüm feed'leri çek
+          const feeds = await fetchFeeds(userId);
 
-          if (feedsError) throw feedsError;
+          // Feed türlerine göre ayır
+          const rssFeeds = feeds.filter((feed) => feed.type === "rss");
+          const youtubeFeeds = feeds.filter((feed) => feed.type === "youtube");
 
-          const { data: items, error: itemsError } = await supabase
-            .from("feed_items")
-            .select("*")
-            .in(
-              "feed_id",
-              feeds.map((f) => f.id)
-            )
-            .order("published_at", { ascending: false });
+          // RSS feed item'larını çek
+          const rssItems =
+            rssFeeds.length > 0
+              ? await fetchFeedItems(rssFeeds.map((f) => f.id))
+              : [];
 
-          if (itemsError) throw itemsError;
+          // YouTube feed item'larını çek
+          const youtubeItems =
+            youtubeFeeds.length > 0
+              ? await fetchYoutubeItems(youtubeFeeds.map((f) => f.id))
+              : [];
 
-          const limitedData = limitItemsPerFeed(feeds, items);
+          // Tüm item'ları birleştir
+          const allItems = [...rssItems, ...youtubeItems];
+
+          // Veri boyutunu sınırla
+          const { feeds: limitedFeeds, items: limitedItems } =
+            limitItemsPerFeed(feeds, allItems);
+
+          // Update state and cache
+          set({
+            feeds: limitedFeeds || [],
+            items: limitedItems || [],
+            lastUpdated: new Date(),
+            isLoading: false,
+          });
 
           // Update cache
           setCache({
-            feeds: limitedData.feeds,
-            items: limitedData.items,
-            lastUpdated: new Date().toISOString(),
-          });
-
-          set({
-            feeds: limitedData.feeds,
-            items: limitedData.items,
-            lastUpdated: new Date().toISOString(),
-            isLoading: false,
+            feeds: limitedFeeds || [],
+            items: limitedItems || [],
           });
         } catch (error) {
           console.error("Error loading feeds:", error);
-          set({ error: error.message, isLoading: false });
+          set({
+            error: error.message,
+            isLoading: false,
+          });
+          toast.error("Beslemeleri yüklerken bir hata oluştu");
         }
       },
 
@@ -482,7 +477,37 @@ export const useFeedStore = create(
         toast.success("Cache cleared successfully");
       },
 
-      setSelectedFeedId: (id) => set({ selectedFeedId: id }),
+      toggleFeedSelection: (feedId) => {
+        set((state) => {
+          const isSelected = state.selectedFeedIds.includes(feedId);
+
+          if (isSelected) {
+            // Seçili ise kaldır
+            return {
+              selectedFeedIds: state.selectedFeedIds.filter(
+                (id) => id !== feedId
+              ),
+            };
+          } else {
+            // Seçili değilse ekle
+            return {
+              selectedFeedIds: [...state.selectedFeedIds, feedId],
+            };
+          }
+        });
+      },
+
+      clearFeedSelection: () => set({ selectedFeedIds: [] }),
+
+      setSelectedFeedId: (id) => {
+        console.warn(
+          "setSelectedFeedId is deprecated, use toggleFeedSelection instead"
+        );
+        set((state) => ({
+          selectedFeedIds: id ? [id] : [],
+        }));
+      },
+
       setShowUnreadOnly: (value) => set({ showUnreadOnly: value }),
       setShowFavoritesOnly: (value) => set({ showFavoritesOnly: value }),
       setCompactMode: (value) => set({ compactMode: value }),
@@ -493,7 +518,6 @@ export const useFeedStore = create(
             sortBy: "newest",
             showRead: true,
             showUnread: true,
-            showFavorites: true,
             feedTypes: {
               rss: true,
               youtube: true,
@@ -507,6 +531,9 @@ export const useFeedStore = create(
       partialize: (state) => ({
         lastCacheUpdate: state.lastCacheUpdate,
         lastUpdated: state.lastUpdated,
+        selectedFeedIds: state.selectedFeedIds,
+        compactMode: state.compactMode,
+        filters: state.filters,
       }),
     }
   )
