@@ -5,10 +5,12 @@ import { AddFeedDialog } from "@/components/feeds/AddFeedDialog";
 import { FeedList } from "@/components/feeds/FeedList";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export function FeedContent() {
   const { addRssFeed, addYoutubeFeed } = useFeeds();
   const supabase = createClientComponentClient();
+  const { user } = useAuthStore();
 
   const addFeed = async (feed) => {
     try {
@@ -44,35 +46,158 @@ export function FeedContent() {
   };
 
   const toggleItemRead = async (itemId, isRead) => {
-    try {
-      const { error } = await supabase
-        .from("feed_items")
-        .update({ is_read: isRead })
-        .eq("id", itemId);
+    if (!user) {
+      toast.error("Oturum açmanız gerekiyor");
+      return;
+    }
 
-      if (error) throw error;
+    try {
+      // Önce etkileşim var mı kontrol et
+      const { data: existingInteraction, error: checkError } = await supabase
+        .from("user_item_interactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("item_id", itemId)
+        .single();
+
+      if (checkError && checkError.code !== "PGRST116") throw checkError;
+
+      if (existingInteraction) {
+        // Etkileşim varsa güncelle
+        const { error } = await supabase
+          .from("user_item_interactions")
+          .update({ is_read: isRead })
+          .eq("user_id", user.id)
+          .eq("item_id", itemId);
+
+        if (error) throw error;
+      } else {
+        // Etkileşim yoksa oluştur
+        const { error } = await supabase.from("user_item_interactions").insert([
+          {
+            user_id: user.id,
+            item_id: itemId,
+            is_read: isRead,
+            is_favorite: false,
+            is_read_later: false,
+          },
+        ]);
+
+        if (error) throw error;
+      }
+
+      // Başarılı işlem sonrası kullanıcıya bildirim göster
+      toast.success(
+        isRead
+          ? "Öğe okundu olarak işaretlendi"
+          : "Öğe okunmadı olarak işaretlendi",
+        {
+          duration: 2000,
+          position: "bottom-right",
+        }
+      );
     } catch (error) {
-      toast.error("Failed to update item status");
+      console.error("Error updating item status:", error);
+      toast.error("Öğe durumu güncellenemedi");
     }
   };
 
   const toggleItemFavorite = async (itemId, isFavorite) => {
-    try {
-      const { error } = await supabase
-        .from("feed_items")
-        .update({ is_favorite: isFavorite })
-        .eq("id", itemId);
+    if (!user) {
+      toast.error("Oturum açmanız gerekiyor");
+      return;
+    }
 
-      if (error) throw error;
+    try {
+      // Önce etkileşim var mı kontrol et
+      const { data: existingInteraction, error: checkError } = await supabase
+        .from("user_item_interactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("item_id", itemId)
+        .single();
+
+      if (checkError && checkError.code !== "PGRST116") throw checkError;
+
+      if (existingInteraction) {
+        // Etkileşim varsa güncelle
+        const { error } = await supabase
+          .from("user_item_interactions")
+          .update({ is_favorite: isFavorite })
+          .eq("user_id", user.id)
+          .eq("item_id", itemId);
+
+        if (error) throw error;
+      } else {
+        // Etkileşim yoksa oluştur
+        const { error } = await supabase.from("user_item_interactions").insert([
+          {
+            user_id: user.id,
+            item_id: itemId,
+            is_read: false,
+            is_favorite: isFavorite,
+            is_read_later: false,
+          },
+        ]);
+
+        if (error) throw error;
+      }
     } catch (error) {
-      toast.error("Failed to update favorite status");
+      console.error("Error updating favorite status:", error);
+      toast.error("Favori durumu güncellenemedi");
+    }
+  };
+
+  const toggleItemReadLater = async (itemId, isReadLater) => {
+    if (!user) {
+      toast.error("Oturum açmanız gerekiyor");
+      return;
+    }
+
+    try {
+      // Önce etkileşim var mı kontrol et
+      const { data: existingInteraction, error: checkError } = await supabase
+        .from("user_item_interactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("item_id", itemId)
+        .single();
+
+      if (checkError && checkError.code !== "PGRST116") throw checkError;
+
+      if (existingInteraction) {
+        // Etkileşim varsa güncelle
+        const { error } = await supabase
+          .from("user_item_interactions")
+          .update({ is_read_later: isReadLater })
+          .eq("user_id", user.id)
+          .eq("item_id", itemId);
+
+        if (error) throw error;
+      } else {
+        // Etkileşim yoksa oluştur
+        const { error } = await supabase.from("user_item_interactions").insert([
+          {
+            user_id: user.id,
+            item_id: itemId,
+            is_read: false,
+            is_favorite: false,
+            is_read_later: isReadLater,
+          },
+        ]);
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error("Error updating read later status:", error);
+      toast.error("Okuma listesi durumu güncellenemedi");
     }
   };
 
   return (
     <div className="min-h-0">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-xl font-semibold">Tüm Beslemeler</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Beslemeler</h2>
         <AddFeedDialog>
           <button className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-full transition-colors">
             <svg
@@ -100,6 +225,7 @@ export function FeedContent() {
         onRemoveFeed={removeFeed}
         onToggleRead={toggleItemRead}
         onToggleFavorite={toggleItemFavorite}
+        onToggleReadLater={toggleItemReadLater}
       />
     </div>
   );

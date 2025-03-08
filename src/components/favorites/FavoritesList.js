@@ -14,12 +14,19 @@ import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export function FavoritesList({ initialItems }) {
   const [items, setItems] = useState(initialItems);
   const supabase = createClientComponentClient();
+  const { user } = useAuthStore();
 
   const toggleItemRead = async (itemId, isRead) => {
+    if (!user) {
+      toast.error("Oturum açmanız gerekiyor");
+      return;
+    }
+
     try {
       console.log("Toggling read status in FavoritesList:", itemId, isRead);
 
@@ -30,12 +37,50 @@ export function FavoritesList({ initialItems }) {
         )
       );
 
-      const { error } = await supabase
-        .from("feed_items")
-        .update({ is_read: isRead })
-        .eq("id", itemId);
+      // Önce etkileşim var mı kontrol et
+      const { data: existingInteraction, error: checkError } = await supabase
+        .from("user_item_interactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("item_id", itemId)
+        .single();
 
-      if (error) throw error;
+      if (checkError && checkError.code !== "PGRST116") throw checkError;
+
+      if (existingInteraction) {
+        // Etkileşim varsa güncelle
+        const { error } = await supabase
+          .from("user_item_interactions")
+          .update({ is_read: isRead })
+          .eq("user_id", user.id)
+          .eq("item_id", itemId);
+
+        if (error) throw error;
+      } else {
+        // Etkileşim yoksa oluştur
+        const { error } = await supabase.from("user_item_interactions").insert([
+          {
+            user_id: user.id,
+            item_id: itemId,
+            is_read: isRead,
+            is_favorite: true, // Favoriler sayfasında olduğu için
+            is_read_later: false,
+          },
+        ]);
+
+        if (error) throw error;
+      }
+
+      // Başarılı işlem sonrası kullanıcıya bildirim göster
+      toast.success(
+        isRead
+          ? "Öğe okundu olarak işaretlendi"
+          : "Öğe okunmadı olarak işaretlendi",
+        {
+          duration: 2000,
+          position: "bottom-right",
+        }
+      );
     } catch (error) {
       console.error("Error toggling read status:", error);
 
@@ -50,6 +95,11 @@ export function FavoritesList({ initialItems }) {
   };
 
   const toggleItemFavorite = async (itemId, isFavorite) => {
+    if (!user) {
+      toast.error("Oturum açmanız gerekiyor");
+      return;
+    }
+
     try {
       console.log(
         "Toggling favorite status in FavoritesList:",
@@ -64,12 +114,39 @@ export function FavoritesList({ initialItems }) {
         )
       );
 
-      const { error } = await supabase
-        .from("feed_items")
-        .update({ is_favorite: isFavorite })
-        .eq("id", itemId);
+      // Önce etkileşim var mı kontrol et
+      const { data: existingInteraction, error: checkError } = await supabase
+        .from("user_item_interactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("item_id", itemId)
+        .single();
 
-      if (error) throw error;
+      if (checkError && checkError.code !== "PGRST116") throw checkError;
+
+      if (existingInteraction) {
+        // Etkileşim varsa güncelle
+        const { error } = await supabase
+          .from("user_item_interactions")
+          .update({ is_favorite: isFavorite })
+          .eq("user_id", user.id)
+          .eq("item_id", itemId);
+
+        if (error) throw error;
+      } else {
+        // Etkileşim yoksa oluştur
+        const { error } = await supabase.from("user_item_interactions").insert([
+          {
+            user_id: user.id,
+            item_id: itemId,
+            is_read: false,
+            is_favorite: isFavorite,
+            is_read_later: false,
+          },
+        ]);
+
+        if (error) throw error;
+      }
 
       // Remove from list if unfavorited
       if (!isFavorite) {
@@ -91,6 +168,11 @@ export function FavoritesList({ initialItems }) {
   };
 
   const toggleItemReadLater = async (itemId, isReadLater) => {
+    if (!user) {
+      toast.error("Oturum açmanız gerekiyor");
+      return;
+    }
+
     try {
       console.log(
         "Toggling read later status in FavoritesList:",
@@ -105,12 +187,39 @@ export function FavoritesList({ initialItems }) {
         )
       );
 
-      const { error } = await supabase
-        .from("feed_items")
-        .update({ is_read_later: isReadLater })
-        .eq("id", itemId);
+      // Önce etkileşim var mı kontrol et
+      const { data: existingInteraction, error: checkError } = await supabase
+        .from("user_item_interactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("item_id", itemId)
+        .single();
 
-      if (error) throw error;
+      if (checkError && checkError.code !== "PGRST116") throw checkError;
+
+      if (existingInteraction) {
+        // Etkileşim varsa güncelle
+        const { error } = await supabase
+          .from("user_item_interactions")
+          .update({ is_read_later: isReadLater })
+          .eq("user_id", user.id)
+          .eq("item_id", itemId);
+
+        if (error) throw error;
+      } else {
+        // Etkileşim yoksa oluştur
+        const { error } = await supabase.from("user_item_interactions").insert([
+          {
+            user_id: user.id,
+            item_id: itemId,
+            is_read: false,
+            is_favorite: true, // Favoriler sayfasında olduğu için
+            is_read_later: isReadLater,
+          },
+        ]);
+
+        if (error) throw error;
+      }
     } catch (error) {
       console.error("Error toggling read later status:", error);
 
@@ -150,36 +259,41 @@ export function FavoritesList({ initialItems }) {
           key={item.id}
           className="group hover:shadow-md transition-shadow cursor-pointer"
           onClick={(e) => {
-            handleOpenLink(item.link);
-            if (!item.is_read) {
-              toggleItemRead(item.id, true);
+            if (item.link) {
+              handleOpenLink(item.link);
+              // Sadece okunmamış ise okundu olarak işaretle
+              if (!item.is_read) {
+                toggleItemRead(item.id, true);
+              }
+            } else {
+              toast.error("Bu öğe için bağlantı bulunamadı");
             }
           }}
         >
           <CardContent className="p-4">
-            <div className="flex items-start gap-4 h-[120px]">
+            <div className="flex flex-col sm:flex-row items-start gap-4">
               {item.thumbnail && (
-                <div className="relative w-[120px] h-[90px] flex-shrink-0">
+                <div className="relative w-full sm:w-[120px] h-[160px] sm:h-[90px] flex-shrink-0 mb-3 sm:mb-0">
                   <Image
                     src={item.thumbnail}
                     alt=""
                     fill
                     className="object-cover rounded"
-                    sizes="120px"
+                    sizes="(max-width: 640px) 100vw, 120px"
                     priority={false}
                   />
                 </div>
               )}
               <div className="flex-1 min-w-0 flex flex-col h-full">
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <h2
-                    className={`text-lg font-medium line-clamp-2 ${
+                    className={`text-lg font-medium line-clamp-2 mb-2 sm:mb-0 ${
                       item.is_read ? "text-muted-foreground" : ""
                     }`}
                   >
                     {item.title}
                   </h2>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 flex-shrink-0 mb-3 sm:mb-0">
                     <Button
                       variant={item.is_read ? "secondary" : "outline"}
                       size="sm"
@@ -191,7 +305,7 @@ export function FavoritesList({ initialItems }) {
                         "h-8 px-2 rounded-full transition-all",
                         item.is_read
                           ? "bg-green-500/10 hover:bg-green-500/20"
-                          : ""
+                          : "hover:bg-green-500/10"
                       )}
                       title={
                         item.is_read
@@ -248,44 +362,36 @@ export function FavoritesList({ initialItems }) {
                       {item.is_read_later ? (
                         <BookmarkCheck className="h-4 w-4 mr-1 text-blue-500" />
                       ) : (
-                        <BookmarkPlus className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <BookmarkPlus className="h-4 w-4 mr-1" />
                       )}
                       <span className="text-xs">
-                        {item.is_read_later ? "Listedeki" : "Listeye Ekle"}
+                        {item.is_read_later ? "Listede" : "Listeye Ekle"}
                       </span>
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenLink(item.link);
-                        if (!item.is_read) {
-                          toggleItemRead(item.id, true);
-                        }
-                      }}
-                      className="h-8 px-3 text-xs rounded-full"
-                      title="Yeni sekmede aç"
-                    >
-                      <ExternalLink className="h-4 w-4 mr-1.5" />
-                      Aç
                     </Button>
                   </div>
                 </div>
                 {item.description && (
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2 flex-1">
+                  <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
                     {item.description.replace(/<[^>]*>/g, "")}
                   </p>
                 )}
-                {item.published_at && (
-                  <time
-                    dateTime={item.published_at}
-                    className="text-xs text-muted-foreground mt-auto"
-                  >
-                    {new Date(item.published_at).toLocaleDateString()}
-                  </time>
-                )}
+                <div className="flex items-center gap-2 mt-auto pt-3 text-xs text-muted-foreground">
+                  {item.feeds?.title && (
+                    <>
+                      <span>{item.feeds.title}</span>
+                      <span>•</span>
+                    </>
+                  )}
+                  {item.published_at && (
+                    <span>
+                      {new Date(item.published_at).toLocaleDateString("tr-TR", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>

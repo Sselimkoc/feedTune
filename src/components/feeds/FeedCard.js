@@ -54,21 +54,21 @@ const FeedCardComponent = ({
   const handleToggleRead = (e) => {
     e.stopPropagation();
     if (typeof onToggleRead === "function") {
-      onToggleRead(item.id);
+      onToggleRead(item.id, !item.is_read);
     }
   };
 
   const handleToggleFavorite = (e) => {
     e.stopPropagation();
     if (typeof onToggleFavorite === "function") {
-      onToggleFavorite(item.id);
+      onToggleFavorite(item.id, !item.is_favorite);
     }
   };
 
   const handleToggleReadLater = (e) => {
     e.stopPropagation();
     if (typeof onToggleReadLater === "function") {
-      onToggleReadLater(item.id);
+      onToggleReadLater(item.id, !item.is_read_later);
     }
   };
 
@@ -184,8 +184,10 @@ const FeedCardComponent = ({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  "h-8 w-8 rounded-full",
-                  item.is_read ? "text-muted-foreground" : "text-primary",
+                  "h-8 w-8 rounded-full transition-all duration-200",
+                  item.is_read
+                    ? "text-green-500 bg-green-500/10 hover:bg-green-500/20"
+                    : "text-primary hover:bg-primary/10",
                   isFocused && "bg-background/80"
                 )}
                 onClick={handleToggleRead}
@@ -195,7 +197,7 @@ const FeedCardComponent = ({
                     : "Okundu olarak işaretle"
                 }
               >
-                <Check className="h-4 w-4" />
+                <Check className={cn("h-4 w-4", item.is_read && "font-bold")} />
               </Button>
 
               <Button
@@ -204,8 +206,8 @@ const FeedCardComponent = ({
                 className={cn(
                   "h-8 w-8 rounded-full",
                   item.is_favorite
-                    ? "text-yellow-500 dark:text-yellow-400"
-                    : "text-muted-foreground",
+                    ? "text-yellow-500 bg-yellow-500/10 hover:bg-yellow-500/20"
+                    : "text-muted-foreground hover:bg-yellow-500/10 hover:text-yellow-500",
                   isFocused && "bg-background/80"
                 )}
                 onClick={handleToggleFavorite}
@@ -213,7 +215,12 @@ const FeedCardComponent = ({
                   item.is_favorite ? "Favorilerden çıkar" : "Favorilere ekle"
                 }
               >
-                <Star className="h-4 w-4" />
+                <Star
+                  className={cn(
+                    "h-4 w-4",
+                    item.is_favorite && "fill-yellow-400"
+                  )}
+                />
               </Button>
 
               <Button
@@ -222,8 +229,8 @@ const FeedCardComponent = ({
                 className={cn(
                   "h-8 w-8 rounded-full",
                   item.is_read_later
-                    ? "text-blue-500 dark:text-blue-400"
-                    : "text-muted-foreground",
+                    ? "text-blue-500 bg-blue-500/10 hover:bg-blue-500/20"
+                    : "text-muted-foreground hover:bg-blue-500/10 hover:text-blue-500",
                   isFocused && "bg-background/80"
                 )}
                 onClick={handleToggleReadLater}

@@ -26,13 +26,25 @@ import { FeedNavigation } from "./FeedNavigation";
 import { EmptyFeedState } from "./EmptyFeedState";
 import { EmptyFilterState } from "./EmptyFilterState";
 import { AddFeedButton } from "./AddFeedButton";
-import { Loader2, Filter } from "lucide-react";
+import {
+  Loader2,
+  Filter,
+  Star,
+  EyeOff,
+  Eye,
+  Clock,
+  ArrowDownAZ,
+  ArrowUpAZ,
+  Check,
+} from "lucide-react";
 import { FilterDialog } from "./FilterDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@supabase/supabase-js";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import Image from "next/image";
 
 // Constants
 const ITEMS_PER_PAGE = 10;
@@ -105,15 +117,18 @@ export function FeedList() {
   const listRef = useRef(null);
   const selectedItemRef = useRef(null);
 
+  // Seçili feed ID'leri için yeni state
+  const [selectedFeedIds, setSelectedFeedIds] = useState([]);
+
   // Memoized values
   const filteredItems = useMemo(() => {
     if (!items || items.length === 0) return [];
 
     let result = [...items];
 
-    // Feed ID'ye göre filtrele
-    if (selectedFeedId) {
-      result = result.filter((item) => item.feed_id === selectedFeedId);
+    // Seçili feed ID'lere göre filtrele
+    if (selectedFeedIds.length > 0) {
+      result = result.filter((item) => selectedFeedIds.includes(item.feed_id));
     }
 
     // Feed türüne göre filtrele
@@ -183,7 +198,7 @@ export function FeedList() {
     }
 
     return result;
-  }, [items, feeds, selectedFeedId, filters]);
+  }, [items, feeds, selectedFeedIds, filters]);
 
   // Load data when user changes
   useEffect(() => {
@@ -301,38 +316,97 @@ export function FeedList() {
     }
   }, [focusedItemIndex, isNavigating]);
 
-  // Feed selection handler
-  const handleFeedSelect = useCallback(
-    (feedId) => {
-      setSelectedFeedId(feedId === selectedFeedId ? null : feedId);
-      refetch(); // Yeni feed seçildiğinde verileri yeniden yükle
-    },
-    [selectedFeedId, setSelectedFeedId, refetch]
-  );
+  // Feed seçimi için yeni handler
+  const handleFeedSelect = useCallback((feedId) => {
+    setSelectedFeedIds((prev) => {
+      // Eğer zaten seçiliyse, seçimi kaldır
+      if (prev.includes(feedId)) {
+        return prev.filter((id) => id !== feedId);
+      }
+      // Değilse, seçime ekle
+      return [...prev, feedId];
+    });
+  }, []);
+
+  // Tüm feed'leri seç/kaldır
+  const handleToggleAllFeeds = useCallback(() => {
+    // Tüm seçimleri kaldır
+    setSelectedFeedIds([]);
+  }, []);
 
   // Memoized item action handlers
   const handleToggleRead = useCallback(
     (itemId, isRead) => {
       console.log("Toggling read status:", itemId, isRead);
+
+      // Optimistic update
+      queryClient.setQueryData(["feeds"], (old) => {
+        if (!old) return { feeds: [], items: [] };
+
+        return {
+          ...old,
+          items: old.items.map((item) =>
+            item.id === itemId ? { ...item, is_read: isRead } : item
+          ),
+        };
+      });
+
       if (typeof toggleItemRead === "function") {
         toggleItemRead({ itemId, isRead });
       } else {
         console.error("toggleItemRead is not a function");
+
+        // Rollback optimistic update
+        queryClient.setQueryData(["feeds"], (old) => {
+          if (!old) return { feeds: [], items: [] };
+
+          return {
+            ...old,
+            items: old.items.map((item) =>
+              item.id === itemId ? { ...item, is_read: !isRead } : item
+            ),
+          };
+        });
       }
     },
-    [toggleItemRead]
+    [toggleItemRead, queryClient]
   );
 
   const handleToggleFavorite = useCallback(
     (itemId, isFavorite) => {
       console.log("Toggling favorite status:", itemId, isFavorite);
+
+      // Optimistic update
+      queryClient.setQueryData(["feeds"], (old) => {
+        if (!old) return { feeds: [], items: [] };
+
+        return {
+          ...old,
+          items: old.items.map((item) =>
+            item.id === itemId ? { ...item, is_favorite: isFavorite } : item
+          ),
+        };
+      });
+
       if (typeof toggleItemFavorite === "function") {
         toggleItemFavorite({ itemId, isFavorite });
       } else {
         console.error("toggleItemFavorite is not a function");
+
+        // Rollback optimistic update
+        queryClient.setQueryData(["feeds"], (old) => {
+          if (!old) return { feeds: [], items: [] };
+
+          return {
+            ...old,
+            items: old.items.map((item) =>
+              item.id === itemId ? { ...item, is_favorite: !isFavorite } : item
+            ),
+          };
+        });
       }
     },
-    [toggleItemFavorite]
+    [toggleItemFavorite, queryClient]
   );
 
   const handleToggleReadLater = useCallback(
@@ -358,75 +432,25 @@ export function FeedList() {
         } catch (error) {
           console.error("Error calling toggleItemReadLater:", error);
 
-          // Fallback to direct database update
-          try {
-            const supabase = createClientComponentClient();
-            supabase
-              .from("feed_items")
-              .update({ is_read_later: isReadLater })
-              .eq("id", itemId)
-              .then(({ error: updateError }) => {
-                if (updateError) {
-                  console.error("Error in fallback update:", updateError);
-                  // Rollback optimistic update
-                  queryClient.setQueryData(["feeds"], (old) => {
-                    if (!old) return { feeds: [], items: [] };
+          // Rollback optimistic update
+          queryClient.setQueryData(["feeds"], (old) => {
+            if (!old) return { feeds: [], items: [] };
 
-                    return {
-                      ...old,
-                      items: old.items.map((item) =>
-                        item.id === itemId
-                          ? { ...item, is_read_later: !isReadLater }
-                          : item
-                      ),
-                    };
-                  });
-                } else {
-                  console.log(
-                    "Successfully updated read later status directly"
-                  );
-                }
-              });
-          } catch (fallbackError) {
-            console.error("Error in fallback update:", fallbackError);
-          }
+            return {
+              ...old,
+              items: old.items.map((item) =>
+                item.id === itemId
+                  ? { ...item, is_read_later: !isReadLater }
+                  : item
+              ),
+            };
+          });
         }
       } else {
         console.error(
           "toggleItemReadLater is not a function",
           toggleItemReadLater
         );
-
-        // Direct database update
-        try {
-          const supabase = createClientComponentClient();
-          supabase
-            .from("feed_items")
-            .update({ is_read_later: isReadLater })
-            .eq("id", itemId)
-            .then(({ error: updateError }) => {
-              if (updateError) {
-                console.error("Error updating directly:", updateError);
-                // Rollback optimistic update
-                queryClient.setQueryData(["feeds"], (old) => {
-                  if (!old) return { feeds: [], items: [] };
-
-                  return {
-                    ...old,
-                    items: old.items.map((item) =>
-                      item.id === itemId
-                        ? { ...item, is_read_later: !isReadLater }
-                        : item
-                    ),
-                  };
-                });
-              } else {
-                console.log("Successfully updated read later status directly");
-              }
-            });
-        } catch (directError) {
-          console.error("Error in direct update:", directError);
-        }
       }
     },
     [toggleItemReadLater, queryClient]
@@ -460,6 +484,33 @@ export function FeedList() {
     return count;
   }, [filters]);
 
+  // Aktif filtreleri yönetmek için yeni fonksiyon
+  const handleFilterClick = useCallback(
+    (filterType, value) => {
+      const newFilters = { ...filters };
+
+      switch (filterType) {
+        case "sortBy":
+          newFilters.sortBy = value;
+          break;
+        case "showRead":
+          newFilters.showRead = !newFilters.showRead;
+          break;
+        case "showUnread":
+          newFilters.showUnread = !newFilters.showUnread;
+          break;
+        case "feedType":
+          newFilters.feedTypes[value] = !newFilters.feedTypes[value];
+          break;
+        default:
+          break;
+      }
+
+      setFilters(newFilters);
+    },
+    [filters, setFilters]
+  );
+
   // Render
   return (
     <div
@@ -474,37 +525,102 @@ export function FeedList() {
         )}
       </AnimatePresence>
 
-      {/* Feed Navigation */}
+      {/* Çoklu Kanal Seçimi */}
       {feeds.length > 0 && (
-        <FeedNavigation
-          feeds={feeds}
-          selectedFeedId={selectedFeedId}
-          onFeedSelect={setSelectedFeedId}
-          onOpenFilters={() => setIsFilterDialogOpen(true)}
-        />
+        <div className="mb-6 bg-background/60 backdrop-blur-sm sticky top-0 z-10 py-2 border-b">
+          <div className="flex justify-between items-center gap-2">
+            <ScrollArea className="w-full whitespace-nowrap rounded-md">
+              <div className="flex space-x-2 p-1">
+                {/* Tüm Seçimleri Kaldır Butonu */}
+                {selectedFeedIds.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleToggleAllFeeds}
+                    className="h-8 px-3 transition-all duration-200 flex items-center gap-1.5 rounded-full"
+                  >
+                    <span className="text-xs font-medium">
+                      Tüm Seçimleri Kaldır
+                    </span>
+                  </Button>
+                )}
+
+                {feeds.map((feed) => {
+                  const isSelected = selectedFeedIds.includes(feed.id);
+                  const isYoutube = feed.type === "youtube";
+
+                  return (
+                    <Button
+                      key={feed.id}
+                      onClick={() => handleFeedSelect(feed.id)}
+                      variant={isSelected ? "default" : "outline"}
+                      size="sm"
+                      className={cn(
+                        "h-8 px-3 transition-all duration-200 flex items-center gap-1.5 rounded-full",
+                        isSelected ? "shadow-sm" : "hover:bg-muted"
+                      )}
+                    >
+                      {feed.site_favicon && (
+                        <div className="relative w-4 h-4 flex-shrink-0">
+                          <Image
+                            src={feed.site_favicon}
+                            alt=""
+                            width={16}
+                            height={16}
+                            className={cn(
+                              "object-cover",
+                              isYoutube ? "rounded-full" : "rounded"
+                            )}
+                            unoptimized
+                          />
+                        </div>
+                      )}
+                      <span
+                        className={cn(
+                          "text-xs font-medium truncate max-w-[120px]",
+                          isSelected ? "" : "text-muted-foreground"
+                        )}
+                      >
+                        {feed.title}
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
+              <ScrollBar orientation="horizontal" className="h-2" />
+            </ScrollArea>
+
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFilterDialogOpen(true)}
+                className="h-8 rounded-full ml-1"
+              >
+                <Filter className="h-3.5 w-3.5 mr-1" />
+                <span className="text-xs">Filtrele</span>
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Filter Button (Mobile) */}
+      {/* Mobil Görünüm Bilgisi - Filtrele butonu kaldırıldı */}
       <div className="flex justify-between items-center mb-4 lg:hidden">
-        <h2 className="text-xl font-semibold">
-          {selectedFeedId
-            ? feeds.find((f) => f.id === selectedFeedId)?.title || "Feed"
-            : "Tüm Beslemeler"}
-        </h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsFilterDialogOpen(true)}
-          className="h-8 rounded-full"
-        >
-          <Filter className="h-3.5 w-3.5 mr-1" />
-          <span className="text-xs">Filtrele</span>
-          {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="ml-1 h-5 px-1">
-              {activeFilterCount}
+        <div className="flex items-center gap-2">
+          {selectedFeedIds.length > 0 && (
+            <Badge variant="secondary" className="px-2 py-1">
+              {selectedFeedIds.length === 1
+                ? feeds.find((f) => f.id === selectedFeedIds[0])?.title
+                : `${selectedFeedIds.length} Kanal`}
             </Badge>
           )}
-        </Button>
+        </div>
       </div>
 
       {/* Filter Dialog */}
