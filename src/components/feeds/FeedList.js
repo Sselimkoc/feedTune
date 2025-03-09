@@ -36,6 +36,9 @@ import {
   ArrowDownAZ,
   ArrowUpAZ,
   Check,
+  Search,
+  X,
+  PlusCircle,
 } from "lucide-react";
 import { FilterDialog } from "./FilterDialog";
 import { Button } from "@/components/ui/button";
@@ -45,6 +48,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@supabase/supabase-js";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import Image from "next/image";
+import { RssIcon, Tag } from "lucide-react";
+import { formatTimeAgo, stripHtml } from "@/lib/utils";
 
 // Constants
 const ITEMS_PER_PAGE = 10;
@@ -513,12 +518,7 @@ export function FeedList() {
 
   // Render
   return (
-    <div
-      className={cn(
-        "space-y-6",
-        feeds.length === 0 ? "min-h-0" : "min-h-[50vh]"
-      )}
-    >
+    <div className="w-full">
       <AnimatePresence>
         {showKeyboardHelp && (
           <KeyboardShortcutsHelp onClose={() => setShowKeyboardHelp(false)} />
@@ -610,19 +610,6 @@ export function FeedList() {
         </div>
       )}
 
-      {/* Mobil Görünüm Bilgisi - Filtrele butonu kaldırıldı */}
-      <div className="flex justify-between items-center mb-4 lg:hidden">
-        <div className="flex items-center gap-2">
-          {selectedFeedIds.length > 0 && (
-            <Badge variant="secondary" className="px-2 py-1">
-              {selectedFeedIds.length === 1
-                ? feeds.find((f) => f.id === selectedFeedIds[0])?.title
-                : `${selectedFeedIds.length} Kanal`}
-            </Badge>
-          )}
-        </div>
-      </div>
-
       {/* Filter Dialog */}
       <FilterDialog
         isOpen={isFilterDialogOpen}
@@ -631,7 +618,7 @@ export function FeedList() {
         onApplyFilters={setFilters}
       />
 
-      {/* Loading State */}
+      {/* Yükleniyor */}
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -647,7 +634,10 @@ export function FeedList() {
       ) : (
         // Feed Items
         <div className="space-y-6">
-          <div ref={containerRef} className="space-y-4">
+          <div
+            ref={containerRef}
+            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+          >
             <AnimatePresence>
               {filteredItems.map((item, index) => (
                 <motion.div
@@ -674,7 +664,7 @@ export function FeedList() {
                   <FeedCard
                     item={item}
                     feed={feeds.find((f) => f.id === item.feed_id)}
-                    isCompact={compactMode}
+                    compact={compactMode}
                     onToggleRead={handleToggleRead}
                     onToggleFavorite={handleToggleFavorite}
                     onToggleReadLater={handleToggleReadLater}

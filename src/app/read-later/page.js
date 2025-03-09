@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import { ReadLaterList } from "@/components/read-later/ReadLaterList";
+import { ReadLaterContent } from "@/components/read-later/ReadLaterContent";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { Loader2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -63,23 +65,18 @@ async function getReadLaterItems() {
   return itemsWithInteractions || [];
 }
 
-export default async function ReadLaterPage() {
-  const items = await getReadLaterItems();
-
+export default function ReadLaterPage() {
   return (
-    <main className="container max-w-4xl mx-auto py-4 px-4 sm:py-6 sm:px-6">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-8">
-        Okuma Listem
-      </h1>
+    <div className="max-w-[1600px] mx-auto py-4 px-3 sm:px-4 md:py-6 md:px-6">
       <Suspense
         fallback={
-          <div className="flex justify-center py-10">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+          <div className="flex justify-center items-center min-h-[70vh]">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         }
       >
-        <ReadLaterList initialItems={items} />
+        <ReadLaterContent />
       </Suspense>
-    </main>
+    </div>
   );
 }

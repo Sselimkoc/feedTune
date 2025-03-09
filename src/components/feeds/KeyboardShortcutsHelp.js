@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -11,9 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Keyboard } from "lucide-react";
 
-export function KeyboardShortcutsHelp() {
-  const [open, setOpen] = useState(false);
-
+export function KeyboardShortcutsHelp({ open, onOpenChange }) {
   const shortcuts = [
     {
       key: "Tab / Shift+Tab",
@@ -42,36 +41,55 @@ export function KeyboardShortcutsHelp() {
   ];
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Keyboard className="h-4 w-4" />
-          <span className="hidden sm:inline">Klavye Kısayolları</span>
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Klavye Kısayolları</DialogTitle>
+          <DialogDescription>
+            Feed'leri daha hızlı gezinmek için klavye kısayollarını
+            kullanabilirsiniz.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Feed'ler arasında gezinmek ve içerikleri okumak için aşağıdaki
-            klavye kısayollarını kullanabilirsiniz.
-          </p>
-          <div className="grid gap-2">
-            {shortcuts.map((shortcut) => (
-              <div
-                key={shortcut.key}
-                className="flex items-center justify-between py-2"
-              >
-                <span className="text-sm font-medium">
-                  {shortcut.description}
-                </span>
-                <kbd className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted rounded border">
-                  {shortcut.key}
-                </kbd>
-              </div>
-            ))}
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-2 items-center gap-4">
+            <div className="text-sm font-medium">j / ↓</div>
+            <div className="text-sm text-muted-foreground">
+              Sonraki öğeye git
+            </div>
+          </div>
+          <div className="grid grid-cols-2 items-center gap-4">
+            <div className="text-sm font-medium">k / ↑</div>
+            <div className="text-sm text-muted-foreground">
+              Önceki öğeye git
+            </div>
+          </div>
+          <div className="grid grid-cols-2 items-center gap-4">
+            <div className="text-sm font-medium">o / Enter</div>
+            <div className="text-sm text-muted-foreground">Öğeyi aç</div>
+          </div>
+          <div className="grid grid-cols-2 items-center gap-4">
+            <div className="text-sm font-medium">m</div>
+            <div className="text-sm text-muted-foreground">
+              Okundu/Okunmadı olarak işaretle
+            </div>
+          </div>
+          <div className="grid grid-cols-2 items-center gap-4">
+            <div className="text-sm font-medium">s</div>
+            <div className="text-sm text-muted-foreground">
+              Favorilere ekle/çıkar
+            </div>
+          </div>
+          <div className="grid grid-cols-2 items-center gap-4">
+            <div className="text-sm font-medium">b</div>
+            <div className="text-sm text-muted-foreground">
+              Okuma listesine ekle/çıkar
+            </div>
+          </div>
+          <div className="grid grid-cols-2 items-center gap-4">
+            <div className="text-sm font-medium">?</div>
+            <div className="text-sm text-muted-foreground">
+              Bu yardımı göster
+            </div>
           </div>
         </div>
       </DialogContent>

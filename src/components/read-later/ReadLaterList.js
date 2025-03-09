@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Check,
   Star,
   ExternalLink,
   BookmarkPlus,
   BookmarkCheck,
+  Loader2,
+  Badge,
 } from "lucide-react";
 import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -16,11 +19,36 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
+import Link from "next/link";
+import { RssIcon } from "lucide-react";
+import { formatTimeAgo } from "@/lib/utils";
+import { stripHtml } from "@/lib/utils";
 
-export function ReadLaterList({ initialItems }) {
+export function ReadLaterList({ initialItems, isLoading }) {
   const [items, setItems] = useState(initialItems);
   const supabase = createClientComponentClient();
   const { user } = useAuthStore();
+
+  // Debug bilgisi
+  useEffect(() => {
+    console.log("ReadLaterList received items:", initialItems?.length || 0);
+    console.log("Sample item:", initialItems?.[0]);
+
+    // Render edilecek öğeleri kontrol et
+    if (initialItems?.length > 0) {
+      console.log("Items to be rendered:", items.length);
+      console.log("First item feed info:", {
+        feed_title: initialItems[0].feed_title,
+        feed_type: initialItems[0].feed_type,
+        feed_id: initialItems[0].feed_id,
+      });
+    }
+  }, [initialItems, items]);
+
+  // initialItems değiştiğinde items state'ini güncelle
+  useEffect(() => {
+    setItems(initialItems || []);
+  }, [initialItems]);
 
   const toggleItemRead = async (itemId, isRead) => {
     if (!user) {
@@ -85,12 +113,8 @@ export function ReadLaterList({ initialItems }) {
     } catch (error) {
       console.error("Error toggling read status:", error);
 
-      // Rollback on error
-      setItems((currentItems) =>
-        currentItems.map((item) =>
-          item.id === itemId ? { ...item, is_read: !isRead } : item
-        )
-      );
+      // Hata durumunda optimistic update'i geri al
+      setItems(initialItems);
       toast.error("Öğe durumu güncellenirken hata oluştu");
     }
   };
@@ -148,15 +172,20 @@ export function ReadLaterList({ initialItems }) {
 
         if (error) throw error;
       }
+
+      // Başarılı işlem sonrası kullanıcıya bildirim göster
+      toast.success(
+        isFavorite ? "Öğe favorilere eklendi" : "Öğe favorilerden çıkarıldı",
+        {
+          duration: 2000,
+          position: "bottom-right",
+        }
+      );
     } catch (error) {
       console.error("Error toggling favorite status:", error);
 
-      // Rollback on error
-      setItems((currentItems) =>
-        currentItems.map((item) =>
-          item.id === itemId ? { ...item, is_favorite: !isFavorite } : item
-        )
-      );
+      // Hata durumunda optimistic update'i geri al
+      setItems(initialItems);
       toast.error("Favori durumu güncellenirken hata oluştu");
     }
   };
@@ -176,9 +205,14 @@ export function ReadLaterList({ initialItems }) {
 
       // Optimistic update
       setItems((currentItems) =>
-        currentItems.map((item) =>
-          item.id === itemId ? { ...item, is_read_later: isReadLater } : item
-        )
+        // Okuma listesinden çıkarılıyorsa, öğeyi listeden kaldır
+        isReadLater === false
+          ? currentItems.filter((item) => item.id !== itemId)
+          : currentItems.map((item) =>
+              item.id === itemId
+                ? { ...item, is_read_later: isReadLater }
+                : item
+            )
       );
 
       // Önce etkileşim var mı kontrol et
@@ -215,21 +249,21 @@ export function ReadLaterList({ initialItems }) {
         if (error) throw error;
       }
 
-      // Remove from list if removed from read later
-      if (!isReadLater) {
-        setItems((currentItems) =>
-          currentItems.filter((item) => item.id !== itemId)
-        );
-      }
+      // Başarılı işlem sonrası kullanıcıya bildirim göster
+      toast.success(
+        isReadLater
+          ? "Öğe okuma listesine eklendi"
+          : "Öğe okuma listesinden çıkarıldı",
+        {
+          duration: 2000,
+          position: "bottom-right",
+        }
+      );
     } catch (error) {
       console.error("Error toggling read later status:", error);
 
-      // Rollback on error
-      setItems((currentItems) =>
-        currentItems.map((item) =>
-          item.id === itemId ? { ...item, is_read_later: !isReadLater } : item
-        )
-      );
+      // Hata durumunda optimistic update'i geri al
+      setItems(initialItems);
       toast.error("Okuma listesi durumu güncellenirken hata oluştu");
     }
   };
@@ -254,165 +288,98 @@ export function ReadLaterList({ initialItems }) {
   }
 
   return (
-    <div className="grid gap-4">
-      <AnimatePresence>
-        {items.map((item, index) => (
-          <motion.div
-            key={item.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2, delay: index * 0.05 }}
-          >
-            <Card
-              className="group hover:shadow-md transition-shadow cursor-pointer"
-              onClick={(e) => {
-                if (item.link) {
-                  handleOpenLink(item.link);
-                  // Sadece okunmamış ise okundu olarak işaretle
-                  if (!item.is_read) {
-                    toggleItemRead(item.id, true);
-                  }
-                } else {
-                  toast.error("Bu öğe için bağlantı bulunamadı");
-                }
-              }}
-            >
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row items-start gap-4">
-                  {item.thumbnail && (
-                    <div className="relative w-full sm:w-[120px] h-[160px] sm:h-[90px] flex-shrink-0 mb-3 sm:mb-0">
-                      <Image
-                        src={item.thumbnail}
-                        alt=""
-                        fill
-                        className="object-cover rounded"
-                        sizes="(max-width: 640px) 100vw, 120px"
-                        priority={false}
-                      />
+    <div className="space-y-6">
+      {isLoading ? (
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+          <div className="mb-4 rounded-full bg-muted p-3">
+            <BookmarkCheck className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h3 className="mb-2 text-lg font-medium">Okuma listeniz boş</h3>
+          <p className="mb-6 max-w-md text-sm text-muted-foreground">
+            İçerikleri okuma listenize ekleyerek daha sonra okumak üzere
+            kaydedebilirsiniz.
+          </p>
+          <Button asChild>
+            <Link href="/feeds">
+              <RssIcon className="h-4 w-4 mr-2" />
+              Feed&apos;lere Git
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {items.map((item) => (
+            <Card key={item.id} className="overflow-hidden border">
+              <CardContent className="p-0 flex flex-col h-full">
+                {/* Thumbnail */}
+                <div className="relative w-full aspect-video bg-muted mb-3">
+                  {item.thumbnail ? (
+                    <Image
+                      src={item.thumbnail}
+                      alt={item.title}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <BookmarkCheck className="h-8 w-8 text-muted-foreground" />
                     </div>
                   )}
-                  <div className="flex-1 min-w-0 flex flex-col h-full">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                      <h2
-                        className={`text-lg font-medium line-clamp-2 mb-2 sm:mb-0 ${
-                          item.is_read ? "text-muted-foreground" : ""
-                        }`}
-                      >
-                        {item.title}
-                      </h2>
-                      <div className="flex flex-wrap items-center gap-2 flex-shrink-0 mb-3 sm:mb-0">
-                        <Button
-                          variant={item.is_read ? "secondary" : "outline"}
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleItemRead(item.id, !item.is_read);
-                          }}
-                          className={cn(
-                            "h-8 px-2 rounded-full transition-all",
-                            item.is_read
-                              ? "bg-green-500/10 hover:bg-green-500/20"
-                              : "hover:bg-green-500/10"
-                          )}
-                          title={
-                            item.is_read
-                              ? "Okunmadı olarak işaretle"
-                              : "Okundu olarak işaretle"
-                          }
-                        >
-                          <Check
-                            className={cn(
-                              "h-4 w-4 mr-1",
-                              item.is_read
-                                ? "text-green-500"
-                                : "text-muted-foreground"
-                            )}
-                          />
-                          <span className="text-xs">
-                            {item.is_read ? "Okundu" : "Okunmadı"}
-                          </span>
-                        </Button>
+                </div>
 
-                        <Button
-                          variant={item.is_favorite ? "secondary" : "outline"}
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleItemFavorite(item.id, !item.is_favorite);
-                          }}
-                          className={cn(
-                            "h-8 px-2 rounded-full transition-all",
-                            item.is_favorite
-                              ? "bg-yellow-500/10 hover:bg-yellow-500/20"
-                              : ""
-                          )}
-                          title={
-                            item.is_favorite
-                              ? "Favorilerden çıkar"
-                              : "Favorilere ekle"
-                          }
-                        >
-                          <Star
-                            className={cn(
-                              "h-4 w-4 mr-1",
-                              item.is_favorite
-                                ? "fill-yellow-400 text-yellow-500"
-                                : "text-muted-foreground"
-                            )}
-                          />
-                          <span className="text-xs">
-                            {item.is_favorite ? "Favori" : "Favorilere Ekle"}
-                          </span>
-                        </Button>
+                <div className="p-4 flex-1 flex flex-col">
+                  {/* Feed bilgisi ve tarih */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground font-medium">
+                        {item.feed_title || "Bilinmeyen Kaynak"}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formatTimeAgo(new Date(item.published_at))}
+                    </span>
+                  </div>
 
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleItemReadLater(item.id, !item.is_read_later);
-                          }}
-                          className="h-8 px-2 rounded-full bg-blue-500/10 hover:bg-blue-500/20"
-                          title="Okuma listesinden çıkar"
-                        >
-                          <BookmarkCheck className="h-4 w-4 mr-1 text-blue-500" />
-                          <span className="text-xs">Listeden Çıkar</span>
-                        </Button>
-                      </div>
-                    </div>
-                    {item.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
-                        {item.description.replace(/<[^>]*>/g, "")}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 mt-auto pt-3 text-xs text-muted-foreground">
-                      {item.feeds?.title && (
-                        <>
-                          <span>{item.feeds.title}</span>
-                          <span>•</span>
-                        </>
-                      )}
-                      {item.published_at && (
-                        <span>
-                          {new Date(item.published_at).toLocaleDateString(
-                            "tr-TR",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )}
-                        </span>
-                      )}
-                    </div>
+                  {/* Başlık */}
+                  <h3 className="font-semibold text-base mb-2 line-clamp-2">
+                    {item.title}
+                  </h3>
+
+                  {/* Açıklama */}
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                    {stripHtml(item.description || "")}
+                  </p>
+
+                  {/* Butonlar */}
+                  <div className="flex items-center gap-1 mt-auto pt-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 rounded-md flex-1"
+                      onClick={() => handleOpenLink(item.link)}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1.5" />
+                      Oku
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 rounded-md"
+                      onClick={() => toggleItemReadLater(item.id, false)}
+                    >
+                      <BookmarkCheck className="h-4 w-4 fill-current text-blue-500" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
-        ))}
-      </AnimatePresence>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

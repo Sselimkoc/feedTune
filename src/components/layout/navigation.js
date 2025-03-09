@@ -56,17 +56,46 @@ export function Navigation() {
     <>
       {/* Mobile Menu Button */}
       <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 right-4 z-50 lg:hidden glass"
+        variant="outline"
+        size="sm"
+        className={cn(
+          "fixed top-4 right-4 z-50 lg:hidden",
+          "h-9 px-2.5 transition-all duration-300",
+          "bg-background/80 hover:bg-background",
+          "border border-input",
+          "backdrop-blur-sm"
+        )}
         onClick={() => setIsOpen(!isOpen)}
+        aria-label={isOpen ? "Close menu" : "Open menu"}
       >
-        {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        <div className="relative w-5 h-5">
+          <span
+            className={cn(
+              "absolute block h-0.5 w-5 bg-foreground transition-all duration-300",
+              isOpen ? "top-2.5 rotate-45" : "top-1"
+            )}
+          />
+          <span
+            className={cn(
+              "absolute block h-0.5 w-5 bg-foreground transition-all duration-300",
+              "top-2.5",
+              isOpen && "opacity-0"
+            )}
+          />
+          <span
+            className={cn(
+              "absolute block h-0.5 w-5 bg-foreground transition-all duration-300",
+              isOpen ? "top-2.5 -rotate-45" : "top-4"
+            )}
+          />
+        </div>
       </Button>
 
       <nav
         className={cn(
-          "fixed lg:fixed lg:left-0 lg:top-0 h-full w-64 glass border-r p-4 z-40 transition-all duration-300 ease-in-out",
+          "fixed lg:fixed lg:left-0 lg:top-0 h-full w-64 border-r p-4 z-40",
+          "bg-background/95 backdrop-blur-md shadow-lg",
+          "transition-all duration-300 ease-in-out",
           "transform lg:transform-none",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -80,7 +109,7 @@ export function Navigation() {
               <div>
                 <h1 className="text-xl font-bold">FeedTune</h1>
                 <p className="text-xs text-muted-foreground">
-                  Your RSS Feed Reader
+                  RSS Besleme Okuyucunuz
                 </p>
               </div>
             </div>
@@ -96,10 +125,12 @@ export function Navigation() {
               return (
                 <Button
                   key={item.href}
-                  variant={isActive ? "secondary" : "ghost"}
+                  variant={isActive ? "default" : "ghost"}
                   className={cn(
-                    "w-full justify-start",
-                    isActive && "bg-secondary"
+                    "w-full justify-start h-10 px-3",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
                   )}
                   asChild
                   onMouseEnter={item.onMouseEnter}
@@ -109,22 +140,33 @@ export function Navigation() {
                     <item.icon
                       className={cn(
                         "h-4 w-4",
-                        isActive ? "text-primary" : "text-muted-foreground"
+                        isActive
+                          ? "text-primary-foreground"
+                          : "text-muted-foreground"
                       )}
                     />
                     <span
                       className={cn(
+                        "font-medium",
                         isActive
-                          ? "text-primary font-medium"
+                          ? "text-primary-foreground"
                           : "text-muted-foreground"
                       )}
                     >
-                      {item.label}
+                      {item.label === "Home"
+                        ? "Ana Sayfa"
+                        : item.label === "My Feeds"
+                        ? "Beslemelerim"
+                        : item.label === "Favorites"
+                        ? "Favoriler"
+                        : item.label === "Settings"
+                        ? "Ayarlar"
+                        : item.label}
                     </span>
 
                     {/* Notification indicator example */}
                     {item.label === "My Feeds" && mounted && (
-                      <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                      <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground text-[10px] font-medium text-primary">
                         3
                       </span>
                     )}
@@ -136,14 +178,16 @@ export function Navigation() {
 
           <div className="mt-auto pt-4 border-t">
             {user && (
-              <div className="mb-4 p-3 rounded-lg bg-secondary/50">
+              <div className="mb-4 p-3 rounded-lg bg-muted">
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
                     {user.email?.charAt(0).toUpperCase() || "U"}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">Free Plan</p>
+                    <p className="text-xs text-muted-foreground">
+                      Ücretsiz Plan
+                    </p>
                   </div>
                 </div>
               </div>
@@ -152,11 +196,11 @@ export function Navigation() {
             {user ? (
               <Button variant="outline" className="w-full" onClick={signOut}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
+                Çıkış Yap
               </Button>
             ) : (
               <Button variant="default" className="w-full" asChild>
-                <Link href="/">Sign In</Link>
+                <Link href="/">Giriş Yap</Link>
               </Button>
             )}
           </div>
@@ -164,12 +208,14 @@ export function Navigation() {
       </nav>
 
       {/* Overlay for mobile */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-30 lg:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+      <div
+        className={cn(
+          "fixed inset-0 bg-background/80 backdrop-blur-sm z-30 lg:hidden",
+          "transition-opacity duration-300 ease-in-out",
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        onClick={() => setIsOpen(false)}
+      />
     </>
   );
 }

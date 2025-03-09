@@ -80,188 +80,192 @@ const FeedCardComponent = ({
   return (
     <Card
       className={cn(
-        "group transition-all duration-200 cursor-pointer border overflow-hidden",
-        isFocused
-          ? "feed-item-focused"
-          : "hover:border-primary/50 dark:hover:border-primary/50 hover:shadow-md",
-        compact ? "h-auto" : "h-[180px]"
+        "group transition-all duration-200 cursor-pointer overflow-hidden",
+        "border border-border bg-card hover:bg-card/80",
+        "dark:bg-card/90 dark:hover:bg-card",
+        "rounded-lg shadow-sm hover:shadow",
+        isFocused ? "ring-2 ring-primary" : "",
+        "h-full"
       )}
-      onClick={handleOpenLink}
+      onClick={(e) => {
+        if (item.link) {
+          handleOpenLink(e);
+          // Sadece okunmamış ise okundu olarak işaretle
+          if (!item.is_read) {
+            onToggleRead(item.id, true);
+          }
+        }
+      }}
       ref={cardRef}
     >
-      <CardContent
-        className={cn(
-          "p-4 transition-colors duration-200",
-          isFocused && "bg-primary/5 dark:bg-primary/10"
-        )}
-      >
-        <div
-          className={cn(
-            "flex items-start gap-4",
-            compact ? "h-auto" : "h-full"
-          )}
-        >
-          {/* Thumbnail veya Avatar */}
-          {item.thumbnail ? (
-            <div
-              className={cn(
-                "relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-md overflow-hidden transition-all duration-200",
-                isFocused && "ring-1 ring-primary shadow-sm"
-              )}
-            >
+      <CardContent className={cn("p-0 flex flex-col h-full")}>
+        {/* Thumbnail veya Avatar */}
+        {item.thumbnail ? (
+          <div className="relative w-full h-40 overflow-hidden">
+            <Image
+              src={item.thumbnail}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority={false}
+            />
+            {isYoutube && (
+              <Badge
+                variant="secondary"
+                className="absolute top-2 right-2 bg-black/70 text-white border-0 px-2 py-1"
+              >
+                YouTube
+              </Badge>
+            )}
+          </div>
+        ) : (
+          <div className="relative w-full h-24 bg-muted flex items-center justify-center">
+            {feed.site_favicon ? (
               <Image
-                src={item.thumbnail}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) 64px, 80px"
-                priority={false}
+                src={feed.site_favicon}
+                alt={feedTitle}
+                width={32}
+                height={32}
+                className={cn(
+                  "object-cover",
+                  isYoutube ? "rounded-full" : "rounded"
+                )}
+                unoptimized
               />
-            </div>
-          ) : (
-            <div
-              className={cn(
-                "flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-muted rounded-md flex-shrink-0 transition-all duration-200",
-                isFocused && "ring-1 ring-primary shadow-sm"
-              )}
-            >
+            ) : (
+              <Avatar className="h-12 w-12">
+                <AvatarFallback>
+                  {feedTitle.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            )}
+            {isYoutube && (
+              <Badge
+                variant="secondary"
+                className="absolute top-2 right-2 bg-black/70 text-white border-0 px-2 py-1"
+              >
+                YouTube
+              </Badge>
+            )}
+          </div>
+        )}
+
+        <div className="p-4 flex-1 flex flex-col">
+          {/* Kaynak ve Zaman Bilgisi */}
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
               {feed.site_favicon ? (
-                <Image
-                  src={feed.site_favicon}
-                  alt={feedTitle}
-                  width={32}
-                  height={32}
-                  className={cn(isYoutube ? "rounded-full" : "rounded")}
-                  unoptimized
-                />
+                <div className="relative w-4 h-4 flex-shrink-0">
+                  <Image
+                    src={feed.site_favicon}
+                    alt={feedTitle}
+                    width={16}
+                    height={16}
+                    className={cn(
+                      "object-cover",
+                      isYoutube ? "rounded-full" : "rounded"
+                    )}
+                    unoptimized
+                  />
+                </div>
               ) : (
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    {feedTitle.substring(0, 2).toUpperCase()}
+                <Avatar className="h-4 w-4">
+                  <AvatarFallback className="text-[8px]">
+                    {feedTitle ? feedTitle.substring(0, 2).toUpperCase() : "FT"}
                   </AvatarFallback>
                 </Avatar>
               )}
+              <span className="text-xs text-muted-foreground font-medium truncate max-w-[120px]">
+                {feedTitle}
+              </span>
             </div>
+            <span className="text-xs text-muted-foreground">•</span>
+            <span className="text-xs text-muted-foreground">{timeAgo}</span>
+          </div>
+
+          {/* Başlık */}
+          <h3
+            className={cn(
+              "font-semibold text-base mb-2 line-clamp-2",
+              item.is_read ? "text-muted-foreground" : "text-foreground"
+            )}
+          >
+            {item.title}
+          </h3>
+
+          {/* Açıklama */}
+          {!compact && truncatedDescription && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+              {truncatedDescription}
+            </p>
           )}
 
-          {/* İçerik */}
-          <div className="flex-1 min-w-0 flex flex-col h-full">
-            {/* Başlık ve Kaynak Bilgisi */}
-            <div className="mb-1">
-              <h3
-                className={cn(
-                  "font-medium line-clamp-2 text-sm sm:text-base transition-colors duration-200",
-                  isFocused && "text-primary dark:text-primary"
-                )}
-              >
-                {item.title}
-              </h3>
-              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                <span className="truncate max-w-[120px]">{feedTitle}</span>
-                <span>•</span>
-                <span>{timeAgo}</span>
-                {isYoutube && (
-                  <>
-                    <span>•</span>
-                    <Badge variant="outline" className="text-[10px] py-0 h-4">
-                      YouTube
-                    </Badge>
-                  </>
-                )}
-              </div>
-            </div>
+          {/* Butonlar */}
+          <div className="flex items-center gap-1 mt-auto pt-2 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-8 rounded-md flex items-center gap-1.5",
+                item.is_read ? "text-green-600" : "text-muted-foreground"
+              )}
+              onClick={handleToggleRead}
+              title={
+                item.is_read
+                  ? "Okunmadı olarak işaretle"
+                  : "Okundu olarak işaretle"
+              }
+            >
+              <Check className="h-4 w-4" />
+              <span className="text-xs">
+                {item.is_read ? "Okundu" : "Okunmadı"}
+              </span>
+            </Button>
 
-            {/* Açıklama */}
-            {!compact && (
-              <p className="text-sm text-muted-foreground line-clamp-2 mt-1 mb-auto">
-                {truncatedDescription}
-              </p>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-8 rounded-md flex items-center gap-1.5",
+                item.is_favorite ? "text-yellow-600" : "text-muted-foreground"
+              )}
+              onClick={handleToggleFavorite}
+              title={
+                item.is_favorite ? "Favorilerden çıkar" : "Favorilere ekle"
+              }
+            >
+              <Star
+                className={cn("h-4 w-4", item.is_favorite && "fill-yellow-500")}
+              />
+              <span className="text-xs">
+                {item.is_favorite ? "Favori" : "Favorile"}
+              </span>
+            </Button>
 
-            {/* Butonlar */}
-            <div className="flex items-center gap-1 mt-auto pt-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-8 w-8 rounded-full transition-all duration-200",
-                  item.is_read
-                    ? "text-green-500 bg-green-500/10 hover:bg-green-500/20"
-                    : "text-primary hover:bg-primary/10",
-                  isFocused && "bg-background/80"
-                )}
-                onClick={handleToggleRead}
-                title={
-                  item.is_read
-                    ? "Okunmadı olarak işaretle"
-                    : "Okundu olarak işaretle"
-                }
-              >
-                <Check className={cn("h-4 w-4", item.is_read && "font-bold")} />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-8 w-8 rounded-full",
-                  item.is_favorite
-                    ? "text-yellow-500 bg-yellow-500/10 hover:bg-yellow-500/20"
-                    : "text-muted-foreground hover:bg-yellow-500/10 hover:text-yellow-500",
-                  isFocused && "bg-background/80"
-                )}
-                onClick={handleToggleFavorite}
-                title={
-                  item.is_favorite ? "Favorilerden çıkar" : "Favorilere ekle"
-                }
-              >
-                <Star
-                  className={cn(
-                    "h-4 w-4",
-                    item.is_favorite && "fill-yellow-400"
-                  )}
-                />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-8 w-8 rounded-full",
-                  item.is_read_later
-                    ? "text-blue-500 bg-blue-500/10 hover:bg-blue-500/20"
-                    : "text-muted-foreground hover:bg-blue-500/10 hover:text-blue-500",
-                  isFocused && "bg-background/80"
-                )}
-                onClick={handleToggleReadLater}
-                title={
-                  item.is_read_later
-                    ? "Okuma listesinden çıkar"
-                    : "Okuma listesine ekle"
-                }
-              >
-                {item.is_read_later ? (
-                  <BookmarkCheck className="h-4 w-4" />
-                ) : (
-                  <BookmarkPlus className="h-4 w-4" />
-                )}
-              </Button>
-
-              <div className="flex-1" />
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-8 w-8 rounded-full text-muted-foreground",
-                  isFocused && "bg-background/80"
-                )}
-                onClick={handleOpenLink}
-                title="Bağlantıyı aç"
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-8 rounded-md flex items-center gap-1.5",
+                item.is_read_later ? "text-blue-600" : "text-muted-foreground"
+              )}
+              onClick={handleToggleReadLater}
+              title={
+                item.is_read_later
+                  ? "Okuma listesinden çıkar"
+                  : "Okuma listesine ekle"
+              }
+            >
+              {item.is_read_later ? (
+                <BookmarkCheck className="h-4 w-4" />
+              ) : (
+                <BookmarkPlus className="h-4 w-4" />
+              )}
+              <span className="text-xs">
+                {item.is_read_later ? "Listede" : "Listeye Ekle"}
+              </span>
+            </Button>
           </div>
         </div>
       </CardContent>

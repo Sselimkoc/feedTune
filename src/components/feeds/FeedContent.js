@@ -1,16 +1,28 @@
 "use client";
 
 import { useFeeds } from "@/hooks/useFeeds";
-import { AddFeedDialog } from "@/components/feeds/AddFeedDialog";
+import { AddFeedButton } from "@/components/feeds/AddFeedButton";
 import { FeedList } from "@/components/feeds/FeedList";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
+import { Button } from "@/components/ui/button";
+import { Keyboard } from "lucide-react";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { KeyboardShortcutsHelp } from "@/components/feeds/KeyboardShortcutsHelp";
 
 export function FeedContent() {
   const { addRssFeed, addYoutubeFeed } = useFeeds();
   const supabase = createClientComponentClient();
   const { user } = useAuthStore();
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
   const addFeed = async (feed) => {
     try {
@@ -195,30 +207,26 @@ export function FeedContent() {
   };
 
   return (
-    <div className="min-h-0">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Beslemeler</h2>
-        <AddFeedDialog>
-          <button className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-full transition-colors">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-plus-circle"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M8 12h8" />
-              <path d="M12 8v8" />
-            </svg>
-            Feed Ekle
-          </button>
-        </AddFeedDialog>
+    <div className="w-full">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Feed'ler</h1>
+          <p className="text-muted-foreground">
+            Takip ettiğiniz kaynakların içeriklerini görüntüleyin
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <AddFeedButton />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowKeyboardHelp(true)}
+            className="h-9 px-3"
+          >
+            <Keyboard className="h-4 w-4 mr-2" />
+            <span className="text-sm">Klavye Kısayolları</span>
+          </Button>
+        </div>
       </div>
 
       <FeedList
@@ -226,6 +234,11 @@ export function FeedContent() {
         onToggleRead={toggleItemRead}
         onToggleFavorite={toggleItemFavorite}
         onToggleReadLater={toggleItemReadLater}
+      />
+
+      <KeyboardShortcutsHelp
+        open={showKeyboardHelp}
+        onOpenChange={setShowKeyboardHelp}
       />
     </div>
   );
