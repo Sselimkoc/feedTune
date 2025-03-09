@@ -30,6 +30,7 @@ import {
   Trash2,
   RefreshCw,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFeeds } from "@/hooks/useFeeds";
@@ -50,7 +51,14 @@ export function HomeContent({ initialSession }) {
   const { user: authUser } = useAuthStore();
   const [user, setUser] = useState(initialSession?.user);
   const supabase = createClientComponentClient();
-  const { feeds, items, isLoading, refetch, deleteFeed } = useFeeds();
+  const {
+    feeds,
+    items,
+    isLoading: feedsLoading,
+    refetch,
+    deleteFeed,
+  } = useFeeds();
+  const [isLoading, setIsLoading] = useState(false);
   const [recentFeeds, setRecentFeeds] = useState([]);
   const [recentItems, setRecentItems] = useState([]);
   const [stats, setStats] = useState({
@@ -72,6 +80,7 @@ export function HomeContent({ initialSession }) {
   useEffect(() => {
     if (user) {
       const loadData = async () => {
+        setIsLoading(true);
         try {
           // Son eklenen 5 feed'i al
           const { data: feedsData, error: feedsError } = await supabase
@@ -179,7 +188,9 @@ export function HomeContent({ initialSession }) {
           }
         } catch (error) {
           console.error("Error loading data:", error);
-          toast.error("Veriler yüklenirken bir hata oluştu");
+          toast.error(t("errors.general"));
+        } finally {
+          setIsLoading(false);
         }
       };
 
@@ -193,7 +204,7 @@ export function HomeContent({ initialSession }) {
       setIsDeleting(true);
 
       // İlerleme bildirimi göster
-      const toastId = toast.loading("Feed siliniyor...");
+      const toastId = toast.loading(t("feeds.deleteFeed.deleting"));
 
       // 1. Önce feed'e ait tüm öğeleri bul
       const { data: feedItems, error: itemsError } = await supabase
@@ -203,7 +214,7 @@ export function HomeContent({ initialSession }) {
 
       if (itemsError) {
         console.error("Feed öğeleri alınırken hata:", itemsError);
-        toast.error("Feed öğeleri alınırken hata oluştu", { id: toastId });
+        toast.error(t("errors.general"), { id: toastId });
         setIsDeleting(false);
         setShowDeleteDialog(false);
         return;
@@ -223,7 +234,7 @@ export function HomeContent({ initialSession }) {
             "Kullanıcı etkileşimleri silinirken hata:",
             interactionsError
           );
-          toast.error("Kullanıcı etkileşimleri silinirken hata oluştu", {
+          toast.error(t("errors.general"), {
             id: toastId,
           });
           setIsDeleting(false);
@@ -240,7 +251,7 @@ export function HomeContent({ initialSession }) {
 
       if (deleteItemsError) {
         console.error("Feed öğeleri silinirken hata:", deleteItemsError);
-        toast.error("Feed öğeleri silinirken hata oluştu", { id: toastId });
+        toast.error(t("errors.general"), { id: toastId });
         setIsDeleting(false);
         setShowDeleteDialog(false);
         return;
@@ -302,14 +313,14 @@ export function HomeContent({ initialSession }) {
 
       if (deleteFeedError) {
         console.error("Feed silinirken hata:", deleteFeedError);
-        toast.error("Feed silinirken hata oluştu", { id: toastId });
+        toast.error(t("errors.general"), { id: toastId });
         setIsDeleting(false);
         setShowDeleteDialog(false);
         return;
       }
 
       // Başarılı bildirim göster
-      toast.success("Feed ve ilişkili tüm veriler başarıyla silindi", {
+      toast.success(t("feeds.deleteFeed.success"), {
         id: toastId,
       });
 
@@ -332,7 +343,7 @@ export function HomeContent({ initialSession }) {
       setShowDeleteDialog(false);
     } catch (error) {
       console.error("Feed silme işlemi sırasında hata:", error);
-      toast.error("Feed silme işlemi başarısız oldu");
+      toast.error(t("feeds.deleteFeed.error"));
       setIsDeleting(false);
       setShowDeleteDialog(false);
     }
@@ -843,7 +854,15 @@ export function HomeContent({ initialSession }) {
   return (
     <div className="relative min-h-screen">
       <div className="container py-6 px-4 lg:py-12">
-        {user ? renderLoggedInContent() : renderLoggedOutContent()}
+        {isLoading ? (
+          <div className="flex justify-center items-center min-h-[50vh]">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : user ? (
+          renderLoggedInContent()
+        ) : (
+          renderLoggedOutContent()
+        )}
       </div>
 
       <AuthModal isOpen={showAuthModal} onOpenChange={setShowAuthModal} />

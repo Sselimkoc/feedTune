@@ -5,6 +5,17 @@ import { persist } from "zustand/middleware";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 
+// Not: Store içinde useLanguage hook'unu doğrudan kullanamayız çünkü hook'lar sadece React bileşenlerinde kullanılabilir.
+// Bu nedenle toast mesajlarını doğrudan kullanıcı arayüzü bileşenlerinde çevireceğiz.
+
+// Auth ile ilgili toast mesajları için sabit anahtarlar tanımlayalım
+const AUTH_MESSAGES = {
+  VERIFICATION_EMAIL_SENT: "auth.verificationEmailSent",
+  LOGIN_SUCCESS: "auth.loginSuccess",
+  LOGOUT_SUCCESS: "auth.logoutSuccess",
+  AUTHENTICATION_ERROR: "auth.authenticationError",
+};
+
 export const useAuthStore = create(
   persist(
     (set, get) => {
@@ -18,7 +29,7 @@ export const useAuthStore = create(
           window.location.href = "/";
         }
 
-        toast.error(error.message || "Authentication error occurred");
+        toast.error(error.message || AUTH_MESSAGES.AUTHENTICATION_ERROR);
         return { success: false, error };
       };
 
@@ -58,7 +69,7 @@ export const useAuthStore = create(
 
             if (error) throw error;
 
-            toast.success("Verification email sent! Please check your inbox.");
+            toast.success(AUTH_MESSAGES.VERIFICATION_EMAIL_SENT);
             return { success: true };
           } catch (error) {
             return handleAuthError(error);
@@ -82,7 +93,7 @@ export const useAuthStore = create(
               session: data.session,
               lastChecked: new Date().toISOString(),
             });
-            toast.success("Successfully signed in!");
+            toast.success(AUTH_MESSAGES.LOGIN_SUCCESS);
             return { success: true };
           } catch (error) {
             return handleAuthError(error);
@@ -102,7 +113,7 @@ export const useAuthStore = create(
               session: null,
               lastChecked: new Date().toISOString(),
             });
-            toast.success("Successfully signed out!");
+            toast.success(AUTH_MESSAGES.LOGOUT_SUCCESS);
             window.location.href = "/";
           } catch (error) {
             handleAuthError(error);

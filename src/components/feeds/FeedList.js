@@ -548,19 +548,8 @@ export function FeedList() {
             </span>
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsFilterDialogOpen(true)}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">{t("common.filter")}</span>
-            {activeFilterCount > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1">
-                {activeFilterCount}
-              </Badge>
-            )}
-          </Button>
+          {/* add feed button */}
+          <AddFeedButton />
         </div>
       </div>
 

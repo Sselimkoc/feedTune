@@ -36,26 +36,22 @@ export function FeedContent() {
 
       if (feedError) throw feedError;
 
-      toast.success("Feed added successfully");
+      toast.success(t("feeds.addFeed.success"));
     } catch (error) {
       console.error("Error adding feed:", error);
-      toast.error("Failed to add feed");
+      toast.error(t("feeds.addFeed.error"));
     }
   };
 
   const removeFeed = async (feedId) => {
     try {
       // Kullanıcıya onay sor
-      if (
-        !window.confirm(
-          "Bu feed'i silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
-        )
-      ) {
+      if (!window.confirm(t("feeds.deleteFeed.confirmation"))) {
         return;
       }
 
       // İlerleme bildirimi göster
-      const toastId = toast.loading("Feed siliniyor...");
+      const toastId = toast.loading(t("feeds.deleteFeed.deleting"));
 
       // 1. Önce feed'e ait tüm öğeleri bul
       const { data: feedItems, error: itemsError } = await supabase
@@ -65,7 +61,7 @@ export function FeedContent() {
 
       if (itemsError) {
         console.error("Feed öğeleri alınırken hata:", itemsError);
-        toast.error("Feed öğeleri alınırken hata oluştu", { id: toastId });
+        toast.error(t("errors.general"), { id: toastId });
         return;
       }
 
@@ -83,7 +79,7 @@ export function FeedContent() {
             "Kullanıcı etkileşimleri silinirken hata:",
             interactionsError
           );
-          toast.error("Kullanıcı etkileşimleri silinirken hata oluştu", {
+          toast.error(t("errors.general"), {
             id: toastId,
           });
           return;
@@ -98,7 +94,7 @@ export function FeedContent() {
 
       if (deleteItemsError) {
         console.error("Feed öğeleri silinirken hata:", deleteItemsError);
-        toast.error("Feed öğeleri silinirken hata oluştu", { id: toastId });
+        toast.error(t("errors.general"), { id: toastId });
         return;
       }
 
@@ -158,12 +154,12 @@ export function FeedContent() {
 
       if (deleteFeedError) {
         console.error("Feed silinirken hata:", deleteFeedError);
-        toast.error("Feed silinirken hata oluştu", { id: toastId });
+        toast.error(t("errors.general"), { id: toastId });
         return;
       }
 
       // Başarılı bildirim göster
-      toast.success("Feed ve ilişkili tüm veriler başarıyla silindi", {
+      toast.success(t("feeds.deleteFeed.success"), {
         id: toastId,
       });
 
@@ -171,13 +167,13 @@ export function FeedContent() {
       refetch();
     } catch (error) {
       console.error("Feed silme işlemi sırasında hata:", error);
-      toast.error("Feed silme işlemi başarısız oldu");
+      toast.error(t("feeds.deleteFeed.error"));
     }
   };
 
   const toggleItemRead = async (itemId, isRead) => {
     if (!user) {
-      toast.error("Oturum açmanız gerekiyor");
+      toast.error(t("errors.unauthorized"));
       return;
     }
 
@@ -219,8 +215,8 @@ export function FeedContent() {
       // Başarılı işlem sonrası kullanıcıya bildirim göster
       toast.success(
         isRead
-          ? "Öğe okundu olarak işaretlendi"
-          : "Öğe okunmadı olarak işaretlendi",
+          ? t("feeds.feedList.markAsRead")
+          : t("feeds.feedList.markAsUnread"),
         {
           duration: 2000,
           position: "bottom-right",
@@ -228,13 +224,13 @@ export function FeedContent() {
       );
     } catch (error) {
       console.error("Error updating item status:", error);
-      toast.error("Öğe durumu güncellenemedi");
+      toast.error(t("errors.general"));
     }
   };
 
   const toggleItemFavorite = async (itemId, isFavorite) => {
     if (!user) {
-      toast.error("Oturum açmanız gerekiyor");
+      toast.error(t("errors.unauthorized"));
       return;
     }
 
@@ -274,13 +270,13 @@ export function FeedContent() {
       }
     } catch (error) {
       console.error("Error updating favorite status:", error);
-      toast.error("Favori durumu güncellenemedi");
+      toast.error(t("errors.general"));
     }
   };
 
   const toggleItemReadLater = async (itemId, isReadLater) => {
     if (!user) {
-      toast.error("Oturum açmanız gerekiyor");
+      toast.error(t("errors.unauthorized"));
       return;
     }
 
@@ -320,13 +316,13 @@ export function FeedContent() {
       }
     } catch (error) {
       console.error("Error updating read later status:", error);
-      toast.error("Okuma listesi durumu güncellenemedi");
+      toast.error(t("errors.general"));
     }
   };
 
   return (
     <div className="w-full">
-      <div className="flex justify-end mb-6">
+      {/* <div className="flex justify-end mb-6">
         <div className="flex items-center gap-2">
           <AddFeedButton />
           <Button
@@ -341,7 +337,7 @@ export function FeedContent() {
             </span>
           </Button>
         </div>
-      </div>
+      </div> */}
 
       <FeedList
         onRemoveFeed={removeFeed}
@@ -350,10 +346,7 @@ export function FeedContent() {
         onToggleReadLater={toggleItemReadLater}
       />
 
-      <KeyboardShortcutsHelp
-        open={showKeyboardHelp}
-        onOpenChange={setShowKeyboardHelp}
-      />
+     
     </div>
   );
 }

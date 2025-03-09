@@ -102,7 +102,7 @@ export function FavoritesContent() {
             is_favorite: true,
             is_read: interaction?.is_read || false,
             is_read_later: interaction?.is_read_later || false,
-            feed_title: feed.title || "Bilinmeyen Kaynak",
+            feed_title: feed.title || t("home.recentContent.unknownSource"),
             feed_type: feed.type || "rss",
             site_favicon: feed.site_favicon || null,
           };
@@ -117,7 +117,7 @@ export function FavoritesContent() {
         setItems(sortedItems);
       } catch (error) {
         console.error("Error in fetchFavorites:", error);
-        toast.error("Favoriler yüklenirken bir hata oluştu");
+        toast.error(t("errors.general"));
       } finally {
         setIsLoading(false);
       }

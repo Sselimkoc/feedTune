@@ -8,6 +8,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import { useCallback, useState, useMemo } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Sabitler
 const STALE_TIME = 1000 * 60 * 5; // 5 dakika
@@ -207,6 +208,7 @@ export function useFeeds() {
   const supabase = createSupabaseClient();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const { translate } = useLanguage();
 
   // Ana feed sorgusu
   const feedsQuery = useQuery({
@@ -556,18 +558,20 @@ export function useFeeds() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["feeds"] });
-      toast.success("Feed removed successfully");
+      toast.success(translate("feedRemovedSuccessfully"));
     },
     onError: (error) => {
       console.error("Error deleting feed:", error);
 
       if (error.code === "PGRST116") {
-        toast.error("You need to be logged in to delete feeds");
+        toast.error(translate("needToBeLoggedInToDeleteFeeds"));
       } else if (error.code === "23503") {
-        toast.error("Feed not found or already deleted");
+        toast.error(translate("feedNotFoundOrAlreadyDeleted"));
       } else {
         toast.error(
-          `Failed to delete feed: ${error.message || "Unknown error"}`
+          `${translate("failedToDeleteFeed")}: ${
+            error.message || "Unknown error"
+          }`
         );
       }
     },
@@ -578,7 +582,7 @@ export function useFeeds() {
     console.log("Toggling read status in useFeeds:", itemId, isRead);
 
     if (!user.id) {
-      toast.error("Oturum açmanız gerekiyor");
+      toast.error(translate("needToBeLoggedIn"));
       return;
     }
 
@@ -610,8 +614,8 @@ export function useFeeds() {
       // Başarılı işlem sonrası kullanıcıya bildirim göster
       toast.success(
         isRead
-          ? "Öğe okundu olarak işaretlendi"
-          : "Öğe okunmadı olarak işaretlendi",
+          ? translate("itemMarkedAsRead")
+          : translate("itemMarkedAsUnread"),
         {
           duration: 2000,
           position: "bottom-right",
@@ -629,7 +633,7 @@ export function useFeeds() {
         };
       });
 
-      toast.error("Öğe durumu güncellenirken hata oluştu");
+      toast.error(translate("errorUpdatingItemStatus"));
     }
   };
 
@@ -638,7 +642,7 @@ export function useFeeds() {
     console.log("Toggling favorite status in useFeeds:", itemId, isFavorite);
 
     if (!user.id) {
-      toast.error("Oturum açmanız gerekiyor");
+      toast.error(translate("needToBeLoggedIn"));
       return;
     }
 
@@ -670,7 +674,9 @@ export function useFeeds() {
 
       // Başarılı işlem sonrası kullanıcıya bildirim göster
       toast.success(
-        isFavorite ? "Öğe favorilere eklendi" : "Öğe favorilerden çıkarıldı",
+        isFavorite
+          ? translate("itemAddedToFavorites")
+          : translate("itemRemovedFromFavorites"),
         {
           duration: 2000,
           position: "bottom-right",
@@ -688,7 +694,7 @@ export function useFeeds() {
         };
       });
 
-      toast.error("Favori durumu güncellenirken hata oluştu");
+      toast.error(translate("errorUpdatingFavoriteStatus"));
     }
   };
 
@@ -697,7 +703,7 @@ export function useFeeds() {
     console.log("Toggling read later status in useFeeds:", itemId, isReadLater);
 
     if (!user.id) {
-      toast.error("Oturum açmanız gerekiyor");
+      toast.error(translate("needToBeLoggedIn"));
       return;
     }
 
@@ -730,8 +736,8 @@ export function useFeeds() {
       // Başarılı işlem sonrası kullanıcıya bildirim göster
       toast.success(
         isReadLater
-          ? "Öğe okuma listesine eklendi"
-          : "Öğe okuma listesinden çıkarıldı",
+          ? translate("itemAddedToReadLater")
+          : translate("itemRemovedFromReadLater"),
         {
           duration: 2000,
           position: "bottom-right",
@@ -749,7 +755,7 @@ export function useFeeds() {
         };
       });
 
-      toast.error("Okuma listesi durumu güncellenirken hata oluştu");
+      toast.error(translate("errorUpdatingReadLaterStatus"));
     }
   };
 

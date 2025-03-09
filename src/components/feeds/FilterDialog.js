@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowDownAZ, ArrowUpAZ, Clock, Star, Eye, EyeOff } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function FilterDialog({
   isOpen,
@@ -23,6 +24,7 @@ export function FilterDialog({
   onApplyFilters,
 }) {
   const [localFilters, setLocalFilters] = useState(filters);
+  const { t } = useLanguage();
 
   // Reset local filters when dialog opens
   const handleOpenChange = (open) => {
@@ -73,13 +75,15 @@ export function FilterDialog({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Filtrele ve Sırala</DialogTitle>
+          <DialogTitle>{t("feeds.filters.title")}</DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="sort" className="mt-4">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="sort">Sıralama</TabsTrigger>
-            <TabsTrigger value="filter">Filtreleme</TabsTrigger>
+            <TabsTrigger value="sort">{t("feeds.filters.sort")}</TabsTrigger>
+            <TabsTrigger value="filter">
+              {t("feeds.filters.filter")}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="sort" className="space-y-4 pt-4">
@@ -92,7 +96,7 @@ export function FilterDialog({
                   <RadioGroupItem value="newest" id="newest" />
                   <Label htmlFor="newest" className="flex items-center">
                     <ArrowDownAZ className="mr-2 h-4 w-4" />
-                    <span>En yeni</span>
+                    <span>{t("feeds.filters.newest")}</span>
                   </Label>
                 </div>
 
@@ -100,7 +104,7 @@ export function FilterDialog({
                   <RadioGroupItem value="oldest" id="oldest" />
                   <Label htmlFor="oldest" className="flex items-center">
                     <ArrowUpAZ className="mr-2 h-4 w-4" />
-                    <span>En eski</span>
+                    <span>{t("feeds.filters.oldest")}</span>
                   </Label>
                 </div>
 
@@ -108,7 +112,7 @@ export function FilterDialog({
                   <RadioGroupItem value="unread" id="unread" />
                   <Label htmlFor="unread" className="flex items-center">
                     <EyeOff className="mr-2 h-4 w-4" />
-                    <span>Okunmamışlar önce</span>
+                    <span>{t("feeds.filters.unreadFirst")}</span>
                   </Label>
                 </div>
 
@@ -116,7 +120,7 @@ export function FilterDialog({
                   <RadioGroupItem value="favorites" id="favorites" />
                   <Label htmlFor="favorites" className="flex items-center">
                     <Star className="mr-2 h-4 w-4" />
-                    <span>Favoriler önce</span>
+                    <span>{t("feeds.filters.favoritesFirst")}</span>
                   </Label>
                 </div>
               </RadioGroup>
@@ -125,7 +129,9 @@ export function FilterDialog({
 
           <TabsContent value="filter" className="space-y-6 pt-4">
             <div className="space-y-4">
-              <h3 className="text-sm font-medium">Gösterilecek İçerikler</h3>
+              <h3 className="text-sm font-medium">
+                {t("feeds.filters.showContent")}
+              </h3>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -137,7 +143,7 @@ export function FilterDialog({
                   />
                   <Label htmlFor="show-read" className="flex items-center">
                     <Eye className="mr-2 h-4 w-4" />
-                    <span>Okunmuş içerikler</span>
+                    <span>{t("feeds.filters.readContent")}</span>
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -150,7 +156,7 @@ export function FilterDialog({
                   />
                   <Label htmlFor="show-unread" className="flex items-center">
                     <EyeOff className="mr-2 h-4 w-4" />
-                    <span>Okunmamış içerikler</span>
+                    <span>{t("feeds.filters.unreadContent")}</span>
                   </Label>
                 </div>
               </div>
@@ -159,7 +165,9 @@ export function FilterDialog({
             <Separator />
 
             <div className="space-y-4">
-              <h3 className="text-sm font-medium">Besleme Türleri</h3>
+              <h3 className="text-sm font-medium">
+                {t("feeds.filters.feedTypes")}
+              </h3>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -169,7 +177,9 @@ export function FilterDialog({
                       updateFeedType("rss", checked)
                     }
                   />
-                  <Label htmlFor="show-rss">RSS Beslemeleri</Label>
+                  <Label htmlFor="show-rss">
+                    {t("feeds.filters.rssFeeds")}
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -179,7 +189,9 @@ export function FilterDialog({
                       updateFeedType("youtube", checked)
                     }
                   />
-                  <Label htmlFor="show-youtube">YouTube Beslemeleri</Label>
+                  <Label htmlFor="show-youtube">
+                    {t("feeds.filters.youtubeFeeds")}
+                  </Label>
                 </div>
               </div>
             </div>
@@ -188,9 +200,11 @@ export function FilterDialog({
 
         <DialogFooter className="flex justify-between">
           <Button variant="outline" onClick={handleResetFilters}>
-            Sıfırla
+            {t("feeds.filters.reset")}
           </Button>
-          <Button onClick={handleApplyFilters}>Uygula</Button>
+          <Button onClick={handleApplyFilters}>
+            {t("feeds.filters.apply")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

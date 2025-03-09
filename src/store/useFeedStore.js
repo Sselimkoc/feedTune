@@ -50,6 +50,19 @@ const setCache = (data) => {
 // useFeeds.js'den import edilen limitItemsPerFeed fonksiyonunu kullanıyoruz
 // Buradaki tanımı kaldırıyoruz
 
+// Feed ile ilgili toast mesajları için sabit anahtarlar tanımlayalım
+const FEED_MESSAGES = {
+  LOADING_ERROR: "errors.general",
+  FEED_EXISTS: "feeds.feedExists",
+  FEED_ADDED: "feeds.feedAdded",
+  FEED_ADD_ERROR: "feeds.addFeed.error",
+  FEED_REMOVED: "feeds.feedRemovedSuccessfully",
+  FEED_REMOVE_ERROR: "errors.failedToDeleteFeed",
+  ITEM_STATUS_ERROR: "errors.errorUpdatingItemStatus",
+  FAVORITE_STATUS_ERROR: "errors.errorUpdatingFavoriteStatus",
+  CACHE_CLEARED: "feeds.cacheCleared",
+};
+
 export const useFeedStore = create(
   persist(
     (set, get) => ({
@@ -141,7 +154,7 @@ export const useFeedStore = create(
             error: error.message,
             isLoading: false,
           });
-          toast.error("Beslemeleri yüklerken bir hata oluştu");
+          toast.error(FEED_MESSAGES.LOADING_ERROR);
         }
       },
 
@@ -235,7 +248,7 @@ export const useFeedStore = create(
           const existingFeed = feeds.find((f) => f.link === feed.link);
 
           if (existingFeed) {
-            toast.error("This feed is already in your list");
+            toast.error(FEED_MESSAGES.FEED_EXISTS);
             return;
           }
 
@@ -311,7 +324,7 @@ export const useFeedStore = create(
             });
           }
 
-          toast.success(`Added feed: ${feed.title}`);
+          toast.success(FEED_MESSAGES.FEED_ADDED);
         } catch (error) {
           console.error("Error adding feed:", {
             message: error.message,
@@ -319,9 +332,7 @@ export const useFeedStore = create(
             hint: error.hint,
             code: error.code,
           });
-          toast.error(
-            `Failed to add feed: ${error.message || "Unknown error"}`
-          );
+          toast.error(FEED_MESSAGES.FEED_ADD_ERROR);
           throw error;
         }
       },
@@ -357,10 +368,11 @@ export const useFeedStore = create(
             lastUpdated: now,
           });
 
-          toast.success("Feed removed successfully");
+          toast.success(FEED_MESSAGES.FEED_REMOVED);
         } catch (error) {
           console.error("Error removing feed:", error);
-          toast.error("Failed to remove feed");
+          toast.error(FEED_MESSAGES.FEED_REMOVE_ERROR);
+          throw error;
         }
       },
 
@@ -393,7 +405,7 @@ export const useFeedStore = create(
           });
         } catch (error) {
           console.error("Error updating item read status:", error);
-          toast.error("Failed to update item status");
+          toast.error(FEED_MESSAGES.ITEM_STATUS_ERROR);
         }
       },
 
@@ -426,7 +438,7 @@ export const useFeedStore = create(
           });
         } catch (error) {
           console.error("Error updating item favorite status:", error);
-          toast.error("Failed to update favorite status");
+          toast.error(FEED_MESSAGES.FAVORITE_STATUS_ERROR);
         }
       },
 
@@ -475,7 +487,7 @@ export const useFeedStore = create(
           items: [],
           lastUpdated: null,
         });
-        toast.success("Cache cleared successfully");
+        toast.success(FEED_MESSAGES.CACHE_CLEARED);
       },
 
       setSelectedFeedId: (id) => set({ selectedFeedId: id }),

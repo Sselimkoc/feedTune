@@ -22,15 +22,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 function handleError(error, info) {
   console.error("Feed Dialog Error:", error, info);
+  const { t } = useLanguage();
 
   if (error.name === "NetworkError") {
-    toast.error("Bağlantı hatası. İnternet bağlantınızı kontrol edin.");
+    toast.error(t("errors.networkError"));
   } else if (error.name === "LoadingError") {
-    toast.error("Feed yüklenirken bir hata oluştu.");
+    toast.error(t("errors.general"));
   } else {
-    toast.error(
-      error.message || "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
-    );
+    toast.error(error.message || t("errors.tryAgain"));
   }
 }
 

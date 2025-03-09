@@ -117,7 +117,7 @@ export function ReadLaterContent() {
         setItems(sortedItems);
       } catch (error) {
         console.error("Error in fetchReadLater:", error);
-        toast.error("Okuma listesi yüklenirken bir hata oluştu");
+        toast.error(t("errors.general"));
       } finally {
         setIsLoading(false);
       }

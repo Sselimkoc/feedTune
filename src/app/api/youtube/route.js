@@ -31,10 +31,55 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const channelId = searchParams.get("channelId");
     const handle = searchParams.get("handle");
+    const query = searchParams.get("q");
+
+    // Arama sorgusu varsa, kanal arama işlemini gerçekleştir
+    if (query) {
+      try {
+        const searchResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(
+            query
+          )}&maxResults=5&key=${YOUTUBE_API_KEY}`
+        );
+
+        if (!searchResponse.ok) {
+          const errorData = await searchResponse.json();
+          console.error("YouTube Search API Error:", errorData);
+          throw new Error(
+            errorData.error?.message || "Failed to search channels"
+          );
+        }
+
+        const searchData = await searchResponse.json();
+
+        if (!searchData.items || searchData.items.length === 0) {
+          return Response.json({ items: [] });
+        }
+
+        // Arama sonuçlarını formatla
+        const formattedResults = searchData.items.map((channel) => ({
+          id: channel.id.channelId,
+          title: channel.snippet.title,
+          description: channel.snippet.description,
+          thumbnail:
+            channel.snippet.thumbnails?.medium?.url ||
+            channel.snippet.thumbnails?.default?.url,
+          handle: channel.snippet.customUrl,
+        }));
+
+        return Response.json(formattedResults);
+      } catch (error) {
+        console.error("Error searching channels:", error);
+        return Response.json(
+          { error: error.message || "Failed to search channels" },
+          { status: 500 }
+        );
+      }
+    }
 
     if (!channelId && !handle) {
       return Response.json(
-        { error: "Channel ID or handle is required" },
+        { error: "Channel ID, handle or search query is required" },
         { status: 400 }
       );
     }

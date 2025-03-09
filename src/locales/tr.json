@@ -33,7 +33,13 @@
     "registerSuccess": "Kayıt başarılı",
     "registerError": "Kayıt başarısız",
     "logoutSuccess": "Çıkış başarılı",
-    "unauthorized": "Yetkisiz erişim"
+    "unauthorized": "Yetkisiz erişim",
+    "registerDescription": "FeedTune'a hoş geldiniz! Hemen hesap oluşturun ve içeriklerinizi yönetmeye başlayın.",
+    "loginDescription": "Hesabınıza giriş yapın ve kaldığınız yerden devam edin.",
+    "registerPrompt": "Hesabınız yok mu? Hemen oluşturun",
+    "loginPrompt": "Zaten hesabınız var mı? Giriş yapın",
+    "verificationEmailSent": "Doğrulama e-postası gönderildi! Lütfen gelen kutunuzu kontrol edin.",
+    "authenticationError": "Kimlik doğrulama hatası oluştu."
   },
   "navigation": {
     "home": "Ana Sayfa",
@@ -126,16 +132,15 @@
     },
     "addYoutubeFeed": {
       "title": "YouTube Kanalı Ekle",
-      "channelId": "Kanal ID veya URL",
-      "channelIdPlaceholder": "Kanal ID, URL veya @kullanıcıadı",
-      "channelIdInvalid": "Geçerli bir Kanal ID, URL veya kullanıcı adı giriniz",
-      "searching": "Kanal aranıyor...",
-      "channelNotFound": "Kanal bulunamadı",
       "add": "Kanalı Ekle",
-      "success": "Kanal başarıyla eklendi",
-      "error": "Kanal eklenirken hata oluştu",
-      "subscriberCount": "Abone",
-      "videoCount": "Video"
+      "adding": "Kanal Ekleniyor...",
+      "success": "YouTube kanalı başarıyla eklendi",
+      "error": "Kanal eklenirken bir hata oluştu",
+      "channelNotFound": "Kanal bulunamadı",
+      "searchPlaceholder": "Kanal adı, ID veya @kullanıcıadı ile ara",
+      "searchDescription": "YouTube kanal adı veya @kullanıcıadı girin",
+      "searching": "Kanal aranıyor...",
+      "searchError": "Kanal aranırken bir hata oluştu. Lütfen tekrar deneyin."
     },
     "deleteFeed": {
       "title": "Feedi Sil",
@@ -143,6 +148,27 @@
       "deleting": "Feed siliniyor...",
       "success": "Feed ve ilişkili tüm veriler başarıyla silindi",
       "error": "Feed silme işlemi başarısız oldu"
+    },
+    "filters": {
+      "title": "Filtrele ve Sırala",
+      "sort": "Sıralama",
+      "filter": "Filtreleme",
+      "newest": "En yeni",
+      "oldest": "En eski",
+      "unreadFirst": "Okunmamışlar önce",
+      "favoritesFirst": "Favoriler önce",
+      "showContent": "Gösterilecek İçerikler",
+      "readContent": "Okunmuş içerikler",
+      "unreadContent": "Okunmamış içerikler",
+      "feedTypes": "Besleme Türleri",
+      "rssFeeds": "RSS Beslemeleri",
+      "youtubeFeeds": "YouTube Beslemeleri",
+      "reset": "Sıfırla",
+      "apply": "Uygula",
+      "noMatchingContent": "Seçilen filtrelere uygun içerik bulunamadı. Lütfen filtrelerinizi değiştirin veya sıfırlayın.",
+      "resetFilters": "Filtreleri Sıfırla",
+      "adjustFilters": "Filtreleri Ayarla",
+      "clearAllSelections": "Tüm Seçimleri Kaldır"
     },
     "feedList": {
       "title": "Beslemelerim",
@@ -173,8 +199,19 @@
       "openItem": "Öğeyi aç",
       "markAsRead": "Okundu/Okunmadı olarak işaretle",
       "addToFavorites": "Favorilere ekle/çıkar",
-      "addToReadLater": "Okuma listesine ekle/çıkar"
-    }
+      "addToReadLater": "Okuma listesine ekle/çıkar",
+      "showHelp": "Bu yardımı göster"
+    },
+    "feedRemovedSuccessfully": "Feed başarıyla silindi",
+    "itemMarkedAsRead": "Öğe okundu olarak işaretlendi",
+    "itemMarkedAsUnread": "Öğe okunmadı olarak işaretlendi",
+    "itemAddedToFavorites": "Öğe favorilere eklendi",
+    "itemRemovedFromFavorites": "Öğe favorilerden çıkarıldı",
+    "itemAddedToReadLater": "Öğe okuma listesine eklendi",
+    "itemRemovedFromReadLater": "Öğe okuma listesinden çıkarıldı",
+    "feedExists": "Bu feed zaten listenizde",
+    "feedAdded": "Feed başarıyla eklendi",
+    "cacheCleared": "Önbellek başarıyla temizlendi"
   },
   "favorites": {
     "title": "Favoriler",
@@ -212,7 +249,8 @@
     "days": "gün",
     "deleteAccount": "Hesabı Sil",
     "deleteAccountConfirmation": "Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
-    "freePlan": "Ücretsiz Plan"
+    "freePlan": "Ücretsiz Plan",
+    "resetToDefaults": "Varsayılanlara Sıfırla"
   },
   "errors": {
     "general": "Bir hata oluştu",
@@ -221,6 +259,13 @@
     "forbidden": "Bu işlemi yapmaya yetkiniz yok",
     "serverError": "Sunucu hatası",
     "networkError": "Ağ hatası",
-    "tryAgain": "Lütfen tekrar deneyin"
+    "tryAgain": "Lütfen tekrar deneyin",
+    "needToBeLoggedIn": "Oturum açmanız gerekiyor",
+    "needToBeLoggedInToDeleteFeeds": "Feed'leri silmek için giriş yapmalısınız",
+    "feedNotFoundOrAlreadyDeleted": "Feed bulunamadı veya zaten silinmiş",
+    "failedToDeleteFeed": "Feed silinemedi",
+    "errorUpdatingItemStatus": "Öğe durumu güncellenirken hata oluştu",
+    "errorUpdatingFavoriteStatus": "Favori durumu güncellenirken hata oluştu",
+    "errorUpdatingReadLaterStatus": "Okuma listesi durumu güncellenirken hata oluştu"
   }
 } 

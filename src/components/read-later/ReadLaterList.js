@@ -12,6 +12,8 @@ import {
   BookmarkCheck,
   Loader2,
   Badge,
+  Youtube,
+  RssIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -20,7 +22,6 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
-import { RssIcon } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
 import { stripHtml } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -32,20 +33,7 @@ export function ReadLaterList({ initialItems, isLoading }) {
   const { t, language } = useLanguage();
 
   // Debug bilgisi
-  useEffect(() => {
-    console.log("ReadLaterList received items:", initialItems?.length || 0);
-    console.log("Sample item:", initialItems?.[0]);
-
-    // Render edilecek öğeleri kontrol et
-    if (initialItems?.length > 0) {
-      console.log("Items to be rendered:", items.length);
-      console.log("First item feed info:", {
-        feed_title: initialItems[0].feed_title,
-        feed_type: initialItems[0].feed_type,
-        feed_id: initialItems[0].feed_id,
-      });
-    }
-  }, [initialItems, items]);
+  console.log("ReadLaterList: Initial items:", initialItems?.length);
 
   // initialItems değiştiğinde items state'ini güncelle
   useEffect(() => {
@@ -53,30 +41,25 @@ export function ReadLaterList({ initialItems, isLoading }) {
   }, [initialItems]);
 
   const toggleItemRead = async (itemId, isRead) => {
-    if (!user) {
-      toast.error("Oturum açmanız gerekiyor");
+    if (!user.id) {
+      toast.error(t("errors.needToBeLoggedIn"));
       return;
     }
 
     try {
-      console.log("Toggling read status in ReadLaterList:", itemId, isRead);
-
       // Optimistic update
-      setItems((currentItems) =>
-        currentItems.map((item) =>
-          item.id === itemId ? { ...item, is_read: isRead } : item
-        )
+      const updatedItems = items.map((item) =>
+        item.id === itemId ? { ...item, is_read: isRead } : item
       );
+      setItems(updatedItems);
 
-      // Önce etkileşim var mı kontrol et
-      const { data: existingInteraction, error: checkError } = await supabase
+      // API call
+      const { data: existingInteraction } = await supabase
         .from("user_item_interactions")
         .select("*")
         .eq("user_id", user.id)
         .eq("item_id", itemId)
         .single();
-
-      if (checkError && checkError.code !== "PGRST116") throw checkError;
 
       if (existingInteraction) {
         // Etkileşim varsa güncelle
@@ -95,7 +78,7 @@ export function ReadLaterList({ initialItems, isLoading }) {
             item_id: itemId,
             is_read: isRead,
             is_favorite: false,
-            is_read_later: true, // Okuma listesi sayfasında olduğu için
+            is_read_later: true,
           },
         ]);
 
@@ -104,26 +87,27 @@ export function ReadLaterList({ initialItems, isLoading }) {
 
       // Başarılı işlem sonrası kullanıcıya bildirim göster
       toast.success(
-        isRead
-          ? "Öğe okundu olarak işaretlendi"
-          : "Öğe okunmadı olarak işaretlendi",
+        isRead ? t("feeds.itemMarkedAsRead") : t("feeds.itemMarkedAsUnread"),
         {
           duration: 2000,
           position: "bottom-right",
         }
       );
     } catch (error) {
-      console.error("Error toggling read status:", error);
+      console.error("Error updating read status:", error);
+      toast.error(t("errors.general"));
 
-      // Hata durumunda optimistic update'i geri al
-      setItems(initialItems);
-      toast.error("Öğe durumu güncellenirken hata oluştu");
+      // Rollback on error
+      const rollbackItems = items.map((item) =>
+        item.id === itemId ? { ...item, is_read: !isRead } : item
+      );
+      setItems(rollbackItems);
     }
   };
 
   const toggleItemFavorite = async (itemId, isFavorite) => {
-    if (!user) {
-      toast.error("Oturum açmanız gerekiyor");
+    if (!user.id) {
+      toast.error(t("errors.needToBeLoggedIn"));
       return;
     }
 
@@ -135,21 +119,18 @@ export function ReadLaterList({ initialItems, isLoading }) {
       );
 
       // Optimistic update
-      setItems((currentItems) =>
-        currentItems.map((item) =>
-          item.id === itemId ? { ...item, is_favorite: isFavorite } : item
-        )
+      const updatedItems = items.map((item) =>
+        item.id === itemId ? { ...item, is_favorite: isFavorite } : item
       );
+      setItems(updatedItems);
 
-      // Önce etkileşim var mı kontrol et
-      const { data: existingInteraction, error: checkError } = await supabase
+      // API call
+      const { data: existingInteraction } = await supabase
         .from("user_item_interactions")
         .select("*")
         .eq("user_id", user.id)
         .eq("item_id", itemId)
         .single();
-
-      if (checkError && checkError.code !== "PGRST116") throw checkError;
 
       if (existingInteraction) {
         // Etkileşim varsa güncelle
@@ -168,7 +149,7 @@ export function ReadLaterList({ initialItems, isLoading }) {
             item_id: itemId,
             is_read: false,
             is_favorite: isFavorite,
-            is_read_later: true, // Okuma listesi sayfasında olduğu için
+            is_read_later: true,
           },
         ]);
 
@@ -177,55 +158,51 @@ export function ReadLaterList({ initialItems, isLoading }) {
 
       // Başarılı işlem sonrası kullanıcıya bildirim göster
       toast.success(
-        isFavorite ? "Öğe favorilere eklendi" : "Öğe favorilerden çıkarıldı",
+        isFavorite
+          ? t("feeds.itemAddedToFavorites")
+          : t("feeds.itemRemovedFromFavorites"),
         {
           duration: 2000,
           position: "bottom-right",
         }
       );
     } catch (error) {
-      console.error("Error toggling favorite status:", error);
+      console.error("Error updating favorite status:", error);
+      toast.error(t("errors.general"));
 
-      // Hata durumunda optimistic update'i geri al
-      setItems(initialItems);
-      toast.error("Favori durumu güncellenirken hata oluştu");
+      // Rollback on error
+      const rollbackItems = items.map((item) =>
+        item.id === itemId ? { ...item, is_favorite: !isFavorite } : item
+      );
+      setItems(rollbackItems);
     }
   };
 
   const toggleItemReadLater = async (itemId, isReadLater) => {
-    if (!user) {
-      toast.error("Oturum açmanız gerekiyor");
+    if (!user.id) {
+      toast.error(t("errors.needToBeLoggedIn"));
       return;
     }
 
     try {
-      console.log(
-        "Toggling read later status in ReadLaterList:",
-        itemId,
-        isReadLater
-      );
+      // Optimistic update - Okuma listesinden çıkarılıyorsa, öğeyi listeden kaldır
+      if (isReadLater === false) {
+        setItems(items.filter((item) => item.id !== itemId));
+      } else {
+        setItems(
+          items.map((item) =>
+            item.id === itemId ? { ...item, is_read_later: isReadLater } : item
+          )
+        );
+      }
 
-      // Optimistic update
-      setItems((currentItems) =>
-        // Okuma listesinden çıkarılıyorsa, öğeyi listeden kaldır
-        isReadLater === false
-          ? currentItems.filter((item) => item.id !== itemId)
-          : currentItems.map((item) =>
-              item.id === itemId
-                ? { ...item, is_read_later: isReadLater }
-                : item
-            )
-      );
-
-      // Önce etkileşim var mı kontrol et
-      const { data: existingInteraction, error: checkError } = await supabase
+      // API call
+      const { data: existingInteraction } = await supabase
         .from("user_item_interactions")
         .select("*")
         .eq("user_id", user.id)
         .eq("item_id", itemId)
         .single();
-
-      if (checkError && checkError.code !== "PGRST116") throw checkError;
 
       if (existingInteraction) {
         // Etkileşim varsa güncelle
@@ -254,19 +231,22 @@ export function ReadLaterList({ initialItems, isLoading }) {
       // Başarılı işlem sonrası kullanıcıya bildirim göster
       toast.success(
         isReadLater
-          ? "Öğe okuma listesine eklendi"
-          : "Öğe okuma listesinden çıkarıldı",
+          ? t("feeds.itemAddedToReadLater")
+          : t("feeds.itemRemovedFromReadLater"),
         {
           duration: 2000,
           position: "bottom-right",
         }
       );
     } catch (error) {
-      console.error("Error toggling read later status:", error);
+      console.error("Error updating read later status:", error);
+      toast.error(t("errors.general"));
 
-      // Hata durumunda optimistic update'i geri al
-      setItems(initialItems);
-      toast.error("Okuma listesi durumu güncellenirken hata oluştu");
+      // Rollback on error
+      const rollbackItems = items.map((item) =>
+        item.id === itemId ? { ...item, is_read_later: !isReadLater } : item
+      );
+      setItems(rollbackItems);
     }
   };
 
@@ -281,10 +261,8 @@ export function ReadLaterList({ initialItems, isLoading }) {
   if (items.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-10">
-        <p>
-          Henüz okuma listenizde öğe yok. Beslemelerinizdeki öğeleri "Listeye
-          Ekle" butonuna tıklayarak okuma listenize ekleyebilirsiniz.
-        </p>
+        <p>{t("readLater.noItems")}</p>
+        <p className="mt-2">{t("readLater.addToReadLater")}</p>
       </div>
     );
   }
@@ -334,15 +312,32 @@ export function ReadLaterList({ initialItems, isLoading }) {
                 </div>
 
                 <div className="p-4 flex-1 flex flex-col">
-                  {/* Feed bilgisi ve tarih */}
+                  {/* Kaynak ve Tarih */}
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-muted-foreground font-medium">
-                        {item.feed_title || "Bilinmeyen Kaynak"}
+                      {item.site_favicon ? (
+                        <div className="relative w-4 h-4 flex-shrink-0">
+                          <Image
+                            src={item.site_favicon}
+                            alt=""
+                            width={16}
+                            height={16}
+                            className="object-cover rounded"
+                            unoptimized={true}
+                          />
+                        </div>
+                      ) : item.feed_type === "youtube" ? (
+                        <Youtube className="h-3.5 w-3.5 text-red-500" />
+                      ) : (
+                        <RssIcon className="h-3.5 w-3.5 text-orange-500" />
+                      )}
+                      <span className="text-xs text-muted-foreground truncate max-w-[150px]">
+                        {item.feed_title ||
+                          t("home.recentContent.unknownSource")}
                       </span>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {formatTimeAgo(new Date(item.published_at))}
+                      {formatTimeAgo(item.published_at)}
                     </span>
                   </div>
 
@@ -365,7 +360,7 @@ export function ReadLaterList({ initialItems, isLoading }) {
                       onClick={() => handleOpenLink(item.link)}
                     >
                       <ExternalLink className="h-4 w-4 mr-1.5" />
-                      Oku
+                      {t("home.recentContent.read")}
                     </Button>
                     <Button
                       variant="ghost"

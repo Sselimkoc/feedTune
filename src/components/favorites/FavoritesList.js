@@ -12,6 +12,7 @@ import {
   BookmarkCheck,
   Loader2,
   Badge,
+  Youtube,
 } from "lucide-react";
 import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -32,20 +33,7 @@ export function FavoritesList({ initialItems, isLoading }) {
   const { t, language } = useLanguage();
 
   // Debug bilgisi
-  useEffect(() => {
-    console.log("FavoritesList received items:", initialItems?.length || 0);
-    console.log("Sample item:", initialItems?.[0]);
-
-    // Render edilecek öğeleri kontrol et
-    if (initialItems?.length > 0) {
-      console.log("Items to be rendered:", items.length);
-      console.log("First item feed info:", {
-        feed_title: initialItems[0].feed_title,
-        feed_type: initialItems[0].feed_type,
-        feed_id: initialItems[0].feed_id,
-      });
-    }
-  }, [initialItems, items]);
+  console.log("FavoritesList: Initial items:", initialItems?.length);
 
   // initialItems değiştiğinde items state'ini güncelle
   useEffect(() => {
@@ -53,30 +41,20 @@ export function FavoritesList({ initialItems, isLoading }) {
   }, [initialItems]);
 
   const toggleItemRead = async (itemId, isRead) => {
-    if (!user) {
-      toast.error("Oturum açmanız gerekiyor");
-      return;
-    }
-
     try {
-      console.log("Toggling read status in FavoritesList:", itemId, isRead);
-
       // Optimistic update
-      setItems((currentItems) =>
-        currentItems.map((item) =>
-          item.id === itemId ? { ...item, is_read: isRead } : item
-        )
+      const updatedItems = items.map((item) =>
+        item.id === itemId ? { ...item, is_read: isRead } : item
       );
+      setItems(updatedItems);
 
-      // Önce etkileşim var mı kontrol et
-      const { data: existingInteraction, error: checkError } = await supabase
+      // API call
+      const { data: existingInteraction } = await supabase
         .from("user_item_interactions")
         .select("*")
         .eq("user_id", user.id)
         .eq("item_id", itemId)
         .single();
-
-      if (checkError && checkError.code !== "PGRST116") throw checkError;
 
       if (existingInteraction) {
         // Etkileşim varsa güncelle
@@ -94,65 +72,45 @@ export function FavoritesList({ initialItems, isLoading }) {
             user_id: user.id,
             item_id: itemId,
             is_read: isRead,
-            is_favorite: true, // Favoriler sayfasında olduğu için
+            is_favorite: true,
             is_read_later: false,
           },
         ]);
 
         if (error) throw error;
       }
-
-      // Başarılı işlem sonrası kullanıcıya bildirim göster
-      toast.success(
-        isRead
-          ? "Öğe okundu olarak işaretlendi"
-          : "Öğe okunmadı olarak işaretlendi",
-        {
-          duration: 2000,
-          position: "bottom-right",
-        }
-      );
     } catch (error) {
-      console.error("Error toggling read status:", error);
+      console.error("Error updating read status:", error);
+      toast.error(t("errors.general"));
 
-      // Hata durumunda optimistic update'i geri al
-      setItems(initialItems);
-      toast.error("Öğe durumu güncellenirken hata oluştu");
+      // Rollback on error
+      const rollbackItems = items.map((item) =>
+        item.id === itemId ? { ...item, is_read: !isRead } : item
+      );
+      setItems(rollbackItems);
     }
   };
 
   const toggleItemFavorite = async (itemId, isFavorite) => {
-    if (!user) {
-      toast.error("Oturum açmanız gerekiyor");
-      return;
-    }
-
     try {
-      console.log(
-        "Toggling favorite status in FavoritesList:",
-        itemId,
-        isFavorite
-      );
+      // Optimistic update - Favorilerden çıkarılıyorsa, öğeyi listeden kaldır
+      if (isFavorite === false) {
+        setItems(items.filter((item) => item.id !== itemId));
+      } else {
+        setItems(
+          items.map((item) =>
+            item.id === itemId ? { ...item, is_favorite: isFavorite } : item
+          )
+        );
+      }
 
-      // Optimistic update
-      setItems((currentItems) =>
-        // Favorilerden çıkarılıyorsa, öğeyi listeden kaldır
-        isFavorite === false
-          ? currentItems.filter((item) => item.id !== itemId)
-          : currentItems.map((item) =>
-              item.id === itemId ? { ...item, is_favorite: isFavorite } : item
-            )
-      );
-
-      // Önce etkileşim var mı kontrol et
-      const { data: existingInteraction, error: checkError } = await supabase
+      // API call
+      const { data: existingInteraction } = await supabase
         .from("user_item_interactions")
         .select("*")
         .eq("user_id", user.id)
         .eq("item_id", itemId)
         .single();
-
-      if (checkError && checkError.code !== "PGRST116") throw checkError;
 
       if (existingInteraction) {
         // Etkileşim varsa güncelle
@@ -177,53 +135,40 @@ export function FavoritesList({ initialItems, isLoading }) {
 
         if (error) throw error;
       }
-
-      // Başarılı işlem sonrası kullanıcıya bildirim göster
-      toast.success(
-        isFavorite ? "Öğe favorilere eklendi" : "Öğe favorilerden çıkarıldı",
-        {
-          duration: 2000,
-          position: "bottom-right",
-        }
-      );
     } catch (error) {
-      console.error("Error toggling favorite status:", error);
+      console.error("Error updating favorite status:", error);
+      toast.error(t("errors.general"));
 
-      // Hata durumunda optimistic update'i geri al
-      setItems(initialItems);
-      toast.error("Favori durumu güncellenirken hata oluştu");
+      // Rollback on error - Favorilerden çıkarma işlemi başarısız olduysa, öğeyi geri ekle
+      if (isFavorite === false) {
+        const itemToRestore = initialItems.find((item) => item.id === itemId);
+        if (itemToRestore) {
+          setItems([...items, itemToRestore]);
+        }
+      } else {
+        const rollbackItems = items.map((item) =>
+          item.id === itemId ? { ...item, is_favorite: !isFavorite } : item
+        );
+        setItems(rollbackItems);
+      }
     }
   };
 
   const toggleItemReadLater = async (itemId, isReadLater) => {
-    if (!user) {
-      toast.error("Oturum açmanız gerekiyor");
-      return;
-    }
-
     try {
-      console.log(
-        "Toggling read later status in FavoritesList:",
-        itemId,
-        isReadLater
-      );
-
       // Optimistic update
-      setItems((currentItems) =>
-        currentItems.map((item) =>
-          item.id === itemId ? { ...item, is_read_later: isReadLater } : item
-        )
+      const updatedItems = items.map((item) =>
+        item.id === itemId ? { ...item, is_read_later: isReadLater } : item
       );
+      setItems(updatedItems);
 
-      // Önce etkileşim var mı kontrol et
-      const { data: existingInteraction, error: checkError } = await supabase
+      // API call
+      const { data: existingInteraction } = await supabase
         .from("user_item_interactions")
         .select("*")
         .eq("user_id", user.id)
         .eq("item_id", itemId)
         .single();
-
-      if (checkError && checkError.code !== "PGRST116") throw checkError;
 
       if (existingInteraction) {
         // Etkileşim varsa güncelle
@@ -241,7 +186,7 @@ export function FavoritesList({ initialItems, isLoading }) {
             user_id: user.id,
             item_id: itemId,
             is_read: false,
-            is_favorite: true, // Favoriler sayfasında olduğu için
+            is_favorite: true,
             is_read_later: isReadLater,
           },
         ]);
@@ -249,15 +194,14 @@ export function FavoritesList({ initialItems, isLoading }) {
         if (error) throw error;
       }
     } catch (error) {
-      console.error("Error toggling read later status:", error);
+      console.error("Error updating read later status:", error);
+      toast.error(t("errors.general"));
 
       // Rollback on error
-      setItems((currentItems) =>
-        currentItems.map((item) =>
-          item.id === itemId ? { ...item, is_read_later: !isReadLater } : item
-        )
+      const rollbackItems = items.map((item) =>
+        item.id === itemId ? { ...item, is_read_later: !isReadLater } : item
       );
-      toast.error("Okuma listesi durumu güncellenirken hata oluştu");
+      setItems(rollbackItems);
     }
   };
 
@@ -283,15 +227,16 @@ export function FavoritesList({ initialItems, isLoading }) {
         <div className="mb-4 rounded-full bg-muted p-3">
           <Star className="h-6 w-6 text-muted-foreground" />
         </div>
-        <h3 className="mb-2 text-lg font-medium">Henüz favoriniz yok</h3>
+        <h3 className="mb-2 text-lg font-medium">
+          {t("favorites.noFavorites")}
+        </h3>
         <p className="mb-6 max-w-md text-sm text-muted-foreground">
-          Beğendiğiniz içerikleri favorilere ekleyerek daha sonra kolayca
-          erişebilirsiniz.
+          {t("favorites.addToFavorites")}
         </p>
         <Button asChild>
           <Link href="/feeds">
             <RssIcon className="h-4 w-4 mr-2" />
-            Feed&apos;lere Git
+            {t("feeds.feedList.title")}
           </Link>
         </Button>
       </div>
@@ -300,34 +245,119 @@ export function FavoritesList({ initialItems, isLoading }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {items.map((item) => {
-        console.log("Rendering item:", item.id, item.title);
-        return (
-          <Card key={item.id} className="overflow-hidden border">
-            <CardContent className="p-0 flex flex-col h-full">
-              <div className="relative w-full aspect-video bg-muted mb-3">
-                {item.thumbnail ? (
-                  <Image
-                    src={item.thumbnail}
-                    alt={item.title}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Star className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                )}
+      {items.map((item) => (
+        <Card key={item.id} className="overflow-hidden border">
+          <CardContent className="p-0 flex flex-col h-full">
+            {/* Thumbnail */}
+            <div className="relative w-full aspect-video bg-muted mb-3">
+              {item.thumbnail ? (
+                <Image
+                  src={item.thumbnail}
+                  alt={item.title}
+                  fill
+                  className="object-cover"
+                  unoptimized={true}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Star className="h-8 w-8 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="p-4 flex-1 flex flex-col">
+              {/* Kaynak ve Tarih */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  {item.site_favicon ? (
+                    <div className="relative w-4 h-4 flex-shrink-0">
+                      <Image
+                        src={item.site_favicon}
+                        alt=""
+                        width={16}
+                        height={16}
+                        className="object-cover rounded"
+                        unoptimized={true}
+                      />
+                    </div>
+                  ) : item.feed_type === "youtube" ? (
+                    <Youtube className="h-3.5 w-3.5 text-red-500" />
+                  ) : (
+                    <RssIcon className="h-3.5 w-3.5 text-orange-500" />
+                  )}
+                  <span className="text-xs text-muted-foreground truncate max-w-[150px]">
+                    {item.feed_title || t("home.recentContent.unknownSource")}
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {formatTimeAgo(item.published_at)}
+                </span>
               </div>
-              <div className="p-4 flex-1 flex flex-col">
-                <h3 className="font-semibold text-base mb-2 line-clamp-2">
-                  {item.title}
-                </h3>
+
+              {/* Title */}
+              <h3 className="font-semibold text-base mb-2 line-clamp-2">
+                {item.title}
+              </h3>
+
+              {/* Description */}
+              <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                {stripHtml(item.description)}
+              </p>
+
+              {/* Actions */}
+              <div className="mt-auto flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 rounded-md flex-1"
+                  onClick={() => handleOpenLink(item.link)}
+                >
+                  <ExternalLink className="h-4 w-4 mr-1.5" />
+                  {t("home.recentContent.read")}
+                </Button>
+                <div className="flex items-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-md"
+                    onClick={() => toggleItemRead(item.id, !item.is_read)}
+                  >
+                    <Check
+                      className={cn(
+                        "h-4 w-4",
+                        item.is_read && "fill-current text-green-500"
+                      )}
+                    />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-md"
+                    onClick={() => toggleItemFavorite(item.id, false)}
+                  >
+                    <Star className="h-4 w-4 fill-current text-yellow-500" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-md"
+                    onClick={() =>
+                      toggleItemReadLater(item.id, !item.is_read_later)
+                    }
+                  >
+                    {item.is_read_later ? (
+                      <BookmarkCheck className="h-4 w-4 fill-current text-blue-500" />
+                    ) : (
+                      <BookmarkPlus className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

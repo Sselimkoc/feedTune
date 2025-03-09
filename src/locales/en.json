@@ -33,7 +33,13 @@
     "registerSuccess": "Registration successful",
     "registerError": "Registration failed",
     "logoutSuccess": "Logout successful",
-    "unauthorized": "Unauthorized access"
+    "unauthorized": "Unauthorized access",
+    "registerDescription": "Welcome to FeedTune! Create an account now and start managing your content.",
+    "loginDescription": "Sign in to your account and continue where you left off.",
+    "registerPrompt": "Don't have an account? Create one now",
+    "loginPrompt": "Already have an account? Sign in",
+    "verificationEmailSent": "Verification email sent! Please check your inbox.",
+    "authenticationError": "Authentication error occurred."
   },
   "navigation": {
     "home": "Home",
@@ -126,16 +132,15 @@
     },
     "addYoutubeFeed": {
       "title": "Add YouTube Channel",
-      "channelId": "Channel ID or URL",
-      "channelIdPlaceholder": "Channel ID, URL, or @username",
-      "channelIdInvalid": "Please enter a valid Channel ID, URL, or username",
-      "searching": "Searching for channel...",
-      "channelNotFound": "Channel not found",
       "add": "Add Channel",
-      "success": "Channel added successfully",
+      "adding": "Adding Channel...",
+      "success": "YouTube channel added successfully",
       "error": "Error adding channel",
-      "subscriberCount": "Subscribers",
-      "videoCount": "Videos"
+      "channelNotFound": "Channel not found",
+      "searchPlaceholder": "Search by channel name, ID or @username",
+      "searchDescription": "Enter YouTube channel name or @username",
+      "searching": "Searching channel...",
+      "searchError": "Error searching for channel. Please try again."
     },
     "deleteFeed": {
       "title": "Delete Feed",
@@ -143,6 +148,27 @@
       "deleting": "Deleting feed...",
       "success": "Feed and all related data deleted successfully",
       "error": "Failed to delete feed"
+    },
+    "filters": {
+      "title": "Filter and Sort",
+      "sort": "Sort",
+      "filter": "Filter",
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "unreadFirst": "Unread first",
+      "favoritesFirst": "Favorites first",
+      "showContent": "Show Content",
+      "readContent": "Read content",
+      "unreadContent": "Unread content",
+      "feedTypes": "Feed Types",
+      "rssFeeds": "RSS Feeds",
+      "youtubeFeeds": "YouTube Feeds",
+      "reset": "Reset",
+      "apply": "Apply",
+      "noMatchingContent": "No content found matching the selected filters. Please adjust or reset your filters.",
+      "resetFilters": "Reset Filters",
+      "adjustFilters": "Adjust Filters",
+      "clearAllSelections": "Clear All Selections"
     },
     "feedList": {
       "title": "My Feeds",
@@ -173,8 +199,19 @@
       "openItem": "Open item",
       "markAsRead": "Mark as read/unread",
       "addToFavorites": "Add to/remove from favorites",
-      "addToReadLater": "Add to/remove from read later"
-    }
+      "addToReadLater": "Add to/remove from read later",
+      "showHelp": "Show this help"
+    },
+    "feedRemovedSuccessfully": "Feed removed successfully",
+    "itemMarkedAsRead": "Item marked as read",
+    "itemMarkedAsUnread": "Item marked as unread",
+    "itemAddedToFavorites": "Item added to favorites",
+    "itemRemovedFromFavorites": "Item removed from favorites",
+    "itemAddedToReadLater": "Item added to read later list",
+    "itemRemovedFromReadLater": "Item removed from read later list",
+    "feedExists": "This feed is already in your list",
+    "feedAdded": "Feed added successfully",
+    "cacheCleared": "Cache cleared successfully"
   },
   "favorites": {
     "title": "Favorites",
@@ -212,7 +249,8 @@
     "days": "days",
     "deleteAccount": "Delete Account",
     "deleteAccountConfirmation": "Are you sure you want to delete your account? This action cannot be undone.",
-    "freePlan": "Free Plan"
+    "freePlan": "Free Plan",
+    "resetToDefaults": "Reset to Defaults"
   },
   "errors": {
     "general": "An error occurred",
@@ -221,6 +259,13 @@
     "forbidden": "You don't have permission to perform this action",
     "serverError": "Server error",
     "networkError": "Network error",
-    "tryAgain": "Please try again"
+    "tryAgain": "Please try again",
+    "needToBeLoggedIn": "You need to be logged in",
+    "needToBeLoggedInToDeleteFeeds": "You need to be logged in to delete feeds",
+    "feedNotFoundOrAlreadyDeleted": "Feed not found or already deleted",
+    "failedToDeleteFeed": "Failed to delete feed",
+    "errorUpdatingItemStatus": "Error updating item status",
+    "errorUpdatingFavoriteStatus": "Error updating favorite status",
+    "errorUpdatingReadLaterStatus": "Error updating read later status"
   }
 } 

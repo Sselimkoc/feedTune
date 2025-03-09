@@ -153,7 +153,7 @@ export function SettingsContent() {
               });
             }}
           >
-            Reset to Defaults
+            {t("settings.resetToDefaults")}
           </Button>
         </div>
       </div>

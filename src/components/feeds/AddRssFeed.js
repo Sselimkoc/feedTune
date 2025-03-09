@@ -61,12 +61,12 @@ export function AddRssFeed({ onBack, onSuccess }) {
     const error = validateUrl(formState.url);
     if (error) {
       setFormState((prev) => ({ ...prev, error }));
-      toast.error(error);
+      toast.error(t("feeds.addRssFeed.urlInvalid"));
       return;
     }
 
     if (!user?.id) {
-      toast.error("You must be logged in to add feeds");
+      toast.error(t("errors.unauthorized"));
       return;
     }
 
@@ -94,11 +94,11 @@ export function AddRssFeed({ onBack, onSuccess }) {
       });
 
       setFormState((prev) => ({ ...prev, url: "" }));
-      toast.success("Feed added successfully");
+      toast.success(t("feeds.addRssFeed.success"));
       onSuccess?.();
     } catch (error) {
       console.error("Error fetching feed:", error);
-      toast.error(error.message || "Failed to fetch RSS feed");
+      toast.error(error.message || t("feeds.addRssFeed.error"));
       setFormState((prev) => ({ ...prev, error: error.message }));
     } finally {
       setFormState((prev) => ({ ...prev, isSubmitting: false }));
@@ -147,11 +147,7 @@ export function AddRssFeed({ onBack, onSuccess }) {
         <Button
           type="submit"
           className="w-full"
-          disabled={
-            !formState.url ||
-            !!formState.error ||
-            isLoading
-          }
+          disabled={!formState.url || !!formState.error || isLoading}
         >
           {isLoading ? (
             <>

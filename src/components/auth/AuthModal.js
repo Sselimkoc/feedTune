@@ -14,37 +14,42 @@ import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { DialogFooter } from "@/components/ui/dialog";
 
 export function AuthModal({ isOpen, onOpenChange, initialMode = "login" }) {
+  const [mode, setMode] = useState(initialMode);
+  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(initialMode === "signup");
-  const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp } = useAuthStore();
+  const supabase = createClientComponentClient();
   const router = useRouter();
+  const { t } = useLanguage();
+  const { signIn, signUp } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      if (isSignUp) {
+      if (mode === "signup") {
         const result = await signUp(email, password);
         if (result.success) {
-          toast.success("Hesabınız başarıyla oluşturuldu!");
+          toast.success(t("auth.registerSuccess"));
           onOpenChange?.(false);
         }
       } else {
         const result = await signIn(email, password);
         if (result.success) {
-          toast.success("Başarıyla giriş yaptınız!");
+          toast.success(t("auth.loginSuccess"));
           onOpenChange?.(false);
           // Force a refresh of the current page to update UI
           router.refresh();
         }
       }
     } catch (error) {
-      toast.error(error.message || "Bir hata oluştu");
+      toast.error(error.message || t("errors.general"));
     } finally {
       setIsLoading(false);
     }
@@ -63,57 +68,59 @@ export function AuthModal({ isOpen, onOpenChange, initialMode = "login" }) {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isSignUp ? "Hesap Oluştur" : "Giriş Yap"}</DialogTitle>
+          <DialogTitle>
+            {mode === "signup" ? t("auth.register") : t("auth.login")}
+          </DialogTitle>
           <DialogDescription>
-            {isSignUp
-              ? "FeedTune'a hoş geldiniz! Hemen hesap oluşturun ve içeriklerinizi yönetmeye başlayın."
-              : "Hesabınıza giriş yapın ve kaldığınız yerden devam edin."}
+            {mode === "signup"
+              ? t("auth.registerDescription")
+              : t("auth.loginDescription")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="email">E-posta</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="ornek@email.com"
-              required
-              disabled={isLoading}
-            />
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">{t("auth.email")}</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="ornek@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">{t("auth.password")}</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Şifre</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              disabled={isLoading}
-            />
-          </div>
-          <div className="flex flex-col gap-4">
-            <Button type="submit" disabled={isLoading}>
+          <DialogFooter className="mt-4">
+            <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading
-                ? "İşleniyor..."
-                : isSignUp
-                ? "Hesap Oluştur"
-                : "Giriş Yap"}
+                ? t("common.loading")
+                : mode === "signup"
+                ? t("auth.register")
+                : t("auth.login")}
             </Button>
             <Button
               type="button"
               variant="ghost"
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => setMode(mode === "login" ? "signup" : "login")}
               disabled={isLoading}
+              className="w-full mt-2"
             >
-              {isSignUp
-                ? "Zaten hesabınız var mı? Giriş yapın"
-                : "Hesabınız yok mu? Hemen oluşturun"}
+              {mode === "login"
+                ? t("auth.registerPrompt")
+                : t("auth.loginPrompt")}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

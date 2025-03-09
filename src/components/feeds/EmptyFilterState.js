@@ -23,16 +23,16 @@ export function EmptyFilterState({ onOpenFilters }) {
         {t("feeds.feedList.emptyState")}
       </h3>
       <p className="text-muted-foreground mb-6 max-w-md">
-        {t("feeds.feedList.emptyState")}
+        {t("feeds.filters.noMatchingContent")}
       </p>
       <div className="flex gap-3">
         <Button onClick={resetFilters} variant="outline" size="sm">
           <RefreshCw className="mr-2 h-4 w-4" />
-          {t("common.refresh")}
+          {t("feeds.filters.resetFilters")}
         </Button>
         <Button onClick={onOpenFilters} size="sm">
           <Filter className="mr-2 h-4 w-4" />
-          {t("common.filter")}
+          {t("feeds.filters.adjustFilters")}
         </Button>
       </div>
     </motion.div>
