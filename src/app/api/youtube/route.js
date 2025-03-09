@@ -43,31 +43,63 @@ export async function GET(request) {
     let targetChannelId = channelId;
     if (handle) {
       try {
+        // Önce doğrudan handle ile arama yapalım
         const handleResponse = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${handle}&key=${YOUTUBE_API_KEY}`
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=@${handle}&maxResults=5&key=${YOUTUBE_API_KEY}`
         );
 
         if (!handleResponse.ok) {
           const errorData = await handleResponse.json();
+          console.error("YouTube Search API Error:", errorData);
           throw new Error(
             errorData.error?.message || "Failed to fetch channel from handle"
           );
         }
 
         const handleData = await handleResponse.json();
+
+        // Sonuçları kontrol et
         if (!handleData.items || handleData.items.length === 0) {
-          return Response.json(
-            { error: "Channel not found with given handle" },
-            { status: 404 }
+          // Eğer sonuç yoksa, @ olmadan tekrar deneyelim
+          const fallbackResponse = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${handle}&maxResults=5&key=${YOUTUBE_API_KEY}`
           );
+
+          if (!fallbackResponse.ok) {
+            const fallbackErrorData = await fallbackResponse.json();
+            console.error(
+              "YouTube Fallback Search API Error:",
+              fallbackErrorData
+            );
+            throw new Error(
+              fallbackErrorData.error?.message ||
+                "Failed to fetch channel from handle"
+            );
+          }
+
+          const fallbackData = await fallbackResponse.json();
+
+          if (!fallbackData.items || fallbackData.items.length === 0) {
+            return Response.json(
+              { error: "Channel not found with given handle" },
+              { status: 404 }
+            );
+          }
+
+          // İlk eşleşen kanalı al
+          targetChannelId = fallbackData.items[0].id.channelId;
+        } else {
+          // İlk eşleşen kanalı al
+          targetChannelId = handleData.items[0].id.channelId;
         }
 
-        // İlk eşleşen kanalı al
-        targetChannelId = handleData.items[0].id.channelId;
+        console.log(
+          `Found channel ID for handle @${handle}: ${targetChannelId}`
+        );
       } catch (error) {
         console.error("Error fetching channel from handle:", error);
         return Response.json(
-          { error: "Failed to fetch channel from handle" },
+          { error: `Failed to fetch channel from handle: ${error.message}` },
           { status: 500 }
         );
       }
@@ -103,17 +135,54 @@ export async function GET(request) {
       }
 
       // 2. Son videoları al
-      const videosResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=10&key=${YOUTUBE_API_KEY}`
-      );
+      let videosData = { items: [] };
+      try {
+        const videosResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=10&key=${YOUTUBE_API_KEY}`
+        );
 
-      if (!videosResponse.ok) {
-        const errorData = await videosResponse.json();
-        console.error("YouTube Videos API Error:", errorData);
-        throw new Error(errorData.error?.message || "Failed to fetch videos");
+        if (!videosResponse.ok) {
+          const errorData = await videosResponse.json();
+          console.error("YouTube Videos API Error:", errorData);
+          throw new Error(errorData.error?.message || "Failed to fetch videos");
+        }
+
+        videosData = await videosResponse.json();
+      } catch (playlistError) {
+        console.error("Error fetching playlist items:", playlistError);
+        // Playlist hatası durumunda, doğrudan kanal videolarını almayı deneyelim
+        try {
+          console.log(
+            `Trying alternative method to fetch videos for channel ${targetChannelId}`
+          );
+          const searchResponse = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${targetChannelId}&order=date&maxResults=10&type=video&key=${YOUTUBE_API_KEY}`
+          );
+
+          if (!searchResponse.ok) {
+            const searchErrorData = await searchResponse.json();
+            console.error("YouTube Search API Error:", searchErrorData);
+            // Hata fırlatmıyoruz, boş video listesi ile devam ediyoruz
+          } else {
+            const searchData = await searchResponse.json();
+            if (searchData.items && searchData.items.length > 0) {
+              // Search API'den gelen videoları playlistItems formatına dönüştür
+              videosData.items = searchData.items.map((item) => ({
+                snippet: {
+                  resourceId: { videoId: item.id.videoId },
+                  title: item.snippet.title,
+                  description: item.snippet.description,
+                  thumbnails: item.snippet.thumbnails,
+                  publishedAt: item.snippet.publishedAt,
+                },
+              }));
+            }
+          }
+        } catch (searchError) {
+          console.error("Error with alternative video fetching:", searchError);
+          // Hata fırlatmıyoruz, boş video listesi ile devam ediyoruz
+        }
       }
-
-      const videosData = await videosResponse.json();
 
       // 3. Yanıtı formatla
       const formattedResponse = {
@@ -148,6 +217,32 @@ export async function GET(request) {
       return Response.json(formattedResponse);
     } catch (error) {
       console.error("YouTube API Error:", error);
+
+      // Eğer kanal bilgileri alındıysa ama videolar alınamadıysa,
+      // en azından kanal bilgilerini döndür
+      if (channelInfo) {
+        return Response.json({
+          channel: {
+            id: targetChannelId,
+            title: channelInfo.snippet.title,
+            description: channelInfo.snippet.description,
+            thumbnail:
+              channelInfo.snippet.thumbnails?.default?.url ||
+              channelInfo.snippet.thumbnails?.medium?.url ||
+              channelInfo.snippet.thumbnails?.high?.url,
+            handle: channelInfo.snippet.customUrl,
+            statistics: {
+              subscriberCount: channelInfo.statistics?.subscriberCount,
+              videoCount: channelInfo.statistics?.videoCount,
+              viewCount: channelInfo.statistics?.viewCount,
+            },
+            uploadsPlaylistId,
+          },
+          videos: [],
+          warning: "Could not fetch videos for this channel",
+        });
+      }
+
       return Response.json(
         { error: error.message || "Failed to fetch YouTube data" },
         { status: error.status || 500 }

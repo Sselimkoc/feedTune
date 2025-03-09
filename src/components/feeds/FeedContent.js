@@ -19,7 +19,7 @@ import {
 import { KeyboardShortcutsHelp } from "@/components/feeds/KeyboardShortcutsHelp";
 
 export function FeedContent() {
-  const { addRssFeed, addYoutubeFeed } = useFeeds();
+  const { addRssFeed, addYoutubeFeed, refetch } = useFeeds();
   const supabase = createClientComponentClient();
   const { user } = useAuthStore();
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
@@ -43,17 +43,133 @@ export function FeedContent() {
 
   const removeFeed = async (feedId) => {
     try {
-      const { error } = await supabase
+      // Kullanıcıya onay sor
+      if (
+        !window.confirm(
+          "Bu feed'i silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+        )
+      ) {
+        return;
+      }
+
+      // İlerleme bildirimi göster
+      const toastId = toast.loading("Feed siliniyor...");
+
+      // 1. Önce feed'e ait tüm öğeleri bul
+      const { data: feedItems, error: itemsError } = await supabase
+        .from("feed_items")
+        .select("id")
+        .eq("feed_id", feedId);
+
+      if (itemsError) {
+        console.error("Feed öğeleri alınırken hata:", itemsError);
+        toast.error("Feed öğeleri alınırken hata oluştu", { id: toastId });
+        return;
+      }
+
+      // 2. Kullanıcı etkileşimlerini sil (eğer öğeler varsa)
+      if (feedItems && feedItems.length > 0) {
+        const itemIds = feedItems.map((item) => item.id);
+
+        const { error: interactionsError } = await supabase
+          .from("user_item_interactions")
+          .delete()
+          .in("item_id", itemIds);
+
+        if (interactionsError) {
+          console.error(
+            "Kullanıcı etkileşimleri silinirken hata:",
+            interactionsError
+          );
+          toast.error("Kullanıcı etkileşimleri silinirken hata oluştu", {
+            id: toastId,
+          });
+          return;
+        }
+      }
+
+      // 3. Feed öğelerini sil
+      const { error: deleteItemsError } = await supabase
+        .from("feed_items")
+        .delete()
+        .eq("feed_id", feedId);
+
+      if (deleteItemsError) {
+        console.error("Feed öğeleri silinirken hata:", deleteItemsError);
+        toast.error("Feed öğeleri silinirken hata oluştu", { id: toastId });
+        return;
+      }
+
+      // 4. Feed türüne özel tablodan sil (rss_feeds veya youtube_feeds)
+      const { data: feedData, error: feedTypeError } = await supabase
+        .from("feeds")
+        .select("type")
+        .eq("id", feedId)
+        .single();
+
+      if (!feedTypeError && feedData) {
+        if (feedData.type === "rss") {
+          const { error: rssError } = await supabase
+            .from("rss_feeds")
+            .delete()
+            .eq("id", feedId);
+
+          if (rssError) {
+            console.error("RSS feed detayları silinirken hata:", rssError);
+            // Bu hatayı kritik olarak değerlendirmiyoruz, devam ediyoruz
+          }
+        } else if (feedData.type === "youtube") {
+          const { error: youtubeError } = await supabase
+            .from("youtube_feeds")
+            .delete()
+            .eq("id", feedId);
+
+          if (youtubeError) {
+            console.error(
+              "YouTube feed detayları silinirken hata:",
+              youtubeError
+            );
+            // Bu hatayı kritik olarak değerlendirmiyoruz, devam ediyoruz
+          }
+        }
+      }
+
+      // 5. Feed kategori ilişkilerini sil
+      const { error: categoryMappingError } = await supabase
+        .from("feed_category_mappings")
+        .delete()
+        .eq("feed_id", feedId);
+
+      if (categoryMappingError) {
+        console.error(
+          "Feed kategori ilişkileri silinirken hata:",
+          categoryMappingError
+        );
+        // Bu hatayı kritik olarak değerlendirmiyoruz, devam ediyoruz
+      }
+
+      // 6. Son olarak ana feed'i sil
+      const { error: deleteFeedError } = await supabase
         .from("feeds")
         .delete()
-        .match({ id: feedId });
+        .eq("id", feedId);
 
-      if (error) throw error;
+      if (deleteFeedError) {
+        console.error("Feed silinirken hata:", deleteFeedError);
+        toast.error("Feed silinirken hata oluştu", { id: toastId });
+        return;
+      }
 
-      toast.success("Feed removed successfully");
+      // Başarılı bildirim göster
+      toast.success("Feed ve ilişkili tüm veriler başarıyla silindi", {
+        id: toastId,
+      });
+
+      // Feed listesini yenile
+      refetch();
     } catch (error) {
-      console.error("Error removing feed:", error);
-      toast.error("Failed to remove feed");
+      console.error("Feed silme işlemi sırasında hata:", error);
+      toast.error("Feed silme işlemi başarısız oldu");
     }
   };
 

@@ -121,6 +121,7 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
 
     // Arama sırasında input alanını devre dışı bırakmıyoruz
     setIsSearching(true);
+    setError(null); // Önceki hataları temizle
 
     try {
       const channelInfo = extractChannelInfo(value);
@@ -130,18 +131,49 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
         ? `handle=${encodeURIComponent(channelInfo.slice(1))}`
         : `channelId=${encodeURIComponent(channelInfo)}`;
 
+      console.log(
+        `Searching for YouTube channel with ${
+          isHandle ? "handle" : "channelId"
+        }: ${isHandle ? channelInfo.slice(1) : channelInfo}`
+      );
+
       const response = await fetch(`/api/youtube?${queryParams}`);
 
+      // Hata durumunda
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to fetch YouTube data");
+        const errorData = await response.json();
+        console.error("YouTube API error response:", errorData);
+
+        // Hata mesajını kullanıcı dostu hale getir
+        let userFriendlyError = "YouTube kanalı bulunamadı.";
+
+        if (response.status === 404) {
+          userFriendlyError = `"${value}" için kanal bulunamadı. Lütfen kanal adını veya ID'sini kontrol edin.`;
+        } else if (response.status === 401 || response.status === 403) {
+          userFriendlyError =
+            "YouTube API erişim hatası. Lütfen daha sonra tekrar deneyin.";
+        } else if (errorData.error && errorData.error.includes("playlistId")) {
+          userFriendlyError =
+            "Bu kanal için video listesi alınamadı, ancak kanal bilgileri getirildi.";
+          // Bu durumda kanalı yine de gösterebiliriz, sadece video listesi olmayacak
+        } else if (errorData.error) {
+          userFriendlyError = errorData.error;
+        }
+
+        throw new Error(userFriendlyError);
       }
 
       const data = await response.json();
+
+      if (!data.channel) {
+        throw new Error("Kanal bilgileri alınamadı.");
+      }
+
       setChannelData(data.channel);
+      setError(null);
     } catch (error) {
       console.error("Error searching channel:", error);
-      setError(error.message || "Failed to fetch YouTube data");
+      setError(error.message || "YouTube kanalı aranırken bir hata oluştu.");
       setChannelData(null);
     } finally {
       setIsSearching(false);
