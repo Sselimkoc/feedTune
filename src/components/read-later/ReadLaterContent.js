@@ -5,12 +5,14 @@ import { ReadLaterList } from "@/components/read-later/ReadLaterList";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function ReadLaterContent() {
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClientComponentClient();
   const { user } = useAuthStore();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     const fetchReadLater = async () => {
@@ -128,10 +130,8 @@ export function ReadLaterContent() {
     <div className="w-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Okuma Listem</h1>
-          <p className="text-muted-foreground">
-            Daha sonra okumak için kaydettiğiniz içerikleri görüntüleyin
-          </p>
+          <h1 className="text-2xl font-bold">{t("readLater.title")}</h1>
+          <p className="text-muted-foreground">{t("readLater.description")}</p>
         </div>
       </div>
 

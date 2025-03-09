@@ -50,6 +50,8 @@ import Image from "next/image";
 import { RssIcon, Tag } from "lucide-react";
 import { formatTimeAgo, stripHtml } from "@/lib/utils";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { KeyboardIcon } from "lucide-react";
 
 // Constants
 const ITEMS_PER_PAGE = 10;
@@ -80,6 +82,7 @@ export function FeedList() {
   const { settings } = useSettingsStore();
   const queryClient = useQueryClient();
   const supabase = createClientComponentClient();
+  const { t, language } = useLanguage();
 
   // State management
   const [focusedItemIndex, setFocusedItemIndex] = useState(0);
@@ -522,6 +525,44 @@ export function FeedList() {
           />
         )}
       </AnimatePresence>
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">{t("feeds.feedList.title")}</h1>
+          <p className="text-muted-foreground">
+            {t("feeds.feedList.description")}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowKeyboardHelp(true)}
+            title={t("feeds.keyboardShortcuts.title")}
+          >
+            <KeyboardIcon className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">
+              {t("feeds.keyboardShortcuts.title")}
+            </span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsFilterDialogOpen(true)}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">{t("common.filter")}</span>
+            {activeFilterCount > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
+        </div>
+      </div>
 
       {/* Çoklu Kanal Seçimi */}
       {feeds.length > 0 && (

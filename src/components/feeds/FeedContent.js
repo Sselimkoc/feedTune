@@ -17,12 +17,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { KeyboardShortcutsHelp } from "@/components/feeds/KeyboardShortcutsHelp";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function FeedContent() {
   const { addRssFeed, addYoutubeFeed, refetch } = useFeeds();
   const supabase = createClientComponentClient();
   const { user } = useAuthStore();
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const { t, language } = useLanguage();
 
   const addFeed = async (feed) => {
     try {
@@ -324,13 +326,7 @@ export function FeedContent() {
 
   return (
     <div className="w-full">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Feed&apos;ler</h1>
-          <p className="text-muted-foreground">
-            Takip ettiğiniz kaynakların içeriklerini görüntüleyin
-          </p>
-        </div>
+      <div className="flex justify-end mb-6">
         <div className="flex items-center gap-2">
           <AddFeedButton />
           <Button
@@ -340,7 +336,9 @@ export function FeedContent() {
             className="h-9 px-3"
           >
             <Keyboard className="h-4 w-4 mr-2" />
-            <span className="text-sm">Klavye Kısayolları</span>
+            <span className="text-sm">
+              {t("feeds.keyboardShortcuts.title")}
+            </span>
           </Button>
         </div>
       </div>

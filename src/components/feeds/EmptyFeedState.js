@@ -3,8 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { AddFeedDialog } from "./AddFeedDialog";
 import { PlusCircle, Rss, Youtube } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function EmptyFeedState() {
+  const { t, language } = useLanguage();
+
   return (
     <div className="flex flex-col items-center justify-center py-12 p-8 text-center">
       <div className="bg-card/50 backdrop-blur-sm rounded-lg p-8 shadow-sm border max-w-md">
@@ -19,16 +22,17 @@ export function EmptyFeedState() {
           </div>
         </div>
 
-        <h3 className="text-2xl font-semibold mb-3">Henüz feed eklenmemiş</h3>
+        <h3 className="text-2xl font-semibold mb-3">
+          {t("feeds.feedList.noFeeds")}
+        </h3>
         <p className="text-muted-foreground mb-8">
-          RSS feed'leri veya YouTube kanalları ekleyerek içerikleri takip etmeye
-          başlayabilirsiniz.
+          {t("feeds.feedList.description")}
         </p>
 
         <AddFeedDialog>
           <Button size="lg" className="w-full gap-2">
             <PlusCircle className="h-5 w-5" />
-            <span>Feed Ekle</span>
+            <span>{t("feeds.feedList.addFeed")}</span>
           </Button>
         </AddFeedDialog>
       </div>

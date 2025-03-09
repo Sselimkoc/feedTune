@@ -18,69 +18,34 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ErrorBoundary } from "react-error-boundary";
 import { toast } from "sonner";
-
-const TRANSLATIONS = {
-  addNewFeed: "Feed Ekle",
-  selectPlatform: "Platform Seç",
-  keepAdding: "Feed eklemeye devam et",
-  error: {
-    title: "Bir hata oluştu",
-    retry: "Tekrar dene",
-    generic: "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
-    loadingError: "Feed yüklenirken bir hata oluştu.",
-    networkError: "Bağlantı hatası. İnternet bağlantınızı kontrol edin.",
-  },
-  rss: {
-    name: "RSS Feed",
-    title: "RSS Feed Ekle",
-  },
-  youtube: {
-    name: "YouTube Kanalı",
-    title: "YouTube Kanalı Ekle",
-  },
-};
-
-const FEED_PLATFORMS = {
-  rss: {
-    id: "rss",
-    name: TRANSLATIONS.rss.name,
-    icon: Rss,
-    component: AddRssFeed,
-  },
-  youtube: {
-    id: "youtube",
-    name: TRANSLATIONS.youtube.name,
-    icon: Youtube,
-    component: AddYoutubeFeed,
-  },
-};
+import { useLanguage } from "@/contexts/LanguageContext";
 
 function handleError(error, info) {
   console.error("Feed Dialog Error:", error, info);
 
   if (error.name === "NetworkError") {
-    toast.error(TRANSLATIONS.error.networkError);
+    toast.error("Bağlantı hatası. İnternet bağlantınızı kontrol edin.");
   } else if (error.name === "LoadingError") {
-    toast.error(TRANSLATIONS.error.loadingError);
+    toast.error("Feed yüklenirken bir hata oluştu.");
   } else {
-    toast.error(error.message || TRANSLATIONS.error.generic);
+    toast.error(
+      error.message || "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
+    );
   }
 }
 
 function AddFeedErrorBoundary({ children }) {
+  const { t } = useLanguage();
+
   return (
     <ErrorBoundary
       fallbackRender={({ error, resetErrorBoundary }) => (
         <div className="p-4 text-center">
-          <h3 className="text-lg font-semibold mb-2">
-            {TRANSLATIONS.error.title}
-          </h3>
+          <h3 className="text-lg font-semibold mb-2">{t("errors.general")}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            {error.message || TRANSLATIONS.error.generic}
+            {error.message || t("errors.tryAgain")}
           </p>
-          <Button onClick={resetErrorBoundary}>
-            {TRANSLATIONS.error.retry}
-          </Button>
+          <Button onClick={resetErrorBoundary}>{t("common.refresh")}</Button>
         </div>
       )}
       onError={handleError}
@@ -90,17 +55,42 @@ function AddFeedErrorBoundary({ children }) {
   );
 }
 
-export function AddFeedDialog({ children, onSuccess, defaultPlatform = null }) {
-  const [isOpen, setIsOpen] = useState(false);
+export function AddFeedDialog({
+  children,
+  onSuccess,
+  defaultPlatform = null,
+  open,
+  onOpenChange,
+}) {
   const [selectedPlatform, setSelectedPlatform] = useState(defaultPlatform);
   const [keepAdding, setKeepAdding] = useState(false);
+  const { t } = useLanguage();
+
+  // FEED_PLATFORMS'ı dinamik olarak oluştur
+  const FEED_PLATFORMS_LOCALIZED = useMemo(
+    () => ({
+      rss: {
+        id: "rss",
+        name: t("feeds.addFeed.rss"),
+        icon: Rss,
+        component: AddRssFeed,
+      },
+      youtube: {
+        id: "youtube",
+        name: t("feeds.addFeed.youtube"),
+        icon: Youtube,
+        component: AddYoutubeFeed,
+      },
+    }),
+    [t]
+  );
 
   const handleSuccess = useCallback(() => {
     if (!keepAdding) {
-      setIsOpen(false);
+      onOpenChange?.(false);
     }
     onSuccess?.();
-  }, [keepAdding, onSuccess]);
+  }, [keepAdding, onSuccess, onOpenChange]);
 
   const handlePlatformSelect = useCallback((platform) => {
     setSelectedPlatform(platform);
@@ -108,27 +98,29 @@ export function AddFeedDialog({ children, onSuccess, defaultPlatform = null }) {
 
   const ActiveComponent = useMemo(
     () =>
-      selectedPlatform ? FEED_PLATFORMS[selectedPlatform]?.component : null,
-    [selectedPlatform]
+      selectedPlatform
+        ? FEED_PLATFORMS_LOCALIZED[selectedPlatform]?.component
+        : null,
+    [selectedPlatform, FEED_PLATFORMS_LOCALIZED]
   );
 
   const handleOpenChange = useCallback(
     (open) => {
-      setIsOpen(open);
+      onOpenChange?.(open);
       if (!open) {
         setSelectedPlatform(defaultPlatform);
       }
     },
-    [defaultPlatform]
+    [defaultPlatform, onOpenChange]
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children || (
           <Button>
             <PlusCircle className="w-4 h-4 mr-2" />
-            {TRANSLATIONS.addNewFeed}
+            {t("feeds.addFeed.title")}
           </Button>
         )}
       </DialogTrigger>
@@ -136,11 +128,13 @@ export function AddFeedDialog({ children, onSuccess, defaultPlatform = null }) {
         <DialogHeader>
           <DialogTitle className="text-center text-xl">
             {selectedPlatform
-              ? FEED_PLATFORMS[selectedPlatform].name + " Ekle"
-              : TRANSLATIONS.addNewFeed}
+              ? selectedPlatform === "rss"
+                ? t("feeds.addRssFeed.title")
+                : t("feeds.addYoutubeFeed.title")
+              : t("feeds.addFeed.title")}
           </DialogTitle>
           <DialogDescription className="text-center">
-            İçerikleri takip etmek için bir kaynak ekleyin.
+            {t("feeds.addFeed.selectPlatform")}
           </DialogDescription>
         </DialogHeader>
 
@@ -149,7 +143,7 @@ export function AddFeedDialog({ children, onSuccess, defaultPlatform = null }) {
             {!ActiveComponent ? (
               <>
                 <div className="grid grid-cols-2 gap-4">
-                  {Object.values(FEED_PLATFORMS).map((platform) => {
+                  {Object.values(FEED_PLATFORMS_LOCALIZED).map((platform) => {
                     const Icon = platform.icon;
                     return (
                       <button
@@ -176,7 +170,9 @@ export function AddFeedDialog({ children, onSuccess, defaultPlatform = null }) {
                     checked={keepAdding}
                     onCheckedChange={setKeepAdding}
                   />
-                  <Label htmlFor="keep-adding">{TRANSLATIONS.keepAdding}</Label>
+                  <Label htmlFor="keep-adding">
+                    {t("feeds.addFeed.keepAdding")}
+                  </Label>
                 </div>
               </>
             )}
@@ -189,5 +185,7 @@ export function AddFeedDialog({ children, onSuccess, defaultPlatform = null }) {
 
 AddFeedDialog.propTypes = {
   onSuccess: PropTypes.func,
-  defaultPlatform: PropTypes.oneOf(Object.keys(FEED_PLATFORMS)),
+  defaultPlatform: PropTypes.oneOf(["rss", "youtube"]),
+  open: PropTypes.bool,
+  onOpenChange: PropTypes.func,
 };

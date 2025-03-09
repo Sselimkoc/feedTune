@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
@@ -13,15 +13,30 @@ import {
   X,
   Rss,
   BookmarkCheck,
+  LogIn,
+  UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
+import { motion, AnimatePresence } from "framer-motion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function Navigation() {
   const pathname = usePathname();
   const { user, checkSession, signOut, setSession } = useAuthStore();
+  const { t, language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -36,21 +51,36 @@ export function Navigation() {
     setMounted(true);
   }, [checkSession, setSession]);
 
-  const menuItems = [
-    { icon: Home, label: "Home", href: "/" },
-    ...(user
-      ? [
-          {
-            icon: Library,
-            label: "My Feeds",
-            href: "/feeds",
-          },
-          { icon: Star, label: "Favorites", href: "/favorites" },
-          { icon: BookmarkCheck, label: "Okuma Listem", href: "/read-later" },
-          { icon: Settings, label: "Settings", href: "/settings" },
-        ]
-      : []),
-  ];
+  const menuItems = useMemo(
+    () => [
+      { icon: Home, label: t("navigation.home"), href: "/" },
+      ...(user
+        ? [
+            {
+              icon: Library,
+              label: t("navigation.feeds"),
+              href: "/feeds",
+            },
+            {
+              icon: Star,
+              label: t("navigation.favorites"),
+              href: "/favorites",
+            },
+            {
+              icon: BookmarkCheck,
+              label: t("navigation.readLater"),
+              href: "/read-later",
+            },
+            {
+              icon: Settings,
+              label: t("navigation.settings"),
+              href: "/settings",
+            },
+          ]
+        : []),
+    ],
+    [user, t, language]
+  );
 
   return (
     <>
@@ -109,11 +139,12 @@ export function Navigation() {
               <div>
                 <h1 className="text-xl font-bold">FeedTune</h1>
                 <p className="text-xs text-muted-foreground">
-                  RSS Besleme Okuyucunuz
+                  {t("navigation.tagline")}
                 </p>
               </div>
             </div>
             <ThemeToggle />
+            <LanguageSwitcher />
           </div>
 
           <div className="space-y-1.5">
@@ -153,19 +184,11 @@ export function Navigation() {
                           : "text-muted-foreground"
                       )}
                     >
-                      {item.label === "Home"
-                        ? "Ana Sayfa"
-                        : item.label === "My Feeds"
-                        ? "Beslemelerim"
-                        : item.label === "Favorites"
-                        ? "Favoriler"
-                        : item.label === "Settings"
-                        ? "Ayarlar"
-                        : item.label}
+                      {item.label}
                     </span>
 
                     {/* Notification indicator example */}
-                    {item.label === "My Feeds" && mounted && (
+                    {item.label === t("navigation.feeds") && mounted && (
                       <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground text-[10px] font-medium text-primary">
                         3
                       </span>
@@ -186,7 +209,7 @@ export function Navigation() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{user.email}</p>
                     <p className="text-xs text-muted-foreground">
-                      Ücretsiz Plan
+                      {t("settings.freePlan")}
                     </p>
                   </div>
                 </div>
@@ -196,11 +219,11 @@ export function Navigation() {
             {user ? (
               <Button variant="outline" className="w-full" onClick={signOut}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Çıkış Yap
+                {t("auth.logout")}
               </Button>
             ) : (
               <Button variant="default" className="w-full" asChild>
-                <Link href="/">Giriş Yap</Link>
+                <Link href="/">{t("auth.login")}</Link>
               </Button>
             )}
           </div>

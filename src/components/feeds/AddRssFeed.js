@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFeeds } from "@/hooks/useFeeds";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // URL validation regex
 const URL_REGEX = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
@@ -17,9 +18,9 @@ export function AddRssFeed({ onBack, onSuccess }) {
     error: "",
     isSubmitting: false,
   });
-
   const { addRssFeed, isAddingRssFeed } = useFeeds();
   const { user } = useAuthStore();
+  const { t } = useLanguage();
 
   const validateUrl = (url) => {
     if (!url) return "URL zorunludur";
@@ -108,49 +109,57 @@ export function AddRssFeed({ onBack, onSuccess }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={onBack} disabled={isLoading}>
+      <div className="flex items-center gap-2 mb-4">
+        <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-lg font-semibold">Add RSS Feed</h2>
+        <h2 className="text-lg font-semibold">{t("feeds.addRssFeed.title")}</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Input
-            type="url"
+            id="url"
+            name="url"
+            type="text"
             value={formState.url}
             onChange={(e) => {
-              // State'i hemen güncelle (UI için)
-              setFormState((prev) => ({ ...prev, url: e.target.value }));
-              // Debounced fonksiyonu çağır (doğrulama için)
+              setFormState({
+                ...formState,
+                url: e.target.value,
+                error: "",
+              });
               debouncedUrlChange(e);
             }}
-            placeholder="Enter RSS feed URL"
+            placeholder={t("feeds.addRssFeed.urlPlaceholder")}
             disabled={isLoading}
             aria-invalid={!!formState.error}
-            className={formState.error ? "border-red-500" : ""}
+            className={formState.error ? "border-destructive" : ""}
           />
           {formState.error && (
-            <p className="text-sm text-red-500">{formState.error}</p>
+            <p className="text-xs text-destructive">{formState.error}</p>
           )}
           <p className="text-xs text-muted-foreground">
-            Örnek: https://ntv.com.tr/rss veya @ntv
+            {t("feeds.addRssFeed.urlPlaceholder")}
           </p>
         </div>
 
         <Button
           type="submit"
           className="w-full"
-          disabled={isLoading || !!formState.error || !formState.url}
+          disabled={
+            !formState.url ||
+            !!formState.error ||
+            isLoading
+          }
         >
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Adding...
+              {t("feeds.addRssFeed.checking")}
             </>
           ) : (
-            "Add Feed"
+            t("feeds.addRssFeed.add")
           )}
         </Button>
       </form>

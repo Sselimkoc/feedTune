@@ -1,0 +1,226 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error occurred",
+    "success": "Operation successful",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "refresh": "Refresh",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "continue": "Continue",
+    "deleting": "Deleting..."
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password",
+    "resetPassword": "Reset Password",
+    "loginSuccess": "Login successful",
+    "loginError": "Login failed",
+    "registerSuccess": "Registration successful",
+    "registerError": "Registration failed",
+    "logoutSuccess": "Logout successful",
+    "unauthorized": "Unauthorized access"
+  },
+  "navigation": {
+    "home": "Home",
+    "feeds": "My Feeds",
+    "favorites": "Favorites",
+    "readLater": "Read Later",
+    "settings": "Settings",
+    "tagline": "Your RSS Feed Reader"
+  },
+  "home": {
+    "title": "Manage Your Content with FeedTune",
+    "subtitle": "Collect, organize, and follow your RSS feeds and YouTube channels in one place. Never miss your favorite content creators!",
+    "getStarted": "Get Started",
+    "getStartedDesc": "Start using FeedTune for free and manage your content from a single place.",
+    "features": {
+      "title": "Features",
+      "rssFeeds": {
+        "title": "RSS Feeds",
+        "desc": "Follow the latest content from your favorite blogs and news sites. Easily add and manage RSS feeds."
+      },
+      "youtube": {
+        "title": "YouTube Integration",
+        "desc": "Follow your favorite YouTube channels. See new videos instantly and never miss them."
+      },
+      "autoUpdates": {
+        "title": "Automatic Updates",
+        "desc": "Content is updated automatically. You just focus on reading and watching."
+      },
+      "organization": {
+        "title": "Easy Organization",
+        "desc": "Categorize your content, add to favorites, and mark as read."
+      },
+      "keyboard": {
+        "title": "Keyboard Shortcuts",
+        "desc": "Navigate quickly and manage content with keyboard shortcuts."
+      },
+      "darkMode": {
+        "title": "Dark Mode",
+        "desc": "Read comfortably at night with dark mode that doesn't strain your eyes."
+      }
+    },
+    "stats": {
+      "totalFeeds": "Total Feeds",
+      "totalItems": "Total Content",
+      "unreadItems": "Unread",
+      "favoriteItems": "Favorites",
+      "readLaterItems": "Read Later"
+    },
+    "feedManagement": {
+      "title": "Feed Management",
+      "description": "View and manage your recently added feeds",
+      "addFirstFeed": "Add Your First Feed",
+      "addFeed": "Add Feed",
+      "noFeeds": "You haven't added any feeds yet",
+      "visitSite": "Visit Site",
+      "deleteFeed": "Delete Feed",
+      "viewAllFeeds": "View All Feeds",
+      "rssFeed": "RSS Feed",
+      "youtubeChannel": "YouTube Channel"
+    },
+    "recentContent": {
+      "title": "Recent Content",
+      "description": "Latest content from your feeds",
+      "read": "Read",
+      "viewAllContent": "View All Content",
+      "unknownSource": "Unknown Source"
+    }
+  },
+  "feeds": {
+    "title": "My Feeds",
+    "description": "View content from your followed sources",
+    "addFeed": {
+      "title": "Add Feed",
+      "selectPlatform": "Select Platform",
+      "rss": "RSS Feed",
+      "youtube": "YouTube Channel",
+      "back": "Back",
+      "continue": "Continue",
+      "keepAdding": "Continue adding feeds"
+    },
+    "addRssFeed": {
+      "title": "Add RSS Feed",
+      "url": "Feed URL",
+      "urlPlaceholder": "https://example.com/feed",
+      "urlInvalid": "Please enter a valid URL",
+      "checking": "Checking feed...",
+      "add": "Add Feed",
+      "success": "Feed added successfully",
+      "error": "Error adding feed"
+    },
+    "addYoutubeFeed": {
+      "title": "Add YouTube Channel",
+      "channelId": "Channel ID or URL",
+      "channelIdPlaceholder": "Channel ID, URL, or @username",
+      "channelIdInvalid": "Please enter a valid Channel ID, URL, or username",
+      "searching": "Searching for channel...",
+      "channelNotFound": "Channel not found",
+      "add": "Add Channel",
+      "success": "Channel added successfully",
+      "error": "Error adding channel",
+      "subscriberCount": "Subscribers",
+      "videoCount": "Videos"
+    },
+    "deleteFeed": {
+      "title": "Delete Feed",
+      "confirmation": "Are you sure you want to delete this feed? This action cannot be undone.",
+      "deleting": "Deleting feed...",
+      "success": "Feed and all related data deleted successfully",
+      "error": "Failed to delete feed"
+    },
+    "feedList": {
+      "title": "My Feeds",
+      "description": "View content from your followed sources",
+      "noFeeds": "You haven't added any feeds yet",
+      "addFeed": "Add Feed",
+      "markAsRead": "Mark as read",
+      "markAsUnread": "Mark as unread",
+      "addToFavorites": "Add to favorites",
+      "removeFromFavorites": "Remove from favorites",
+      "addToReadLater": "Add to read later",
+      "removeFromReadLater": "Remove from read later",
+      "read": "Read",
+      "unread": "Unread",
+      "favorite": "Favorite",
+      "favoriteAction": "Favorite",
+      "inReadingList": "In List",
+      "addToList": "Add to List",
+      "emptyState": "No content found matching the selected filters"
+    },
+    "keyboardShortcuts": {
+      "title": "Keyboard Shortcuts",
+      "description": "You can use the following keyboard shortcuts to navigate faster",
+      "navigation": "Navigation",
+      "actions": "Actions",
+      "nextItem": "Next item",
+      "previousItem": "Previous item",
+      "openItem": "Open item",
+      "markAsRead": "Mark as read/unread",
+      "addToFavorites": "Add to/remove from favorites",
+      "addToReadLater": "Add to/remove from read later"
+    }
+  },
+  "favorites": {
+    "title": "Favorites",
+    "description": "View your favorite content",
+    "noFavorites": "You don't have any favorite content yet",
+    "addToFavorites": "Visit the feeds page to add content to favorites"
+  },
+  "readLater": {
+    "title": "Read Later",
+    "description": "View content you've saved to read later",
+    "noItems": "You don't have any items in your read later list yet",
+    "addToReadLater": "Visit the feeds page to add content to your read later list"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "themeDescription": "Customize how FeedTune looks on your device",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "notifications": "Notifications",
+    "account": "Account",
+    "accountDescription": "Manage your account settings",
+    "profile": "Profile",
+    "security": "Security",
+    "preferences": "Preferences",
+    "preferencesDescription": "Customize your reading experience",
+    "compactMode": "Compact Mode",
+    "compactModeDescription": "Display content in a more compact way",
+    "feedRefresh": "Feed Refresh Frequency",
+    "feedRefreshDescription": "Choose how often feeds are updated",
+    "minutes": "minutes",
+    "hours": "hours",
+    "days": "days",
+    "deleteAccount": "Delete Account",
+    "deleteAccountConfirmation": "Are you sure you want to delete your account? This action cannot be undone.",
+    "freePlan": "Free Plan"
+  },
+  "errors": {
+    "general": "An error occurred",
+    "notFound": "Page not found",
+    "unauthorized": "You must be logged in to perform this action",
+    "forbidden": "You don't have permission to perform this action",
+    "serverError": "Server error",
+    "networkError": "Network error",
+    "tryAgain": "Please try again"
+  }
+} 

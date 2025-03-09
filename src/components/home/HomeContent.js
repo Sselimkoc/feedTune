@@ -40,6 +40,7 @@ import Image from "next/image";
 import { AddFeedDialog } from "@/components/feeds/AddFeedDialog";
 import { formatTimeAgo } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function HomeContent({ initialSession }) {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -59,6 +60,8 @@ export function HomeContent({ initialSession }) {
     favoriteItems: 0,
     readLaterItems: 0,
   });
+  const { t } = useLanguage();
+  const [showAddFeedDialog, setShowAddFeedDialog] = useState(false);
 
   // Update user state when authUser changes
   useEffect(() => {
@@ -396,258 +399,285 @@ export function HomeContent({ initialSession }) {
   const renderLoggedInContent = () => {
     return (
       <div className="space-y-8">
-        {/* Özet İstatistikler */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card className="bg-primary/5">
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center">
-                <h3 className="text-3xl font-bold">{stats.totalFeeds}</h3>
-                <p className="text-sm text-muted-foreground">Toplam Feed</p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Stats */}
+        <section className="py-8 lg:py-12">
+          <div className="container">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 lg:gap-6">
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardHeader className="pb-2 pt-4">
+                  <CardTitle className="text-xl text-center">
+                    {stats.totalFeeds}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-center text-sm">
+                    {t("home.stats.totalFeeds")}
+                  </p>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-primary/5">
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center">
-                <h3 className="text-3xl font-bold">{stats.totalItems}</h3>
-                <p className="text-sm text-muted-foreground">Toplam İçerik</p>
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardHeader className="pb-2 pt-4">
+                  <CardTitle className="text-xl text-center">
+                    {stats.totalItems}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-center text-sm">
+                    {t("home.stats.totalItems")}
+                  </p>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-primary/5">
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center">
-                <h3 className="text-3xl font-bold">{stats.unreadItems}</h3>
-                <p className="text-sm text-muted-foreground">Okunmamış</p>
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardHeader className="pb-2 pt-4">
+                  <CardTitle className="text-xl text-center">
+                    {stats.unreadItems}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-center text-sm">
+                    {t("home.stats.unreadItems")}
+                  </p>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-primary/5">
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center">
-                <h3 className="text-3xl font-bold">{stats.favoriteItems}</h3>
-                <p className="text-sm text-muted-foreground">Favoriler</p>
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardHeader className="pb-2 pt-4">
+                  <CardTitle className="text-xl text-center">
+                    {stats.favoriteItems}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-center text-sm">
+                    {t("home.stats.favoriteItems")}
+                  </p>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-primary/5">
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center">
-                <h3 className="text-3xl font-bold">{stats.readLaterItems}</h3>
-                <p className="text-sm text-muted-foreground">Okuma Listesi</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardHeader className="pb-2 pt-4">
+                  <CardTitle className="text-xl text-center">
+                    {stats.readLaterItems}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-center text-sm">
+                    {t("home.stats.readLaterItems")}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
 
         {/* Feed Yönetimi */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-center">
-              <CardTitle>Feed Yönetimi</CardTitle>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => refetch()}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Yenile
+        <section className="py-8 lg:py-12">
+          <div className="container">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold">
+                  {t("home.feedManagement.title")}
+                </h2>
+                <p className="text-muted-foreground">
+                  {t("home.feedManagement.description")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddFeedDialog(true)}
+                >
+                  {feeds.length === 0
+                    ? t("home.feedManagement.addFirstFeed")
+                    : t("home.feedManagement.addFeed")}
                 </Button>
                 <Button
+                  variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    if (window.addFeedDialogTrigger) {
-                      window.addFeedDialogTrigger.click();
-                    }
-                  }}
+                  className="hidden md:flex"
+                  asChild
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {stats.totalFeeds === 0
-                    ? "İlk Feed&apos;inizi Ekleyin"
-                    : "Feed Ekle"}
+                  <Link href="/feeds">
+                    {t("home.feedManagement.viewAllFeeds")}
+                  </Link>
                 </Button>
               </div>
             </div>
-            <CardDescription>
-              Son eklenen feed&apos;lerinizi görüntüleyin ve yönetin
-            </CardDescription>
-          </CardHeader>
 
-          <CardContent>
-            {recentFeeds.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">
-                  Henüz hiç feed eklemediniz
-                </p>
-                <Button
-                  onClick={() => {
-                    if (window.addFeedDialogTrigger) {
-                      window.addFeedDialogTrigger.click();
-                    }
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  İlk Feed&apos;inizi Ekleyin
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
+            {recentFeeds.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {recentFeeds.map((feed) => (
-                  <div
+                  <Card
                     key={feed.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/5"
+                    className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm"
                   >
-                    <div className="flex items-center gap-3">
-                      {feed.site_favicon ? (
-                        <div className="relative w-8 h-8 flex-shrink-0">
-                          <Image
-                            src={feed.site_favicon}
-                            alt={feed.title || ""}
-                            width={32}
-                            height={32}
-                            style={{ width: "100%", height: "auto" }}
-                            loading="eager"
-                            unoptimized={true}
-                            className={
-                              feed.type === "youtube"
-                                ? "rounded-full"
-                                : "rounded-sm"
-                            }
-                          />
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-10 w-10 overflow-hidden rounded-full bg-primary/10">
+                          {feed.logo ? (
+                            <Image
+                              src={feed.logo}
+                              alt={feed.title}
+                              fill
+                              className="object-cover"
+                              unoptimized={true}
+                            />
+                          ) : feed.type === "youtube" ? (
+                            <Youtube className="h-6 w-6 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                          ) : (
+                            <Rss className="h-6 w-6 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                          )}
                         </div>
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-muted-foreground/10 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-semibold text-muted-foreground">
-                            {feed.title?.substring(0, 2).toUpperCase() || "FT"}
-                          </span>
+                        <div>
+                          <CardTitle className="text-base truncate">
+                            {feed.title}
+                          </CardTitle>
+                          <p className="text-xs text-muted-foreground">
+                            {feed.type === "youtube"
+                              ? t("home.feedManagement.youtubeChannel")
+                              : t("home.feedManagement.rssFeed")}
+                          </p>
                         </div>
-                      )}
-                      <div>
-                        <h4 className="font-medium text-sm">{feed.title}</h4>
-                        <p className="text-xs text-muted-foreground">
-                          {feed.type === "rss" ? "RSS Feed" : "YouTube Kanalı"}
-                        </p>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
+                    </CardHeader>
+                    <CardFooter className="flex justify-between pt-2">
                       <Button
                         variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive/80"
+                        size="sm"
+                        className="text-xs"
                         onClick={() => {
                           setFeedToDelete(feed.id);
                           setShowDeleteDialog(true);
                         }}
-                        title="Feedi Sil"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5 mr-1" />
+                        {t("home.feedManagement.deleteFeed")}
                       </Button>
-                    </div>
-                  </div>
+                    </CardFooter>
+                  </Card>
                 ))}
-
-                {recentFeeds.length > 0 && (
-                  <div className="flex justify-center mt-4">
-                    <Button variant="outline" asChild>
-                      <Link href="/feeds">Tüm Feed&apos;leri Görüntüle</Link>
-                    </Button>
-                  </div>
-                )}
               </div>
+            ) : (
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardContent className="pt-6 text-center">
+                  <p className="text-muted-foreground mb-4">
+                    {t("home.feedManagement.noFeeds")}
+                  </p>
+                  <Button onClick={() => setShowAddFeedDialog(true)}>
+                    {t("home.feedManagement.addFirstFeed")}
+                  </Button>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
         {/* Son İçerikler */}
-        {recentItems.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle>Son İçerikler</CardTitle>
-              <CardDescription>
-                Feed&apos;lerinizden en son eklenen içerikler
-              </CardDescription>
-            </CardHeader>
+        <section className="py-8 lg:py-12">
+          <div className="container">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold">
+                  {t("home.recentContent.title")}
+                </h2>
+                <p className="text-muted-foreground">
+                  {t("home.recentContent.description")}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden md:flex"
+                asChild
+              >
+                <Link href="/feeds">
+                  {t("home.recentContent.viewAllContent")}
+                </Link>
+              </Button>
+            </div>
 
-            <CardContent>
-              <div className="space-y-4">
+            {recentItems.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {recentItems.map((item) => (
-                  <div
+                  <Card
                     key={item.id}
-                    className="flex items-start gap-3 p-3 border rounded-lg hover:bg-accent/5"
+                    className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm overflow-hidden"
                   >
-                    {item.thumbnail ? (
-                      <div className="relative w-16 h-16 flex-shrink-0">
+                    {item.image && (
+                      <div className="relative w-full h-40">
                         <Image
-                          src={item.thumbnail}
-                          alt={item.title || ""}
-                          width={64}
-                          height={64}
-                          style={{ width: "100%", height: "auto" }}
-                          loading="eager"
+                          src={item.image}
+                          alt={item.title}
+                          fill
+                          className="object-cover"
                           unoptimized={true}
-                          className="object-cover rounded-md"
                         />
-                      </div>
-                    ) : item.feeds?.site_favicon ? (
-                      <div className="relative w-16 h-16 flex-shrink-0 bg-muted flex items-center justify-center">
-                        <Image
-                          src={item.feeds.site_favicon}
-                          alt={item.feeds?.title || ""}
-                          width={32}
-                          height={32}
-                          style={{ width: "auto", height: "auto" }}
-                          loading="eager"
-                          unoptimized={true}
-                          className="opacity-50"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-16 h-16 rounded-md bg-muted-foreground/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-semibold text-muted-foreground">
-                          {item.feeds?.title?.substring(0, 2).toUpperCase() ||
-                            "FT"}
-                        </span>
                       </div>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm line-clamp-2">
-                        {item.title}
-                      </h4>
-                      <div className="flex items-center gap-2 mt-1">
+                    <CardHeader className={item.image ? "pt-3" : ""}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="relative h-6 w-6 overflow-hidden rounded-full bg-primary/10">
+                          {item.feed?.logo ? (
+                            <Image
+                              src={item.feed.logo}
+                              alt={item.feed.title}
+                              fill
+                              className="object-cover"
+                              unoptimized={true}
+                            />
+                          ) : item.feed?.type === "youtube" ? (
+                            <Youtube className="h-4 w-4 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                          ) : (
+                            <Rss className="h-4 w-4 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {item.feed?.title ||
+                            t("home.recentContent.unknownSource")}
+                        </p>
                         <span className="text-xs text-muted-foreground">
-                          {item.feeds?.title || "Bilinmeyen Kaynak"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatTimeAgo(new Date(item.published_at))}
+                          {formatTimeAgo(item.published_at)}
                         </span>
                       </div>
-                      <Button
-                        variant="link"
-                        className="h-auto p-0 text-xs mt-1"
-                        asChild
-                      >
-                        <Link
-                          href={getRealWebsiteUrl(item.link)}
+                      <CardTitle className="text-base line-clamp-2">
+                        {item.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {item.description}
+                      </p>
+                    </CardContent>
+                    <CardFooter>
+                      <Button size="sm" asChild className="w-full">
+                        <a
+                          href={item.url}
                           target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          Oku <ExternalLink className="h-3 w-3 ml-1" />
-                        </Link>
+                          {t("home.recentContent.read")}
+                        </a>
                       </Button>
-                    </div>
-                  </div>
+                    </CardFooter>
+                  </Card>
                 ))}
-
-                <div className="flex justify-center mt-4">
-                  <Button variant="outline" asChild>
-                    <Link href="/feeds">Tüm İçerikleri Görüntüle</Link>
-                  </Button>
-                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardContent className="pt-6 text-center">
+                  <p className="text-muted-foreground mb-4">
+                    {t("home.feedManagement.noFeeds")}
+                  </p>
+                  <Button onClick={() => setShowAddFeedDialog(true)}>
+                    {t("home.feedManagement.addFirstFeed")}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </section>
       </div>
     );
   };
@@ -659,133 +689,153 @@ export function HomeContent({ initialSession }) {
         {/* Hero Section */}
         <div className="max-w-3xl mx-auto text-center space-y-6 lg:space-y-8 mb-12 lg:mb-16">
           <h1 className="text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-transparent">
-            FeedTune ile İçeriklerinizi Yönetin
+            {t("home.title")}
           </h1>
           <p className="text-lg lg:text-xl text-muted-foreground">
-            RSS beslemeleri ve YouTube kanallarınızı tek bir yerde toplayın,
-            organize edin ve takip edin. Favori içerik üreticilerinizi
-            kaçırmayın!
+            {t("home.subtitle")}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" onClick={() => setShowAuthModal(true)}>
-              Giriş Yap
+              {t("auth.login")}
             </Button>
             <Button
               size="lg"
               variant="outline"
               onClick={() => setShowAuthModal(true)}
             >
-              Hesap Oluştur
+              {t("auth.register")}
             </Button>
           </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12 lg:mb-16">
-          <Card className="p-6 hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-2">
-              <Rss className="h-12 w-12 text-primary mb-4" />
-              <CardTitle>RSS Beslemeleri</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Favori blog ve haber sitelerinizden en son içerikleri takip
-                edin. RSS beslemelerini kolayca ekleyin ve yönetin.
-              </p>
-            </CardContent>
-          </Card>
+        {/* Features */}
+        <section className="py-12 lg:py-16">
+          <div className="container">
+            <h2 className="text-3xl font-bold text-center mb-12">
+              {t("home.features.title")}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {/* RSS Feeds */}
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Rss className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle>{t("home.features.rssFeeds.title")}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    {t("home.features.rssFeeds.desc")}
+                  </p>
+                </CardContent>
+              </Card>
 
-          <Card className="p-6 hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-2">
-              <Youtube className="h-12 w-12 text-primary mb-4" />
-              <CardTitle>YouTube Entegrasyonu</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Sevdiğiniz YouTube kanallarını takip edin. Yeni videoları anında
-                görün ve kaçırmayın.
-              </p>
-            </CardContent>
-          </Card>
+              {/* YouTube Integration */}
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Youtube className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle>{t("home.features.youtube.title")}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    {t("home.features.youtube.desc")}
+                  </p>
+                </CardContent>
+              </Card>
 
-          <Card className="p-6 hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-2">
-              <Bell className="h-12 w-12 text-primary mb-4" />
-              <CardTitle>Otomatik Güncellemeler</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                İçerikler otomatik olarak güncellenir. Siz sadece okumaya ve
-                izlemeye odaklanın.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+              {/* Auto Updates */}
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Bell className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle>
+                      {t("home.features.autoUpdates.title")}
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    {t("home.features.autoUpdates.desc")}
+                  </p>
+                </CardContent>
+              </Card>
 
-        {/* Features List */}
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl lg:text-3xl font-bold text-center mb-6 lg:mb-8">
-            Özellikler
-          </h2>
-          <div className="grid gap-4 lg:gap-6">
-            <div className="flex items-start gap-4 hover:bg-accent/5 p-4 rounded-lg transition-colors">
-              <div className="p-2 rounded-full bg-primary/10">
-                <CheckCircle className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold mb-1">Kolay Organizasyon</h3>
-                <p className="text-muted-foreground">
-                  İçeriklerinizi kategorilere ayırın, favorilere ekleyin ve
-                  okundu olarak işaretleyin.
-                </p>
-              </div>
-            </div>
+              {/* Organization */}
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <CheckCircle className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle>
+                      {t("home.features.organization.title")}
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    {t("home.features.organization.desc")}
+                  </p>
+                </CardContent>
+              </Card>
 
-            <div className="flex items-start gap-4 hover:bg-accent/5 p-4 rounded-lg transition-colors">
-              <div className="p-2 rounded-full bg-primary/10">
-                <Keyboard className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold mb-1">Klavye Kısayolları</h3>
-                <p className="text-muted-foreground">
-                  Klavye kısayolları ile hızlıca gezinin ve içerikleri yönetin.
-                </p>
-              </div>
-            </div>
+              {/* Keyboard Shortcuts */}
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Keyboard className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle>{t("home.features.keyboard.title")}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    {t("home.features.keyboard.desc")}
+                  </p>
+                </CardContent>
+              </Card>
 
-            <div className="flex items-start gap-4 hover:bg-accent/5 p-4 rounded-lg transition-colors">
-              <div className="p-2 rounded-full bg-primary/10">
-                <Moon className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold mb-1">Karanlık Mod</h3>
-                <p className="text-muted-foreground">
-                  Gözlerinizi yormayan karanlık mod ile gece de rahatça okuyun.
-                </p>
-              </div>
+              {/* Dark Mode */}
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Moon className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle>{t("home.features.darkMode.title")}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    {t("home.features.darkMode.desc")}
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Call to Action */}
-        <div className="max-w-3xl mx-auto mt-12 lg:mt-16 text-center px-4">
-          <Card className="p-6 lg:p-8 bg-primary/5">
-            <CardHeader>
-              <CardTitle className="text-xl lg:text-2xl">
-                Hemen Başlayın
-              </CardTitle>
-              <CardDescription>
-                FeedTune&apos;u ücretsiz kullanmaya başlayın ve içeriklerinizi
-                tek bir yerden yönetin.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button size="lg" onClick={() => setShowAuthModal(true)}>
-                Hesap Oluştur
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <section className="py-12 lg:py-16 bg-accent/10 rounded-xl">
+          <div className="container text-center">
+            <h2 className="text-3xl font-bold mb-4">{t("home.getStarted")}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
+              {t("home.getStartedDesc")}
+            </p>
+            <Button size="lg" onClick={() => setShowAuthModal(true)}>
+              {t("auth.register")}
+            </Button>
+          </div>
+        </section>
       </>
     );
   };
@@ -798,46 +848,30 @@ export function HomeContent({ initialSession }) {
 
       <AuthModal isOpen={showAuthModal} onOpenChange={setShowAuthModal} />
 
-      {/* Feed Ekleme Dialog */}
-      <AddFeedDialog
-        onSuccess={() => {
-          refetch();
-          // Güncel feed listesini al
-          if (user) {
-            supabase
-              .from("feeds")
-              .select("*")
-              .eq("user_id", user.id)
-              .eq("is_active", true)
-              .order("created_at", { ascending: false })
-              .limit(5)
-              .then(({ data }) => {
-                setRecentFeeds(data || []);
-              });
-          }
-        }}
-      >
-        {/* Trigger butonu gizli, çünkü diğer butonlar tarafından açılacak */}
-        <Button
-          id="addFeedDialogTrigger"
-          className="hidden"
-          ref={(el) => {
-            // Bu referansı global olarak erişilebilir yap
-            window.addFeedDialogTrigger = el;
-          }}
-        >
-          Open Dialog
-        </Button>
-      </AddFeedDialog>
+      {/* Add Feed Dialog Trigger (Hidden) */}
+      <button
+        id="add-feed-trigger"
+        className="hidden"
+        onClick={() => setShowAddFeedDialog(true)}
+      />
 
-      {/* Delete Dialog */}
+      {/* Add Feed Dialog */}
+      <AddFeedDialog
+        open={showAddFeedDialog}
+        onOpenChange={setShowAddFeedDialog}
+        onSuccess={() => {
+          setShowAddFeedDialog(false);
+          refetch();
+        }}
+      />
+
+      {/* Delete Feed Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Feedi Sil</DialogTitle>
+            <DialogTitle>{t("feeds.deleteFeed.title")}</DialogTitle>
             <DialogDescription>
-              Bu feed&apos;i silmek istediğinize emin misiniz? Bu işlem geri
-              alınamaz.
+              {t("feeds.deleteFeed.confirmation")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -846,7 +880,7 @@ export function HomeContent({ initialSession }) {
               onClick={() => setShowDeleteDialog(false)}
               disabled={isDeleting}
             >
-              İptal
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -856,10 +890,10 @@ export function HomeContent({ initialSession }) {
               {isDeleting ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Siliniyor...
+                  {t("common.deleting")}
                 </>
               ) : (
-                "Sil"
+                t("common.delete")
               )}
             </Button>
           </DialogFooter>

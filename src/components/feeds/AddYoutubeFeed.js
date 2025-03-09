@@ -9,6 +9,7 @@ import { useFeeds } from "@/hooks/useFeeds";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/store/useAuthStore";
 import Image from "next/image";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // YouTube channel ID validation regex
 const CHANNEL_ID_REGEX = /^UC[\w-]{21}[AQgw]$/;
@@ -34,14 +35,19 @@ const URL_PATTERNS = [
 ];
 
 export function AddYoutubeFeed({ onBack, onSuccess }) {
-  const [input, setInput] = useState("");
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
+  const [formState, setFormState] = useState({
+    channelId: "",
+    error: "",
+    isSubmitting: false,
+  });
   const [channelData, setChannelData] = useState(null);
-
+  const [isSearching, setIsSearching] = useState(false);
   const { addYoutubeFeed } = useFeeds();
   const { user } = useAuthStore();
+  const { t } = useLanguage();
+
+  // isLoading değişkenini tanımlayalım
+  const isLoading = formState.isSubmitting || isSearching;
 
   const validateInput = (value) => {
     if (!value) return "Kanal ID, URL veya kullanıcı adı zorunludur";
@@ -92,14 +98,14 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
 
   const handleInputChange = (e) => {
     const value = e.target.value;
-    setInput(value);
-
-    // Hata kontrolü
-    const validationError = validateInput(value);
-    setError(validationError);
+    setFormState((prev) => ({
+      ...prev,
+      channelId: value,
+      error: validateInput(value),
+    }));
 
     // Eğer @ karakteri ise veya hata varsa, arama yapma
-    if (value === "@" || validationError) {
+    if (value === "@" || formState.error) {
       setChannelData(null);
       return;
     }
@@ -121,7 +127,10 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
 
     // Arama sırasında input alanını devre dışı bırakmıyoruz
     setIsSearching(true);
-    setError(null); // Önceki hataları temizle
+    setFormState((prev) => ({
+      ...prev,
+      error: null,
+    }));
 
     try {
       const channelInfo = extractChannelInfo(value);
@@ -170,10 +179,16 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
       }
 
       setChannelData(data.channel);
-      setError(null);
+      setFormState((prev) => ({
+        ...prev,
+        error: null,
+      }));
     } catch (error) {
       console.error("Error searching channel:", error);
-      setError(error.message || "YouTube kanalı aranırken bir hata oluştu.");
+      setFormState((prev) => ({
+        ...prev,
+        error: error.message || "YouTube kanalı aranırken bir hata oluştu.",
+      }));
       setChannelData(null);
     } finally {
       setIsSearching(false);
@@ -183,140 +198,156 @@ export function AddYoutubeFeed({ onBack, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!input) {
-      setError("Kanal ID, URL veya kullanıcı adı zorunludur");
-      return;
-    }
-
-    if (!user?.id) {
-      toast.error("You must be logged in to add feeds");
+    if (!formState.channelId) {
+      setFormState((prev) => ({
+        ...prev,
+        error: "Kanal ID, URL veya kullanıcı adı zorunludur",
+      }));
       return;
     }
 
     if (!channelData) {
-      toast.error("Channel information could not be loaded");
+      toast.error("Kanal bilgisi bulunamadı");
       return;
     }
 
-    setIsSubmitting(true);
+    setFormState((prev) => ({
+      ...prev,
+      isSubmitting: true,
+    }));
 
     try {
       await addYoutubeFeed({
         channelId: channelData.id,
         userId: user.id,
+        channelData: {
+          title: channelData.title,
+          thumbnail: channelData.thumbnail,
+          subscriberCount: channelData.subscriberCount,
+          videoCount: channelData.videoCount,
+        },
       });
 
-      setInput("");
+      setFormState((prev) => ({
+        ...prev,
+        channelId: "",
+        error: "",
+      }));
       setChannelData(null);
       toast.success("YouTube channel added successfully");
-
       onSuccess?.();
     } catch (error) {
       console.error("Error adding YouTube feed:", error);
       toast.error(error.message || "Failed to add YouTube channel");
-      setError(error.message || "Failed to add YouTube channel");
+      setFormState((prev) => ({
+        ...prev,
+        error: error.message || "Failed to add YouTube channel",
+      }));
     } finally {
-      setIsSubmitting(false);
+      setFormState((prev) => ({
+        ...prev,
+        isSubmitting: false,
+      }));
     }
   };
 
-  const isLoading = isSubmitting || isSearching;
-
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={onBack} disabled={isLoading}>
+      <div className="flex items-center gap-2 mb-4">
+        <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-lg font-semibold">Add YouTube Channel</h2>
+        <h2 className="text-lg font-semibold">
+          {t("feeds.addYoutubeFeed.title")}
+        </h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="channelInput">YouTube Channel</Label>
+          <Label htmlFor="channelInput">
+            {t("feeds.addYoutubeFeed.channelId")}
+          </Label>
           <Input
             id="channelInput"
-            value={input}
+            value={formState.channelId}
             onChange={handleInputChange}
-            placeholder="Enter channel URL, @handle, or ID"
-            disabled={isSubmitting}
-            aria-invalid={!!error}
-            className={error ? "border-red-500" : ""}
+            placeholder={t("feeds.addYoutubeFeed.channelIdPlaceholder")}
+            disabled={isLoading}
+            aria-invalid={!!formState.error}
+            className={formState.error ? "border-destructive" : ""}
           />
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {formState.error && (
+            <p className="text-sm text-destructive">{formState.error}</p>
+          )}
           <p className="text-xs text-muted-foreground">
-            Example formats:
-            <br />• @channelname
-            <br />• youtube.com/@channelname
-            <br />• youtube.com/channel/UC...
-            <br />• UC... (Channel ID)
+            {t("feeds.addYoutubeFeed.channelIdPlaceholder")}
           </p>
         </div>
 
         {isSearching && (
-          <div className="flex justify-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="ml-2">{t("feeds.addYoutubeFeed.searching")}</span>
           </div>
         )}
 
-        {channelData && !isSearching && (
-          <div className="p-4 border rounded-md bg-card">
-            <div className="flex items-center gap-4">
+        {channelData && (
+          <div className="border rounded-lg p-4 space-y-4">
+            <div className="flex items-center gap-3">
               {channelData.thumbnail && (
-                <div className="relative w-12 h-12 rounded-full overflow-hidden">
+                <div className="relative h-12 w-12 overflow-hidden rounded-full">
                   <Image
                     src={channelData.thumbnail}
-                    alt={channelData.title || "Channel"}
-                    width={48}
-                    height={48}
+                    alt={channelData.title}
+                    fill
                     className="object-cover"
-                    priority
+                    unoptimized={true}
                   />
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold truncate">
-                  {channelData.title || "Unknown Channel"}
-                </h3>
-                {channelData.statistics && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div>
+                <h3 className="font-medium">{channelData.title}</h3>
+                <div className="flex gap-3 text-xs text-muted-foreground">
+                  {channelData.subscriberCount && (
                     <span>
-                      {parseInt(
-                        channelData.statistics.subscriberCount || 0
-                      ).toLocaleString()}{" "}
-                      subscribers
+                      {channelData.subscriberCount}{" "}
+                      {t("feeds.addYoutubeFeed.subscriberCount")}
                     </span>
-                    <span>•</span>
+                  )}
+                  {channelData.videoCount && (
                     <span>
-                      {parseInt(
-                        channelData.statistics.videoCount || 0
-                      ).toLocaleString()}{" "}
-                      videos
+                      {channelData.videoCount}{" "}
+                      {t("feeds.addYoutubeFeed.videoCount")}
                     </span>
-                  </div>
-                )}
-                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                  {channelData.description || "No description available"}
-                </p>
+                  )}
+                </div>
               </div>
             </div>
+            <Button
+              type="submit"
+              disabled={isLoading || !!formState.error || !channelData}
+              className="w-full"
+            >
+              {formState.isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t("common.loading")}
+                </>
+              ) : (
+                t("feeds.addYoutubeFeed.add")
+              )}
+            </Button>
           </div>
         )}
 
-        <Button
-          type="submit"
-          disabled={isSubmitting || !!error || !channelData}
-          className="w-full"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Adding...
-            </>
-          ) : (
-            "Add Feed"
+        {!channelData &&
+          !isSearching &&
+          formState.channelId &&
+          !formState.error && (
+            <p className="text-center text-sm text-muted-foreground">
+              {t("feeds.addYoutubeFeed.channelNotFound")}
+            </p>
           )}
-        </Button>
       </form>
     </div>
   );

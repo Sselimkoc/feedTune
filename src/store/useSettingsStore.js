@@ -5,7 +5,8 @@ export const useSettingsStore = create(
   persist(
     (set) => ({
       settings: {
-        updateInterval: "30",
+        refreshInterval: 30,
+        compactMode: false,
         autoMarkAsRead: false,
         pushNotifications: false,
         emailNotifications: false,

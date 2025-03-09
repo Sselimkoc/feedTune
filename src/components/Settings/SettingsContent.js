@@ -20,11 +20,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTheme } from "next-themes";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function SettingsContent() {
   const { settings, updateSettings } = useSettingsStore();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     setMounted(true);
@@ -36,114 +38,105 @@ export function SettingsContent() {
 
   return (
     <div className="max-w-2xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8">{t("settings.title")}</h1>
       <div className="space-y-6">
         {/* Appearance */}
         <Card>
           <CardHeader>
-            <CardTitle>Appearance</CardTitle>
-            <CardDescription>
-              Customize how FeedTune looks on your device
-            </CardDescription>
+            <CardTitle>{t("settings.theme")}</CardTitle>
+            <CardDescription>{t("settings.themeDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Dark Mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  Switch between light and dark themes
-                </p>
+                <Label>{t("settings.theme")}</Label>
+                <div className="text-sm text-muted-foreground">
+                  {t("settings.themeDescription")}
+                </div>
               </div>
-              <Switch
-                checked={theme === "dark"}
-                onCheckedChange={(checked) =>
-                  setTheme(checked ? "dark" : "light")
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Feed Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Feed Settings</CardTitle>
-            <CardDescription>
-              Customize your feed reading experience
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Update Interval</Label>
               <Select
-                value={settings.updateInterval || "30"}
-                onValueChange={(value) =>
-                  updateSettings({ updateInterval: value })
-                }
+                value={theme}
+                onValueChange={(value) => {
+                  setTheme(value);
+                }}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select interval" />
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={t("settings.theme")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="15">Every 15 minutes</SelectItem>
-                  <SelectItem value="30">Every 30 minutes</SelectItem>
-                  <SelectItem value="60">Every hour</SelectItem>
+                  <SelectItem value="light">{t("settings.light")}</SelectItem>
+                  <SelectItem value="dark">{t("settings.dark")}</SelectItem>
+                  <SelectItem value="system">{t("settings.system")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Auto Mark as Read</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically mark articles as read when opened
-                </p>
-              </div>
-              <Switch
-                checked={settings.autoMarkAsRead}
-                onCheckedChange={(checked) =>
-                  updateSettings({ autoMarkAsRead: checked })
-                }
-              />
-            </div>
           </CardContent>
         </Card>
 
-        {/* Notifications */}
+        {/* Feed Preferences */}
         <Card>
           <CardHeader>
-            <CardTitle>Notifications</CardTitle>
+            <CardTitle>{t("settings.preferences")}</CardTitle>
             <CardDescription>
-              Choose how you want to be notified about new content
+              {t("settings.preferencesDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Push Notifications</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified about new articles in real-time
-                </p>
+                <Label>{t("settings.compactMode")}</Label>
+                <div className="text-sm text-muted-foreground">
+                  {t("settings.compactModeDescription")}
+                </div>
               </div>
               <Switch
-                checked={settings.pushNotifications}
+                checked={settings.compactMode || false}
                 onCheckedChange={(checked) =>
-                  updateSettings({ pushNotifications: checked })
+                  updateSettings({ compactMode: checked })
                 }
               />
             </div>
+
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Email Digest</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive a daily summary of new articles
-                </p>
+                <Label>{t("settings.feedRefresh")}</Label>
+                <div className="text-sm text-muted-foreground">
+                  {t("settings.feedRefreshDescription")}
+                </div>
               </div>
-              <Switch
-                checked={settings.emailNotifications}
-                onCheckedChange={(checked) =>
-                  updateSettings({ emailNotifications: checked })
+              <Select
+                value={(settings.refreshInterval || 30).toString()}
+                onValueChange={(value) =>
+                  updateSettings({ refreshInterval: parseInt(value) })
                 }
-              />
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={t("settings.feedRefresh")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="15">15 {t("settings.minutes")}</SelectItem>
+                  <SelectItem value="30">30 {t("settings.minutes")}</SelectItem>
+                  <SelectItem value="60">1 {t("settings.hours")}</SelectItem>
+                  <SelectItem value="180">3 {t("settings.hours")}</SelectItem>
+                  <SelectItem value="360">6 {t("settings.hours")}</SelectItem>
+                  <SelectItem value="720">12 {t("settings.hours")}</SelectItem>
+                  <SelectItem value="1440">24 {t("settings.hours")}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Account */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.account")}</CardTitle>
+            <CardDescription>
+              {t("settings.accountDescription")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button variant="destructive">{t("settings.deleteAccount")}</Button>
           </CardContent>
         </Card>
 

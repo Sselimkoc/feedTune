@@ -5,12 +5,14 @@ import { FavoritesList } from "@/components/favorites/FavoritesList";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function FavoritesContent() {
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClientComponentClient();
   const { user } = useAuthStore();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -128,10 +130,8 @@ export function FavoritesContent() {
     <div className="w-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Favoriler</h1>
-          <p className="text-muted-foreground">
-            Favorilerinize eklediğiniz içerikleri görüntüleyin
-          </p>
+          <h1 className="text-2xl font-bold">{t("favorites.title")}</h1>
+          <p className="text-muted-foreground">{t("favorites.description")}</p>
         </div>
       </div>
 

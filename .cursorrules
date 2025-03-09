@@ -46,3 +46,10 @@ You are an expert in JavaScript, Node.js, Next.js App Router, React, Shadcn UI, 
 
 ## Terminal Command Guidelines
 - Do not chain commands with `&&`; run each terminal command separately.
+
+## Language Guidelines
+- Create json files for all text content.
+
+## Extras
+- Always comment using English.
+

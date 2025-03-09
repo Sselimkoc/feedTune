@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { SettingsContent } from "@/components/settings/SettingsContent";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +23,9 @@ export default async function SettingsPage() {
 
   return (
     <main className="container py-6">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
-      <Suspense fallback={<div>Loading...</div>}>
+      <LanguageProvider>
         <SettingsContent />
-      </Suspense>
+      </LanguageProvider>
     </main>
   );
 }

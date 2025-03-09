@@ -23,11 +23,13 @@ import Link from "next/link";
 import { RssIcon } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
 import { stripHtml } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function ReadLaterList({ initialItems, isLoading }) {
   const [items, setItems] = useState(initialItems);
   const supabase = createClientComponentClient();
   const { user } = useAuthStore();
+  const { t, language } = useLanguage();
 
   // Debug bilgisi
   useEffect(() => {
