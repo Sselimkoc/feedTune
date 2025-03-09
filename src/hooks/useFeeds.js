@@ -94,27 +94,54 @@ export const fetchFavorites = async (userId) => {
 
   const supabase = createSupabaseClient();
 
-  // Önce favori etkileşimleri al
-  const { data: interactions, error: interactionsError } = await supabase
-    .from("user_item_interactions")
-    .select("item_id")
-    .eq("user_id", userId)
-    .eq("is_favorite", true);
+  try {
+    // Önce kullanıcının favori etkileşimlerini al
+    const { data: interactions, error: interactionsError } = await supabase
+      .from("user_item_interactions")
+      .select("item_id")
+      .eq("user_id", userId)
+      .eq("is_favorite", true);
 
-  if (interactionsError) throw new Error(interactionsError.message);
+    if (interactionsError) throw interactionsError;
 
-  if (!interactions || interactions.length === 0) return [];
+    if (!interactions || interactions.length === 0) {
+      return [];
+    }
 
-  // Ardından bu öğelerin detaylarını al
-  const itemIds = interactions.map((interaction) => interaction.item_id);
-  const { data: items, error: itemsError } = await supabase
-    .from("feed_items")
-    .select("*")
-    .in("id", itemIds)
-    .order("published_at", { ascending: false });
+    // Ardından bu öğelerin detaylarını al
+    const itemIds = interactions.map((interaction) => interaction.item_id);
+    const { data: items, error: itemsError } = await supabase
+      .from("feed_items")
+      .select(
+        `
+        *,
+        feeds:feed_id (
+          id,
+          title,
+          site_favicon,
+          type
+        )
+      `
+      )
+      .in("id", itemIds)
+      .order("published_at", { ascending: false });
 
-  if (itemsError) throw new Error(itemsError.message);
-  return items || [];
+    if (itemsError) throw itemsError;
+
+    // Etkileşim bilgilerini öğelere ekle
+    const itemsWithInteractions = items.map((item) => ({
+      ...item,
+      is_favorite: true, // Zaten favorilerde olduğunu biliyoruz
+      feed_title: item.feeds?.title || "Bilinmeyen Kaynak",
+      feed_type: item.feeds?.type || "rss",
+      site_favicon: item.feeds?.site_favicon || null,
+    }));
+
+    return itemsWithInteractions;
+  } catch (error) {
+    console.error("Error fetching favorites:", error);
+    return [];
+  }
 };
 
 export const fetchReadLaterItems = async (userId) => {
@@ -122,27 +149,54 @@ export const fetchReadLaterItems = async (userId) => {
 
   const supabase = createSupabaseClient();
 
-  // Önce okuma listesi etkileşimlerini al
-  const { data: interactions, error: interactionsError } = await supabase
-    .from("user_item_interactions")
-    .select("item_id")
-    .eq("user_id", userId)
-    .eq("is_read_later", true);
+  try {
+    // Önce kullanıcının okuma listesi etkileşimlerini al
+    const { data: interactions, error: interactionsError } = await supabase
+      .from("user_item_interactions")
+      .select("item_id")
+      .eq("user_id", userId)
+      .eq("is_read_later", true);
 
-  if (interactionsError) throw new Error(interactionsError.message);
+    if (interactionsError) throw interactionsError;
 
-  if (!interactions || interactions.length === 0) return [];
+    if (!interactions || interactions.length === 0) {
+      return [];
+    }
 
-  // Ardından bu öğelerin detaylarını al
-  const itemIds = interactions.map((interaction) => interaction.item_id);
-  const { data: items, error: itemsError } = await supabase
-    .from("feed_items")
-    .select("*")
-    .in("id", itemIds)
-    .order("published_at", { ascending: false });
+    // Ardından bu öğelerin detaylarını al
+    const itemIds = interactions.map((interaction) => interaction.item_id);
+    const { data: items, error: itemsError } = await supabase
+      .from("feed_items")
+      .select(
+        `
+        *,
+        feeds:feed_id (
+          id,
+          title,
+          site_favicon,
+          type
+        )
+      `
+      )
+      .in("id", itemIds)
+      .order("published_at", { ascending: false });
 
-  if (itemsError) throw new Error(itemsError.message);
-  return items || [];
+    if (itemsError) throw itemsError;
+
+    // Etkileşim bilgilerini öğelere ekle
+    const itemsWithInteractions = items.map((item) => ({
+      ...item,
+      is_read_later: true, // Zaten okuma listesinde olduğunu biliyoruz
+      feed_title: item.feeds?.title || "Bilinmeyen Kaynak",
+      feed_type: item.feeds?.type || "rss",
+      site_favicon: item.feeds?.site_favicon || null,
+    }));
+
+    return itemsWithInteractions;
+  } catch (error) {
+    console.error("Error fetching read later items:", error);
+    return [];
+  }
 };
 
 // YouTube öğeleri de feed_items tablosunda saklandığı için aynı fonksiyonu kullanabiliriz
@@ -520,223 +574,184 @@ export function useFeeds() {
   });
 
   // Öğe okundu durumunu değiştirme
-  const toggleItemReadMutation = useMutation({
-    mutationFn: async ({ itemId, isRead }) => {
-      // Önce etkileşim var mı kontrol et
-      const { data: existingInteraction, error: checkError } = await supabase
-        .from("user_item_interactions")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("item_id", itemId)
-        .single();
+  const toggleItemRead = async (itemId, isRead) => {
+    console.log("Toggling read status in useFeeds:", itemId, isRead);
 
-      if (checkError && checkError.code !== "PGRST116") throw checkError;
+    if (!user.id) {
+      toast.error("Oturum açmanız gerekiyor");
+      return;
+    }
 
-      if (existingInteraction) {
-        // Etkileşim varsa güncelle
-        const { error } = await supabase
-          .from("user_item_interactions")
-          .update({ is_read: isRead })
-          .eq("user_id", user.id)
-          .eq("item_id", itemId);
-
-        if (error) throw error;
-      } else {
-        // Etkileşim yoksa oluştur
-        const { error } = await supabase.from("user_item_interactions").insert([
-          {
-            user_id: user.id,
-            item_id: itemId,
-            is_read: isRead,
-            is_favorite: false,
-            is_read_later: false,
-          },
-        ]);
-
-        if (error) throw error;
-      }
-
-      return { itemId, isRead };
-    },
-    onMutate: async ({ itemId, isRead }) => {
-      // Önceki sorguları iptal et
-      await queryClient.cancelQueries({ queryKey: ["feeds"] });
-
-      // Önceki verileri kaydet
-      const previousData = queryClient.getQueryData(["feeds"]);
-
-      // Verileri iyimser bir şekilde güncelle
-      queryClient.setQueryData(["feeds"], (old) => {
-        if (!old) return { feeds: [], items: [] };
-
+    try {
+      // Optimistic update
+      queryClient.setQueryData(["userInteractions", user.id], (old) => {
+        if (!old) return {};
         return {
           ...old,
-          items: old.items.map((item) =>
-            item.id === itemId ? { ...item, is_read: isRead } : item
-          ),
+          [itemId]: { ...old[itemId], is_read: isRead },
         };
       });
 
-      return { previousData };
-    },
-    onError: (err, variables, context) => {
-      // Hata durumunda önceki verileri geri yükle
-      if (context?.previousData) {
-        queryClient.setQueryData(["feeds"], context.previousData);
-      }
-      toast.error("Failed to update item status");
-    },
-    onSettled: () => {
-      // Sorguyu geçersiz kıl ve yeniden getir
-      queryClient.invalidateQueries({ queryKey: ["feeds"] });
-    },
-  });
+      // Update in database
+      const { error } = await supabase.from("user_item_interactions").upsert(
+        {
+          user_id: user.id,
+          item_id: itemId,
+          is_read: isRead,
+        },
+        { onConflict: "user_id,item_id" }
+      );
+
+      if (error) throw error;
+
+      // Invalidate queries
+      queryClient.invalidateQueries(["userInteractions", user.id]);
+
+      // Başarılı işlem sonrası kullanıcıya bildirim göster
+      toast.success(
+        isRead
+          ? "Öğe okundu olarak işaretlendi"
+          : "Öğe okunmadı olarak işaretlendi",
+        {
+          duration: 2000,
+          position: "bottom-right",
+        }
+      );
+    } catch (error) {
+      console.error("Error toggling read status:", error);
+
+      // Rollback on error
+      queryClient.setQueryData(["userInteractions", user.id], (old) => {
+        if (!old) return {};
+        return {
+          ...old,
+          [itemId]: { ...old[itemId], is_read: !isRead },
+        };
+      });
+
+      toast.error("Öğe durumu güncellenirken hata oluştu");
+    }
+  };
 
   // Öğe favori durumunu değiştirme
-  const toggleItemFavoriteMutation = useMutation({
-    mutationFn: async ({ itemId, isFavorite }) => {
-      // Önce etkileşim var mı kontrol et
-      const { data: existingInteraction, error: checkError } = await supabase
-        .from("user_item_interactions")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("item_id", itemId)
-        .single();
+  const toggleItemFavorite = async (itemId, isFavorite) => {
+    console.log("Toggling favorite status in useFeeds:", itemId, isFavorite);
 
-      if (checkError && checkError.code !== "PGRST116") throw checkError;
+    if (!user.id) {
+      toast.error("Oturum açmanız gerekiyor");
+      return;
+    }
 
-      if (existingInteraction) {
-        // Etkileşim varsa güncelle
-        const { error } = await supabase
-          .from("user_item_interactions")
-          .update({ is_favorite: isFavorite })
-          .eq("user_id", user.id)
-          .eq("item_id", itemId);
-
-        if (error) throw error;
-      } else {
-        // Etkileşim yoksa oluştur
-        const { error } = await supabase.from("user_item_interactions").insert([
-          {
-            user_id: user.id,
-            item_id: itemId,
-            is_read: false,
-            is_favorite: isFavorite,
-            is_read_later: false,
-          },
-        ]);
-
-        if (error) throw error;
-      }
-
-      return { itemId, isFavorite };
-    },
-    onMutate: async ({ itemId, isFavorite }) => {
-      // Önceki sorguları iptal et
-      await queryClient.cancelQueries({ queryKey: ["feeds"] });
-
-      // Önceki verileri kaydet
-      const previousData = queryClient.getQueryData(["feeds"]);
-
-      // Verileri iyimser bir şekilde güncelle
-      queryClient.setQueryData(["feeds"], (old) => {
-        if (!old) return { feeds: [], items: [] };
-
+    try {
+      // Optimistic update
+      queryClient.setQueryData(["userInteractions", user.id], (old) => {
+        if (!old) return {};
         return {
           ...old,
-          items: old.items.map((item) =>
-            item.id === itemId ? { ...item, is_favorite: isFavorite } : item
-          ),
+          [itemId]: { ...old[itemId], is_favorite: isFavorite },
         };
       });
 
-      return { previousData };
-    },
-    onError: (err, variables, context) => {
-      // Hata durumunda önceki verileri geri yükle
-      if (context?.previousData) {
-        queryClient.setQueryData(["feeds"], context.previousData);
-      }
-      toast.error("Failed to update favorite status");
-    },
-    onSettled: () => {
-      // Sorguyu geçersiz kıl ve yeniden getir
-      queryClient.invalidateQueries({ queryKey: ["feeds"] });
-    },
-  });
+      // Update in database
+      const { error } = await supabase.from("user_item_interactions").upsert(
+        {
+          user_id: user.id,
+          item_id: itemId,
+          is_favorite: isFavorite,
+        },
+        { onConflict: "user_id,item_id" }
+      );
+
+      if (error) throw error;
+
+      // Invalidate queries
+      queryClient.invalidateQueries(["userInteractions", user.id]);
+      queryClient.invalidateQueries(["favorites", user.id]);
+
+      // Başarılı işlem sonrası kullanıcıya bildirim göster
+      toast.success(
+        isFavorite ? "Öğe favorilere eklendi" : "Öğe favorilerden çıkarıldı",
+        {
+          duration: 2000,
+          position: "bottom-right",
+        }
+      );
+    } catch (error) {
+      console.error("Error toggling favorite status:", error);
+
+      // Rollback on error
+      queryClient.setQueryData(["userInteractions", user.id], (old) => {
+        if (!old) return {};
+        return {
+          ...old,
+          [itemId]: { ...old[itemId], is_favorite: !isFavorite },
+        };
+      });
+
+      toast.error("Favori durumu güncellenirken hata oluştu");
+    }
+  };
 
   // Öğe okuma listesi durumunu değiştirme
-  const toggleItemReadLaterMutation = useMutation({
-    mutationFn: async ({ itemId, isReadLater }) => {
-      // Önce etkileşim var mı kontrol et
-      const { data: existingInteraction, error: checkError } = await supabase
-        .from("user_item_interactions")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("item_id", itemId)
-        .single();
+  const toggleItemReadLater = async (itemId, isReadLater) => {
+    console.log("Toggling read later status in useFeeds:", itemId, isReadLater);
 
-      if (checkError && checkError.code !== "PGRST116") throw checkError;
+    if (!user.id) {
+      toast.error("Oturum açmanız gerekiyor");
+      return;
+    }
 
-      if (existingInteraction) {
-        // Etkileşim varsa güncelle
-        const { error } = await supabase
-          .from("user_item_interactions")
-          .update({ is_read_later: isReadLater })
-          .eq("user_id", user.id)
-          .eq("item_id", itemId);
-
-        if (error) throw error;
-      } else {
-        // Etkileşim yoksa oluştur
-        const { error } = await supabase.from("user_item_interactions").insert([
-          {
-            user_id: user.id,
-            item_id: itemId,
-            is_read: false,
-            is_favorite: false,
-            is_read_later: isReadLater,
-          },
-        ]);
-
-        if (error) throw error;
-      }
-
-      return { itemId, isReadLater };
-    },
-    onMutate: async ({ itemId, isReadLater }) => {
-      // Önceki sorguları iptal et
-      await queryClient.cancelQueries({ queryKey: ["feeds"] });
-
-      // Önceki verileri kaydet
-      const previousData = queryClient.getQueryData(["feeds"]);
-
-      // Verileri iyimser bir şekilde güncelle
-      queryClient.setQueryData(["feeds"], (old) => {
-        if (!old) return { feeds: [], items: [] };
-
+    try {
+      // Optimistic update
+      queryClient.setQueryData(["userInteractions", user.id], (old) => {
+        if (!old) return {};
         return {
           ...old,
-          items: old.items.map((item) =>
-            item.id === itemId ? { ...item, is_read_later: isReadLater } : item
-          ),
+          [itemId]: { ...old[itemId], is_read_later: isReadLater },
         };
       });
 
-      return { previousData };
-    },
-    onError: (err, variables, context) => {
-      // Hata durumunda önceki verileri geri yükle
-      if (context?.previousData) {
-        queryClient.setQueryData(["feeds"], context.previousData);
-      }
-      toast.error("Failed to update read later status");
-    },
-    onSettled: () => {
-      // Sorguyu geçersiz kıl ve yeniden getir
-      queryClient.invalidateQueries({ queryKey: ["feeds"] });
-    },
-  });
+      // Update in database
+      const { error } = await supabase.from("user_item_interactions").upsert(
+        {
+          user_id: user.id,
+          item_id: itemId,
+          is_read_later: isReadLater,
+        },
+        { onConflict: "user_id,item_id" }
+      );
+
+      if (error) throw error;
+
+      // Invalidate queries
+      queryClient.invalidateQueries(["userInteractions", user.id]);
+      queryClient.invalidateQueries(["readLater", user.id]);
+
+      // Başarılı işlem sonrası kullanıcıya bildirim göster
+      toast.success(
+        isReadLater
+          ? "Öğe okuma listesine eklendi"
+          : "Öğe okuma listesinden çıkarıldı",
+        {
+          duration: 2000,
+          position: "bottom-right",
+        }
+      );
+    } catch (error) {
+      console.error("Error toggling read later status:", error);
+
+      // Rollback on error
+      queryClient.setQueryData(["userInteractions", user.id], (old) => {
+        if (!old) return {};
+        return {
+          ...old,
+          [itemId]: { ...old[itemId], is_read_later: !isReadLater },
+        };
+      });
+
+      toast.error("Okuma listesi durumu güncellenirken hata oluştu");
+    }
+  };
 
   return {
     feeds: feedsQuery.data?.feeds || [],
@@ -749,11 +764,8 @@ export function useFeeds() {
     addYoutubeFeed,
     deleteFeed: deleteFeed.mutate,
     isDeleting: deleteFeed.isLoading,
-    toggleItemRead: toggleItemReadMutation.mutate,
-    isTogglingRead: toggleItemReadMutation.isLoading,
-    toggleItemFavorite: toggleItemFavoriteMutation.mutate,
-    isTogglingFavorite: toggleItemFavoriteMutation.isLoading,
-    toggleItemReadLater: toggleItemReadLaterMutation.mutate,
-    isTogglingReadLater: toggleItemReadLaterMutation.isLoading,
+    toggleItemRead,
+    toggleItemFavorite,
+    toggleItemReadLater,
   };
 }

@@ -1,27 +1,24 @@
 /** @type {import('next').NextConfig} */
-const config = {
+const nextConfig = {
+  reactStrictMode: true,
   images: {
-    domains: [
-      "i.ytimg.com",
-      "img.youtube.com",
-      "yt3.ggpht.com",
-      "yt3.googleusercontent.com",
-      "lh3.googleusercontent.com",
-    ],
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**.ytimg.com",
+        hostname: "**",
       },
       {
-        protocol: "https",
-        hostname: "**.ggpht.com",
-      },
-      {
-        protocol: "https",
-        hostname: "**.googleusercontent.com",
+        protocol: "http",
+        hostname: "**",
       },
     ],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ["image/webp"],
+    minimumCacheTTL: 60,
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    unoptimized: true,
   },
   webpack: (config) => {
     config.resolve.alias = {
@@ -42,4 +39,4 @@ const config = {
   },
 };
 
-module.exports = config;
+module.exports = nextConfig;

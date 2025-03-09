@@ -46,7 +46,7 @@ export function KeyboardShortcutsHelp({ open, onOpenChange }) {
         <DialogHeader>
           <DialogTitle>Klavye Kısayolları</DialogTitle>
           <DialogDescription>
-            Feed'leri daha hızlı gezinmek için klavye kısayollarını
+            Feed&apos;leri daha hızlı gezinmek için klavye kısayollarını
             kullanabilirsiniz.
           </DialogDescription>
         </DialogHeader>

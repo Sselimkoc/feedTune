@@ -210,7 +210,7 @@ export function FeedContent() {
     <div className="w-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Feed'ler</h1>
+          <h1 className="text-2xl font-bold">Feed&apos;ler</h1>
           <p className="text-muted-foreground">
             Takip ettiğiniz kaynakların içeriklerini görüntüleyin
           </p>

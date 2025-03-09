@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { KeyboardShortcutsHelp } from "./KeyboardShortcutsHelp";
+import { KeyboardShortcutsHelp } from "@/components/feeds/KeyboardShortcutsHelp";
 import { FeedSkeleton } from "./FeedSkeleton";
 import { FeedCard } from "./FeedCard";
 import { FeedNavigation } from "./FeedNavigation";
@@ -45,44 +45,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useQueryClient } from "@tanstack/react-query";
-import { createClient } from "@supabase/supabase-js";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { RssIcon, Tag } from "lucide-react";
 import { formatTimeAgo, stripHtml } from "@/lib/utils";
+import { toast } from "sonner";
 
 // Constants
 const ITEMS_PER_PAGE = 10;
-
-// Supabase client'ını oluştur
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Kullanıcı kimliğini almak için bir fonksiyon
-const getUserIdFromJWT = async () => {
-  const { user } = await supabase.auth.getUser();
-  return user ? user.id : null;
-};
-
-// toggleItemRead fonksiyonunu güncelle
-const toggleItemRead = async (itemId) => {
-  const userId = await getUserIdFromJWT();
-  if (userId) {
-    // Veritabanı işlemlerini burada yapın
-    const { data, error } = await supabase
-      .from("your_table_name")
-      .update({ isRead: true })
-      .eq("id", itemId)
-      .eq("user_id", userId);
-
-    if (error) {
-      console.error("Error updating item:", error);
-    } else {
-      console.log("Item updated:", data);
-    }
-  }
-};
 
 // Main component
 export function FeedList() {
@@ -109,6 +79,7 @@ export function FeedList() {
   } = useFeedStore();
   const { settings } = useSettingsStore();
   const queryClient = useQueryClient();
+  const supabase = createClientComponentClient();
 
   // State management
   const [focusedItemIndex, setFocusedItemIndex] = useState(0);
@@ -224,74 +195,97 @@ export function FeedList() {
     }
   }, [user, refetch, queryClient]);
 
-  // Keyboard navigation
+  // Klavye kısayolları için useEffect
   useEffect(() => {
-    if (!settings.enableKeyboardNavigation) return;
-
     const handleKeyDown = (e) => {
-      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+      // Eğer bir input veya textarea odaklanmışsa, kısayolları devre dışı bırak
+      if (
+        document.activeElement.tagName === "INPUT" ||
+        document.activeElement.tagName === "TEXTAREA"
+      ) {
         return;
+      }
+
+      // Yardımcı fonksiyon: Belirli bir öğeye scroll yap
+      const scrollToIndex = (index) => {
+        const itemId = filteredItems[index]?.id;
+        if (itemId) {
+          const element = document.getElementById(`feed-item-${itemId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }
+      };
 
       switch (e.key) {
+        case "j":
         case "ArrowDown":
+          // Aşağı git
           e.preventDefault();
-          setFocusedItemIndex((prev) =>
-            Math.min(prev + 1, filteredItems.length - 1)
-          );
-          setIsNavigating(true);
+          setFocusedItemIndex((prev) => {
+            const newIndex = Math.min(prev + 1, filteredItems.length - 1);
+            // Scroll işlemini doğrudan burada yap
+            requestAnimationFrame(() => scrollToIndex(newIndex));
+            return newIndex;
+          });
           break;
+        case "k":
         case "ArrowUp":
+          // Yukarı git
           e.preventDefault();
-          setFocusedItemIndex((prev) => Math.max(prev - 1, 0));
-          setIsNavigating(true);
+          setFocusedItemIndex((prev) => {
+            const newIndex = Math.max(prev - 1, 0);
+            // Scroll işlemini doğrudan burada yap
+            requestAnimationFrame(() => scrollToIndex(newIndex));
+            return newIndex;
+          });
           break;
+        case "o":
         case "Enter":
+          // Öğeyi aç
           e.preventDefault();
-          if (filteredItems[focusedItemIndex]) {
-            const item = filteredItems[focusedItemIndex];
-            window.open(item.link, "_blank");
-            toggleItemRead(item.id, true);
+          if (filteredItems[focusedItemIndex]?.link) {
+            window.open(filteredItems[focusedItemIndex].link, "_blank");
+            // Okunmadıysa okundu olarak işaretle
+            if (!filteredItems[focusedItemIndex].is_read) {
+              toggleItemRead(filteredItems[focusedItemIndex].id, true);
+            }
           }
           break;
-        case "r":
+        case "m":
+          // Okundu/Okunmadı olarak işaretle
           e.preventDefault();
           if (filteredItems[focusedItemIndex]) {
-            const item = filteredItems[focusedItemIndex];
-            toggleItemRead(item.id, !item.is_read);
+            toggleItemRead(
+              filteredItems[focusedItemIndex].id,
+              !filteredItems[focusedItemIndex].is_read
+            );
           }
           break;
-        case "f":
+        case "s":
+          // Favorilere ekle/çıkar
           e.preventDefault();
           if (filteredItems[focusedItemIndex]) {
-            const item = filteredItems[focusedItemIndex];
-            toggleItemFavorite(item.id, !item.is_favorite);
+            toggleItemFavorite(
+              filteredItems[focusedItemIndex].id,
+              !filteredItems[focusedItemIndex].is_favorite
+            );
+          }
+          break;
+        case "b":
+          // Okuma listesine ekle/çıkar
+          e.preventDefault();
+          if (filteredItems[focusedItemIndex]) {
+            toggleItemReadLater(
+              filteredItems[focusedItemIndex].id,
+              !filteredItems[focusedItemIndex].is_read_later
+            );
           }
           break;
         case "?":
+          // Klavye kısayolları yardımını göster
           e.preventDefault();
-          setShowKeyboardHelp((prev) => !prev);
-          break;
-        case "Escape":
-          e.preventDefault();
-          if (showKeyboardHelp) {
-            setShowKeyboardHelp(false);
-          }
-          break;
-        case "c":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            refetch();
-          }
-          break;
-        case "Home":
-          e.preventDefault();
-          setFocusedItemIndex(0);
-          setIsNavigating(true);
-          break;
-        case "End":
-          e.preventDefault();
-          setFocusedItemIndex(filteredItems.length - 1);
-          setIsNavigating(true);
+          setShowKeyboardHelp(true);
           break;
         default:
           break;
@@ -299,27 +293,28 @@ export function FeedList() {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [
-    settings.enableKeyboardNavigation,
     filteredItems,
     focusedItemIndex,
     toggleItemRead,
     toggleItemFavorite,
-    showKeyboardHelp,
-    refetch,
+    toggleItemReadLater,
   ]);
 
-  // Scroll to selected item
+  // İlk render'da ilk öğeye odaklan
   useEffect(() => {
-    if (isNavigating && selectedItemRef.current) {
-      selectedItemRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-      });
-      setIsNavigating(false);
+    if (filteredItems.length > 0 && focusedItemIndex === 0) {
+      const element = document.getElementById(
+        `feed-item-${filteredItems[0]?.id}`
+      );
+      if (element) {
+        element.scrollIntoView({ behavior: "auto", block: "nearest" });
+      }
     }
-  }, [focusedItemIndex, isNavigating]);
+  }, [filteredItems, filteredItems.length, focusedItemIndex]);
 
   // Feed seçimi için yeni handler
   const handleFeedSelect = useCallback((feedId) => {
@@ -521,7 +516,10 @@ export function FeedList() {
     <div className="w-full">
       <AnimatePresence>
         {showKeyboardHelp && (
-          <KeyboardShortcutsHelp onClose={() => setShowKeyboardHelp(false)} />
+          <KeyboardShortcutsHelp
+            open={showKeyboardHelp}
+            onOpenChange={setShowKeyboardHelp}
+          />
         )}
       </AnimatePresence>
 
@@ -661,19 +659,17 @@ export function FeedList() {
                     delay: index * 0.05,
                   }}
                 >
-                  <FeedCard
-                    item={item}
-                    feed={feeds.find((f) => f.id === item.feed_id)}
-                    compact={compactMode}
-                    onToggleRead={handleToggleRead}
-                    onToggleFavorite={handleToggleFavorite}
-                    onToggleReadLater={handleToggleReadLater}
-                    onOpenLink={handleOpenLink}
-                    isFocused={
-                      index === focusedItemIndex &&
-                      settings.enableKeyboardNavigation
-                    }
-                  />
+                  <div id={`feed-item-${item.id}`}>
+                    <FeedCard
+                      item={item}
+                      feed={feeds.find((f) => f.id === item.feed_id)}
+                      compact={settings.compactView}
+                      onToggleRead={toggleItemRead}
+                      onToggleFavorite={toggleItemFavorite}
+                      onToggleReadLater={toggleItemReadLater}
+                      isFocused={focusedItemIndex === index}
+                    />
+                  </div>
                 </motion.div>
               ))}
             </AnimatePresence>
