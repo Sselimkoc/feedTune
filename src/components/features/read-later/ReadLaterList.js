@@ -25,7 +25,7 @@ import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export function ReadLaterList({ initialItems, isLoading }) {
-  const [items, setItems] = useState(initialItems);
+  const [items, setItems] = useState(initialItems || []);
   const supabase = createClientComponentClient();
   const { user } = useAuthStore();
   const { t, language } = useLanguage();
@@ -35,8 +35,11 @@ export function ReadLaterList({ initialItems, isLoading }) {
 
   // initialItems değiştiğinde items state'ini güncelle
   useEffect(() => {
-    setItems(initialItems || []);
-  }, [initialItems]);
+    // Eğer initialItems varsa ve yükleme tamamlandıysa, items state'ini güncelle
+    if (initialItems && !isLoading) {
+      setItems(initialItems);
+    }
+  }, [initialItems, isLoading]);
 
   const toggleItemRead = async (itemId, isRead) => {
     if (!user.id) {
@@ -256,35 +259,52 @@ export function ReadLaterList({ initialItems, isLoading }) {
     }
   };
 
-  if (items.length === 0) {
-    return (
-      <div className="text-center text-muted-foreground py-10">
-        <p>{t("readLater.noItems")}</p>
-        <p className="mt-2">{t("readLater.addToReadLater")}</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="w-full">
       {isLoading ? (
-        <div className="flex justify-center items-center min-h-[50vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] loading-container rounded-xl p-8">
+          <div className="relative mb-6">
+            <div className="absolute inset-0 rounded-full bg-blue-500/20 blur-xl"></div>
+            <div className="relative z-10 bg-background/80 backdrop-blur-sm rounded-full p-4 shadow-lg border">
+              <BookmarkCheck className="h-12 w-12 text-blue-500 loading-spinner" />
+            </div>
+          </div>
+
+          <h3 className="text-xl font-medium mb-2 loading-pulse">
+            {t("readLater.title")}
+          </h3>
+          <p className="text-muted-foreground text-center max-w-md mb-4 loading-pulse">
+            {t("common.loading")}
+          </p>
+
+          <div className="flex items-center gap-2 mt-2">
+            <div
+              className="h-2 w-2 rounded-full bg-blue-500 animate-bounce"
+              style={{ animationDelay: "0ms" }}
+            ></div>
+            <div
+              className="h-2 w-2 rounded-full bg-blue-500 animate-bounce"
+              style={{ animationDelay: "150ms" }}
+            ></div>
+            <div
+              className="h-2 w-2 rounded-full bg-blue-500 animate-bounce"
+              style={{ animationDelay: "300ms" }}
+            ></div>
+          </div>
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
           <div className="mb-4 rounded-full bg-muted p-3">
             <BookmarkCheck className="h-6 w-6 text-muted-foreground" />
           </div>
-          <h3 className="mb-2 text-lg font-medium">Okuma listeniz boş</h3>
+          <h3 className="mb-2 text-lg font-medium">{t("readLater.noItems")}</h3>
           <p className="mb-6 max-w-md text-sm text-muted-foreground">
-            İçerikleri okuma listenize ekleyerek daha sonra okumak üzere
-            kaydedebilirsiniz.
+            {t("readLater.addToReadLater")}
           </p>
           <Button asChild>
             <Link href="/feeds">
               <RssIcon className="h-4 w-4 mr-2" />
-              Feed&apos;lere Git
+              {t("feeds.title")}
             </Link>
           </Button>
         </div>

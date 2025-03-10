@@ -29,31 +29,7 @@ export function HomeContent() {
     useHomeData();
   const { isDeleting, handleRemoveFeed } = useDeleteFeed();
 
-  // URL temizleme fonksiyonu
-  const getRealWebsiteUrl = (feedUrl) => {
-    try {
-      const url = new URL(feedUrl);
-      let hostname = url.hostname;
-      let path = "/";
-
-      if (hostname.startsWith("www.")) {
-        hostname = hostname.substring(4);
-      }
-
-      if (
-        hostname === "youtube.com" ||
-        hostname === "www.youtube.com" ||
-        hostname === "m.youtube.com"
-      ) {
-        path = "/";
-      }
-
-      return `${url.protocol}//${hostname}${path}`;
-    } catch (error) {
-      console.error("URL dönüştürme hatası:", error);
-      return feedUrl;
-    }
-  };
+  
 
   // Feed silme işleyicisi
   const handleDeleteFeed = async () => {
@@ -101,7 +77,7 @@ export function HomeContent() {
             setFeedToDelete(feedId);
             setShowDeleteDialog(true);
           }}
-          getRealWebsiteUrl={getRealWebsiteUrl}
+         
         />
         <HomeRecentContent recentItems={recentItems} />
       </div>

@@ -25,7 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export function FavoritesList({ initialItems, isLoading }) {
-  const [items, setItems] = useState(initialItems);
+  const [items, setItems] = useState(initialItems || []);
   const supabase = createClientComponentClient();
   const { user } = useAuthStore();
   const { t, language } = useLanguage();
@@ -35,8 +35,11 @@ export function FavoritesList({ initialItems, isLoading }) {
 
   // initialItems değiştiğinde items state'ini güncelle
   useEffect(() => {
-    setItems(initialItems || []);
-  }, [initialItems]);
+    // Eğer initialItems varsa ve yükleme tamamlandıysa, items state'ini güncelle
+    if (initialItems && !isLoading) {
+      setItems(initialItems);
+    }
+  }, [initialItems, isLoading]);
 
   const toggleItemRead = async (itemId, isRead) => {
     try {
@@ -211,10 +214,38 @@ export function FavoritesList({ initialItems, isLoading }) {
     }
   };
 
+  // Yükleme durumu için dönen loading ekranı
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] loading-container rounded-xl p-8">
+        <div className="relative mb-6">
+          <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl"></div>
+          <div className="relative z-10 bg-background/80 backdrop-blur-sm rounded-full p-4 shadow-lg border">
+            <Star className="h-12 w-12 text-primary loading-spinner" />
+          </div>
+        </div>
+
+        <h3 className="text-xl font-medium mb-2 loading-pulse">
+          {t("favorites.title")}
+        </h3>
+        <p className="text-muted-foreground text-center max-w-md mb-4 loading-pulse">
+          {t("common.loading")}
+        </p>
+
+        <div className="flex items-center gap-2 mt-2">
+          <div
+            className="h-2 w-2 rounded-full bg-primary animate-bounce"
+            style={{ animationDelay: "0ms" }}
+          ></div>
+          <div
+            className="h-2 w-2 rounded-full bg-primary animate-bounce"
+            style={{ animationDelay: "150ms" }}
+          ></div>
+          <div
+            className="h-2 w-2 rounded-full bg-primary animate-bounce"
+            style={{ animationDelay: "300ms" }}
+          ></div>
+        </div>
       </div>
     );
   }
@@ -234,7 +265,7 @@ export function FavoritesList({ initialItems, isLoading }) {
         <Button asChild>
           <Link href="/feeds">
             <RssIcon className="h-4 w-4 mr-2" />
-            {t("feeds.feedList.title")}
+            {t("feeds.title")}
           </Link>
         </Button>
       </div>

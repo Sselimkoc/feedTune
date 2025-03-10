@@ -119,7 +119,10 @@ export function FavoritesContent() {
         console.error("Error in fetchFavorites:", error);
         toast.error(t("errors.general"));
       } finally {
-        setIsLoading(false);
+        // Veri yükleme işlemi tamamlandığında isLoading'i false yap
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 300); // Kısa bir gecikme ekleyerek geçişi daha yumuşak hale getir
       }
     };
 

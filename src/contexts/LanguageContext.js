@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import trTranslations from "@/locales/tr.json";
 import enTranslations from "@/locales/en.json";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 // Dil çevirileri
 const translations = {
@@ -10,35 +11,32 @@ const translations = {
   en: enTranslations,
 };
 
-// Varsayılan dil
-const DEFAULT_LANGUAGE = "tr";
-
 // Context oluşturma
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  // Tarayıcı dilini veya localStorage'dan kaydedilmiş dili al
-  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
+  const { settings, setLanguage: setStoreLanguage } = useSettingsStore();
+  const [language, setLanguageState] = useState(settings.language || "tr");
 
-  // Sayfa yüklendiğinde localStorage'dan dil tercihini al
+  // Sayfa yüklendiğinde store'dan dil tercihini al
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("language");
-    if (savedLanguage && translations[savedLanguage]) {
-      setLanguage(savedLanguage);
+    if (settings.language && translations[settings.language]) {
+      setLanguageState(settings.language);
     } else {
       // Tarayıcı dilini kontrol et
       const browserLanguage = navigator.language.split("-")[0];
       if (translations[browserLanguage]) {
-        setLanguage(browserLanguage);
+        setLanguageState(browserLanguage);
+        setStoreLanguage(browserLanguage);
       }
     }
-  }, []);
+  }, [settings.language, setStoreLanguage]);
 
   // Dil değiştirme fonksiyonu
   const changeLanguage = (newLanguage) => {
     if (translations[newLanguage]) {
-      setLanguage(newLanguage);
-      localStorage.setItem("language", newLanguage);
+      setLanguageState(newLanguage);
+      setStoreLanguage(newLanguage);
     }
   };
 

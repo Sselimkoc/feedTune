@@ -1,4 +1,7 @@
 {
+  "navigation": {
+    "tagline": "RSS ve YouTube içeriklerinizi tek bir yerde yönetin"
+  },
   "common": {
     "loading": "Yükleniyor...",
     "error": "Hata oluştu",
@@ -50,81 +53,10 @@
     "unauthorized": "Yetkisiz erişim",
     "registerDescription": "Yeni bir hesap oluşturun",
     "loginDescription": "Hesabınıza giriş yapın",
-    "registerPrompt": "Hesabınız yok mu? Kayıt olun",
-    "loginPrompt": "Zaten hesabınız var mı? Giriş yapın",
-    "verificationEmailSent": "Doğrulama e-postası gönderildi! Lütfen gelen kutunuzu kontrol edin.",
-    "authenticationError": "Kimlik doğrulama hatası oluştu.",
     "switchToRegister": "Hesabınız yok mu? Kayıt olun",
     "switchToLogin": "Zaten hesabınız var mı? Giriş yapın",
     "loginButton": "Giriş Yap",
     "registerButton": "Kayıt Ol"
-  },
-  "navigation": {
-    "home": "Ana Sayfa",
-    "feeds": "Beslemeler",
-    "favorites": "Favoriler",
-    "readLater": "Sonra Oku",
-    "settings": "Ayarlar",
-    "tagline": "RSS Besleme Okuyucunuz"
-  },
-  "home": {
-    "title": "FeedTune ile İçeriklerinizi Yönetin",
-    "subtitle": "RSS beslemeleri ve YouTube kanallarınızı tek bir yerde toplayın, organize edin ve takip edin. Favori içerik üreticilerinizi kaçırmayın!",
-    "getStarted": "Hemen Başlayın",
-    "getStartedDesc": "FeedTune'u ücretsiz kullanmaya başlayın ve içeriklerinizi tek bir yerden yönetin.",
-    "features": {
-      "title": "Özellikler",
-      "rssFeeds": {
-        "title": "RSS Beslemeleri",
-        "desc": "Favori blog ve haber sitelerinizden en son içerikleri takip edin. RSS beslemelerini kolayca ekleyin ve yönetin."
-      },
-      "youtube": {
-        "title": "YouTube Entegrasyonu",
-        "desc": "Sevdiğiniz YouTube kanallarını takip edin. Yeni videoları anında görün ve kaçırmayın."
-      },
-      "autoUpdates": {
-        "title": "Otomatik Güncellemeler",
-        "desc": "İçerikler otomatik olarak güncellenir. Siz sadece okumaya ve izlemeye odaklanın."
-      },
-      "organization": {
-        "title": "Kolay Organizasyon",
-        "desc": "İçeriklerinizi kategorilere ayırın, favorilere ekleyin ve okundu olarak işaretleyin."
-      },
-      "keyboard": {
-        "title": "Klavye Kısayolları",
-        "desc": "Klavye kısayolları ile hızlıca gezinin ve içerikleri yönetin."
-      },
-      "darkMode": {
-        "title": "Karanlık Mod",
-        "desc": "Gözlerinizi yormayan karanlık mod ile gece de rahatça okuyun."
-      }
-    },
-    "stats": {
-      "totalFeeds": "Toplam Feed",
-      "totalItems": "Toplam İçerik",
-      "unreadItems": "Okunmamış",
-      "favoriteItems": "Favoriler",
-      "readLaterItems": "Okuma Listesi"
-    },
-    "feedManagement": {
-      "title": "Feed Yönetimi",
-      "description": "Son eklenen feed'lerinizi görüntüleyin ve yönetin",
-      "addFirstFeed": "İlk Feed'inizi Ekleyin",
-      "addFeed": "Feed Ekle",
-      "noFeeds": "Henüz hiç feed eklemediniz",
-      "visitSite": "Siteyi Ziyaret Et",
-      "deleteFeed": "Feedi Sil",
-      "viewAllFeeds": "Tüm Feed'leri Görüntüle",
-      "rssFeed": "RSS Feed",
-      "youtubeChannel": "YouTube Kanalı"
-    },
-    "recentContent": {
-      "title": "Son İçerikler",
-      "description": "Feed'lerinizden en son eklenen içerikler",
-      "read": "Oku",
-      "viewAllContent": "Tüm İçerikleri Görüntüle",
-      "unknownSource": "Bilinmeyen Kaynak"
-    }
   },
   "feeds": {
     "title": "Beslemeleriniz",
@@ -134,15 +66,11 @@
       "selectPlatform": "Platform Seçin",
       "rss": "RSS Feed",
       "youtube": "YouTube Kanalı",
-      "back": "Geri",
-      "continue": "Devam Et",
-      "keepAdding": "Feed eklemeye devam et",
       "success": "Besleme başarıyla eklendi",
       "error": "Besleme eklenirken bir hata oluştu"
     },
     "addRssFeed": {
       "title": "RSS Beslemesi Ekle",
-      "url": "Feed URL",
       "urlPlaceholder": "RSS besleme URL'sini girin",
       "urlInvalid": "Geçerli bir URL girin",
       "checking": "Besleme kontrol ediliyor...",
@@ -159,9 +87,7 @@
       "channelNotFound": "Kanal bulunamadı",
       "searchPlaceholder": "Kanal ID, URL veya kullanıcı adı girin",
       "searchDescription": "YouTube kanal URL'si, ID'si veya kullanıcı adı (@kullanıcıadı) girebilirsiniz",
-      "searching": "Kanal aranıyor...",
-      "searchError": "Kanal aranırken bir hata oluştu",
-      "add": "YouTube Kanalı Ekle"
+      "searching": "Kanal aranıyor..."
     },
     "deleteFeed": {
       "title": "Feedi Sil",
@@ -169,27 +95,6 @@
       "deleting": "Feed siliniyor...",
       "success": "Feed ve ilişkili tüm veriler başarıyla silindi",
       "error": "Feed silme işlemi başarısız oldu"
-    },
-    "filters": {
-      "title": "Filtrele ve Sırala",
-      "sort": "Sıralama",
-      "filter": "Filtreleme",
-      "newest": "En yeni",
-      "oldest": "En eski",
-      "unreadFirst": "Okunmamışlar önce",
-      "favoritesFirst": "Favoriler önce",
-      "showContent": "Gösterilecek İçerikler",
-      "readContent": "Okunmuş içerikler",
-      "unreadContent": "Okunmamış içerikler",
-      "feedTypes": "Besleme Türleri",
-      "rssFeeds": "RSS Beslemeleri",
-      "youtubeFeeds": "YouTube Beslemeleri",
-      "reset": "Sıfırla",
-      "apply": "Uygula",
-      "noMatchingContent": "Seçilen filtrelere uygun içerik bulunamadı. Lütfen filtrelerinizi değiştirin veya sıfırlayın.",
-      "resetFilters": "Filtreleri Sıfırla",
-      "adjustFilters": "Filtreleri Ayarla",
-      "clearAllSelections": "Tüm Seçimleri Kaldır"
     },
     "feedList": {
       "title": "Beslemeleriniz",
@@ -207,9 +112,7 @@
       "favorite": "Favori",
       "favoriteAction": "Favorile",
       "inReadingList": "Listede",
-      "addToList": "Listeye Ekle",
-      "emptyState": "Henüz hiç besleme eklemediniz",
-      "description": "Takip ettiğiniz tüm RSS ve YouTube beslemeleri"
+      "addToList": "Listeye Ekle"
     },
     "keyboardShortcuts": {
       "title": "Klavye Kısayolları",
@@ -224,23 +127,83 @@
       "addToReadLater": "Okuma listesine ekle/çıkar",
       "showHelp": "Bu yardımı göster"
     },
-    "feedRemovedSuccessfully": "Feed başarıyla silindi",
-    "itemMarkedAsRead": "Öğe okundu olarak işaretlendi",
-    "itemMarkedAsUnread": "Öğe okunmadı olarak işaretlendi",
-    "itemAddedToFavorites": "Öğe favorilere eklendi",
-    "itemRemovedFromFavorites": "Öğe favorilerden çıkarıldı",
-    "itemAddedToReadLater": "Öğe okuma listesine eklendi",
-    "itemRemovedFromReadLater": "Öğe okuma listesinden çıkarıldı",
-    "feedExists": "Bu feed zaten listenizde",
-    "feedAdded": "Feed başarıyla eklendi",
-    "cacheCleared": "Önbellek başarıyla temizlendi",
-    "loadingState": {
-      "description": "Beslemeleriniz yükleniyor..."
-    },
     "emptyState": {
       "title": "Henüz hiç besleme eklemediniz",
       "description": "RSS veya YouTube beslemesi ekleyerek başlayın",
       "addFeedButton": "Besleme Ekle"
+    },
+    "loadingState": {
+      "description": "Beslemeleriniz yükleniyor..."
+    }
+  },
+  "home": {
+    "title": "FeedTune ile İçeriklerinizi Yönetin",
+    "subtitle": "RSS beslemeleri ve YouTube kanallarınızı tek bir yerde toplayın, organize edin ve takip edin.",
+    "getStarted": "Hemen Başlayın",
+    "feedManagement": {
+      "title": "Beslemeleriniz",
+      "description": "Takip ettiğiniz kaynaklar",
+      "addFeed": "Feed Ekle",
+      "viewAllContent": "Tüm İçerikleri Görüntüle",
+      "viewContent": "İçerikleri Gör",
+      "viewAllFeeds": "Tüm Feed'leri Görüntüle",
+      "websiteLink": "Web sitesini ziyaret et",
+      "openInNewTab": "Yeni sekmede aç",
+      "copyLink": "Bağlantıyı kopyala",
+      "copyLinkSuccess": "Bağlantı kopyalandı",
+      "visitWebsite": "Web sitesine git",
+      "lastUpdated": "Son güncelleme",
+      "noFeeds": "Takip etmek istediğiniz RSS veya YouTube kaynaklarını ekleyin",
+      "noFeedsTitle": "Henüz feed eklenmemiş",
+      "addFirstFeed": "İlk Feed'i Ekle",
+      "addFeedDescription": "Yeni bir RSS veya YouTube kaynağı ekleyin"
+    },
+    "recentContent": {
+      "title": "Son İçerikler",
+      "description": "Feed'lerinizden en son eklenen içerikler",
+      "viewAllContent": "Tüm İçerikleri Görüntüle",
+      "read": "Oku",
+      "unknownSource": "Bilinmeyen Kaynak",
+      "noContent": "Feed'lerinizden içerikler burada görünecek",
+      "noContentTitle": "Henüz içerik yok"
+    },
+    "stats": {
+      "title": "İstatistikler",
+      "description": "Feed'lerinizin genel durumu",
+      "totalFeeds": "Toplam Feed",
+      "totalItems": "Toplam İçerik",
+      "unreadItems": "Okunmamış",
+      "favoriteItems": "Favoriler",
+      "readLaterItems": "Okuma Listesi"
+    },
+    "features": {
+      "title": "Özellikler",
+      "subtitle": "FeedTune'un Sunduğu Avantajlar",
+      "description": "FeedTune ile içeriklerinizi daha verimli yönetin",
+      "rssFeeds": {
+        "title": "RSS Beslemeleri",
+        "desc": "Favori web sitelerinizden en son içerikleri takip edin"
+      },
+      "youtube": {
+        "title": "YouTube Kanalları",
+        "desc": "Sevdiğiniz YouTube kanallarını RSS gibi takip edin"
+      },
+      "autoUpdates": {
+        "title": "Otomatik Güncellemeler",
+        "desc": "İçerikleriniz otomatik olarak güncellenir"
+      },
+      "organization": {
+        "title": "İçerik Organizasyonu",
+        "desc": "İçeriklerinizi favorilere ekleyin veya sonra okumak üzere kaydedin"
+      },
+      "keyboard": {
+        "title": "Klavye Kısayolları",
+        "desc": "Klavye kısayolları ile daha hızlı gezinin"
+      },
+      "darkMode": {
+        "title": "Karanlık Mod",
+        "desc": "Gözlerinizi yormayan karanlık mod desteği"
+      }
     }
   },
   "favorites": {
@@ -258,41 +221,36 @@
   "settings": {
     "title": "Ayarlar",
     "language": "Dil",
-    "theme": "Tema",
-    "themeDescription": "FeedTune'un görünümünü özelleştirin",
-    "light": "Açık",
-    "dark": "Koyu",
-    "system": "Sistem",
-    "notifications": "Bildirimler",
-    "account": "Hesap",
-    "accountDescription": "Hesap ayarlarınızı yönetin",
-    "profile": "Profil",
-    "security": "Güvenlik",
+    "languageDescription": "Uygulama dilini değiştirin",
+    "theme": {
+      "title": "Tema",
+      "description": "FeedTune'un görünümünü özelleştirin",
+      "light": "Açık",
+      "dark": "Koyu",
+      "system": "Sistem"
+    },
     "preferences": "Tercihler",
-    "preferencesDescription": "Okuma deneyiminizi özelleştirin",
+    "preferencesDescription": "Feed görüntüleme tercihlerinizi özelleştirin",
     "compactMode": "Kompakt Mod",
-    "compactModeDescription": "İçerikleri daha kompakt bir şekilde görüntüleyin",
-    "feedRefresh": "Feed Yenileme Sıklığı",
-    "feedRefreshDescription": "Feed'lerin ne sıklıkla güncelleneceğini seçin",
+    "compactModeDescription": "Feed'leri daha kompakt bir görünümde göster",
+    "feedRefresh": "Feed Yenileme",
+    "feedRefreshDescription": "Feed'lerin otomatik yenileme sıklığı",
     "minutes": "dakika",
     "hours": "saat",
-    "days": "gün",
-    "deleteAccount": "Hesabı Sil",
-    "deleteAccountConfirmation": "Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
-    "freePlan": "Ücretsiz Plan",
-    "resetToDefaults": "Varsayılanlara Sıfırla"
+    "account": {
+      "title": "Hesap",
+      "description": "Hesap ayarlarınızı yönetin",
+      "freePlan": "Ücretsiz Plan",
+      "deleteAccount": "Hesabı Sil",
+      "deleteAccountConfirmation": "Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+    },
+    "resetToDefaults": "Varsayılan Ayarlara Dön"
   },
   "errors": {
     "general": "Bir hata oluştu",
     "unauthorized": "Bu işlemi yapmak için giriş yapmalısınız",
-    "failedToDeleteFeed": "Besleme silinirken bir hata oluştu",
-    "errorUpdatingItemStatus": "Öğe durumu güncellenirken bir hata oluştu",
-    "tryAgain": "Lütfen tekrar deneyin",
-    "unknownError": "Bilinmeyen bir hata oluştu",
     "networkError": "Ağ bağlantısı hatası",
-    "needToBeLoggedIn": "Bu işlemi yapmak için giriş yapmalısınız",
-    "errorUpdatingFavoriteStatus": "Favori durumu güncellenirken hata oluştu",
-    "errorUpdatingReadLaterStatus": "Okuma listesi durumu güncellenirken hata oluştu"
+    "tryAgain": "Lütfen tekrar deneyin"
   },
   "timeAgo": {
     "justNow": "Az önce",
@@ -308,13 +266,5 @@
     "month_other": "{{count}} ay önce",
     "year_one": "1 yıl önce",
     "year_other": "{{count}} yıl önce"
-  },
-  "error": {
-    "title": "Bir hata oluştu",
-    "description": "İşlem sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
-    "retry": "Tekrar Dene"
-  },
-  "item": {
-    "updateError": "Öğe güncellenirken bir hata oluştu"
   }
 } 

@@ -19,11 +19,12 @@ export const FeedNavigation = memo(function FeedNavigation({
   // Seçili feed'e scroll yapma
   useEffect(() => {
     if (selectedRef.current && scrollRef.current) {
-      selectedRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
+      // Kaydırma özelliği şimdilik devre dışı bırakıldı
+      // selectedRef.current.scrollIntoView({
+      //   behavior: "smooth",
+      //   block: "nearest",
+      //   inline: "center",
+      // });
     }
   }, [selectedFeedId]);
 

@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { KeyboardShortcutsHelp } from "@/components/features/feeds/KeyboardShortcutsHelp";
-import { FeedSkeleton } from "./FeedSkeleton";
 import { FeedCard } from "./FeedCard";
 import { FeedNavigation } from "./FeedNavigation";
 import { EmptyState } from "./EmptyState";
@@ -39,6 +38,7 @@ import {
   Search,
   X,
   PlusCircle,
+  Rss,
 } from "lucide-react";
 import { FilterDialog } from "./FilterDialog";
 import { Button } from "@/components/ui/button";
@@ -210,13 +210,14 @@ export function FeedList() {
 
       // Yardımcı fonksiyon: Belirli bir öğeye scroll yap
       const scrollToIndex = (index) => {
-        const itemId = filteredItems[index]?.id;
-        if (itemId) {
-          const element = document.getElementById(`feed-item-${itemId}`);
-          if (element) {
-            element.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
-        }
+        // Kaydırma özelliği şimdilik devre dışı bırakıldı
+        // const itemId = filteredItems[index]?.id;
+        // if (itemId) {
+        //   const element = document.getElementById(`feed-item-${itemId}`);
+        //   if (element) {
+        //     element.scrollIntoView({ behavior: "smooth", block: "center" });
+        //   }
+        // }
       };
 
       switch (e.key) {
@@ -226,8 +227,8 @@ export function FeedList() {
           e.preventDefault();
           setFocusedItemIndex((prev) => {
             const newIndex = Math.min(prev + 1, filteredItems.length - 1);
-            // Scroll işlemini doğrudan burada yap
-            requestAnimationFrame(() => scrollToIndex(newIndex));
+            // Kaydırma özelliği şimdilik devre dışı bırakıldı
+            // requestAnimationFrame(() => scrollToIndex(newIndex));
             return newIndex;
           });
           break;
@@ -237,8 +238,8 @@ export function FeedList() {
           e.preventDefault();
           setFocusedItemIndex((prev) => {
             const newIndex = Math.max(prev - 1, 0);
-            // Scroll işlemini doğrudan burada yap
-            requestAnimationFrame(() => scrollToIndex(newIndex));
+            // Kaydırma özelliği şimdilik devre dışı bırakıldı
+            // requestAnimationFrame(() => scrollToIndex(newIndex));
             return newIndex;
           });
           break;
@@ -309,12 +310,13 @@ export function FeedList() {
   // İlk render'da ilk öğeye odaklan
   useEffect(() => {
     if (filteredItems.length > 0 && focusedItemIndex === 0) {
-      const element = document.getElementById(
-        `feed-item-${filteredItems[0]?.id}`
-      );
-      if (element) {
-        element.scrollIntoView({ behavior: "auto", block: "nearest" });
-      }
+      // Kaydırma özelliği şimdilik devre dışı bırakıldı
+      // const element = document.getElementById(
+      //   `feed-item-${filteredItems[0]?.id}`
+      // );
+      // if (element) {
+      //   element.scrollIntoView({ behavior: "auto", block: "nearest" });
+      // }
     }
   }, [filteredItems, filteredItems.length, focusedItemIndex]);
 
@@ -647,8 +649,35 @@ export function FeedList() {
 
       {/* Yükleniyor */}
       {isLoading ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] loading-container rounded-xl p-8">
+          <div className="relative mb-6">
+            <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl"></div>
+            <div className="relative z-10 bg-background/80 backdrop-blur-sm rounded-full p-4 shadow-lg border">
+              <Rss className="h-12 w-12 text-primary loading-spinner" />
+            </div>
+          </div>
+
+          <h3 className="text-xl font-medium mb-2 loading-pulse">
+            {t("feeds.title")}
+          </h3>
+          <p className="text-muted-foreground text-center max-w-md mb-4 loading-pulse">
+            {t("common.loading")}
+          </p>
+
+          <div className="flex items-center gap-2 mt-2">
+            <div
+              className="h-2 w-2 rounded-full bg-primary animate-bounce"
+              style={{ animationDelay: "0ms" }}
+            ></div>
+            <div
+              className="h-2 w-2 rounded-full bg-primary animate-bounce"
+              style={{ animationDelay: "150ms" }}
+            ></div>
+            <div
+              className="h-2 w-2 rounded-full bg-primary animate-bounce"
+              style={{ animationDelay: "300ms" }}
+            ></div>
+          </div>
         </div>
       ) : !feeds || feeds.length === 0 ? (
         // Empty State - No Feeds

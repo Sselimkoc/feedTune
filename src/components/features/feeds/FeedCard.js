@@ -228,7 +228,7 @@ const FeedCardComponent = ({
               }
             >
               <Star
-                className={cn("h-4 w-4", item.is_favorite && "fill-yellow-500")}
+                className={cn("h-4 w-4", item.is_favorite && "fill-current")}
               />
               <span className="text-xs">
                 {item.is_favorite
@@ -264,6 +264,19 @@ const FeedCardComponent = ({
                   ? t("feeds.feedList.inReadingList")
                   : t("feeds.feedList.addToList")}
               </span>
+            </Button>
+
+            <div className="flex-1" />
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-md flex items-center gap-1.5"
+              onClick={handleOpenLink}
+              title={t("home.recentContent.read")}
+            >
+              <ExternalLink className="h-4 w-4" />
+              <span className="text-xs">{t("home.recentContent.read")}</span>
             </Button>
           </div>
         </div>

@@ -1,4 +1,7 @@
 {
+  "navigation": {
+    "tagline": "Manage your RSS and YouTube content in one place"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error occurred",
@@ -20,12 +23,26 @@
     "continue": "Continue",
     "deleting": "Deleting..."
   },
+  "nav": {
+    "menu": "Menu",
+    "home": "Home",
+    "library": "Library",
+    "favorites": "Favorites",
+    "readLater": "Read Later",
+    "feeds": "Feeds",
+    "settings": "Settings",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
   "auth": {
     "login": "Login",
     "register": "Register",
     "logout": "Logout",
     "email": "Email",
+    "emailPlaceholder": "Enter your email",
     "password": "Password",
+    "passwordPlaceholder": "Enter your password",
     "forgotPassword": "Forgot Password",
     "resetPassword": "Reset Password",
     "loginSuccess": "Login successful",
@@ -36,83 +53,10 @@
     "unauthorized": "Unauthorized access",
     "registerDescription": "Welcome to FeedTune! Create an account now and start managing your content.",
     "loginDescription": "Sign in to your account and continue where you left off.",
-    "registerPrompt": "Don't have an account? Create one now",
-    "loginPrompt": "Already have an account? Sign in",
-    "verificationEmailSent": "Verification email sent! Please check your inbox.",
-    "authenticationError": "Authentication error occurred.",
-    "emailPlaceholder": "Enter your email",
-    "passwordPlaceholder": "Enter your password",
     "switchToRegister": "Don't have an account? Register",
     "switchToLogin": "Already have an account? Login",
     "loginButton": "Login",
     "registerButton": "Register"
-  },
-  "navigation": {
-    "home": "Home",
-    "feeds": "My Feeds",
-    "favorites": "Favorites",
-    "readLater": "Read Later",
-    "settings": "Settings",
-    "tagline": "Your RSS Feed Reader"
-  },
-  "home": {
-    "title": "Manage Your Content with FeedTune",
-    "subtitle": "Collect, organize, and follow your RSS feeds and YouTube channels in one place. Never miss your favorite content creators!",
-    "getStarted": "Get Started",
-    "getStartedDesc": "Start using FeedTune for free and manage your content from a single place.",
-    "features": {
-      "title": "Features",
-      "rssFeeds": {
-        "title": "RSS Feeds",
-        "desc": "Follow the latest content from your favorite blogs and news sites. Easily add and manage RSS feeds."
-      },
-      "youtube": {
-        "title": "YouTube Integration",
-        "desc": "Follow your favorite YouTube channels. See new videos instantly and never miss them."
-      },
-      "autoUpdates": {
-        "title": "Automatic Updates",
-        "desc": "Content is updated automatically. You just focus on reading and watching."
-      },
-      "organization": {
-        "title": "Easy Organization",
-        "desc": "Categorize your content, add to favorites, and mark as read."
-      },
-      "keyboard": {
-        "title": "Keyboard Shortcuts",
-        "desc": "Navigate quickly and manage content with keyboard shortcuts."
-      },
-      "darkMode": {
-        "title": "Dark Mode",
-        "desc": "Read comfortably at night with dark mode that doesn't strain your eyes."
-      }
-    },
-    "stats": {
-      "totalFeeds": "Total Feeds",
-      "totalItems": "Total Content",
-      "unreadItems": "Unread",
-      "favoriteItems": "Favorites",
-      "readLaterItems": "Read Later"
-    },
-    "feedManagement": {
-      "title": "Feed Management",
-      "description": "View and manage your recently added feeds",
-      "addFirstFeed": "Add Your First Feed",
-      "addFeed": "Add Feed",
-      "noFeeds": "You haven't added any feeds yet",
-      "visitSite": "Visit Site",
-      "deleteFeed": "Delete Feed",
-      "viewAllFeeds": "View All Feeds",
-      "rssFeed": "RSS Feed",
-      "youtubeChannel": "YouTube Channel"
-    },
-    "recentContent": {
-      "title": "Recent Content",
-      "description": "Latest content from your feeds",
-      "read": "Read",
-      "viewAllContent": "View All Content",
-      "unknownSource": "Unknown Source"
-    }
   },
   "feeds": {
     "title": "My Feeds",
@@ -122,15 +66,11 @@
       "selectPlatform": "Select Platform",
       "rss": "RSS Feed",
       "youtube": "YouTube Channel",
-      "back": "Back",
-      "continue": "Continue",
-      "keepAdding": "Continue adding feeds",
       "success": "Feed added successfully",
       "error": "Failed to add feed"
     },
     "addRssFeed": {
       "title": "Add RSS Feed",
-      "url": "Feed URL",
       "urlPlaceholder": "https://example.com/feed",
       "urlInvalid": "Please enter a valid URL",
       "checking": "Checking feed...",
@@ -143,21 +83,11 @@
       "add": "Add Channel",
       "adding": "Adding Channel...",
       "success": "YouTube channel added successfully",
-      "error": "Error adding channel",
+      "error": "Failed to add YouTube channel",
       "channelNotFound": "Channel not found",
-      "searchPlaceholder": "Search by channel name, ID or @username",
-      "searchDescription": "Enter YouTube channel name or @username",
-      "searching": "Searching channel...",
-      "searchError": "Error searching for channel. Please try again.",
       "searchPlaceholder": "Enter channel ID, URL or username",
       "searchDescription": "You can enter a YouTube channel URL, ID or username (@username)",
-      "searching": "Searching for channel...",
-      "channelNotFound": "Channel not found",
-      "searchError": "Error searching for channel",
-      "adding": "Adding channel...",
-      "add": "Add YouTube Channel",
-      "success": "YouTube channel added successfully",
-      "error": "Failed to add YouTube channel"
+      "searching": "Searching for channel..."
     },
     "deleteFeed": {
       "title": "Delete Feed",
@@ -165,27 +95,6 @@
       "deleting": "Deleting feed...",
       "success": "Feed and all related data deleted successfully",
       "error": "Failed to delete feed"
-    },
-    "filters": {
-      "title": "Filter and Sort",
-      "sort": "Sort",
-      "filter": "Filter",
-      "newest": "Newest first",
-      "oldest": "Oldest first",
-      "unreadFirst": "Unread first",
-      "favoritesFirst": "Favorites first",
-      "showContent": "Show Content",
-      "readContent": "Read content",
-      "unreadContent": "Unread content",
-      "feedTypes": "Feed Types",
-      "rssFeeds": "RSS Feeds",
-      "youtubeFeeds": "YouTube Feeds",
-      "reset": "Reset",
-      "apply": "Apply",
-      "noMatchingContent": "No content found matching the selected filters. Please adjust or reset your filters.",
-      "resetFilters": "Reset Filters",
-      "adjustFilters": "Adjust Filters",
-      "clearAllSelections": "Clear All Selections"
     },
     "feedList": {
       "title": "Your Feeds",
@@ -203,9 +112,7 @@
       "favorite": "Favorite",
       "favoriteAction": "Favorite",
       "inReadingList": "In List",
-      "addToList": "Add to List",
-      "emptyState": "No feeds yet",
-      "description": "All your RSS and YouTube feeds"
+      "addToList": "Add to List"
     },
     "keyboardShortcuts": {
       "title": "Keyboard Shortcuts",
@@ -220,16 +127,6 @@
       "addToReadLater": "Add to/remove from read later",
       "showHelp": "Show this help"
     },
-    "feedRemovedSuccessfully": "Feed removed successfully",
-    "itemMarkedAsRead": "Item marked as read",
-    "itemMarkedAsUnread": "Item marked as unread",
-    "itemAddedToFavorites": "Item added to favorites",
-    "itemRemovedFromFavorites": "Item removed from favorites",
-    "itemAddedToReadLater": "Item added to read later list",
-    "itemRemovedFromReadLater": "Item removed from read later list",
-    "feedExists": "This feed is already in your list",
-    "feedAdded": "Feed added successfully",
-    "cacheCleared": "Cache cleared successfully",
     "emptyState": {
       "title": "No feeds yet",
       "description": "Start by adding an RSS or YouTube feed",
@@ -237,6 +134,76 @@
     },
     "loadingState": {
       "description": "Loading your feeds..."
+    }
+  },
+  "home": {
+    "title": "Manage Your Content with FeedTune",
+    "subtitle": "Collect, organize, and follow your RSS feeds and YouTube channels in one place.",
+    "getStarted": "Get Started",
+    "feedManagement": {
+      "title": "Your Feeds",
+      "description": "Sources you follow",
+      "addFeed": "Add Feed",
+      "viewAllContent": "View All Content",
+      "viewContent": "View Content",
+      "viewAllFeeds": "View All Feeds",
+      "websiteLink": "Visit website",
+      "openInNewTab": "Open in new tab",
+      "copyLink": "Copy link",
+      "copyLinkSuccess": "Link copied",
+      "visitWebsite": "Visit website",
+      "lastUpdated": "Last updated",
+      "noFeeds": "Add RSS or YouTube sources you want to follow",
+      "noFeedsTitle": "No feeds added yet",
+      "addFirstFeed": "Add First Feed",
+      "addFeedDescription": "Add a new RSS or YouTube source"
+    },
+    "recentContent": {
+      "title": "Recent Content",
+      "description": "Latest content from your feeds",
+      "viewAllContent": "View All Content",
+      "read": "Read",
+      "unknownSource": "Unknown Source",
+      "noContent": "Content from your feeds will appear here",
+      "noContentTitle": "No content yet"
+    },
+    "stats": {
+      "title": "Statistics",
+      "description": "Overview of your feeds",
+      "totalFeeds": "Total Feeds",
+      "totalItems": "Total Content",
+      "unreadItems": "Unread",
+      "favoriteItems": "Favorites",
+      "readLaterItems": "Read Later"
+    },
+    "features": {
+      "title": "Features",
+      "subtitle": "Benefits of FeedTune",
+      "description": "Manage your content more efficiently with FeedTune",
+      "rssFeeds": {
+        "title": "RSS Feeds",
+        "desc": "Follow the latest content from your favorite websites"
+      },
+      "youtube": {
+        "title": "YouTube Channels",
+        "desc": "Follow your favorite YouTube channels like RSS feeds"
+      },
+      "autoUpdates": {
+        "title": "Auto Updates",
+        "desc": "Your content is automatically updated"
+      },
+      "organization": {
+        "title": "Content Organization",
+        "desc": "Add content to favorites or save for later reading"
+      },
+      "keyboard": {
+        "title": "Keyboard Shortcuts",
+        "desc": "Navigate faster with keyboard shortcuts"
+      },
+      "darkMode": {
+        "title": "Dark Mode",
+        "desc": "Dark mode support that doesn't strain your eyes"
+      }
     }
   },
   "favorites": {
@@ -254,64 +221,50 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
-    "theme": "Theme",
-    "themeDescription": "Customize how FeedTune looks on your device",
-    "light": "Light",
-    "dark": "Dark",
-    "system": "System",
-    "notifications": "Notifications",
-    "account": "Account",
-    "accountDescription": "Manage your account settings",
-    "profile": "Profile",
-    "security": "Security",
+    "languageDescription": "Change the application language",
+    "theme": {
+      "title": "Theme",
+      "description": "Customize how FeedTune looks on your device",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
     "preferences": "Preferences",
-    "preferencesDescription": "Customize your reading experience",
+    "preferencesDescription": "Customize your feed viewing preferences",
     "compactMode": "Compact Mode",
-    "compactModeDescription": "Display content in a more compact way",
-    "feedRefresh": "Feed Refresh Frequency",
-    "feedRefreshDescription": "Choose how often feeds are updated",
+    "compactModeDescription": "Display feeds in a more compact view",
+    "feedRefresh": "Feed Refresh",
+    "feedRefreshDescription": "How often feeds should automatically refresh",
     "minutes": "minutes",
     "hours": "hours",
-    "days": "days",
-    "deleteAccount": "Delete Account",
-    "deleteAccountConfirmation": "Are you sure you want to delete your account? This action cannot be undone.",
-    "freePlan": "Free Plan",
+    "account": {
+      "title": "Account",
+      "description": "Manage your account settings",
+      "freePlan": "Free Plan",
+      "deleteAccount": "Delete Account",
+      "deleteAccountConfirmation": "Are you sure you want to delete your account? This action cannot be undone."
+    },
     "resetToDefaults": "Reset to Defaults"
   },
   "errors": {
     "general": "An error occurred",
-    "notFound": "Page not found",
     "unauthorized": "You must be logged in to perform this action",
-    "forbidden": "You don't have permission to perform this action",
-    "serverError": "Server error",
     "networkError": "Network error",
-    "tryAgain": "Please try again",
-    "needToBeLoggedIn": "You need to be logged in",
-    "needToBeLoggedInToDeleteFeeds": "You need to be logged in to delete feeds",
-    "feedNotFoundOrAlreadyDeleted": "Feed not found or already deleted",
-    "failedToDeleteFeed": "Failed to delete feed",
-    "errorUpdatingItemStatus": "Error updating item status",
-    "errorUpdatingFavoriteStatus": "Error updating favorite status",
-    "errorUpdatingReadLaterStatus": "Error updating read later status"
+    "tryAgain": "Please try again"
   },
-  "error": {
-    "title": "An error occurred",
-    "description": "An unexpected error occurred during the operation. Please try again.",
-    "retry": "Try Again"
-  },
-  "item": {
-    "updateError": "Failed to update item"
-  },
-  "nav": {
-    "menu": "Menu",
-    "home": "Home",
-    "library": "Library",
-    "favorites": "Favorites",
-    "readLater": "Read Later",
-    "feeds": "Feeds",
-    "settings": "Settings",
-    "login": "Login",
-    "register": "Register",
-    "logout": "Logout"
+  "timeAgo": {
+    "justNow": "Just now",
+    "minute_one": "1 min ago",
+    "minute_other": "{{count}} mins ago",
+    "hour_one": "1 hour ago",
+    "hour_other": "{{count}} hours ago",
+    "day_one": "1 day ago",
+    "day_other": "{{count}} days ago",
+    "week_one": "1 week ago",
+    "week_other": "{{count}} weeks ago",
+    "month_one": "1 month ago",
+    "month_other": "{{count}} months ago",
+    "year_one": "1 year ago",
+    "year_other": "{{count}} years ago"
   }
 } 

@@ -107,7 +107,9 @@ function NavigationComponent() {
                 </Avatar>
                 <div className="flex-1 overflow-hidden">
                   <p className="truncate text-sm font-medium">{user.email}</p>
-                  <p className="text-xs text-muted-foreground">Ücretsiz Plan</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("settings.account.freePlan")}
+                  </p>
                 </div>
               </div>
               <Button
@@ -210,7 +212,7 @@ function NavigationComponent() {
                         {user.email}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Ücretsiz Plan
+                        {t("settings.account.freePlan")}
                       </p>
                     </div>
                   </div>

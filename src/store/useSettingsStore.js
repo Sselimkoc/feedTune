@@ -10,10 +10,15 @@ export const useSettingsStore = create(
         autoMarkAsRead: false,
         pushNotifications: false,
         emailNotifications: false,
+        language: "tr",
       },
       updateSettings: (newSettings) =>
         set((state) => ({
           settings: { ...state.settings, ...newSettings },
+        })),
+      setLanguage: (language) =>
+        set((state) => ({
+          settings: { ...state.settings, language },
         })),
     }),
     {
