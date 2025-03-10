@@ -1,6 +1,5 @@
 import { Suspense } from "react";
-import { FavoritesList } from "@/components/favorites/FavoritesList";
-import { FavoritesContent } from "@/components/favorites/FavoritesContent";
+import { FavoritesContent } from "@/components/features/favorites/FavoritesContent";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { Loader2 } from "lucide-react";

@@ -12,17 +12,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Rss, Youtube, Loader2 } from "lucide-react";
-import { AddRssFeed } from "@/components/Feeds/AddRssFeed";
-import { AddYoutubeFeed } from "@/components/Feeds/AddYoutubeFeed";
+import { AddRssFeed } from "@/components/features/feeds/AddRssFeed";
+import { AddYoutubeFeed } from "@/components/features/feeds/AddYoutubeFeed";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ErrorBoundary } from "react-error-boundary";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-function handleError(error, info) {
+function handleError(error, info, t) {
   console.error("Feed Dialog Error:", error, info);
-  const { t } = useLanguage();
 
   if (error.name === "NetworkError") {
     toast.error(t("errors.networkError"));
@@ -42,12 +41,12 @@ function AddFeedErrorBoundary({ children }) {
         <div className="p-4 text-center">
           <h3 className="text-lg font-semibold mb-2">{t("errors.general")}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            {error.message || t("errors.tryAgain")}
+            {error.message || t("errors.unknownError")}
           </p>
-          <Button onClick={resetErrorBoundary}>{t("common.refresh")}</Button>
+          <Button onClick={resetErrorBoundary}>{t("common.tryAgain")}</Button>
         </div>
       )}
-      onError={handleError}
+      onError={(error, info) => handleError(error, info, t)}
     >
       {children}
     </ErrorBoundary>

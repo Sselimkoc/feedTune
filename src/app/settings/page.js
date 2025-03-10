@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { SettingsContent } from "@/components/settings/SettingsContent";
+import { SettingsContent } from "@/components/features/settings/SettingsContent";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
 export const dynamic = "force-dynamic";

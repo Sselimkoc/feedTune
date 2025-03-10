@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ReadLaterList } from "@/components/read-later/ReadLaterList";
+import { FavoritesList } from "@/components/features/favorites/FavoritesList";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-export function ReadLaterContent() {
+export function FavoritesContent() {
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClientComponentClient();
@@ -15,7 +15,7 @@ export function ReadLaterContent() {
   const { t, language } = useLanguage();
 
   useEffect(() => {
-    const fetchReadLater = async () => {
+    const fetchFavorites = async () => {
       if (!user) {
         setIsLoading(false);
         return;
@@ -24,24 +24,24 @@ export function ReadLaterContent() {
       setIsLoading(true);
 
       try {
-        console.log("Fetching read later items for user:", user.id);
+        console.log("Fetching favorites for user:", user.id);
 
-        // Kullanıcının okuma listesi etkileşimlerini al
+        // Kullanıcının favori etkileşimlerini al
         const { data: interactions, error: interactionsError } = await supabase
           .from("user_item_interactions")
           .select("*")
           .eq("user_id", user.id)
-          .eq("is_read_later", true);
+          .eq("is_favorite", true);
 
         if (interactionsError) {
           console.error(
-            "Error fetching read later interactions:",
+            "Error fetching favorite interactions:",
             interactionsError
           );
           throw interactionsError;
         }
 
-        console.log("Read later interactions:", interactions?.length || 0);
+        console.log("Favorite interactions:", interactions?.length || 0);
 
         if (!interactions || interactions.length === 0) {
           setItems([]);
@@ -99,10 +99,10 @@ export function ReadLaterContent() {
 
           return {
             ...item,
-            is_read_later: true,
+            is_favorite: true,
             is_read: interaction?.is_read || false,
-            is_favorite: interaction?.is_favorite || false,
-            feed_title: feed.title || "Bilinmeyen Kaynak",
+            is_read_later: interaction?.is_read_later || false,
+            feed_title: feed.title || t("home.recentContent.unknownSource"),
             feed_type: feed.type || "rss",
             site_favicon: feed.site_favicon || null,
           };
@@ -116,26 +116,26 @@ export function ReadLaterContent() {
         console.log("Formatted items:", sortedItems.length);
         setItems(sortedItems);
       } catch (error) {
-        console.error("Error in fetchReadLater:", error);
+        console.error("Error in fetchFavorites:", error);
         toast.error(t("errors.general"));
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchReadLater();
-  }, [user, supabase]);
+    fetchFavorites();
+  }, [user, supabase, t]);
 
   return (
     <div className="w-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">{t("readLater.title")}</h1>
-          <p className="text-muted-foreground">{t("readLater.description")}</p>
+          <h1 className="text-2xl font-bold">{t("favorites.title")}</h1>
+          <p className="text-muted-foreground">{t("favorites.description")}</p>
         </div>
       </div>
 
-      <ReadLaterList initialItems={items} isLoading={isLoading} />
+      <FavoritesList initialItems={items} isLoading={isLoading} />
     </div>
   );
 }

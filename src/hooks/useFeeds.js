@@ -208,7 +208,7 @@ export function useFeeds() {
   const supabase = createSupabaseClient();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const { translate } = useLanguage();
+  const { t } = useLanguage();
 
   // Ana feed sorgusu
   const feedsQuery = useQuery({
@@ -558,20 +558,18 @@ export function useFeeds() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["feeds"] });
-      toast.success(translate("feedRemovedSuccessfully"));
+      toast.success(t("feedRemovedSuccessfully"));
     },
     onError: (error) => {
       console.error("Error deleting feed:", error);
 
       if (error.code === "PGRST116") {
-        toast.error(translate("needToBeLoggedInToDeleteFeeds"));
+        toast.error(t("needToBeLoggedInToDeleteFeeds"));
       } else if (error.code === "23503") {
-        toast.error(translate("feedNotFoundOrAlreadyDeleted"));
+        toast.error(t("feedNotFoundOrAlreadyDeleted"));
       } else {
         toast.error(
-          `${translate("failedToDeleteFeed")}: ${
-            error.message || "Unknown error"
-          }`
+          `${t("failedToDeleteFeed")}: ${error.message || "Unknown error"}`
         );
       }
     },
@@ -582,7 +580,7 @@ export function useFeeds() {
     console.log("Toggling read status in useFeeds:", itemId, isRead);
 
     if (!user.id) {
-      toast.error(translate("needToBeLoggedIn"));
+      toast.error(t("errors.needToBeLoggedIn"));
       return;
     }
 
@@ -613,9 +611,7 @@ export function useFeeds() {
 
       // Başarılı işlem sonrası kullanıcıya bildirim göster
       toast.success(
-        isRead
-          ? translate("itemMarkedAsRead")
-          : translate("itemMarkedAsUnread"),
+        isRead ? t("feeds.itemMarkedAsRead") : t("feeds.itemMarkedAsUnread"),
         {
           duration: 2000,
           position: "bottom-right",
@@ -633,7 +629,7 @@ export function useFeeds() {
         };
       });
 
-      toast.error(translate("errorUpdatingItemStatus"));
+      toast.error(t("errors.errorUpdatingItemStatus"));
     }
   };
 
@@ -642,7 +638,7 @@ export function useFeeds() {
     console.log("Toggling favorite status in useFeeds:", itemId, isFavorite);
 
     if (!user.id) {
-      toast.error(translate("needToBeLoggedIn"));
+      toast.error(t("errors.needToBeLoggedIn"));
       return;
     }
 
@@ -675,8 +671,8 @@ export function useFeeds() {
       // Başarılı işlem sonrası kullanıcıya bildirim göster
       toast.success(
         isFavorite
-          ? translate("itemAddedToFavorites")
-          : translate("itemRemovedFromFavorites"),
+          ? t("feeds.itemAddedToFavorites")
+          : t("feeds.itemRemovedFromFavorites"),
         {
           duration: 2000,
           position: "bottom-right",
@@ -694,7 +690,7 @@ export function useFeeds() {
         };
       });
 
-      toast.error(translate("errorUpdatingFavoriteStatus"));
+      toast.error(t("errors.errorUpdatingFavoriteStatus"));
     }
   };
 
@@ -703,7 +699,7 @@ export function useFeeds() {
     console.log("Toggling read later status in useFeeds:", itemId, isReadLater);
 
     if (!user.id) {
-      toast.error(translate("needToBeLoggedIn"));
+      toast.error(t("errors.needToBeLoggedIn"));
       return;
     }
 
@@ -736,8 +732,8 @@ export function useFeeds() {
       // Başarılı işlem sonrası kullanıcıya bildirim göster
       toast.success(
         isReadLater
-          ? translate("itemAddedToReadLater")
-          : translate("itemRemovedFromReadLater"),
+          ? t("feeds.itemAddedToReadLater")
+          : t("feeds.itemRemovedFromReadLater"),
         {
           duration: 2000,
           position: "bottom-right",
@@ -755,7 +751,7 @@ export function useFeeds() {
         };
       });
 
-      toast.error(translate("errorUpdatingReadLaterStatus"));
+      toast.error(t("errors.errorUpdatingReadLaterStatus"));
     }
   };
 

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { ReadLaterList } from "@/components/read-later/ReadLaterList";
-import { ReadLaterContent } from "@/components/read-later/ReadLaterContent";
+import { ReadLaterList } from "@/components/features/read-later/ReadLaterList";
+import { ReadLaterContent } from "@/components/features/read-later/ReadLaterContent";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { Loader2 } from "lucide-react";

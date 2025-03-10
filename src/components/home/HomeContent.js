@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AuthModal } from "@/components/auth/AuthModal";
+import { AuthModal } from "@/components/features/auth/AuthModal";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,7 +38,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
-import { AddFeedDialog } from "@/components/feeds/AddFeedDialog";
+import { AddFeedDialog } from "@/components/features/feeds/AddFeedDialog";
 import { formatTimeAgo } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -196,7 +196,7 @@ export function HomeContent({ initialSession }) {
 
       loadData();
     }
-  }, [user, supabase]);
+  }, [user,t, supabase]);
 
   const handleRemoveFeed = async (feedId) => {
     try {

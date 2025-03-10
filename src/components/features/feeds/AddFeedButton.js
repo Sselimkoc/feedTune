@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
-import { AddFeedDialog } from "@/components/feeds/AddFeedDialog";
+import { AddFeedDialog } from "@/components/features/feeds/AddFeedDialog";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export function AddFeedButton() {

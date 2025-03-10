@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { FeedContent } from "@/components/feeds/FeedContent";
+import { FeedContent } from "@/components/features/feeds/FeedContent";
 import { Loader2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";

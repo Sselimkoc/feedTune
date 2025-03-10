@@ -2,10 +2,10 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { Navigation } from "@/components/layout/navigation";
-import { ThemeProvider } from "@/components/theme/ThemeProvider";
-import { AuthProvider } from "@/components/auth/AuthProvider";
-import { QueryProvider } from "@/components/providers/QueryProvider";
-import { LogoMigrationProvider } from "@/components/providers/LogoMigrationProvider";
+import { ThemeProvider } from "@/components/features/theme/themeProvider";
+import { AuthProvider } from "@/components/features/auth/AuthProvider";
+import { QueryProvider } from "@/components/features/providers/QueryProvider";
+import { LogoMigrationProvider } from "@/components/features/providers/LogoMigrationProvider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });

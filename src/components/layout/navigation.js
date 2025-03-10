@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { ThemeToggle } from "@/components/features/theme/themeToggle";
 import {
   Home,
   Library,
@@ -36,7 +36,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 export function Navigation() {
   const pathname = usePathname();
   const { user, checkSession, signOut, setSession } = useAuthStore();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -79,7 +79,7 @@ export function Navigation() {
           ]
         : []),
     ],
-    [user, t, language]
+    [user, t]
   );
 
   return (
@@ -143,8 +143,10 @@ export function Navigation() {
                 </p>
               </div>
             </div>
-            <ThemeToggle />
-            <LanguageSwitcher />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <LanguageSwitcher />
+            </div>
           </div>
 
           <div className="space-y-1.5">

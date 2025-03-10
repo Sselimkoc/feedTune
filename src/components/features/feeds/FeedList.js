@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { KeyboardShortcutsHelp } from "@/components/feeds/KeyboardShortcutsHelp";
+import { KeyboardShortcutsHelp } from "@/components/features/feeds/KeyboardShortcutsHelp";
 import { FeedSkeleton } from "./FeedSkeleton";
 import { FeedCard } from "./FeedCard";
 import { FeedNavigation } from "./FeedNavigation";

@@ -1,8 +1,7 @@
 "use client";
 
 import { useFeeds } from "@/hooks/useFeeds";
-import { AddFeedButton } from "@/components/feeds/AddFeedButton";
-import { FeedList } from "@/components/feeds/FeedList";
+import { FeedList } from "@/components/features/feeds/FeedList";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -16,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { KeyboardShortcutsHelp } from "@/components/feeds/KeyboardShortcutsHelp";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export function FeedContent() {
@@ -345,8 +343,6 @@ export function FeedContent() {
         onToggleFavorite={toggleItemFavorite}
         onToggleReadLater={toggleItemReadLater}
       />
-
-     
     </div>
   );
 }

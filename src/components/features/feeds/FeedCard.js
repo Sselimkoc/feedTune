@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn, formatTimeAgo, stripHtml } from "@/lib/utils";
 import Image from "next/image";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const FeedCardComponent = ({
   item,
@@ -25,6 +26,7 @@ const FeedCardComponent = ({
   isFocused,
 }) => {
   const cardRef = useRef(null);
+  const { t } = useLanguage();
 
   // Erken dönüş kontrolü
   if (!item || !feed) return null;
@@ -186,13 +188,15 @@ const FeedCardComponent = ({
               }}
               title={
                 item.is_read
-                  ? "Okunmadı olarak işaretle"
-                  : "Okundu olarak işaretle"
+                  ? t("feeds.feedList.markAsUnread")
+                  : t("feeds.feedList.markAsRead")
               }
             >
               <Check className="h-4 w-4" />
               <span className="text-xs">
-                {item.is_read ? "Okundu" : "Okunmadı"}
+                {item.is_read
+                  ? t("feeds.feedList.read")
+                  : t("feeds.feedList.unread")}
               </span>
             </Button>
 
@@ -208,14 +212,18 @@ const FeedCardComponent = ({
                 handleToggleFavorite(e);
               }}
               title={
-                item.is_favorite ? "Favorilerden çıkar" : "Favorilere ekle"
+                item.is_favorite
+                  ? t("feeds.feedList.removeFromFavorites")
+                  : t("feeds.feedList.addToFavorites")
               }
             >
               <Star
                 className={cn("h-4 w-4", item.is_favorite && "fill-yellow-500")}
               />
               <span className="text-xs">
-                {item.is_favorite ? "Favori" : "Favorile"}
+                {item.is_favorite
+                  ? t("feeds.feedList.favorite")
+                  : t("feeds.feedList.favoriteAction")}
               </span>
             </Button>
 
@@ -232,8 +240,8 @@ const FeedCardComponent = ({
               }}
               title={
                 item.is_read_later
-                  ? "Okuma listesinden çıkar"
-                  : "Okuma listesine ekle"
+                  ? t("feeds.feedList.removeFromReadLater")
+                  : t("feeds.feedList.addToReadLater")
               }
             >
               {item.is_read_later ? (
@@ -242,7 +250,9 @@ const FeedCardComponent = ({
                 <BookmarkPlus className="h-4 w-4" />
               )}
               <span className="text-xs">
-                {item.is_read_later ? "Listede" : "Listeye Ekle"}
+                {item.is_read_later
+                  ? t("feeds.feedList.inReadingList")
+                  : t("feeds.feedList.addToList")}
               </span>
             </Button>
           </div>
