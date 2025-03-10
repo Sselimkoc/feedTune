@@ -18,12 +18,10 @@ import {
 import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, stripHtml } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
-import { formatTimeAgo } from "@/lib/utils";
-import { stripHtml } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export function ReadLaterList({ initialItems, isLoading }) {
@@ -336,9 +334,21 @@ export function ReadLaterList({ initialItems, isLoading }) {
                           t("home.recentContent.unknownSource")}
                       </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {formatTimeAgo(item.published_at)}
-                    </span>
+                    <div className="mt-1 flex items-center text-xs text-muted-foreground">
+                      <span className="line-clamp-1">
+                        {
+                          item.timeAgoData
+                            ? item.timeAgoData.isJustNow
+                              ? t("timeAgo.justNow")
+                              : item.timeAgoData.value === 1
+                              ? t(`timeAgo.${item.timeAgoData.unit}_one`)
+                              : t(`timeAgo.${item.timeAgoData.unit}_other`, {
+                                  count: item.timeAgoData.value,
+                                })
+                            : new Date(item.published_at).toLocaleDateString() // timeAgoData yoksa basit tarih formatı
+                        }
+                      </span>
+                    </div>
                   </div>
 
                   {/* Başlık */}

@@ -7,7 +7,7 @@ import {
   fetchFeedItems,
   fetchYoutubeItems,
   limitItemsPerFeed,
-} from "@/hooks/useFeeds";
+} from "@/hooks/features/useFeeds";
 
 // Önbellek ayarları
 const CACHE_KEY = "feed-cache";

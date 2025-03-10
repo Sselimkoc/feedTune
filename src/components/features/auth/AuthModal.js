@@ -7,118 +7,82 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthStore } from "@/store/useAuthStore";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { DialogFooter } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/auth/useAuth";
 
-export function AuthModal({ isOpen, onOpenChange, initialMode = "login" }) {
-  const [mode, setMode] = useState(initialMode);
-  const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const supabase = createClientComponentClient();
-  const router = useRouter();
+export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
+  const [mode, setMode] = useState(defaultTab);
   const { t } = useLanguage();
-  const { signIn, signUp } = useAuthStore();
+  const { isLoading, email, setEmail, password, setPassword, handleSubmit } =
+    useAuth();
 
-  const handleSubmit = async (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      if (mode === "signup") {
-        const result = await signUp(email, password);
-        if (result.success) {
-          toast.success(t("auth.registerSuccess"));
-          onOpenChange?.(false);
-        }
-      } else {
-        const result = await signIn(email, password);
-        if (result.success) {
-          toast.success(t("auth.loginSuccess"));
-          onOpenChange?.(false);
-          // Force a refresh of the current page to update UI
-          router.refresh();
-        }
-      }
-    } catch (error) {
-      toast.error(error.message || t("errors.general"));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleOpenChange = (open) => {
-    if (!open) {
-      setEmail("");
-      setPassword("");
-      setIsLoading(false);
-    }
-    onOpenChange?.(open);
+    await handleSubmit(mode, () => onOpenChange?.(false));
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {mode === "signup" ? t("auth.register") : t("auth.login")}
+            {mode === "login" ? t("auth.login") : t("auth.register")}
           </DialogTitle>
           <DialogDescription>
-            {mode === "signup"
-              ? t("auth.registerDescription")
-              : t("auth.loginDescription")}
+            {mode === "login"
+              ? t("auth.loginDescription")
+              : t("auth.registerDescription")}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">{t("auth.email")}</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="ornek@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">{t("auth.password")}</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
+
+        <form onSubmit={handleFormSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">{t("auth.email")}</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t("auth.emailPlaceholder")}
+              required
+            />
           </div>
-          <DialogFooter className="mt-4">
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading
-                ? t("common.loading")
-                : mode === "signup"
-                ? t("auth.register")
-                : t("auth.login")}
-            </Button>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">{t("auth.password")}</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={t("auth.passwordPlaceholder")}
+              required
+            />
+          </div>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
             <Button
               type="button"
-              variant="ghost"
+              variant="link"
               onClick={() => setMode(mode === "login" ? "signup" : "login")}
-              disabled={isLoading}
-              className="w-full mt-2"
+              className="px-0"
             >
               {mode === "login"
-                ? t("auth.registerPrompt")
-                : t("auth.loginPrompt")}
+                ? t("auth.switchToRegister")
+                : t("auth.switchToLogin")}
+            </Button>
+
+            <Button type="submit" disabled={isLoading}>
+              {isLoading
+                ? t("common.loading")
+                : mode === "login"
+                ? t("auth.loginButton")
+                : t("auth.registerButton")}
             </Button>
           </DialogFooter>
         </form>

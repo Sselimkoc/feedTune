@@ -7,11 +7,11 @@ import {
   fetchFeeds,
   fetchFavorites,
   fetchReadLaterItems,
-} from "@/hooks/useFeeds";
+} from "@/hooks/features/useFeeds";
 import { useFeedStore } from "@/store/useFeedStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { cn } from "@/lib/utils";
+import { cn, stripHtml } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -23,7 +23,7 @@ import { KeyboardShortcutsHelp } from "@/components/features/feeds/KeyboardShort
 import { FeedSkeleton } from "./FeedSkeleton";
 import { FeedCard } from "./FeedCard";
 import { FeedNavigation } from "./FeedNavigation";
-import { EmptyFeedState } from "./EmptyFeedState";
+import { EmptyState } from "./EmptyState";
 import { EmptyFilterState } from "./EmptyFilterState";
 import { AddFeedButton } from "./AddFeedButton";
 import {
@@ -48,7 +48,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { RssIcon, Tag } from "lucide-react";
-import { formatTimeAgo, stripHtml } from "@/lib/utils";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { KeyboardIcon } from "lucide-react";
@@ -554,7 +553,7 @@ export function FeedList() {
       </div>
 
       {/* Çoklu Kanal Seçimi */}
-      {feeds.length > 0 && (
+      {feeds?.length > 0 && (
         <div className="mb-6 bg-background/60 backdrop-blur-sm sticky top-0 z-10 py-2 border-b">
           <div className="flex justify-between items-center gap-2">
             <ScrollArea className="w-full whitespace-nowrap rounded-md">
@@ -651,10 +650,10 @@ export function FeedList() {
         <div className="flex justify-center items-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : feeds.length === 0 ? (
+      ) : !feeds || feeds.length === 0 ? (
         // Empty State - No Feeds
         <div className="space-y-6">
-          <EmptyFeedState />
+          <EmptyState />
         </div>
       ) : filteredItems.length === 0 ? (
         // Empty State - No Items Match Filters

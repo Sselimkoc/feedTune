@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/features/theme/themeToggle";
 import {
@@ -17,9 +17,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/useAuthStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -30,217 +28,231 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useNavigation } from "@/hooks/ui/useNavigation";
 
-export function Navigation() {
-  const pathname = usePathname();
-  const { user, checkSession, signOut, setSession } = useAuthStore();
+// Navigasyon öğeleri
+const navigationItems = [
+  { href: "/", icon: Home, labelKey: "nav.home" },
+  { href: "/feeds", icon: Rss, labelKey: "nav.feeds" },
+  { href: "/favorites", icon: Star, labelKey: "nav.favorites" },
+  { href: "/read-later", icon: BookmarkCheck, labelKey: "nav.readLater" },
+  { href: "/settings", icon: Settings, labelKey: "nav.settings" },
+];
+
+// Giriş yapmamış kullanıcı için öğeler
+const authItems = [
+  { icon: LogIn, labelKey: "nav.login", href: "/auth/login" },
+  { icon: UserPlus, labelKey: "nav.register", href: "/auth/register" },
+];
+
+function NavigationComponent() {
+  const { isOpen, setIsOpen, pathname, user, handleSignOut } = useNavigation();
   const { t } = useLanguage();
-  const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    const getUser = async () => {
-      const session = await checkSession();
-      if (session) {
-        setSession(session);
-      }
-    };
-    getUser();
-    setMounted(true);
-  }, [checkSession, setSession]);
-
-  const menuItems = useMemo(
-    () => [
-      { icon: Home, label: t("navigation.home"), href: "/" },
-      ...(user
-        ? [
-            {
-              icon: Library,
-              label: t("navigation.feeds"),
-              href: "/feeds",
-            },
-            {
-              icon: Star,
-              label: t("navigation.favorites"),
-              href: "/favorites",
-            },
-            {
-              icon: BookmarkCheck,
-              label: t("navigation.readLater"),
-              href: "/read-later",
-            },
-            {
-              icon: Settings,
-              label: t("navigation.settings"),
-              href: "/settings",
-            },
-          ]
-        : []),
-    ],
-    [user, t]
-  );
 
   return (
-    <>
-      {/* Mobile Menu Button */}
-      <Button
-        variant="outline"
-        size="sm"
-        className={cn(
-          "fixed top-4 right-4 z-50 lg:hidden",
-          "h-9 px-2.5 transition-all duration-300",
-          "bg-background/80 hover:bg-background",
-          "border border-input",
-          "backdrop-blur-sm"
-        )}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label={isOpen ? "Close menu" : "Open menu"}
-      >
-        <div className="relative w-5 h-5">
-          <span
-            className={cn(
-              "absolute block h-0.5 w-5 bg-foreground transition-all duration-300",
-              isOpen ? "top-2.5 rotate-45" : "top-1"
-            )}
-          />
-          <span
-            className={cn(
-              "absolute block h-0.5 w-5 bg-foreground transition-all duration-300",
-              "top-2.5",
-              isOpen && "opacity-0"
-            )}
-          />
-          <span
-            className={cn(
-              "absolute block h-0.5 w-5 bg-foreground transition-all duration-300",
-              isOpen ? "top-2.5 -rotate-45" : "top-4"
-            )}
-          />
+    <nav className="fixed left-0 top-0 bottom-0 z-50 hidden w-72 border-r bg-card/50 backdrop-blur-xl md:block">
+      <div className="flex h-full flex-col">
+        {/* Logo ve Tema */}
+        <div className="flex h-24 flex-col border-b px-6 py-4">
+          <div className="flex items-center justify-between">
+            <Link
+              href="/"
+              className="flex items-center space-x-3 transition-opacity hover:opacity-80"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <Rss className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <span className="text-lg font-semibold tracking-tight">
+                FeedTune
+              </span>
+            </Link>
+            <ThemeToggle />
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t("navigation.tagline")}
+          </p>
         </div>
-      </Button>
 
-      <nav
-        className={cn(
-          "fixed lg:fixed lg:left-0 lg:top-0 h-full w-64 border-r p-4 z-40",
-          "bg-background/95 backdrop-blur-md shadow-lg",
-          "transition-all duration-300 ease-in-out",
-          "transform lg:transform-none",
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        )}
-      >
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-2">
-              <div className="bg-primary rounded-lg p-2 text-primary-foreground">
-                <Rss className="h-5 w-5" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">FeedTune</h1>
-                <p className="text-xs text-muted-foreground">
-                  {t("navigation.tagline")}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <LanguageSwitcher />
-            </div>
-          </div>
+        {/* Ana Menü */}
+        <div className="flex-1 space-y-1 overflow-y-auto p-4">
+          {navigationItems.map((item) => (
+            <Button
+              key={item.href}
+              variant={pathname === item.href ? "secondary" : "ghost"}
+              className={cn(
+                "w-full justify-start space-x-3",
+                pathname === item.href && "font-medium"
+              )}
+              asChild
+            >
+              <Link href={item.href}>
+                <item.icon className="h-4 w-4" />
+                <span>{t(item.labelKey)}</span>
+              </Link>
+            </Button>
+          ))}
+        </div>
 
-          <div className="space-y-1.5">
-            {menuItems.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href));
-
-              return (
-                <Button
-                  key={item.href}
-                  variant={isActive ? "default" : "ghost"}
-                  className={cn(
-                    "w-full justify-start h-10 px-3",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
-                  )}
-                  asChild
-                  onMouseEnter={item.onMouseEnter}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <Link href={item.href} className="flex items-center gap-3">
-                    <item.icon
-                      className={cn(
-                        "h-4 w-4",
-                        isActive
-                          ? "text-primary-foreground"
-                          : "text-muted-foreground"
-                      )}
-                    />
-                    <span
-                      className={cn(
-                        "font-medium",
-                        isActive
-                          ? "text-primary-foreground"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      {item.label}
-                    </span>
-
-                    {/* Notification indicator example */}
-                    {item.label === t("navigation.feeds") && mounted && (
-                      <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground text-[10px] font-medium text-primary">
-                        3
-                      </span>
-                    )}
-                  </Link>
-                </Button>
-              );
-            })}
-          </div>
-
-          <div className="mt-auto pt-4 border-t">
-            {user && (
-              <div className="mb-4 p-3 rounded-lg bg-muted">
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                    {user.email?.charAt(0).toUpperCase() || "U"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("settings.freePlan")}
-                    </p>
-                  </div>
+        {/* Alt Menü */}
+        <div className="border-t p-4">
+          {user ? (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3 rounded-lg bg-muted/50 p-2">
+                <Avatar className="h-9 w-9 border-2 border-primary/10">
+                  <AvatarImage src={user.avatar_url} />
+                  <AvatarFallback className="bg-primary/5 text-primary">
+                    {user.email?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate text-sm font-medium">{user.email}</p>
+                  <p className="text-xs text-muted-foreground">Ücretsiz Plan</p>
                 </div>
               </div>
-            )}
-
-            {user ? (
-              <Button variant="outline" className="w-full" onClick={signOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                {t("auth.logout")}
+              <Button
+                variant="ghost"
+                className="w-full justify-start space-x-3 text-red-500 hover:bg-red-500/10 hover:text-red-500"
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4" />
+                <span>{t("nav.logout")}</span>
               </Button>
-            ) : (
-              <Button variant="default" className="w-full" asChild>
-                <Link href="/">{t("auth.login")}</Link>
-              </Button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="grid gap-2">
+              {authItems.map((item) => (
+                <Button
+                  key={item.href}
+                  variant={
+                    item.labelKey === "nav.login" ? "default" : "outline"
+                  }
+                  className="w-full justify-start space-x-3"
+                  asChild
+                >
+                  <Link href={item.href}>
+                    <item.icon className="h-4 w-4" />
+                    <span>{t(item.labelKey)}</span>
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
-      </nav>
+      </div>
 
-      {/* Overlay for mobile */}
-      <div
-        className={cn(
-          "fixed inset-0 bg-background/80 backdrop-blur-sm z-30 lg:hidden",
-          "transition-opacity duration-300 ease-in-out",
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}
-        onClick={() => setIsOpen(false)}
-      />
-    </>
+      {/* Mobil Menü */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="fixed left-4 top-4 z-50 md:hidden"
+        onClick={() => setIsOpen(true)}
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent side="left" className="w-72 p-0">
+          <div className="flex h-full flex-col">
+            <div className="flex h-24 flex-col border-b px-6 py-4">
+              <div className="flex items-center justify-between">
+                <Link
+                  href="/"
+                  className="flex items-center space-x-3"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                    <Rss className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  <span className="text-lg font-semibold tracking-tight">
+                    FeedTune
+                  </span>
+                </Link>
+                <ThemeToggle />
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("navigation.tagline")}
+              </p>
+            </div>
+
+            <div className="flex-1 space-y-1 overflow-y-auto p-4">
+              {navigationItems.map((item) => (
+                <Button
+                  key={item.href}
+                  variant={pathname === item.href ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start space-x-3",
+                    pathname === item.href && "font-medium"
+                  )}
+                  asChild
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Link href={item.href}>
+                    <item.icon className="h-4 w-4" />
+                    <span>{t(item.labelKey)}</span>
+                  </Link>
+                </Button>
+              ))}
+            </div>
+
+            <div className="border-t p-4">
+              {user ? (
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3 rounded-lg bg-muted/50 p-2">
+                    <Avatar className="h-9 w-9 border-2 border-primary/10">
+                      <AvatarImage src={user.avatar_url} />
+                      <AvatarFallback className="bg-primary/5 text-primary">
+                        {user.email?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="truncate text-sm font-medium">
+                        {user.email}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Ücretsiz Plan
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start space-x-3 text-red-500 hover:bg-red-500/10 hover:text-red-500"
+                    onClick={() => {
+                      handleSignOut();
+                      setIsOpen(false);
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>{t("nav.logout")}</span>
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-2">
+                  {authItems.map((item) => (
+                    <Button
+                      key={item.href}
+                      variant={
+                        item.labelKey === "nav.login" ? "default" : "outline"
+                      }
+                      className="w-full justify-start space-x-3"
+                      asChild
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{t(item.labelKey)}</span>
+                      </Link>
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </nav>
   );
 }
+
+// Performans optimizasyonu için memo kullanıyoruz
+export const Navigation = memo(NavigationComponent);

@@ -20,32 +20,50 @@
     "continue": "Devam Et",
     "deleting": "Siliniyor..."
   },
+  "nav": {
+    "menu": "Menü",
+    "home": "Ana Sayfa",
+    "library": "Kütüphane",
+    "favorites": "Favoriler",
+    "readLater": "Sonra Oku",
+    "feeds": "Beslemeler",
+    "settings": "Ayarlar",
+    "login": "Giriş Yap",
+    "register": "Kayıt Ol",
+    "logout": "Çıkış Yap"
+  },
   "auth": {
     "login": "Giriş Yap",
-    "register": "Hesap Oluştur",
+    "register": "Kayıt Ol",
     "logout": "Çıkış Yap",
     "email": "E-posta",
+    "emailPlaceholder": "E-posta adresinizi girin",
     "password": "Şifre",
+    "passwordPlaceholder": "Şifrenizi girin",
     "forgotPassword": "Şifremi Unuttum",
     "resetPassword": "Şifremi Sıfırla",
-    "loginSuccess": "Giriş başarılı",
+    "loginSuccess": "Başarıyla giriş yapıldı",
     "loginError": "Giriş başarısız",
-    "registerSuccess": "Kayıt başarılı",
+    "registerSuccess": "Hesabınız başarıyla oluşturuldu",
     "registerError": "Kayıt başarısız",
     "logoutSuccess": "Çıkış başarılı",
     "unauthorized": "Yetkisiz erişim",
-    "registerDescription": "FeedTune'a hoş geldiniz! Hemen hesap oluşturun ve içeriklerinizi yönetmeye başlayın.",
-    "loginDescription": "Hesabınıza giriş yapın ve kaldığınız yerden devam edin.",
-    "registerPrompt": "Hesabınız yok mu? Hemen oluşturun",
+    "registerDescription": "Yeni bir hesap oluşturun",
+    "loginDescription": "Hesabınıza giriş yapın",
+    "registerPrompt": "Hesabınız yok mu? Kayıt olun",
     "loginPrompt": "Zaten hesabınız var mı? Giriş yapın",
     "verificationEmailSent": "Doğrulama e-postası gönderildi! Lütfen gelen kutunuzu kontrol edin.",
-    "authenticationError": "Kimlik doğrulama hatası oluştu."
+    "authenticationError": "Kimlik doğrulama hatası oluştu.",
+    "switchToRegister": "Hesabınız yok mu? Kayıt olun",
+    "switchToLogin": "Zaten hesabınız var mı? Giriş yapın",
+    "loginButton": "Giriş Yap",
+    "registerButton": "Kayıt Ol"
   },
   "navigation": {
     "home": "Ana Sayfa",
-    "feeds": "Beslemelerim",
+    "feeds": "Beslemeler",
     "favorites": "Favoriler",
-    "readLater": "Okuma Listem",
+    "readLater": "Sonra Oku",
     "settings": "Ayarlar",
     "tagline": "RSS Besleme Okuyucunuz"
   },
@@ -109,8 +127,8 @@
     }
   },
   "feeds": {
-    "title": "Beslemelerim",
-    "description": "Takip ettiğiniz kaynakların içeriklerini görüntüleyin",
+    "title": "Beslemeleriniz",
+    "description": "Takip ettiğiniz tüm RSS ve YouTube beslemeleri",
     "addFeed": {
       "title": "Feed Ekle",
       "selectPlatform": "Platform Seçin",
@@ -118,29 +136,32 @@
       "youtube": "YouTube Kanalı",
       "back": "Geri",
       "continue": "Devam Et",
-      "keepAdding": "Feed eklemeye devam et"
+      "keepAdding": "Feed eklemeye devam et",
+      "success": "Besleme başarıyla eklendi",
+      "error": "Besleme eklenirken bir hata oluştu"
     },
     "addRssFeed": {
-      "title": "RSS Feed Ekle",
+      "title": "RSS Beslemesi Ekle",
       "url": "Feed URL",
-      "urlPlaceholder": "https://example.com/feed",
-      "urlInvalid": "Geçerli bir URL giriniz",
-      "checking": "Feed kontrol ediliyor...",
-      "add": "Feed Ekle",
-      "success": "Feed başarıyla eklendi",
-      "error": "Feed eklenirken hata oluştu"
+      "urlPlaceholder": "RSS besleme URL'sini girin",
+      "urlInvalid": "Geçerli bir URL girin",
+      "checking": "Besleme kontrol ediliyor...",
+      "add": "RSS Beslemesi Ekle",
+      "success": "RSS beslemesi başarıyla eklendi",
+      "error": "RSS beslemesi eklenirken bir hata oluştu"
     },
     "addYoutubeFeed": {
       "title": "YouTube Kanalı Ekle",
       "add": "Kanalı Ekle",
       "adding": "Kanal Ekleniyor...",
       "success": "YouTube kanalı başarıyla eklendi",
-      "error": "Kanal eklenirken bir hata oluştu",
+      "error": "YouTube kanalı eklenirken bir hata oluştu",
       "channelNotFound": "Kanal bulunamadı",
-      "searchPlaceholder": "Kanal adı, ID veya @kullanıcıadı ile ara",
-      "searchDescription": "YouTube kanal adı veya @kullanıcıadı girin",
+      "searchPlaceholder": "Kanal ID, URL veya kullanıcı adı girin",
+      "searchDescription": "YouTube kanal URL'si, ID'si veya kullanıcı adı (@kullanıcıadı) girebilirsiniz",
       "searching": "Kanal aranıyor...",
-      "searchError": "Kanal aranırken bir hata oluştu. Lütfen tekrar deneyin."
+      "searchError": "Kanal aranırken bir hata oluştu",
+      "add": "YouTube Kanalı Ekle"
     },
     "deleteFeed": {
       "title": "Feedi Sil",
@@ -171,8 +192,8 @@
       "clearAllSelections": "Tüm Seçimleri Kaldır"
     },
     "feedList": {
-      "title": "Beslemelerim",
-      "description": "Takip ettiğiniz kaynakların içeriklerini görüntüleyin",
+      "title": "Beslemeleriniz",
+      "description": "Takip ettiğiniz tüm RSS ve YouTube beslemeleri",
       "noFeeds": "Henüz hiç feed eklemediniz",
       "addFeed": "Feed Ekle",
       "markAsRead": "Okundu olarak işaretle",
@@ -187,7 +208,8 @@
       "favoriteAction": "Favorile",
       "inReadingList": "Listede",
       "addToList": "Listeye Ekle",
-      "emptyState": "Seçilen filtrelere uygun içerik bulunamadı"
+      "emptyState": "Henüz hiç besleme eklemediniz",
+      "description": "Takip ettiğiniz tüm RSS ve YouTube beslemeleri"
     },
     "keyboardShortcuts": {
       "title": "Klavye Kısayolları",
@@ -211,7 +233,15 @@
     "itemRemovedFromReadLater": "Öğe okuma listesinden çıkarıldı",
     "feedExists": "Bu feed zaten listenizde",
     "feedAdded": "Feed başarıyla eklendi",
-    "cacheCleared": "Önbellek başarıyla temizlendi"
+    "cacheCleared": "Önbellek başarıyla temizlendi",
+    "loadingState": {
+      "description": "Beslemeleriniz yükleniyor..."
+    },
+    "emptyState": {
+      "title": "Henüz hiç besleme eklemediniz",
+      "description": "RSS veya YouTube beslemesi ekleyerek başlayın",
+      "addFeedButton": "Besleme Ekle"
+    }
   },
   "favorites": {
     "title": "Favoriler",
@@ -255,12 +285,36 @@
   "errors": {
     "general": "Bir hata oluştu",
     "unauthorized": "Bu işlemi yapmak için giriş yapmalısınız",
+    "failedToDeleteFeed": "Besleme silinirken bir hata oluştu",
+    "errorUpdatingItemStatus": "Öğe durumu güncellenirken bir hata oluştu",
     "tryAgain": "Lütfen tekrar deneyin",
     "unknownError": "Bilinmeyen bir hata oluştu",
     "networkError": "Ağ bağlantısı hatası",
     "needToBeLoggedIn": "Bu işlemi yapmak için giriş yapmalısınız",
-    "errorUpdatingItemStatus": "Öğe durumu güncellenirken hata oluştu",
     "errorUpdatingFavoriteStatus": "Favori durumu güncellenirken hata oluştu",
     "errorUpdatingReadLaterStatus": "Okuma listesi durumu güncellenirken hata oluştu"
+  },
+  "timeAgo": {
+    "justNow": "Az önce",
+    "minute_one": "1 dk önce",
+    "minute_other": "{{count}} dk önce",
+    "hour_one": "1 saat önce",
+    "hour_other": "{{count}} saat önce",
+    "day_one": "1 gün önce",
+    "day_other": "{{count}} gün önce",
+    "week_one": "1 hafta önce",
+    "week_other": "{{count}} hafta önce",
+    "month_one": "1 ay önce",
+    "month_other": "{{count}} ay önce",
+    "year_one": "1 yıl önce",
+    "year_other": "{{count}} yıl önce"
+  },
+  "error": {
+    "title": "Bir hata oluştu",
+    "description": "İşlem sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
+    "retry": "Tekrar Dene"
+  },
+  "item": {
+    "updateError": "Öğe güncellenirken bir hata oluştu"
   }
 } 

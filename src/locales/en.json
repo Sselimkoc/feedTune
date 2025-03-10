@@ -39,7 +39,13 @@
     "registerPrompt": "Don't have an account? Create one now",
     "loginPrompt": "Already have an account? Sign in",
     "verificationEmailSent": "Verification email sent! Please check your inbox.",
-    "authenticationError": "Authentication error occurred."
+    "authenticationError": "Authentication error occurred.",
+    "emailPlaceholder": "Enter your email",
+    "passwordPlaceholder": "Enter your password",
+    "switchToRegister": "Don't have an account? Register",
+    "switchToLogin": "Already have an account? Login",
+    "loginButton": "Login",
+    "registerButton": "Register"
   },
   "navigation": {
     "home": "Home",
@@ -118,7 +124,9 @@
       "youtube": "YouTube Channel",
       "back": "Back",
       "continue": "Continue",
-      "keepAdding": "Continue adding feeds"
+      "keepAdding": "Continue adding feeds",
+      "success": "Feed added successfully",
+      "error": "Failed to add feed"
     },
     "addRssFeed": {
       "title": "Add RSS Feed",
@@ -140,7 +148,16 @@
       "searchPlaceholder": "Search by channel name, ID or @username",
       "searchDescription": "Enter YouTube channel name or @username",
       "searching": "Searching channel...",
-      "searchError": "Error searching for channel. Please try again."
+      "searchError": "Error searching for channel. Please try again.",
+      "searchPlaceholder": "Enter channel ID, URL or username",
+      "searchDescription": "You can enter a YouTube channel URL, ID or username (@username)",
+      "searching": "Searching for channel...",
+      "channelNotFound": "Channel not found",
+      "searchError": "Error searching for channel",
+      "adding": "Adding channel...",
+      "add": "Add YouTube Channel",
+      "success": "YouTube channel added successfully",
+      "error": "Failed to add YouTube channel"
     },
     "deleteFeed": {
       "title": "Delete Feed",
@@ -171,8 +188,8 @@
       "clearAllSelections": "Clear All Selections"
     },
     "feedList": {
-      "title": "My Feeds",
-      "description": "View content from your followed sources",
+      "title": "Your Feeds",
+      "description": "All your RSS and YouTube feeds",
       "noFeeds": "You haven't added any feeds yet",
       "addFeed": "Add Feed",
       "markAsRead": "Mark as read",
@@ -187,7 +204,8 @@
       "favoriteAction": "Favorite",
       "inReadingList": "In List",
       "addToList": "Add to List",
-      "emptyState": "No content found matching the selected filters"
+      "emptyState": "No feeds yet",
+      "description": "All your RSS and YouTube feeds"
     },
     "keyboardShortcuts": {
       "title": "Keyboard Shortcuts",
@@ -211,7 +229,15 @@
     "itemRemovedFromReadLater": "Item removed from read later list",
     "feedExists": "This feed is already in your list",
     "feedAdded": "Feed added successfully",
-    "cacheCleared": "Cache cleared successfully"
+    "cacheCleared": "Cache cleared successfully",
+    "emptyState": {
+      "title": "No feeds yet",
+      "description": "Start by adding an RSS or YouTube feed",
+      "addFeedButton": "Add Feed"
+    },
+    "loadingState": {
+      "description": "Loading your feeds..."
+    }
   },
   "favorites": {
     "title": "Favorites",
@@ -267,5 +293,25 @@
     "errorUpdatingItemStatus": "Error updating item status",
     "errorUpdatingFavoriteStatus": "Error updating favorite status",
     "errorUpdatingReadLaterStatus": "Error updating read later status"
+  },
+  "error": {
+    "title": "An error occurred",
+    "description": "An unexpected error occurred during the operation. Please try again.",
+    "retry": "Try Again"
+  },
+  "item": {
+    "updateError": "Failed to update item"
+  },
+  "nav": {
+    "menu": "Menu",
+    "home": "Home",
+    "library": "Library",
+    "favorites": "Favorites",
+    "readLater": "Read Later",
+    "feeds": "Feeds",
+    "settings": "Settings",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
   }
 } 

@@ -12,7 +12,7 @@ import {
   BookmarkPlus,
   BookmarkCheck,
 } from "lucide-react";
-import { cn, formatTimeAgo, stripHtml } from "@/lib/utils";
+import { cn, stripHtml } from "@/lib/utils";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -105,10 +105,20 @@ const FeedCardComponent = ({
           )}
           <div className="flex flex-col">
             <span className="text-xs font-medium text-muted-foreground">
-              {feed?.title || "Bilinmeyen Kaynak"}
+              {feed?.title || t("home.recentContent.unknownSource")}
             </span>
             <span className="text-xs text-muted-foreground">
-              {formatTimeAgo(new Date(item.published_at))}
+              {
+                item.timeAgoData
+                  ? item.timeAgoData.isJustNow
+                    ? t("timeAgo.justNow")
+                    : item.timeAgoData.value === 1
+                    ? t(`timeAgo.${item.timeAgoData.unit}_one`)
+                    : t(`timeAgo.${item.timeAgoData.unit}_other`, {
+                        count: item.timeAgoData.value,
+                      })
+                  : new Date(item.published_at).toLocaleDateString() // timeAgoData yoksa basit tarih formatı
+              }
             </span>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useFeeds } from "@/hooks/useFeeds";
+import { useFeeds } from "@/hooks/features/useFeeds";
 import { FeedList } from "@/components/features/feeds/FeedList";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
