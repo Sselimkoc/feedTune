@@ -139,6 +139,57 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply bg-muted rounded-full hover:bg-muted-foreground transition-colors;
   }
+  
+  /* Scrollbar gizleme */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE ve Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari ve Opera */
+  }
+  
+  /* Yatay kaydırmalar için özel davranışlar */
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+  
+  .scroll-snap-x {
+    scroll-snap-type: x mandatory;
+  }
+  
+  .scroll-snap-center {
+    scroll-snap-align: center;
+  }
+  
+  .scroll-snap-start {
+    scroll-snap-align: start;
+  }
+  
+  /* Modal içerik uyumlulukları */
+  .modal-content {
+    @apply w-full max-w-full;
+  }
+  
+  .modal-content-adaptive {
+    width: clamp(90vw, 1024px, 95vw);
+    max-height: 90vh;
+  }
+  
+  /* Responsive görüntü iyileştirmeleri */
+  .preserve-aspect-ratio {
+    @apply w-full h-auto object-contain;
+  }
+  
+  /* Dokunmatik ekranlar için kaydırma iyileştirmeleri */
+  .overscroll-none {
+    overscroll-behavior: none;
+  }
+  
+  .touch-pan-x {
+    touch-action: pan-x;
+  }
 }
 
 /* Tema geçiş animasyonları */

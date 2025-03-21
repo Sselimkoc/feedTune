@@ -63,11 +63,13 @@
     "description": "View content from your followed sources",
     "addFeed": {
       "title": "Add Feed",
+      "description": "Select the type of feed you want to follow",
       "selectPlatform": "Select Platform",
       "rss": "RSS Feed",
       "youtube": "YouTube Channel",
       "success": "Feed added successfully",
-      "error": "Failed to add feed"
+      "error": "Failed to add feed",
+      "keepAdding": "Keep adding feeds"
     },
     "addRssFeed": {
       "title": "Add RSS Feed",
@@ -134,7 +136,9 @@
     },
     "loadingState": {
       "description": "Loading your feeds..."
-    }
+    },
+    "articleCount": "{{count}} articles",
+    "lastUpdated": "Last updated: {{date}}"
   },
   "home": {
     "title": "Manage Your Content with FeedTune",

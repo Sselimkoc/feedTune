@@ -22,8 +22,6 @@ import {
 import { KeyboardShortcutsHelp } from "@/components/features/feeds/KeyboardShortcutsHelp";
 import { FeedCard } from "./FeedCard";
 import { FeedNavigation } from "./FeedNavigation";
-import { EmptyState } from "./EmptyState";
-import { EmptyFilterState } from "./EmptyFilterState";
 import { AddFeedButton } from "./AddFeedButton";
 import {
   Loader2,
@@ -686,7 +684,7 @@ export function FeedList() {
         </div>
       ) : filteredItems.length === 0 ? (
         // Empty State - No Items Match Filters
-        <EmptyFilterState onOpenFilters={() => setIsFilterDialogOpen(true)} />
+        <EmptyFilterState onResetFilters={() => setIsFilterDialogOpen(true)} />
       ) : (
         // Feed Items
         <div className="space-y-6">
@@ -739,3 +737,104 @@ export function FeedList() {
 }
 // Memoized FeedCard component
 const FeedCardMemo = memo(FeedCard);
+
+// EmptyState bileşenini güncelleyelim
+export const EmptyState = memo(function EmptyState({ onAddFeed }) {
+  const { t } = useLanguage();
+
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+      <div className="bg-primary/5 rounded-full p-6 mb-6">
+        <Rss className="h-12 w-12 text-primary" />
+      </div>
+      <h2 className="text-2xl font-bold mb-3">{t("feeds.emptyState.title")}</h2>
+      <p className="text-muted-foreground max-w-md mb-8">
+        {t("feeds.emptyState.description")}
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg w-full mb-8">
+        <div className="bg-card border rounded-lg p-4 text-left">
+          <div className="flex items-center mb-2">
+            <Rss className="h-5 w-5 text-orange-500 mr-2" />
+            <h3 className="font-medium">RSS Beslemeleri</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-3">
+            Haber siteleri, bloglar ve podcast'leri takip edin
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => onAddFeed("rss")}
+          >
+            <PlusCircle className="h-4 w-4 mr-1.5" />
+            RSS Ekle
+          </Button>
+        </div>
+
+        <div className="bg-card border rounded-lg p-4 text-left">
+          <div className="flex items-center mb-2">
+            <RssIcon className="h-5 w-5 text-red-500 mr-2" />
+            <h3 className="font-medium">YouTube Kanalları</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-3">
+            Favori YouTube kanallarınızı takip edin
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => onAddFeed("youtube")}
+          >
+            <PlusCircle className="h-4 w-4 mr-1.5" />
+            Kanal Ekle
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        <KeyboardIcon className="h-4 w-4" />
+        <span>
+          Klavye kısayolları için{" "}
+          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">?</kbd> tuşuna
+          basın
+        </span>
+      </div>
+    </div>
+  );
+});
+
+// EmptyFilterState bileşenini güncelleyelim
+export const EmptyFilterState = memo(function EmptyFilterState({
+  onResetFilters,
+}) {
+  const { t } = useLanguage();
+
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+      <div className="bg-yellow-50 rounded-full p-6 mb-6">
+        <Filter className="h-12 w-12 text-yellow-500" />
+      </div>
+      <h2 className="text-2xl font-bold mb-3">
+        {t("feeds.emptyFilterState.title")}
+      </h2>
+      <p className="text-muted-foreground max-w-md mb-6">
+        {t("feeds.emptyFilterState.description")}
+      </p>
+      <Button onClick={onResetFilters} className="mb-4">
+        <Filter className="h-4 w-4 mr-1.5" />
+        {t("feeds.emptyFilterState.resetFilters")}
+      </Button>
+
+      <div className="flex flex-col sm:flex-row items-center gap-2 p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground max-w-md">
+        <div className="flex items-center justify-center bg-background rounded-full p-2">
+          <Search className="h-4 w-4" />
+        </div>
+        <p className="text-center sm:text-left">
+          Filtreleri sıfırlamak, tüm beslemelerinizi ve öğelerinizi
+          görüntülemenizi sağlar.
+        </p>
+      </div>
+    </div>
+  );
+});

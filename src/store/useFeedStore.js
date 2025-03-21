@@ -47,9 +47,6 @@ const setCache = (data) => {
   }
 };
 
-// useFeeds.js'den import edilen limitItemsPerFeed fonksiyonunu kullanıyoruz
-// Buradaki tanımı kaldırıyoruz
-
 // Feed ile ilgili toast mesajları için sabit anahtarlar tanımlayalım
 const FEED_MESSAGES = {
   LOADING_ERROR: "errors.general",
@@ -172,15 +169,39 @@ export const useFeedStore = create(
           // Update each feed
           for (const feed of feeds) {
             try {
-              const response = await fetch(
-                `/api/proxy?url=${encodeURIComponent(feed.link)}&type=${
-                  feed.type
-                }`
-              );
+              let response;
+              let data;
 
-              if (!response.ok) continue;
+              if (feed.type === "rss") {
+                // RSS beslemesi için yeni endpoint'i kullan
+                response = await fetch(
+                  `/api/rss/parse?url=${encodeURIComponent(feed.link)}`
+                );
 
-              const data = await response.json();
+                if (!response.ok) continue;
+
+                data = await response.json();
+              } else if (feed.type === "youtube") {
+                // YouTube için yeni API'yi kullan
+                // YouTube kanalının ID'sini al
+                const channelId = feed.link.includes("/channel/")
+                  ? feed.link.split("/channel/")[1].split("/")[0]
+                  : feed.link;
+
+                response = await fetch(
+                  `/api/youtube/parse?channelId=${encodeURIComponent(
+                    channelId
+                  )}`
+                );
+
+                if (!response.ok) continue;
+
+                data = await response.json();
+              } else {
+                // Desteklenmeyen besleme türü
+                continue;
+              }
+
               const items = feed.type === "youtube" ? data.videos : data.items;
 
               if (items?.length > 0) {

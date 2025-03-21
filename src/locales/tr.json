@@ -1,11 +1,19 @@
 {
   "navigation": {
-    "tagline": "RSS ve YouTube içeriklerinizi tek bir yerde yönetin"
+    "tagline": "RSS ve YouTube içeriklerinizi tek bir yerde yönetin",
+    "home": "Ana Sayfa",
+    "feeds": "Beslemelerim",
+    "explore": "Keşfet",
+    "favorites": "Favoriler",
+    "readLater": "Daha Sonra Oku",
+    "history": "Geçmiş",
+    "settings": "Ayarlar"
   },
   "common": {
+    "appName": "FeedTune",
     "loading": "Yükleniyor...",
-    "error": "Hata oluştu",
-    "success": "İşlem başarılı",
+    "error": "Hata",
+    "success": "Başarılı",
     "cancel": "İptal",
     "save": "Kaydet",
     "delete": "Sil",
@@ -21,7 +29,12 @@
     "no": "Hayır",
     "ok": "Tamam",
     "continue": "Devam Et",
-    "deleting": "Siliniyor..."
+    "deleting": "Siliniyor...",
+    "settings": "Ayarlar",
+    "account": "Hesap",
+    "logout": "Çıkış Yap",
+    "confirm": "Onayla",
+    "submit": "Gönder"
   },
   "nav": {
     "menu": "Menü",
@@ -56,31 +69,64 @@
     "switchToRegister": "Hesabınız yok mu? Kayıt olun",
     "switchToLogin": "Zaten hesabınız var mı? Giriş yapın",
     "loginButton": "Giriş Yap",
-    "registerButton": "Kayıt Ol"
+    "registerButton": "Kayıt Ol",
+    "signIn": "Giriş Yap",
+    "signUp": "Kayıt Ol",
+    "confirmPassword": "Şifreyi Doğrula",
+    "noAccount": "Hesabınız yok mu?",
+    "haveAccount": "Zaten hesabınız var mı?",
+    "signInWithGoogle": "Google ile Giriş Yap",
+    "signInWithGithub": "Github ile Giriş Yap",
+    "signInWithEmail": "E-posta ile Giriş Yap",
+    "or": "veya",
+    "successSignIn": "Giriş başarılı!",
+    "errorSignIn": "Giriş yapılamadı. Lütfen tekrar deneyin.",
+    "successSignUp": "Kayıt başarılı!",
+    "errorSignUp": "Kayıt yapılamadı. Lütfen tekrar deneyin."
   },
   "feeds": {
-    "title": "Beslemeleriniz",
-    "description": "Takip ettiğiniz tüm RSS ve YouTube beslemeleri",
+    "title": "Beslemelerim",
+    "description": "Takip ettiğiniz kaynaklardan içeriklere göz atın",
+    "allItems": "Tüm Öğeler",
+    "unread": "Okunmamış",
+    "today": "Bugün",
+    "yesterday": "Dün",
+    "thisWeek": "Bu Hafta",
+    "older": "Daha Eski",
+    "noItems": "Hiç öğe bulunamadı.",
+    "noFeeds": "Henüz hiç besleme eklemediniz.",
+    "addYourFirst": "İlk beslemenizi ekleyin",
+    "refreshing": "Beslemeler yenileniyor...",
+    "markAllAsRead": "Tümünü okundu olarak işaretle",
+    "markAsRead": "Okundu olarak işaretle",
+    "markAsUnread": "Okunmadı olarak işaretle",
+    "addToFavorites": "Favorilere ekle",
+    "removeFromFavorites": "Favorilerden çıkar",
+    "addToReadLater": "Daha sonra oku",
+    "removeFromReadLater": "Daha sonra oku listesinden çıkar",
     "addFeed": {
-      "title": "Feed Ekle",
+      "title": "Besleme Ekle",
+      "description": "Takip etmek istediğiniz besleme türünü seçin",
       "selectPlatform": "Platform Seçin",
-      "rss": "RSS Feed",
+      "rss": "RSS Beslemesi",
       "youtube": "YouTube Kanalı",
       "success": "Besleme başarıyla eklendi",
-      "error": "Besleme eklenirken bir hata oluştu"
+      "error": "Besleme eklenirken bir hata oluştu",
+      "keepAdding": "Eklemeye devam et"
     },
     "addRssFeed": {
       "title": "RSS Beslemesi Ekle",
-      "urlPlaceholder": "RSS besleme URL'sini girin",
-      "urlInvalid": "Geçerli bir URL girin",
+      "urlPlaceholder": "https://example.com/feed",
+      "urlHelp": "RSS, Atom veya JSON beslemesi URL'si girin",
+      "urlInvalid": "Lütfen geçerli bir URL girin",
       "checking": "Besleme kontrol ediliyor...",
-      "add": "RSS Beslemesi Ekle",
+      "add": "Besleme Ekle",
       "success": "RSS beslemesi başarıyla eklendi",
       "error": "RSS beslemesi eklenirken bir hata oluştu"
     },
     "addYoutubeFeed": {
       "title": "YouTube Kanalı Ekle",
-      "add": "Kanalı Ekle",
+      "add": "Kanal Ekle",
       "adding": "Kanal Ekleniyor...",
       "success": "YouTube kanalı başarıyla eklendi",
       "error": "YouTube kanalı eklenirken bir hata oluştu",
@@ -89,12 +135,18 @@
       "searchDescription": "YouTube kanal URL'si, ID'si veya kullanıcı adı (@kullanıcıadı) girebilirsiniz",
       "searching": "Kanal aranıyor..."
     },
+    "updateFeed": {
+      "title": "Beslemeyi Güncelle",
+      "updating": "Besleme güncelleniyor...",
+      "success": "Besleme başarıyla güncellendi",
+      "error": "Besleme güncellenirken bir hata oluştu"
+    },
     "deleteFeed": {
-      "title": "Feedi Sil",
-      "confirmation": "Bu feed'i silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
-      "deleting": "Feed siliniyor...",
-      "success": "Feed ve ilişkili tüm veriler başarıyla silindi",
-      "error": "Feed silme işlemi başarısız oldu"
+      "title": "Beslemeyi Sil",
+      "confirmation": "Bu beslemeyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+      "deleting": "Besleme siliniyor...",
+      "success": "Besleme ve ilgili tüm veriler başarıyla silindi",
+      "error": "Besleme silinirken bir hata oluştu"
     },
     "feedList": {
       "title": "Beslemeleriniz",
@@ -134,12 +186,19 @@
     },
     "loadingState": {
       "description": "Beslemeleriniz yükleniyor..."
-    }
+    },
+    "articleCount": "{{count}} makale",
+    "lastUpdated": "Son güncelleme: {{date}}"
   },
   "home": {
-    "title": "FeedTune ile İçeriklerinizi Yönetin",
-    "subtitle": "RSS beslemeleri ve YouTube kanallarınızı tek bir yerde toplayın, organize edin ve takip edin.",
-    "getStarted": "Hemen Başlayın",
+    "title": "Ana Sayfa",
+    "welcome": "FeedTune'a Hoş Geldiniz",
+    "getStarted": "Başlayın",
+    "recentlyRead": "Son Okunanlar",
+    "recommendedFeeds": "Önerilen Beslemeler",
+    "trendingContent": "Trend İçerikler",
+    "emptyState": "Henüz hiç besleme eklemediniz.",
+    "emptyStateAction": "Başlamak için besleme ekleyin",
     "feedManagement": {
       "title": "Beslemeleriniz",
       "description": "Takip ettiğiniz kaynaklar",
@@ -206,20 +265,33 @@
       }
     }
   },
+  "explore": {
+    "title": "Keşfet",
+    "description": "Yeni beslemeler ve içerikler keşfedin",
+    "popular": "Popüler",
+    "trending": "Trend",
+    "categories": "Kategoriler",
+    "suggestions": "Öneriler",
+    "search": "Ara",
+    "searchPlaceholder": "Besleme veya içerik ara..."
+  },
   "favorites": {
     "title": "Favoriler",
-    "description": "Favori içeriklerinizi görüntüleyin",
-    "noFavorites": "Henüz hiç favori içeriğiniz yok",
-    "addToFavorites": "İçerikleri favorilere eklemek için feed sayfasını ziyaret edin"
+    "description": "Favori içerikleriniz",
+    "empty": "Henüz favori içeriğiniz yok.",
+    "addSome": "İçerikleri favorilere eklemek için kalpçik simgesine tıklayın."
   },
   "readLater": {
-    "title": "Okuma Listem",
-    "description": "Daha sonra okumak için kaydettiğiniz içerikleri görüntüleyin",
-    "noItems": "Henüz okuma listenizde hiç içerik yok",
-    "addToReadLater": "İçerikleri okuma listenize eklemek için feed sayfasını ziyaret edin"
+    "title": "Daha Sonra Oku",
+    "description": "Daha sonra okumak için kaydettiğiniz içerikler",
+    "empty": "Daha sonra okumak için kaydedilmiş içeriğiniz yok.",
+    "addSome": "İçerikleri daha sonra okumak üzere kaydetmek için yer imi simgesine tıklayın."
   },
   "settings": {
     "title": "Ayarlar",
+    "account": "Hesap",
+    "appearance": "Görünüm",
+    "notifications": "Bildirimler",
     "language": "Dil",
     "languageDescription": "Uygulama dilini değiştirin",
     "theme": {
@@ -237,20 +309,21 @@
     "feedRefreshDescription": "Feed'lerin otomatik yenileme sıklığı",
     "minutes": "dakika",
     "hours": "saat",
-    "account": {
-      "title": "Hesap",
-      "description": "Hesap ayarlarınızı yönetin",
-      "freePlan": "Ücretsiz Plan",
-      "deleteAccount": "Hesabı Sil",
-      "deleteAccountConfirmation": "Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
-    },
-    "resetToDefaults": "Varsayılan Ayarlara Dön"
+    "deleteAccount": "Hesabı Sil",
+    "deleteAccountConfirmation": "Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+    "resetToDefaults": "Varsayılan Ayarlara Dön",
+    "feedSettings": "Besleme Ayarları",
+    "dataAndStorage": "Veri ve Depolama",
+    "privacy": "Gizlilik",
+    "about": "Hakkında"
   },
   "errors": {
     "general": "Bir hata oluştu",
-    "unauthorized": "Bu işlemi yapmak için giriş yapmalısınız",
-    "networkError": "Ağ bağlantısı hatası",
-    "tryAgain": "Lütfen tekrar deneyin"
+    "unauthorized": "Bu işlemi gerçekleştirmek için oturum açmanız gerekiyor.",
+    "notFound": "Üzgünüz, aradığınız sayfa bulunamadı.",
+    "serverError": "Sunucu hatası. Lütfen daha sonra tekrar deneyin.",
+    "networkError": "İnternet bağlantınızı kontrol edin.",
+    "unknownError": "Bilinmeyen bir hata oluştu."
   },
   "timeAgo": {
     "justNow": "Az önce",

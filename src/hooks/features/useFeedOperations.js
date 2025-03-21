@@ -1,86 +1,71 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-// Supabase client'ı oluştur
-const createSupabaseClient = () => createClientComponentClient();
+import { useRssFeeds } from "@/hooks/features/useRssFeeds";
+import { useYoutubeFeeds } from "@/hooks/features/useYoutubeFeeds";
 
 export function useFeedOperations() {
   const queryClient = useQueryClient();
   const { t } = useLanguage();
+  const { addRssFeed, deleteRssFeed } = useRssFeeds();
+  const { addYoutubeChannel, deleteYoutubeChannel } = useYoutubeFeeds();
 
-  // RSS Feed Ekleme
-  const { mutate: addRssFeed, isLoading: isAddingRss } = useMutation({
-    mutationFn: async ({ url, userId }) => {
-      const supabase = createSupabaseClient();
-      const { data, error } = await supabase.functions.invoke("add-rss-feed", {
-        body: { url, userId },
-      });
-
-      if (error) throw error;
-      return data;
+  // RSS Feed Ekleme (eskisine yönlendirme)
+  const { isLoading: isAddingRss } = useMutation({
+    mutationFn: async ({ url }) => {
+      return await addRssFeed(url);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["feeds"]);
-      toast.success(t("feed.addSuccess"));
+      toast.success(t("feeds.addRssFeed.success"));
     },
     onError: (error) => {
       console.error("Error adding RSS feed:", error);
-      toast.error(t("feed.addError"));
+      toast.error(error.message || t("feeds.addRssFeed.error"));
     },
   });
 
-  // YouTube Feed Ekleme
-  const { mutate: addYoutubeFeed, isLoading: isAddingYoutube } = useMutation({
-    mutationFn: async ({ channelId, userId }) => {
-      const supabase = createSupabaseClient();
-      const { data, error } = await supabase.functions.invoke(
-        "add-youtube-feed",
-        {
-          body: { channelId, userId },
-        }
-      );
-
-      if (error) throw error;
-      return data;
+  // YouTube Feed Ekleme (eskisine yönlendirme)
+  const { isLoading: isAddingYoutube } = useMutation({
+    mutationFn: async ({ channelId }) => {
+      return await addYoutubeChannel(channelId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["feeds"]);
-      toast.success(t("feed.addSuccess"));
+      toast.success(t("feeds.addYoutubeFeed.success"));
     },
     onError: (error) => {
       console.error("Error adding YouTube feed:", error);
-      toast.error(t("feed.addError"));
+      toast.error(error.message || t("feeds.addYoutubeFeed.error"));
     },
   });
 
-  // Feed Silme
+  // Feed Silme (feed türüne göre ilgili API'ye yönlendirme)
   const { mutate: deleteFeed, isLoading: isDeleting } = useMutation({
-    mutationFn: async (feedId) => {
-      const supabase = createSupabaseClient();
-      const { error } = await supabase
-        .from("feeds")
-        .update({ is_active: false })
-        .eq("id", feedId);
-
-      if (error) throw error;
+    mutationFn: async ({ feedId, feedType }) => {
+      if (feedType === "rss") {
+        return await deleteRssFeed(feedId);
+      } else if (feedType === "youtube") {
+        return await deleteYoutubeChannel(feedId);
+      } else {
+        throw new Error("Desteklenmeyen besleme türü");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["feeds"]);
-      toast.success(t("feed.deleteSuccess"));
+      toast.success(t("feeds.deleteFeed.success"));
     },
     onError: (error) => {
       console.error("Error deleting feed:", error);
-      toast.error(t("feed.deleteError"));
+      toast.error(error.message || t("feeds.deleteFeed.error"));
     },
   });
 
   return {
     addRssFeed,
-    addYoutubeFeed,
+    addYoutubeFeed: addYoutubeChannel,
     deleteFeed,
     isAddingRss,
     isAddingYoutube,

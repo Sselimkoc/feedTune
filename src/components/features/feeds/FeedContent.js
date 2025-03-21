@@ -16,153 +16,63 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useRssFeeds } from "@/hooks/features/useRssFeeds";
+import { useYoutubeFeeds } from "@/hooks/features/useYoutubeFeeds";
 
 export function FeedContent() {
-  const { addRssFeed, addYoutubeFeed, refetch } = useFeeds();
+  const { refetch } = useFeeds();
+  const { addRssFeed, deleteRssFeed } = useRssFeeds();
+  const { addYoutubeChannel, deleteYoutubeChannel } = useYoutubeFeeds();
   const supabase = createClientComponentClient();
   const { user } = useAuthStore();
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const { t, language } = useLanguage();
 
-  const addFeed = async (feed) => {
+  const addFeed = async (url, feedType = "rss") => {
+    if (!user?.id) {
+      toast.error(t("errors.unauthorized"));
+      return;
+    }
+
     try {
-      const { data: newFeed, error: feedError } = await supabase
-        .from("feeds")
-        .insert([feed])
-        .select()
-        .single();
-
-      if (feedError) throw feedError;
-
-      toast.success(t("feeds.addFeed.success"));
+      if (feedType === "rss") {
+        await addRssFeed(url);
+      } else if (feedType === "youtube") {
+        await addYoutubeChannel(url);
+      } else {
+        toast.error(t("errors.unsupportedFeedType"));
+      }
     } catch (error) {
-      console.error("Error adding feed:", error);
-      toast.error(t("feeds.addFeed.error"));
+      console.error(`Error adding ${feedType} feed:`, error);
     }
   };
 
-  const removeFeed = async (feedId) => {
+  const removeFeed = async (feedId, feedType = "rss") => {
     try {
-      // Kullanıcıya onay sor
       if (!window.confirm(t("feeds.deleteFeed.confirmation"))) {
         return;
       }
 
-      // İlerleme bildirimi göster
       const toastId = toast.loading(t("feeds.deleteFeed.deleting"));
 
-      // 1. Önce feed'e ait tüm öğeleri bul
-      const { data: feedItems, error: itemsError } = await supabase
-        .from("feed_items")
-        .select("id")
-        .eq("feed_id", feedId);
-
-      if (itemsError) {
-        console.error("Feed öğeleri alınırken hata:", itemsError);
-        toast.error(t("errors.general"), { id: toastId });
-        return;
-      }
-
-      // 2. Kullanıcı etkileşimlerini sil (eğer öğeler varsa)
-      if (feedItems && feedItems.length > 0) {
-        const itemIds = feedItems.map((item) => item.id);
-
-        const { error: interactionsError } = await supabase
-          .from("user_item_interactions")
-          .delete()
-          .in("item_id", itemIds);
-
-        if (interactionsError) {
-          console.error(
-            "Kullanıcı etkileşimleri silinirken hata:",
-            interactionsError
-          );
-          toast.error(t("errors.general"), {
-            id: toastId,
-          });
-          return;
+      try {
+        if (feedType === "rss") {
+          await deleteRssFeed(feedId);
+        } else if (feedType === "youtube") {
+          await deleteYoutubeChannel(feedId);
+        } else {
+          throw new Error(t("errors.unsupportedFeedType"));
         }
+
+        toast.success(t("feeds.deleteFeed.success"), {
+          id: toastId,
+        });
+
+        refetch();
+      } catch (error) {
+        console.error("Feed deletion error:", error);
+        toast.error(t("feeds.deleteFeed.error"), { id: toastId });
       }
-
-      // 3. Feed öğelerini sil
-      const { error: deleteItemsError } = await supabase
-        .from("feed_items")
-        .delete()
-        .eq("feed_id", feedId);
-
-      if (deleteItemsError) {
-        console.error("Feed öğeleri silinirken hata:", deleteItemsError);
-        toast.error(t("errors.general"), { id: toastId });
-        return;
-      }
-
-      // 4. Feed türüne özel tablodan sil (rss_feeds veya youtube_feeds)
-      const { data: feedData, error: feedTypeError } = await supabase
-        .from("feeds")
-        .select("type")
-        .eq("id", feedId)
-        .single();
-
-      if (!feedTypeError && feedData) {
-        if (feedData.type === "rss") {
-          const { error: rssError } = await supabase
-            .from("rss_feeds")
-            .delete()
-            .eq("id", feedId);
-
-          if (rssError) {
-            console.error("RSS feed detayları silinirken hata:", rssError);
-            // Bu hatayı kritik olarak değerlendirmiyoruz, devam ediyoruz
-          }
-        } else if (feedData.type === "youtube") {
-          const { error: youtubeError } = await supabase
-            .from("youtube_feeds")
-            .delete()
-            .eq("id", feedId);
-
-          if (youtubeError) {
-            console.error(
-              "YouTube feed detayları silinirken hata:",
-              youtubeError
-            );
-            // Bu hatayı kritik olarak değerlendirmiyoruz, devam ediyoruz
-          }
-        }
-      }
-
-      // 5. Feed kategori ilişkilerini sil
-      const { error: categoryMappingError } = await supabase
-        .from("feed_category_mappings")
-        .delete()
-        .eq("feed_id", feedId);
-
-      if (categoryMappingError) {
-        console.error(
-          "Feed kategori ilişkileri silinirken hata:",
-          categoryMappingError
-        );
-        // Bu hatayı kritik olarak değerlendirmiyoruz, devam ediyoruz
-      }
-
-      // 6. Son olarak ana feed'i sil
-      const { error: deleteFeedError } = await supabase
-        .from("feeds")
-        .delete()
-        .eq("id", feedId);
-
-      if (deleteFeedError) {
-        console.error("Feed silinirken hata:", deleteFeedError);
-        toast.error(t("errors.general"), { id: toastId });
-        return;
-      }
-
-      // Başarılı bildirim göster
-      toast.success(t("feeds.deleteFeed.success"), {
-        id: toastId,
-      });
-
-      // Feed listesini yenile
-      refetch();
     } catch (error) {
       console.error("Feed silme işlemi sırasında hata:", error);
       toast.error(t("feeds.deleteFeed.error"));
@@ -176,7 +86,6 @@ export function FeedContent() {
     }
 
     try {
-      // Önce etkileşim var mı kontrol et
       const { data: existingInteraction, error: checkError } = await supabase
         .from("user_item_interactions")
         .select("*")
@@ -187,7 +96,6 @@ export function FeedContent() {
       if (checkError && checkError.code !== "PGRST116") throw checkError;
 
       if (existingInteraction) {
-        // Etkileşim varsa güncelle
         const { error } = await supabase
           .from("user_item_interactions")
           .update({ is_read: isRead })
@@ -196,7 +104,6 @@ export function FeedContent() {
 
         if (error) throw error;
       } else {
-        // Etkileşim yoksa oluştur
         const { error } = await supabase.from("user_item_interactions").insert([
           {
             user_id: user.id,
@@ -210,7 +117,6 @@ export function FeedContent() {
         if (error) throw error;
       }
 
-      // Başarılı işlem sonrası kullanıcıya bildirim göster
       toast.success(
         isRead
           ? t("feeds.feedList.markAsRead")
@@ -233,7 +139,6 @@ export function FeedContent() {
     }
 
     try {
-      // Önce etkileşim var mı kontrol et
       const { data: existingInteraction, error: checkError } = await supabase
         .from("user_item_interactions")
         .select("*")
@@ -244,7 +149,6 @@ export function FeedContent() {
       if (checkError && checkError.code !== "PGRST116") throw checkError;
 
       if (existingInteraction) {
-        // Etkileşim varsa güncelle
         const { error } = await supabase
           .from("user_item_interactions")
           .update({ is_favorite: isFavorite })
@@ -253,7 +157,6 @@ export function FeedContent() {
 
         if (error) throw error;
       } else {
-        // Etkileşim yoksa oluştur
         const { error } = await supabase.from("user_item_interactions").insert([
           {
             user_id: user.id,
@@ -279,7 +182,6 @@ export function FeedContent() {
     }
 
     try {
-      // Önce etkileşim var mı kontrol et
       const { data: existingInteraction, error: checkError } = await supabase
         .from("user_item_interactions")
         .select("*")
@@ -290,7 +192,6 @@ export function FeedContent() {
       if (checkError && checkError.code !== "PGRST116") throw checkError;
 
       if (existingInteraction) {
-        // Etkileşim varsa güncelle
         const { error } = await supabase
           .from("user_item_interactions")
           .update({ is_read_later: isReadLater })
@@ -299,7 +200,6 @@ export function FeedContent() {
 
         if (error) throw error;
       } else {
-        // Etkileşim yoksa oluştur
         const { error } = await supabase.from("user_item_interactions").insert([
           {
             user_id: user.id,
