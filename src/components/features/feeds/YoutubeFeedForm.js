@@ -1,19 +1,10 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Loader2,
   Check,
@@ -26,8 +17,6 @@ import {
   ChevronRight,
   ArrowLeft,
   MousePointerClick,
-  Info,
-  User,
   AlertCircle,
   Calendar,
   Film,
@@ -41,15 +30,15 @@ import { toast } from "sonner";
 import { useYoutubeFeeds } from "@/hooks/features/useYoutubeFeeds";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDebouncedCallback } from "use-debounce";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { Youtube } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Youtube } from "lucide-react";
 import Image from "next/image";
 
 // Varsayılan thumbnail URL'si
@@ -81,22 +70,26 @@ const styles = {
  * @returns {string} - Formatlanmış sayı
  */
 const formatSubscriberCount = (count) => {
-  if (!count) return "0 abone";
+  if (!count) return t("feeds.addYoutubeFeed.noSubscribers");
 
   try {
     const num = parseInt(count);
-    if (isNaN(num)) return "0 abone";
+    if (isNaN(num)) return t("feeds.addYoutubeFeed.noSubscribers");
 
     if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M abone`;
+      return t("feeds.addYoutubeFeed.subscriberCount.millions", {
+        count: (num / 1000000).toFixed(1),
+      });
     } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K abone`;
+      return t("feeds.addYoutubeFeed.subscriberCount.thousands", {
+        count: (num / 1000).toFixed(1),
+      });
     } else {
-      return `${num} abone`;
+      return t("feeds.addYoutubeFeed.subscriberCount.base", { count: num });
     }
   } catch (error) {
-    console.error("Abone sayısı formatlanırken hata oluştu:", error);
-    return "0 abone";
+    console.error("[YoutubeFeedForm] Abone sayısı formatlanırken hata:", error);
+    return t("feeds.addYoutubeFeed.noSubscribers");
   }
 };
 
@@ -148,9 +141,10 @@ export default function YoutubeFeedForm({
   const [isLoading, setIsLoading] = useState(false);
   const [visibleChannels, setVisibleChannels] = useState(6);
   const channelRowRef = useRef(null);
+  const channelsContainerRef = useRef(null);
 
   const { parseYoutubeChannel, addYoutubeChannel } = useYoutubeFeeds();
-  const channelsContainerRef = useRef(null);
+  const { t } = useLanguage();
 
   const handlePreview = async (query) => {
     if (!query) return;
@@ -301,63 +295,75 @@ export default function YoutubeFeedForm({
 
   // Besleme arama formunu render et
   const renderSearchForm = () => (
-    <div className="mx-auto max-w-full">
-      <Card className="bg-card border-muted shadow-sm">
-        <CardContent className="pt-5 pb-5">
-          <div className="space-y-4">
-            <div>
-              <Label
-                htmlFor="channelId"
-                className="text-sm font-medium mb-1.5 block"
-              >
-                Kanal ID veya Kullanıcı Adı
-              </Label>
-              <div className="relative">
-                <Input
-                  id="channelId"
-                  value={channelId}
-                  onChange={(e) => setChannelId(e.target.value)}
-                  placeholder="UC... veya @kullaniciadi"
-                  className="bg-background pr-10"
-                  disabled={isLoading}
-                />
-                {channelId && !isLoading && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                    onClick={() => setChannelId("")}
-                  >
-                    <X className="h-3 w-3" />
-                    <span className="sr-only">Temizle</span>
-                  </Button>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Örnek: @trt veya UCqVDpXKLmKeBmlEUbDGFUqA
-              </p>
-            </div>
+    <div className="space-y-4">
+      <div>
+        <Label
+          htmlFor="channelUrl"
+          className="text-sm font-medium mb-1.5 block"
+        >
+          {t("feeds.addYoutubeFeed.searchPlaceholder")}
+        </Label>
+        <div className="relative">
+          <Input
+            id="channelUrl"
+            name="channelUrl"
+            type="text"
+            value={channelId}
+            onChange={(e) => setChannelId(e.target.value)}
+            placeholder={t("feeds.addYoutubeFeed.searchPlaceholder")}
+            disabled={isLoading}
+            aria-invalid={!!error}
+            className={cn(
+              "bg-background pr-10",
+              error ? "border-destructive" : ""
+            )}
+            maxLength={2000}
+          />
+          {channelId && (
             <Button
-              className="w-full"
-              disabled={isLoading || !channelId.trim()}
-              onClick={() => handlePreview(channelId)}
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+              onClick={() => {
+                setChannelId("");
+                setError("");
+              }}
+              aria-label={t("common.clear")}
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Kanal Aranıyor...
-                </>
-              ) : (
-                <>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Önizle
-                </>
-              )}
+              <X className="h-3 w-3" />
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          )}
+        </div>
+        {error ? (
+          <p className="text-xs text-destructive mt-1.5">{error}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground mt-1.5">
+            {t("feeds.addYoutubeFeed.searchDescription")}
+          </p>
+        )}
+      </div>
+
+      {/* Bulunan Kanallar */}
+      {previewData?.suggestedChannels.length > 0 && (
+        <div
+          className="space-y-3"
+          role="list"
+          aria-label={t("feeds.addYoutubeFeed.foundChannels")}
+        >
+          {previewData.suggestedChannels
+            .slice(0, visibleChannels)
+            .map((channel) => (
+              <ChannelCard
+                key={channel.id}
+                channel={channel}
+                onSelect={handleSelectChannel}
+                parseYoutubeChannel={parseYoutubeChannel}
+                isAddingChannel={isLoading}
+              />
+            ))}
+        </div>
+      )}
     </div>
   );
 
@@ -365,12 +371,21 @@ export default function YoutubeFeedForm({
   const renderPreview = () => {
     if (isLoading) {
       return (
-        <div className="p-4 sm:p-6 py-8 flex flex-col items-center justify-center space-y-5 text-center border rounded-lg bg-background/50">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <div
+          className="p-4 sm:p-6 py-8 flex flex-col items-center justify-center space-y-5 text-center border rounded-lg bg-background/50"
+          role="status"
+          aria-live="polite"
+        >
+          <Loader2
+            className="w-10 h-10 animate-spin text-primary"
+            aria-hidden="true"
+          />
           <div>
-            <h3 className="text-lg font-medium">Kanal Bilgileri Yükleniyor</h3>
+            <h3 className="text-lg font-medium">
+              {t("feeds.addYoutubeFeed.loadingChannel")}
+            </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              YouTube kanalı bilgileri alınıyor, lütfen bekleyin...
+              {t("feeds.addYoutubeFeed.loadingDescription")}
             </p>
           </div>
         </div>
@@ -379,20 +394,25 @@ export default function YoutubeFeedForm({
 
     if (!previewData) {
       return (
-        <div className="p-4 sm:p-6 py-6 sm:py-8 flex flex-col items-center justify-center border rounded-lg bg-red-50 dark:bg-red-900/10 text-red-800 dark:text-red-300 space-y-4">
-          <AlertCircle className="w-10 h-10" />
+        <div
+          className="p-4 sm:p-6 py-6 sm:py-8 flex flex-col items-center justify-center border rounded-lg bg-red-50 dark:bg-red-900/10 text-red-800 dark:text-red-300 space-y-4"
+          role="alert"
+          aria-live="assertive"
+        >
+          <AlertCircle className="w-10 h-10" aria-hidden="true" />
           <div className="text-center">
-            <h3 className="text-lg font-medium">Kanal Bilgileri Yüklenemedi</h3>
+            <h3 className="text-lg font-medium">
+              {t("feeds.addYoutubeFeed.loadError")}
+            </h3>
             <p className="text-sm mt-2 max-w-md">
-              Kanal bilgileri alınırken bir sorun oluştu. Lütfen farklı bir
-              kanal ID veya ismi deneyin.
+              {t("feeds.addYoutubeFeed.loadErrorDescription")}
             </p>
             <Button
               variant="outline"
               className="mt-4"
               onClick={() => setIsPreview(false)}
             >
-              Aramaya Dön
+              {t("common.back")}
             </Button>
           </div>
         </div>
@@ -402,43 +422,53 @@ export default function YoutubeFeedForm({
     // API kota hatası için özel görünüm
     if (previewData.channel?.quotaExceeded) {
       return (
-        <div className="p-5 sm:p-8 flex flex-col items-center justify-center border rounded-lg bg-amber-50 dark:bg-amber-900/10 text-amber-800 dark:text-amber-300 space-y-5">
+        <div
+          className="p-5 sm:p-8 flex flex-col items-center justify-center border rounded-lg bg-amber-50 dark:bg-amber-900/10 text-amber-800 dark:text-amber-300 space-y-5"
+          role="alert"
+          aria-live="assertive"
+        >
           <div className="bg-amber-100 dark:bg-amber-800/30 p-3 rounded-full">
-            <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10" />
+            <AlertCircle
+              className="w-8 h-8 sm:w-10 sm:h-10"
+              aria-hidden="true"
+            />
           </div>
 
           <div className="text-center max-w-lg">
             <h3 className="text-lg sm:text-xl font-medium">
-              YouTube API Sınırlaması
+              {t("feeds.addYoutubeFeed.quotaError")}
             </h3>
 
             <p className="text-sm sm:text-base mt-2 mb-4">
-              YouTube API erişim kotası dolmuş görünüyor. Bu genellikle şu
-              sebeplerden kaynaklanır:
+              {t("feeds.addYoutubeFeed.quotaErrorDescription")}
             </p>
 
-            <ul className="text-sm sm:text-base space-y-2 text-left mb-4 ml-4">
+            <ul
+              className="text-sm sm:text-base space-y-2 text-left mb-4 ml-4"
+              aria-label={t("feeds.addYoutubeFeed.quotaErrorReasons")}
+            >
               <li className="flex items-start gap-2">
-                <span className="mt-1">•</span>
-                <span>
-                  YouTube&apos;un API kullanım kotası günlük sınıra ulaşmış
-                  olabilir
+                <span className="mt-1" aria-hidden="true">
+                  •
                 </span>
+                <span>{t("feeds.addYoutubeFeed.quotaErrorReason1")}</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="mt-1">•</span>
-                <span>
-                  YouTube API geçici olarak erişime kapatılmış olabilir
+                <span className="mt-1" aria-hidden="true">
+                  •
                 </span>
+                <span>{t("feeds.addYoutubeFeed.quotaErrorReason2")}</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="mt-1">•</span>
-                <span>Çok sayıda istek yapılmış olabilir</span>
+                <span className="mt-1" aria-hidden="true">
+                  •
+                </span>
+                <span>{t("feeds.addYoutubeFeed.quotaErrorReason3")}</span>
               </li>
             </ul>
 
             <p className="text-sm sm:text-base mb-5">
-              Bu durumda aşağıdaki seçenekleri deneyebilirsiniz:
+              {t("feeds.addYoutubeFeed.quotaErrorSolution")}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
@@ -447,16 +477,16 @@ export default function YoutubeFeedForm({
                 onClick={() => setIsPreview(false)}
                 className="border-amber-300 hover:bg-amber-100 hover:text-amber-900 dark:border-amber-800 dark:hover:bg-amber-800/30"
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Aramaya Dön
+                <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                {t("common.back")}
               </Button>
 
               <Button
                 onClick={() => handlePreview(channelId)}
                 className="bg-amber-600 hover:bg-amber-700 text-white"
               >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Tekrar Dene
+                <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
+                {t("common.retry")}
               </Button>
             </div>
           </div>
@@ -647,145 +677,8 @@ export default function YoutubeFeedForm({
                   </div>
                 </div>
               </div>
-
-              {/* Scroll Container */}
-              <div
-                className="relative w-full overflow-hidden"
-                style={{ height: videos.length > 0 ? "auto" : "0" }}
-              >
-                {/* Kaydırma göstergesi (kenarlarda soluklaşan gölgeler) */}
-                <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background/80 to-transparent z-10 pointer-events-none"></div>
-                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background/80 to-transparent z-10 pointer-events-none"></div>
-
-                <div
-                  ref={channelRowRef}
-                  className={cn(
-                    styles.articleScroller,
-                    "rounded-lg border border-dashed border-muted hover:border-muted-foreground/50 transition-colors duration-200 py-2"
-                  )}
-                  data-scrollable="true"
-                >
-                  {/* Sayfalama mantığı - her sayfada 3 video */}
-                  {Array.from({ length: Math.ceil(visibleChannels / 3) }).map(
-                    (_, pageIndex) => (
-                      <div
-                        key={`page-${pageIndex}`}
-                        className="flex-shrink-0 w-full snap-start"
-                      >
-                        <div className={styles.articleContainer}>
-                          {videos
-                            .slice(
-                              pageIndex * 3,
-                              Math.min((pageIndex + 1) * 3, visibleChannels)
-                            )
-                            .map((video, index) => (
-                              <div
-                                key={video.id || `${pageIndex}-${index}`}
-                                className={styles.articleItem}
-                              >
-                                <VideoCard item={video} />
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
             </CardContent>
           </Card>
-        )}
-
-        {/* Benzer Kanallar - tek sıra, yatay kaydırma */}
-        {suggestedChannels.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-base md:text-lg font-medium">
-              Benzer Kanallar
-            </h3>
-
-            <div className="relative -mx-1 px-1">
-              {/* Kaydırma butonları */}
-              <div className="absolute -left-1 sm:left-0 top-1/2 -translate-y-1/2 z-10">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-background/80 backdrop-blur shadow-sm"
-                  onClick={scrollLeft}
-                  aria-label="Sola kaydır"
-                >
-                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-                </Button>
-              </div>
-
-              <div className="absolute -right-1 sm:right-0 top-1/2 -translate-y-1/2 z-10">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-background/80 backdrop-blur shadow-sm"
-                  onClick={scrollRight}
-                  aria-label="Sağa kaydır"
-                >
-                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                </Button>
-              </div>
-
-              {/* Yatay kaydırılabilir kanal listesi - daha iyi responsive davranış */}
-              <div
-                ref={channelsContainerRef}
-                className="flex gap-2 md:gap-3 overflow-x-auto py-1 pb-2 sm:pb-3 px-2 scrollbar-hide scroll-smooth snap-x"
-              >
-                {suggestedChannels.slice(0, visibleChannels).map((channel) => (
-                  <div
-                    key={channel.id || Math.random().toString()}
-                    className="flex-shrink-0 w-[130px] sm:w-[150px] md:w-[170px] border rounded-lg overflow-hidden bg-card hover:border-primary/50 transition-colors snap-start"
-                  >
-                    <div className="p-3 sm:p-4 flex flex-col items-center text-center space-y-2 sm:space-y-3">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                        {safeGetChannelThumbnail(channel) ? (
-                          <img
-                            src={safeGetChannelThumbnail(channel)}
-                            alt={channel.title || "Kanal"}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              console.log(
-                                "Benzer kanal resmi yüklenemedi, varsayılan resim kullanılıyor"
-                              );
-                              e.target.onerror = null;
-                              e.target.src =
-                                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Cline x1='3' x2='21' y1='9' y2='9'/%3E%3Cline x1='9' x2='9' y1='21' y2='9'/%3E%3C/svg%3E";
-                              e.target.className =
-                                "w-1/2 h-1/2 text-muted-foreground";
-                            }}
-                          />
-                        ) : (
-                          <YoutubeIcon className="w-1/2 h-1/2 text-muted-foreground" />
-                        )}
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium text-xs md:text-sm line-clamp-2">
-                          {channel.title || "İsimsiz Kanal"}
-                        </h4>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 md:mt-1">
-                          {formatSubscriberCount(channel.subscriberCount)}
-                        </p>
-                      </div>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-xs h-7 gap-1"
-                        onClick={() => handleSelectChannel(channel)}
-                      >
-                        <Plus className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                        Ekle
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         )}
       </div>
     );
@@ -802,12 +695,12 @@ export default function YoutubeFeedForm({
  * @param {Function} props.parseYoutubeChannel - Kanal verilerini getirme fonksiyonu
  * @param {boolean} props.isAddingChannel - Ekleme işlemi sırasında mı?
  */
-const ChannelCard = ({
+const ChannelCard = memo(function ChannelCard({
   channel,
   onSelect,
   parseYoutubeChannel,
   isAddingChannel,
-}) => {
+}) {
   const [isHovering, setIsHovering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [videoData, setVideoData] = useState(null);
@@ -836,6 +729,11 @@ const ChannelCard = ({
             onMouseEnter={handleMouseEnter}
             onMouseLeave={() => setIsHovering(false)}
             onClick={() => onSelect(channel)}
+            role="button"
+            aria-label={t("feeds.addYoutubeFeed.selectChannel", {
+              channel:
+                channel.title || t("feeds.addYoutubeFeed.unknownChannel"),
+            })}
           >
             <CardContent className="p-3 sm:p-4 h-full flex flex-col">
               <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
@@ -892,27 +790,44 @@ const ChannelCard = ({
           sideOffset={5}
         >
           {isLoading ? (
-            <div className="py-8 flex flex-col items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div
+              className="py-8 flex flex-col items-center justify-center"
+              role="status"
+              aria-label={t("feeds.addYoutubeFeed.loadingVideos")}
+            >
+              <Loader2
+                className="h-8 w-8 animate-spin text-muted-foreground"
+                aria-hidden="true"
+              />
               <p className="text-xs text-muted-foreground mt-2">
-                Videolar yükleniyor...
+                {t("feeds.addYoutubeFeed.loadingVideos")}
               </p>
             </div>
           ) : videoData?.videos && videoData.videos.length > 0 ? (
             <div className="space-y-2">
               <h4 className="text-xs font-medium flex items-center gap-1 mb-1">
-                <Video className="w-3 h-3" /> Son Videolar
+                <Video className="w-3 h-3" aria-hidden="true" />
+                {t("feeds.addYoutubeFeed.recentVideos")}
               </h4>
-              <div className="space-y-2">
+              <div
+                className="space-y-2"
+                role="list"
+                aria-label={t("feeds.addYoutubeFeed.recentVideos")}
+              >
                 {videoData.videos.slice(0, 3).map((video) => (
                   <div
                     key={video.id}
                     className="flex items-center gap-2 text-xs group hover:bg-accent/20 rounded-md p-1"
+                    role="listitem"
                   >
                     <div className="relative w-14 h-8 flex-shrink-0 overflow-hidden rounded">
                       <img
                         src={video.thumbnailUrl || DEFAULT_THUMBNAIL}
-                        alt={video.title}
+                        alt={t("feeds.addYoutubeFeed.videoThumbnail", {
+                          title:
+                            video.title ||
+                            t("feeds.addYoutubeFeed.unknownVideo"),
+                        })}
                         className="h-full w-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
@@ -921,36 +836,45 @@ const ChannelCard = ({
                       />
                     </div>
                     <p className="flex-1 line-clamp-2 text-xs">
-                      {video.title || "İsimsiz Video"}
+                      {video.title || t("feeds.addYoutubeFeed.unknownVideo")}
                     </p>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="py-4 text-center text-muted-foreground">
-              <Video className="w-6 h-6 mx-auto mb-2 opacity-50" />
-              <p className="text-xs">Bu kanal için video bulunamadı</p>
+            <div
+              className="py-4 text-center text-muted-foreground"
+              role="status"
+              aria-label={t("feeds.addYoutubeFeed.noVideos")}
+            >
+              <Video
+                className="w-6 h-6 mx-auto mb-2 opacity-50"
+                aria-hidden="true"
+              />
+              <p className="text-xs">{t("feeds.addYoutubeFeed.noVideos")}</p>
             </div>
           )}
         </HoverCardContent>
       </HoverCard>
     </div>
   );
-};
+});
 
 /**
  * Video Kartı Bileşeni
  * @param {Object} props
  * @param {Object} props.item - Video bilgileri
  */
-const VideoCard = ({ item }) => {
+const VideoCard = memo(function VideoCard({ item }) {
+  const { t } = useLanguage();
+
   const formatDate = (dateString) => {
     if (!dateString) return "";
 
     try {
       const date = new Date(dateString);
-      return new Intl.DateTimeFormat("tr-TR", {
+      return new Intl.DateTimeFormat(i18n.language, {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -973,13 +897,19 @@ const VideoCard = ({ item }) => {
   const thumbnail = getThumbnail();
 
   return (
-    <Card className="h-full bg-card hover:bg-accent/5 transition-colors border-muted">
+    <Card
+      className="h-full bg-card hover:bg-accent/5 transition-colors border-muted"
+      role="article"
+      aria-label={item.title || t("feeds.addYoutubeFeed.unknownVideo")}
+    >
       <CardContent className="p-3 sm:p-4 h-full flex flex-col">
         {thumbnail && (
           <div className="w-full h-32 mb-3 overflow-hidden rounded-md relative group">
             <img
               src={thumbnail}
-              alt={item.title || "Video görseli"}
+              alt={t("feeds.addYoutubeFeed.videoThumbnail", {
+                title: item.title || t("feeds.addYoutubeFeed.unknownVideo"),
+              })}
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.onerror = null;
@@ -987,13 +917,13 @@ const VideoCard = ({ item }) => {
               }}
             />
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <PlayCircle className="w-10 h-10 text-white" />
+              <PlayCircle className="w-10 h-10 text-white" aria-hidden="true" />
             </div>
           </div>
         )}
 
         <h3 className="font-medium text-sm sm:text-base line-clamp-2 mb-2">
-          {item.title || "İsimsiz Video"}
+          {item.title || t("feeds.addYoutubeFeed.unknownVideo")}
         </h3>
 
         {item.description && (
@@ -1005,7 +935,7 @@ const VideoCard = ({ item }) => {
         <div className="mt-auto flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
           {item.pubDate && (
             <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3 flex-shrink-0" />
+              <Clock className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
               {formatDate(item.pubDate)}
             </span>
           )}
@@ -1017,13 +947,16 @@ const VideoCard = ({ item }) => {
               rel="noopener noreferrer"
               className="text-primary hover:underline flex items-center gap-1"
               onClick={(e) => e.stopPropagation()}
+              aria-label={t("feeds.addYoutubeFeed.watchVideo", {
+                title: item.title || t("feeds.addYoutubeFeed.unknownVideo"),
+              })}
             >
-              İzle
-              <ExternalLink className="w-3 h-3" />
+              {t("feeds.addYoutubeFeed.watch")}
+              <ExternalLink className="w-3 h-3" aria-hidden="true" />
             </a>
           )}
         </div>
       </CardContent>
     </Card>
   );
-};
+});

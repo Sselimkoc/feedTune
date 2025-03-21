@@ -72,13 +72,21 @@ export function FilterDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={handleOpenChange}
+      aria-label={t("feeds.filters.title")}
+    >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{t("feeds.filters.title")}</DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="sort" className="mt-4">
+        <Tabs
+          defaultValue="sort"
+          className="mt-4"
+          aria-label={t("feeds.filters.tabsLabel")}
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="sort">{t("feeds.filters.sort")}</TabsTrigger>
             <TabsTrigger value="filter">
@@ -86,16 +94,22 @@ export function FilterDialog({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="sort" className="space-y-4 pt-4">
+          <TabsContent
+            value="sort"
+            className="space-y-4 pt-4"
+            role="tabpanel"
+            aria-label={t("feeds.filters.sortOptions")}
+          >
             <div className="space-y-4">
               <RadioGroup
                 value={localFilters.sortBy}
                 onValueChange={(value) => updateLocalFilters("sortBy", value)}
+                aria-label={t("feeds.filters.sortBy")}
               >
                 <div className="flex items-center space-x-2 rounded-md border p-3">
                   <RadioGroupItem value="newest" id="newest" />
                   <Label htmlFor="newest" className="flex items-center">
-                    <ArrowDownAZ className="mr-2 h-4 w-4" />
+                    <ArrowDownAZ className="mr-2 h-4 w-4" aria-hidden="true" />
                     <span>{t("feeds.filters.newest")}</span>
                   </Label>
                 </div>
@@ -103,7 +117,7 @@ export function FilterDialog({
                 <div className="flex items-center space-x-2 rounded-md border p-3">
                   <RadioGroupItem value="oldest" id="oldest" />
                   <Label htmlFor="oldest" className="flex items-center">
-                    <ArrowUpAZ className="mr-2 h-4 w-4" />
+                    <ArrowUpAZ className="mr-2 h-4 w-4" aria-hidden="true" />
                     <span>{t("feeds.filters.oldest")}</span>
                   </Label>
                 </div>
@@ -111,7 +125,7 @@ export function FilterDialog({
                 <div className="flex items-center space-x-2 rounded-md border p-3">
                   <RadioGroupItem value="unread" id="unread" />
                   <Label htmlFor="unread" className="flex items-center">
-                    <EyeOff className="mr-2 h-4 w-4" />
+                    <EyeOff className="mr-2 h-4 w-4" aria-hidden="true" />
                     <span>{t("feeds.filters.unreadFirst")}</span>
                   </Label>
                 </div>
@@ -119,7 +133,7 @@ export function FilterDialog({
                 <div className="flex items-center space-x-2 rounded-md border p-3">
                   <RadioGroupItem value="favorites" id="favorites" />
                   <Label htmlFor="favorites" className="flex items-center">
-                    <Star className="mr-2 h-4 w-4" />
+                    <Star className="mr-2 h-4 w-4" aria-hidden="true" />
                     <span>{t("feeds.filters.favoritesFirst")}</span>
                   </Label>
                 </div>
@@ -127,12 +141,21 @@ export function FilterDialog({
             </div>
           </TabsContent>
 
-          <TabsContent value="filter" className="space-y-6 pt-4">
+          <TabsContent
+            value="filter"
+            className="space-y-6 pt-4"
+            role="tabpanel"
+            aria-label={t("feeds.filters.filterOptions")}
+          >
             <div className="space-y-4">
               <h3 className="text-sm font-medium">
                 {t("feeds.filters.showContent")}
               </h3>
-              <div className="space-y-2">
+              <div
+                className="space-y-2"
+                role="group"
+                aria-label={t("feeds.filters.contentVisibility")}
+              >
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="show-read"
@@ -142,7 +165,7 @@ export function FilterDialog({
                     }
                   />
                   <Label htmlFor="show-read" className="flex items-center">
-                    <Eye className="mr-2 h-4 w-4" />
+                    <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
                     <span>{t("feeds.filters.readContent")}</span>
                   </Label>
                 </div>
@@ -155,7 +178,7 @@ export function FilterDialog({
                     }
                   />
                   <Label htmlFor="show-unread" className="flex items-center">
-                    <EyeOff className="mr-2 h-4 w-4" />
+                    <EyeOff className="mr-2 h-4 w-4" aria-hidden="true" />
                     <span>{t("feeds.filters.unreadContent")}</span>
                   </Label>
                 </div>
@@ -168,7 +191,11 @@ export function FilterDialog({
               <h3 className="text-sm font-medium">
                 {t("feeds.filters.feedTypes")}
               </h3>
-              <div className="space-y-2">
+              <div
+                className="space-y-2"
+                role="group"
+                aria-label={t("feeds.filters.feedTypeSelection")}
+              >
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="show-rss"
@@ -199,10 +226,17 @@ export function FilterDialog({
         </Tabs>
 
         <DialogFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleResetFilters}>
+          <Button
+            variant="outline"
+            onClick={handleResetFilters}
+            aria-label={t("feeds.filters.resetFilters")}
+          >
             {t("feeds.filters.reset")}
           </Button>
-          <Button onClick={handleApplyFilters}>
+          <Button
+            onClick={handleApplyFilters}
+            aria-label={t("feeds.filters.applyFilters")}
+          >
             {t("feeds.filters.apply")}
           </Button>
         </DialogFooter>

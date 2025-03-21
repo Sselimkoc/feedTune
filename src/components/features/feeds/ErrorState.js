@@ -12,12 +12,12 @@ export function ErrorState({ onRetry }) {
       <div className="rounded-full bg-destructive/10 p-3">
         <AlertCircle className="h-6 w-6 text-destructive" />
       </div>
-      <h3 className="text-lg font-semibold">{t("error.title")}</h3>
+      <h3 className="text-lg font-semibold">{t("errors.general")}</h3>
       <p className="text-sm text-muted-foreground max-w-[400px]">
-        {t("error.description")}
+        {t("errors.networkError")}
       </p>
       <Button onClick={onRetry} variant="outline">
-        {t("error.retry")}
+        {t("common.refresh")}
       </Button>
     </div>
   );

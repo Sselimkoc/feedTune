@@ -56,11 +56,9 @@ export function HomeStats({ stats }) {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-xl font-bold mb-1">
-            {t("home.stats.title") || "İstatistikler"}
-          </h2>
+          <h2 className="text-xl font-bold mb-1">{t("home.stats.title")}</h2>
           <p className="text-sm text-muted-foreground">
-            {t("home.stats.description") || "Feed'lerinizin genel durumu"}
+            {t("home.stats.description")}
           </p>
         </motion.div>
 

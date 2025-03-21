@@ -515,223 +515,162 @@ export function FeedList() {
 
   // Render
   return (
-    <div className="w-full">
-      <AnimatePresence>
-        {showKeyboardHelp && (
-          <KeyboardShortcutsHelp
-            open={showKeyboardHelp}
-            onOpenChange={setShowKeyboardHelp}
-          />
-        )}
-      </AnimatePresence>
+    <div
+      className="container py-6 space-y-6"
+      role="feed"
+      aria-label={t("feeds.feedList.title")}
+    >
+      {/* Filtre ve Sıralama Araçları */}
+      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Feed Seçici */}
+          <Select
+            value={
+              selectedFeedIds.length === 0 ? "all" : selectedFeedIds.join(",")
+            }
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedFeedIds([]);
+              } else {
+                setSelectedFeedIds(value.split(","));
+              }
+            }}
+            aria-label={t("feeds.feedList.selectFeeds")}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder={t("feeds.feedList.allFeeds")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">
+                {t("feeds.feedList.allFeeds")}
+              </SelectItem>
+              {feeds.map((feed) => (
+                <SelectItem key={feed.id} value={feed.id}>
+                  <div className="flex items-center gap-2">
+                    {feed.site_favicon ? (
+                      <Image
+                        src={feed.site_favicon}
+                        alt={t("feeds.feedList.siteLogo", { site: feed.title })}
+                        width={16}
+                        height={16}
+                        className="rounded-sm"
+                      />
+                    ) : (
+                      <RssIcon className="h-4 w-4" />
+                    )}
+                    <span>{feed.title}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{t("feeds.feedList.title")}</h1>
-          <p className="text-muted-foreground">
-            {t("feeds.feedList.description")}
-          </p>
-        </div>
+          {/* Filtre Butonu */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsFilterDialogOpen(true)}
+            className="flex items-center gap-1.5"
+            aria-label={t("feeds.feedList.openFilters")}
+          >
+            <Filter className="h-4 w-4" />
+            <span>{t("feeds.feedList.filters")}</span>
+            {Object.values(filters).some((value) =>
+              typeof value === "object"
+                ? Object.values(value).some((v) => !v)
+                : !value
+            ) && (
+              <Badge variant="secondary" className="ml-1">
+                {t("feeds.feedList.activeFilters")}
+              </Badge>
+            )}
+          </Button>
 
-        <div className="flex items-center gap-2">
+          {/* Klavye Kısayolları */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowKeyboardHelp(true)}
-            title={t("feeds.keyboardShortcuts.title")}
+            className="flex items-center gap-1.5"
+            aria-label={t("feeds.feedList.openKeyboardShortcuts")}
           >
-            <KeyboardIcon className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">
-              {t("feeds.keyboardShortcuts.title")}
-            </span>
+            <KeyboardIcon className="h-4 w-4" />
+            <span>{t("feeds.feedList.keyboardShortcuts")}</span>
           </Button>
-
-          {/* add feed button */}
-          <AddFeedButton />
         </div>
+
+        {/* Feed Ekle Butonu */}
+        <AddFeedButton />
       </div>
 
-      {/* Çoklu Kanal Seçimi */}
-      {feeds?.length > 0 && (
-        <div className="mb-6 bg-background/60 backdrop-blur-sm sticky top-0 z-10 py-2 border-b">
-          <div className="flex justify-between items-center gap-2">
-            <ScrollArea className="w-full whitespace-nowrap rounded-md">
-              <div className="flex space-x-2 p-1">
-                {/* Tüm Seçimleri Kaldır Butonu */}
-                {selectedFeedIds.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleToggleAllFeeds}
-                    className="h-8 px-3 transition-all duration-200 flex items-center gap-1.5 rounded-full"
-                  >
-                    <span className="text-xs font-medium">
-                      Tüm Seçimleri Kaldır
-                    </span>
-                  </Button>
-                )}
-
-                {feeds.map((feed) => {
-                  const isSelected = selectedFeedIds.includes(feed.id);
-                  const isYoutube = feed.type === "youtube";
-
-                  return (
-                    <Button
-                      key={feed.id}
-                      onClick={() => handleFeedSelect(feed.id)}
-                      variant={isSelected ? "default" : "outline"}
-                      size="sm"
-                      className={cn(
-                        "h-8 px-3 transition-all duration-200 flex items-center gap-1.5 rounded-full",
-                        isSelected ? "shadow-sm" : "hover:bg-muted"
-                      )}
-                    >
-                      {feed.site_favicon && (
-                        <div className="relative w-4 h-4 flex-shrink-0">
-                          <Image
-                            src={feed.site_favicon}
-                            alt=""
-                            width={16}
-                            height={16}
-                            className={cn(
-                              "object-cover",
-                              isYoutube ? "rounded-full" : "rounded"
-                            )}
-                            unoptimized
-                          />
-                        </div>
-                      )}
-                      <span
-                        className={cn(
-                          "text-xs font-medium truncate max-w-[120px]",
-                          isSelected ? "" : "text-muted-foreground"
-                        )}
-                      >
-                        {feed.title}
-                      </span>
-                    </Button>
-                  );
-                })}
-              </div>
-              <ScrollBar orientation="horizontal" className="h-2" />
-            </ScrollArea>
-
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsFilterDialogOpen(true)}
-                className="h-8 rounded-full ml-1"
-              >
-                <Filter className="h-3.5 w-3.5 mr-1" />
-                <span className="text-xs">Filtrele</span>
-                {activeFilterCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 px-1">
-                    {activeFilterCount}
-                  </Badge>
-                )}
-              </Button>
-            </div>
-          </div>
+      {/* İçerik Listesi */}
+      {isLoading ? (
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+          role="status"
+          aria-label={t("common.loading")}
+        >
+          {Array(6)
+            .fill(null)
+            .map((_, index) => (
+              <div
+                key={index}
+                className="h-[400px] rounded-lg bg-muted animate-pulse"
+                aria-hidden="true"
+              />
+            ))}
         </div>
+      ) : filteredItems.length > 0 ? (
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+          role="feed"
+          aria-label={t("feeds.feedList.contentList")}
+        >
+          <AnimatePresence mode="popLayout">
+            {filteredItems.map((item, index) => (
+              <motion.div
+                key={item.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
+                id={`feed-item-${item.id}`}
+              >
+                <FeedCard
+                  item={item}
+                  feed={feeds.find((f) => f.id === item.feed_id)}
+                  compact={compactMode}
+                  onToggleRead={(id, value) => toggleItemRead(id, value)}
+                  onToggleFavorite={(id, value) =>
+                    toggleItemFavorite(id, value)
+                  }
+                  onToggleReadLater={(id, value) =>
+                    toggleItemReadLater(id, value)
+                  }
+                  isFocused={focusedItemIndex === index}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      ) : (
+        <EmptyFilterState onResetFilters={() => setFilters(defaultFilters)} />
       )}
 
-      {/* Filter Dialog */}
+      {/* Filtre Dialog */}
       <FilterDialog
-        isOpen={isFilterDialogOpen}
+        open={isFilterDialogOpen}
         onOpenChange={setIsFilterDialogOpen}
         filters={filters}
-        onApplyFilters={setFilters}
+        onFiltersChange={setFilters}
       />
 
-      {/* Yükleniyor */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] loading-container rounded-xl p-8">
-          <div className="relative mb-6">
-            <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl"></div>
-            <div className="relative z-10 bg-background/80 backdrop-blur-sm rounded-full p-4 shadow-lg border">
-              <Rss className="h-12 w-12 text-primary loading-spinner" />
-            </div>
-          </div>
-
-          <h3 className="text-xl font-medium mb-2 loading-pulse">
-            {t("feeds.title")}
-          </h3>
-          <p className="text-muted-foreground text-center max-w-md mb-4 loading-pulse">
-            {t("common.loading")}
-          </p>
-
-          <div className="flex items-center gap-2 mt-2">
-            <div
-              className="h-2 w-2 rounded-full bg-primary animate-bounce"
-              style={{ animationDelay: "0ms" }}
-            ></div>
-            <div
-              className="h-2 w-2 rounded-full bg-primary animate-bounce"
-              style={{ animationDelay: "150ms" }}
-            ></div>
-            <div
-              className="h-2 w-2 rounded-full bg-primary animate-bounce"
-              style={{ animationDelay: "300ms" }}
-            ></div>
-          </div>
-        </div>
-      ) : !feeds || feeds.length === 0 ? (
-        // Empty State - No Feeds
-        <div className="space-y-6">
-          <EmptyState />
-        </div>
-      ) : filteredItems.length === 0 ? (
-        // Empty State - No Items Match Filters
-        <EmptyFilterState onResetFilters={() => setIsFilterDialogOpen(true)} />
-      ) : (
-        // Feed Items
-        <div className="space-y-6">
-          <div
-            ref={containerRef}
-            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
-          >
-            <AnimatePresence>
-              {filteredItems.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  ref={(el) => {
-                    if (el) itemRefs.current[index] = el;
-                    if (index === focusedItemIndex)
-                      selectedItemRef.current = el;
-                  }}
-                  className={cn(
-                    "transition-all duration-150 ease-in-out",
-                    index === focusedItemIndex &&
-                      settings.enableKeyboardNavigation &&
-                      "ring-2 ring-primary ring-offset-2"
-                  )}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{
-                    duration: 0.2,
-                    delay: index * 0.05,
-                  }}
-                >
-                  <div id={`feed-item-${item.id}`}>
-                    <FeedCard
-                      item={item}
-                      feed={feeds.find((f) => f.id === item.feed_id)}
-                      compact={settings.compactView}
-                      onToggleRead={toggleItemRead}
-                      onToggleFavorite={toggleItemFavorite}
-                      onToggleReadLater={toggleItemReadLater}
-                      isFocused={focusedItemIndex === index}
-                    />
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
-      )}
+      {/* Klavye Kısayolları */}
+      <KeyboardShortcutsHelp
+        open={showKeyboardHelp}
+        onOpenChange={setShowKeyboardHelp}
+      />
     </div>
   );
 }

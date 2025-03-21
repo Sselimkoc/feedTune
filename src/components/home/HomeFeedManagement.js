@@ -25,17 +25,12 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
         >
           <div>
             <h2 className="text-xl font-bold mb-1">
-              {t("home.feedManagement.title") || "Beslemeleriniz"}
+              {t("home.feedManagement.title")}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {t("home.feedManagement.description") ||
-                "Takip ettiğiniz kaynaklar"}
+              {t("home.feedManagement.description")}
             </p>
           </div>
-          <Button onClick={onAddFeed} className="group" size="sm">
-            <PlusCircle className="mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
-            {t("home.feedManagement.addFeed") || "Feed Ekle"}
-          </Button>
         </motion.div>
 
         {feeds && feeds.length > 0 ? (
@@ -80,9 +75,7 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
                       <div className="mt-1 text-xs text-muted-foreground mb-3">
                         <div className="flex items-center justify-between">
                           <span className="truncate">
-                            {t("home.feedManagement.lastUpdated") ||
-                              "Son güncelleme"}
-                            :
+                            {t("home.feedManagement.lastUpdated")}:
                           </span>
                           <span className="text-right">
                             {new Date(
@@ -101,8 +94,7 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
                         asChild
                       >
                         <Link href={`/feeds?feedId=${feed.id}`}>
-                          {t("home.feedManagement.viewContent") ||
-                            "İçerikleri Gör"}
+                          {t("home.feedManagement.viewContent")}
                         </Link>
                       </Button>
 
@@ -118,10 +110,7 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
                               href={feed.site_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              title={
-                                t("home.feedManagement.websiteLink") ||
-                                "Web sitesini ziyaret et"
-                              }
+                              title={t("home.feedManagement.websiteLink")}
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
                             </Link>
@@ -133,7 +122,7 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
                           size="icon"
                           className="h-7 w-7 text-muted-foreground hover:text-destructive"
                           onClick={() => onDeleteFeed(feed.id)}
-                          title={t("common.delete") || "Sil"}
+                          title={t("common.delete")}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -165,11 +154,10 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
                       <PlusCircle className="h-5 w-5 text-primary" />
                     </div>
                     <h3 className="text-sm font-medium mb-1">
-                      {t("home.feedManagement.addFeed") || "Feed Ekle"}
+                      {t("home.feedManagement.addFeed")}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      {t("home.feedManagement.addFeedDescription") ||
-                        "Yeni bir RSS veya YouTube kaynağı ekleyin"}
+                      {t("home.feedManagement.addFeedDescription")}
                     </p>
                   </CardContent>
                 </Card>
@@ -189,16 +177,14 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
                   <Rss className="h-6 w-6 text-primary/60" />
                 </div>
                 <h3 className="text-lg font-medium mb-1">
-                  {t("home.feedManagement.noFeedsTitle") ||
-                    "Henüz feed eklenmemiş"}
+                  {t("home.feedManagement.noFeedsTitle")}
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {t("home.feedManagement.noFeeds") ||
-                    "Takip etmek istediğiniz RSS veya YouTube kaynaklarını ekleyin"}
+                  {t("home.feedManagement.noFeeds")}
                 </p>
                 <Button onClick={onAddFeed} size="sm" className="group">
                   <PlusCircle className="mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
-                  {t("home.feedManagement.addFirstFeed") || "İlk Feed'i Ekle"}
+                  {t("home.feedManagement.addFirstFeed")}
                 </Button>
               </CardContent>
             </Card>
@@ -214,10 +200,7 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
             transition={{ duration: 0.5, delay: 0.6 }}
           >
             <Button variant="outline" size="sm" asChild>
-              <Link href="/feeds">
-                {t("home.feedManagement.viewAllFeeds") ||
-                  "Tüm Feed'leri Görüntüle"}
-              </Link>
+              <Link href="/feeds">{t("home.feedManagement.viewAllFeeds")}</Link>
             </Button>
           </motion.div>
         )}

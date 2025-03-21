@@ -77,6 +77,9 @@ const FeedCardComponent = ({
         e.preventDefault();
         handleOpenLink(e);
       }}
+      role="article"
+      aria-label={item.title}
+      tabIndex={0}
     >
       <CardContent className="p-0 flex flex-col h-full">
         {/* Site Logosu/Favicon - Başlığın üstünde */}
@@ -85,7 +88,9 @@ const FeedCardComponent = ({
             <div className="relative w-8 h-8 flex-shrink-0">
               <Image
                 src={feed.site_favicon}
-                alt={feed?.title || ""}
+                alt={t("feeds.feedList.siteLogo", {
+                  site: feed?.title || t("home.recentContent.unknownSource"),
+                })}
                 width={32}
                 height={32}
                 loading="eager"
@@ -97,7 +102,13 @@ const FeedCardComponent = ({
               />
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-full bg-muted-foreground/10 flex items-center justify-center flex-shrink-0">
+            <div
+              className="w-8 h-8 rounded-full bg-muted-foreground/10 flex items-center justify-center flex-shrink-0"
+              role="img"
+              aria-label={t("feeds.feedList.siteLogo", {
+                site: feed?.title || t("home.recentContent.unknownSource"),
+              })}
+            >
               <span className="text-xs font-semibold text-muted-foreground">
                 {feed?.title?.substring(0, 2).toUpperCase() || "FT"}
               </span>
@@ -128,7 +139,9 @@ const FeedCardComponent = ({
           {item.thumbnail ? (
             <Image
               src={item.thumbnail}
-              alt={item.title || ""}
+              alt={t("feeds.feedList.contentThumbnail", {
+                title: item.title || t("home.recentContent.unknownTitle"),
+              })}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               priority={true}
@@ -137,7 +150,11 @@ const FeedCardComponent = ({
               className="object-cover"
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              role="img"
+              aria-label={t("feeds.feedList.placeholderThumbnail")}
+            >
               {feed?.site_favicon ? (
                 <Image
                   src={feed.site_favicon}
@@ -158,7 +175,11 @@ const FeedCardComponent = ({
             </div>
           )}
           {feed?.type === "youtube" && (
-            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+            <div
+              className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded"
+              role="badge"
+              aria-label={t("feeds.feedList.youtubeContent")}
+            >
               YouTube
             </div>
           )}
@@ -172,19 +193,26 @@ const FeedCardComponent = ({
               "font-semibold text-base line-clamp-2 mb-2 h-12",
               item.is_read ? "text-muted-foreground" : "text-foreground"
             )}
+            aria-label={item.title}
           >
             {item.title}
           </h3>
 
           {/* Açıklama - Sabit yükseklik */}
           {!compact && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-4 h-10">
+            <p
+              className="text-sm text-muted-foreground line-clamp-2 mb-4 h-10"
+              aria-label={t("feeds.feedList.contentDescription")}
+            >
               {stripHtml(item.description || "")}
             </p>
           )}
 
           {/* Butonlar */}
-          <div className="flex items-center gap-1 mt-auto pt-2 border-t">
+          <div
+            className="flex items-center gap-1 mt-auto pt-2 border-t"
+            role="toolbar"
+          >
             <Button
               variant="ghost"
               size="sm"

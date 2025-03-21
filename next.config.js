@@ -37,6 +37,14 @@ const nextConfig = {
 
     return config;
   },
+  async rewrites() {
+    return [
+      {
+        source: "/:locale/:path*",
+        destination: "/:path*",
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

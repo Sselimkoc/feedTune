@@ -8,6 +8,7 @@ import Image from "next/image";
 import { cn, stripHtml } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Clock, ExternalLink, BookmarkCheck, Star } from "lucide-react";
+import { i18n } from "@/i18n";
 
 export function HomeRecentContent({ recentItems }) {
   const { t } = useLanguage();
@@ -24,40 +25,31 @@ export function HomeRecentContent({ recentItems }) {
         >
           <div>
             <h2 className="text-xl font-bold mb-1">
-              {t("home.recentContent.title") || "Son İçerikler"}
+              {t("home.recentContent.title")}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {t("home.recentContent.description") ||
-                "Feed'lerinizden en son eklenen içerikler"}
+              {t("home.recentContent.description")}
             </p>
           </div>
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/feeds" className="group">
-              {t("home.recentContent.viewAllContent") ||
-                "Tüm İçerikleri Görüntüle"}
-              <ExternalLink className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-            </Link>
-          </Button>
         </motion.div>
 
         {recentItems && recentItems.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {recentItems.slice(0, 6).map((item, index) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{
+                  duration: 0.4,
+                  delay: index * 0.1,
+                  ease: "easeOut",
+                }}
               >
-                <Card
-                  className={cn(
-                    "overflow-hidden h-full bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm",
-                    "hover:shadow-md transition-all duration-300 hover:translate-y-[-2px]"
-                  )}
-                >
-                  <CardContent className="p-0 h-full flex flex-col">
-                    <Link
+                <Card className="h-full bg-card hover:bg-accent/5 transition-all duration-300 border-muted hover:shadow-md">
+                  <CardContent className="p-3 h-full flex flex-col">
+                    <a
                       href={item.link}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -80,11 +72,9 @@ export function HomeRecentContent({ recentItems }) {
                           </div>
                         )}
 
-                        {/* Kaynak etiketi */}
                         <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm text-white text-xs font-medium max-w-[70%] truncate">
                           {item.feed?.title ||
-                            t("home.recentContent.unknownSource") ||
-                            "Bilinmeyen Kaynak"}
+                            t("home.recentContent.unknownSource")}
                         </div>
                       </div>
 
@@ -95,19 +85,23 @@ export function HomeRecentContent({ recentItems }) {
                             <span className="truncate">
                               {item.timeAgoData
                                 ? item.timeAgoData.isJustNow
-                                  ? t("timeAgo.justNow") || "Az önce"
-                                  : item.timeAgoData.value === 1
-                                  ? t(`timeAgo.${item.timeAgoData.unit}_one`) ||
-                                    "1 dk önce"
+                                  ? t("home.recentContent.timeAgo.justNow")
                                   : t(
-                                      `timeAgo.${item.timeAgoData.unit}_other`,
+                                      `home.recentContent.timeAgo.${item.timeAgoData.unit}sAgo`,
                                       {
                                         count: item.timeAgoData.value,
                                       }
-                                    ) || `${item.timeAgoData.value} dk önce`
+                                    )
                                 : new Date(
                                     item.published_at
-                                  ).toLocaleDateString()}
+                                  ).toLocaleDateString(
+                                    i18n.language === "tr" ? "tr-TR" : "en-US",
+                                    {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                    }
+                                  )}
                             </span>
                           </div>
                         </div>
@@ -120,49 +114,19 @@ export function HomeRecentContent({ recentItems }) {
                           {stripHtml(item.description || "")}
                         </p>
                       </div>
-                    </Link>
+                    </a>
 
                     <div className="p-3 pt-0 mt-auto">
                       <div className="flex items-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 h-7 text-xs group"
-                          asChild
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full h-7 text-xs group inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                         >
-                          <Link
-                            href={item.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {t("home.recentContent.read") || "Oku"}
-                            <ExternalLink className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" />
-                          </Link>
-                        </Button>
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-amber-500"
-                          title={
-                            t("feeds.feedList.addToFavorites") ||
-                            "Favorilere ekle"
-                          }
-                        >
-                          <Star className="h-3.5 w-3.5" />
-                        </Button>
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-emerald-500"
-                          title={
-                            t("feeds.feedList.addToReadLater") ||
-                            "Okuma listesine ekle"
-                          }
-                        >
-                          <BookmarkCheck className="h-3.5 w-3.5" />
-                        </Button>
+                          {t("home.recentContent.read")}
+                          <ExternalLink className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" />
+                        </a>
                       </div>
                     </div>
                   </CardContent>
@@ -175,26 +139,22 @@ export function HomeRecentContent({ recentItems }) {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            transition={{
+              duration: 0.4,
+              ease: "easeOut",
+            }}
           >
-            <Card className="text-center p-6 bg-card/50 backdrop-blur-sm border-primary/10">
+            <Card className="text-center p-6 bg-card/50 backdrop-blur-sm border-primary/10 hover:shadow-md transition-all duration-300">
               <CardContent className="pt-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                   <Clock className="h-6 w-6 text-primary/60" />
                 </div>
                 <h3 className="text-lg font-medium mb-1">
-                  {t("home.recentContent.noContentTitle") || "Henüz içerik yok"}
+                  {t("home.recentContent.noContentTitle")}
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {t("home.recentContent.noContent") ||
-                    "Feed'lerinizden içerikler burada görünecek"}
+                  {t("home.recentContent.noContent")}
                 </p>
-                <Button asChild size="sm">
-                  <Link href="/feeds">
-                    {t("home.feedManagement.viewAllFeeds") ||
-                      "Feed'leri Görüntüle"}
-                  </Link>
-                </Button>
               </CardContent>
             </Card>
           </motion.div>

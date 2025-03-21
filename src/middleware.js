@@ -9,6 +9,12 @@ export async function middleware(req) {
     data: { session },
   } = await supabase.auth.getSession();
 
+  // Harici URL'leri kontrol et
+  const url = req.nextUrl.clone();
+  if (url.pathname.startsWith("/http")) {
+    return NextResponse.redirect(url.pathname.slice(1));
+  }
+
   // Korumalı rotalar
   const protectedRoutes = ["/settings", "/feeds", "/favorites"];
   const isProtectedRoute = protectedRoutes.some((route) =>

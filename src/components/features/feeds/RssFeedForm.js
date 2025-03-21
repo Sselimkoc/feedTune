@@ -97,34 +97,7 @@ export default function RssFeedForm({
 
   // initialQuery değiştiğinde otomatik olarak preview başlat
   useEffect(() => {
-    console.log("[RssFeedForm] initialQuery değişti:", initialQuery);
-
-    if (!initialQuery) {
-      console.log("[RssFeedForm] initialQuery boş, önizleme yapılmıyor");
-      return;
-    }
-
-    // URL'yi state'e kaydet
-    setUrl(initialQuery);
-    console.log("[RssFeedForm] url güncellendi:", initialQuery);
-
-    // URL validasyonu
-    const validationError = validateUrl(initialQuery);
-    if (validationError) {
-      console.log("[RssFeedForm] initialQuery geçersiz URL:", validationError);
-      setError(validationError);
-      return;
-    } else {
-      setError("");
-    }
-
-    // Eğer parent bileşen preview modundaysa otomatik olarak preview başlat
-    if (isParentPreviewMode && initialQuery) {
-      console.log(
-        "[RssFeedForm] Parent preview modunda ve query var, önizleme başlatılıyor"
-      );
-
-      // State güncellemesinin tamamlanmasını sağla
+    if (initialQuery && isParentPreviewMode) {
       const timer = setTimeout(() => {
         handlePreview();
       }, 300);
@@ -138,30 +111,20 @@ export default function RssFeedForm({
       const currentUrl = url.trim();
 
       if (!currentUrl) {
-        console.log("[RssFeedForm] URL boş, önizleme yapılmıyor");
         return;
       }
 
       // URL validasyonu
       const validationError = validateUrl(currentUrl);
       if (validationError) {
-        console.log("[RssFeedForm] URL geçersiz:", validationError);
         setError(validationError);
         return;
       }
 
-      console.log("[RssFeedForm] RSS önizleme başlatılıyor:", currentUrl);
-
-      // ÖNEMLİ: ÖNCE parent'a bildir - bu çok önemli
-      if (onPreviewModeChange) {
-        console.log("[RssFeedForm] onPreviewModeChange(true) çağrılıyor");
-        onPreviewModeChange(true);
-        console.log("[RssFeedForm] onPreviewModeChange(true) tamamlandı");
+      // Eğer parent bileşen preview modundaysa otomatik olarak preview başlat
+      if (isParentPreviewMode && currentUrl) {
+        setIsPreview(true);
       }
-
-      // SONRA kendi state'imizi güncelleyelim (API çağrısından ÖNCE)
-      setIsPreview(true);
-      console.log("[RssFeedForm] isPreview state true olarak güncellendi");
 
       // Yükleme durumunu güncelle
       setIsSubmitting(true);
@@ -192,29 +155,18 @@ export default function RssFeedForm({
           timeoutPromise,
         ]);
 
-        console.log("[RssFeedForm] parseRssFeed yanıtı alındı:", {
-          dataKeys: data ? Object.keys(data) : "Veri yok",
-          feedTitle: data?.feed?.title || "başlık yok",
-          itemCount: data?.items?.length || 0,
-        });
-
         // Veri geldiyse kontrol et ve güvenli bir şekilde kullan
         if (data && data.feed) {
           // Başarılı yanıt geldiğinde önizleme verilerini ayarla
           setPreviewData(data);
-          console.log("[RssFeedForm] Önizleme verileri güncellendi");
         } else {
           // Veri API'den geldi ama geçersiz
-          console.error("[RssFeedForm] Geçersiz API yanıtı:", data);
           toast.error("Besleme bilgisi alınamadı. Lütfen tekrar deneyin.");
           setPreviewData(fallbackData);
         }
 
         // Önizleme modunu korumaya devam et
         if (!isPreview) {
-          console.log(
-            "[RssFeedForm] isPreview false durumuna geçmiş, tekrar true yapılıyor"
-          );
           setIsPreview(true);
 
           // Parent'a tekrar bildirelim
@@ -223,8 +175,6 @@ export default function RssFeedForm({
           }
         }
       } catch (error) {
-        console.error("[RssFeedForm] API/Ağ hatası:", error.message);
-
         // Hata türünü belirle ve özel mesajlar oluştur
         let errorMessage = "";
         let errorType = "generic";
@@ -294,7 +244,6 @@ export default function RssFeedForm({
         }
       }
     } catch (error) {
-      console.error("[RssFeedForm] Beklenmeyen genel hata:", error);
       toast.error("Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.");
 
       // Önizleme modunu koruyalım
@@ -316,41 +265,17 @@ export default function RssFeedForm({
     syncCallback
   ) => {
     useEffect(() => {
-      console.log(
-        "[RssFeedForm] usePreviewEffectSync - State karşılaştırması:",
-        {
-          isLocalPreview,
-          parentPreviewMode,
-          areDifferent: isLocalPreview !== parentPreviewMode,
-        }
-      );
-
-      // KRİTİK: Parent bileşen Preview modundayken, bizim de Preview moduna geçmemiz gerekir
       if (parentPreviewMode && !isLocalPreview) {
-        console.log(
-          "[RssFeedForm] Parent preview modunda, yerel state güncelleniyor"
-        );
         setIsPreview(true);
         return;
       }
 
-      // Parent preview modunda değilken bizimki preview modundaysa, parent'ı güncelle
       if (!parentPreviewMode && isLocalPreview) {
-        console.log(
-          "[RssFeedForm] Parent preview modundan çıktı, yerel modun da çıkması gerekiyor"
-        );
-        // Bu durumda parent'ı değil kendi state'imizi güncelleyelim
-        // Çünkü önce parent'tan tetiklenen bir değişiklik geldi
         setIsPreview(false);
         return;
       }
 
-      // Eğer yerel state'imiz doğrudan setIsPreview ile değiştiyse ve parent state ile uyuşmuyorsa
-      // parent'ı güncellememiz gerekir (ancak bunu sadece onPreviewModeChange varsa yaparız)
       if (isLocalPreview !== parentPreviewMode && syncCallback) {
-        console.log(
-          `[RssFeedForm] Parent bileşene ${isLocalPreview} durumu bildiriliyor`
-        );
         syncCallback(isLocalPreview);
       }
     }, [isLocalPreview, parentPreviewMode, syncCallback]);
@@ -416,7 +341,6 @@ export default function RssFeedForm({
       // Başarı bildirimini gösterme işlemi useRssFeeds hook'unda yapılıyor
       onSuccess?.();
     } catch (error) {
-      console.error("RSS besleme ekleme hatası:", error);
       toast.error(error.message || t("feeds.addRssFeed.error"));
     } finally {
       setIsSubmitting(false);
@@ -457,15 +381,6 @@ export default function RssFeedForm({
       // Sadece kaydırma pozisyonunu güncelle
       setScrollPosition(scrollLeft);
       setMaxScrollPosition(scrollWidth - clientWidth);
-
-      // Debug log
-      console.log("[RssFeedForm] Scroll pozisyonu:", {
-        scrollLeft,
-        maxScroll: scrollWidth - clientWidth,
-        scrollEnd: scrollWidth - scrollLeft - clientWidth,
-        atStart: scrollLeft <= 15,
-        atEnd: scrollWidth - scrollLeft - clientWidth <= 15,
-      });
     };
 
     const articlesRow = articlesRowRef.current;
@@ -477,14 +392,6 @@ export default function RssFeedForm({
       const { scrollWidth, clientWidth, scrollLeft } = articlesRow;
       setMaxScrollPosition(scrollWidth - clientWidth);
       setScrollPosition(scrollLeft);
-
-      // İlk durumu logla
-      console.log("[RssFeedForm] İlk scroll durumu:", {
-        scrollLeft,
-        maxScroll: scrollWidth - clientWidth,
-        contentWidth: scrollWidth,
-        containerWidth: clientWidth,
-      });
     }
 
     return () => {
@@ -501,10 +408,6 @@ export default function RssFeedForm({
     if (articlesRowRef.current) {
       const { scrollWidth, clientWidth } = articlesRowRef.current;
       setMaxScrollPosition(scrollWidth - clientWidth);
-      console.log(
-        "[RssFeedForm] MaxScrollPosition güncellendi:",
-        scrollWidth - clientWidth
-      );
     }
   }, [visibleArticles, previewData?.items]);
 
@@ -515,13 +418,6 @@ export default function RssFeedForm({
         const { scrollWidth, clientWidth, scrollLeft } = articlesRowRef.current;
         setMaxScrollPosition(scrollWidth - clientWidth);
         setScrollPosition(scrollLeft);
-        console.log(
-          "[RssFeedForm] Resize sonrası scroll pozisyonu güncellendi:",
-          {
-            scrollLeft,
-            maxScroll: scrollWidth - clientWidth,
-          }
-        );
       }
     };
 
@@ -561,36 +457,21 @@ export default function RssFeedForm({
 
     // Fare tekerleği olayını tüm dokümana ekle
     document.addEventListener("wheel", handleWheel, { passive: false });
-    console.log("[RssFeedForm] Wheel olay dinleyicisi tüm dokümana eklendi");
 
     return () => {
       document.removeEventListener("wheel", handleWheel);
-      console.log(
-        "[RssFeedForm] Wheel olay dinleyicisi tüm dokümandan kaldırıldı"
-      );
     };
   }, []);
 
   // Ana render metodu
   return (
     <div>
-      {console.log("[RssFeedForm] Render ediliyor, state:", {
-        isPreview,
-        hasPreviewData: !!previewData,
-        url,
-        isSubmitting,
-      })}
-
       {isPreview ? (
         <div>
-          {console.log(
-            "[RssFeedForm] Önizleme içeriği render ediliyor, previewData:",
-            previewData ? `Mevcut - Besleme: ${previewData.feed?.title}` : "Yok"
-          )}
           {isSubmitting ? (
             <div className="p-4 sm:p-6 py-8 flex flex-col items-center justify-center space-y-5 text-center border rounded-lg bg-background/50">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
-              <div>
+                <div>
                 <h3 className="text-lg font-medium">Besleme Yükleniyor</h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   RSS besleme verileri alınıyor, lütfen bekleyin...
@@ -623,124 +504,124 @@ export default function RssFeedForm({
                     Aramaya Dön
                   </Button>
 
-                  <Button
+                      <Button
                     onClick={() => handlePreview()}
                     className="bg-red-600 hover:bg-red-700 text-white"
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Tekrar Dene
-                  </Button>
+                      </Button>
                 </div>
               </div>
-            </div>
-          ) : (
+        </div>
+      ) : (
             <>
-              {/* RSS Besleme Önizleme - Ana Kart */}
-              <Card className="bg-card border-muted shadow-sm mb-5 w-full overflow-hidden">
-                <CardContent className="pt-4 pb-4 sm:pt-6 sm:pb-6">
-                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-5">
-                    <div className="flex-shrink-0 flex justify-center sm:block">
-                      {previewData?.feed?.favicon ? (
-                        <img
-                          src={previewData.feed.favicon}
-                          alt={previewData.feed.title || "RSS Besleme"}
-                          className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg object-cover border border-muted"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = DEFAULT_FAVICON;
-                          }}
-                        />
-                      ) : (
-                        <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg bg-orange-100 flex items-center justify-center">
-                          <Rss className="w-8 h-8 sm:w-12 sm:h-12 text-orange-500" />
-                        </div>
-                      )}
+          {/* RSS Besleme Önizleme - Ana Kart */}
+          <Card className="bg-card border-muted shadow-sm mb-5 w-full overflow-hidden">
+            <CardContent className="pt-4 pb-4 sm:pt-6 sm:pb-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-5">
+                <div className="flex-shrink-0 flex justify-center sm:block">
+                  {previewData?.feed?.favicon ? (
+                    <img
+                      src={previewData.feed.favicon}
+                      alt={previewData.feed.title || "RSS Besleme"}
+                      className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg object-cover border border-muted"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = DEFAULT_FAVICON;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg bg-orange-100 flex items-center justify-center">
+                      <Rss className="w-8 h-8 sm:w-12 sm:h-12 text-orange-500" />
                     </div>
-                    <div className="flex-1 space-y-2 sm:space-y-3 overflow-hidden">
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-medium text-center sm:text-left truncate">
-                          {previewData?.feed?.title || "İsimsiz Besleme"}
-                        </h3>
-                        {previewData?.feed?.link && (
-                          <div className="flex items-center justify-center sm:justify-start mt-1 sm:mt-2">
-                            <a
-                              href={previewData.feed.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs sm:text-sm text-muted-foreground hover:text-primary flex items-center gap-1 truncate max-w-full"
-                            >
-                              <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                              <span className="truncate">
-                                {previewData.feed.link}
-                              </span>
-                            </a>
-                          </div>
-                        )}
+                  )}
+                </div>
+                <div className="flex-1 space-y-2 sm:space-y-3 overflow-hidden">
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-medium text-center sm:text-left truncate">
+                      {previewData?.feed?.title || "İsimsiz Besleme"}
+                    </h3>
+                    {previewData?.feed?.link && (
+                      <div className="flex items-center justify-center sm:justify-start mt-1 sm:mt-2">
+                        <a
+                          href={previewData.feed.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs sm:text-sm text-muted-foreground hover:text-primary flex items-center gap-1 truncate max-w-full"
+                        >
+                          <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                          <span className="truncate">
+                            {previewData.feed.link}
+                          </span>
+                        </a>
                       </div>
-                      <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 text-center sm:text-left max-w-full">
-                        {previewData?.feed?.description || "Açıklama yok"}
-                      </p>
+                    )}
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 text-center sm:text-left max-w-full">
+                    {previewData?.feed?.description || "Açıklama yok"}
+                  </p>
 
-                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 space-x-0 sm:space-x-2 pt-1 sm:pt-2 items-center sm:items-start">
-                        {previewData?.feed?.language && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] sm:text-xs py-1 sm:py-1.5 whitespace-nowrap"
-                          >
-                            {previewData.feed.language.toUpperCase()}
-                          </Badge>
-                        )}
-                        {previewData?.feed?.lastBuildDate && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] sm:text-xs py-1 sm:py-1.5 whitespace-nowrap"
-                          >
-                            <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 space-x-0 sm:space-x-2 pt-1 sm:pt-2 items-center sm:items-start">
+                    {previewData?.feed?.language && (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] sm:text-xs py-1 sm:py-1.5 whitespace-nowrap"
+                      >
+                        {previewData.feed.language.toUpperCase()}
+                      </Badge>
+                    )}
+                    {previewData?.feed?.lastBuildDate && (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] sm:text-xs py-1 sm:py-1.5 whitespace-nowrap"
+                      >
+                        <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                             {t("feeds.lastUpdated", {
                               date: formatDate(previewData.feed.lastBuildDate),
                             })}
-                          </Badge>
-                        )}
+                      </Badge>
+                    )}
 
-                        <Button
-                          className="sm:ml-auto flex-shrink-0 w-full sm:w-auto"
-                          variant="default"
-                          size="sm"
-                          disabled={isAddingRssFeed}
-                          onClick={handleAddFeed}
-                        >
-                          {isAddingRssFeed ? (
-                            <>
-                              <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
-                              Ekleniyor...
-                            </>
-                          ) : (
-                            <>
-                              <Check className="mr-1.5 h-3 w-3" />
-                              Beslemeyi Ekle
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
+                    <Button
+                      className="sm:ml-auto flex-shrink-0 w-full sm:w-auto"
+                      variant="default"
+                      size="sm"
+                      disabled={isAddingRssFeed}
+                      onClick={handleAddFeed}
+                    >
+                      {isAddingRssFeed ? (
+                        <>
+                          <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                          Ekleniyor...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-1.5 h-3 w-3" />
+                          Beslemeyi Ekle
+                        </>
+                      )}
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-              {/* Son Makaleler - Kaydırmalı Görünüm */}
-              {previewData?.items && previewData.items.length > 0 && (
+          {/* Son Makaleler - Kaydırmalı Görünüm */}
+          {previewData?.items && previewData.items.length > 0 && (
                 <Card
                   className={cn(
                     "bg-card border-muted shadow-sm",
                     styles.articlesContainer
                   )}
                 >
-                  <CardContent className="py-3 sm:py-4">
+              <CardContent className="py-3 sm:py-4">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-1 sm:gap-2">
-                        <h4 className="text-sm sm:text-base font-medium">
-                          Son Makaleler
-                        </h4>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <h4 className="text-sm sm:text-base font-medium">
+                      Son Makaleler
+                    </h4>
                         <Badge variant="secondary" className="ml-2">
                           {t("feeds.articleCount", {
                             count: previewData.items.length,
@@ -792,8 +673,8 @@ export default function RssFeedForm({
                       <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background/80 to-transparent z-10 pointer-events-none"></div>
                       <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background/80 to-transparent z-10 pointer-events-none"></div>
 
-                      <div
-                        ref={articlesRowRef}
+                <div
+                  ref={articlesRowRef}
                         className={cn(
                           styles.articleScroller,
                           "rounded-lg border border-dashed border-muted hover:border-muted-foreground/50 transition-colors duration-200 py-2"
@@ -809,19 +690,19 @@ export default function RssFeedForm({
                             className="flex-shrink-0 w-full snap-start"
                           >
                             <div className={styles.articleContainer}>
-                              {previewData.items
+                  {previewData.items
                                 .slice(
                                   pageIndex * 3,
                                   Math.min((pageIndex + 1) * 3, visibleArticles)
                                 )
-                                .map((item, index) => (
-                                  <div
+                    .map((item, index) => (
+                      <div
                                     key={item.id || `${pageIndex}-${index}`}
-                                    className={styles.articleItem}
-                                  >
-                                    <ArticleCard item={item} />
-                                  </div>
-                                ))}
+                        className={styles.articleItem}
+                      >
+                        <ArticleCard item={item} />
+                      </div>
+                    ))}
                             </div>
                           </div>
                         ))}
@@ -878,7 +759,7 @@ export default function RssFeedForm({
                         <span className="sr-only">Temizle</span>
                       </Button>
                     )}
-                  </div>
+                    </div>
                   {error ? (
                     <p className="text-xs text-destructive mt-1.5">{error}</p>
                   ) : (
@@ -905,9 +786,9 @@ export default function RssFeedForm({
                     </>
                   )}
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            </Card>
         </div>
       )}
     </div>
