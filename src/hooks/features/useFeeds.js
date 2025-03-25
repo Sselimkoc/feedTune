@@ -234,12 +234,9 @@ export function useFeeds() {
     isDeleting: feedOperations.isDeleting,
 
     // Öğe işlemleri
-    toggleItemRead: (itemId, isRead) =>
-      feedItems.toggleItemRead({ itemId, isRead, userId: user?.id }),
-    toggleItemFavorite: (itemId, isFavorite) =>
-      feedItems.toggleItemFavorite({ itemId, isFavorite, userId: user?.id }),
-    toggleItemReadLater: (itemId, isReadLater) =>
-      feedItems.toggleItemReadLater({ itemId, isReadLater, userId: user?.id }),
+    toggleItemRead: (params) => feedItems.toggleItemRead(params),
+    toggleItemFavorite: (params) => feedItems.toggleItemFavorite(params),
+    toggleItemReadLater: (params) => feedItems.toggleItemReadLater(params),
     isTogglingRead: feedItems.isTogglingRead,
     isTogglingFavorite: feedItems.isTogglingFavorite,
     isTogglingReadLater: feedItems.isTogglingReadLater,

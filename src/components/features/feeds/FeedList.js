@@ -37,6 +37,11 @@ import {
   X,
   PlusCircle,
   Rss,
+  LayoutGrid,
+  LayoutList,
+  RefreshCw,
+  SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import { FilterDialog } from "./FilterDialog";
 import { Button } from "@/components/ui/button";
@@ -45,10 +50,12 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useQueryClient } from "@tanstack/react-query";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import Image from "next/image";
-import { RssIcon, Tag } from "lucide-react";
+import { RssIcon, Tag, KeyboardIcon, Youtube } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { KeyboardIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Constants
 const ITEMS_PER_PAGE = 10;
@@ -75,11 +82,23 @@ export function FeedList() {
     setSelectedFeedId,
     filters,
     setFilters,
+    toggleCompactMode,
   } = useFeedStore();
   const { settings } = useSettingsStore();
   const queryClient = useQueryClient();
   const supabase = createClientComponentClient();
   const { t, language } = useLanguage();
+
+  // Varsayılan filtreler - setFilters için gereken reset değeri
+  const defaultFilters = {
+    sortBy: "newest",
+    showRead: true,
+    showUnread: true,
+    feedTypes: {
+      rss: true,
+      youtube: true,
+    },
+  };
 
   // State management
   const [focusedItemIndex, setFocusedItemIndex] = useState(0);
@@ -87,13 +106,14 @@ export function FeedList() {
   const itemRefs = useRef({});
   const containerRef = useRef(null);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("all");
 
   // References
   const listRef = useRef(null);
   const selectedItemRef = useRef(null);
 
-  // Seçili feed ID'leri için yeni state
+  // Seçili feed ID'leri için state
   const [selectedFeedIds, setSelectedFeedIds] = useState([]);
 
   // Memoized values
@@ -101,6 +121,13 @@ export function FeedList() {
     if (!items || items.length === 0) return [];
 
     let result = [...items];
+
+    // Sekmeler için filtre ekle
+    if (selectedTab === "unread") {
+      result = result.filter((item) => !item.is_read);
+    } else if (selectedTab === "favorites") {
+      result = result.filter((item) => item.is_favorite);
+    }
 
     // Seçili feed ID'lere göre filtrele
     if (selectedFeedIds.length > 0) {
@@ -174,7 +201,7 @@ export function FeedList() {
     }
 
     return result;
-  }, [items, feeds, selectedFeedIds, filters]);
+  }, [items, feeds, selectedFeedIds, filters, selectedTab]);
 
   // Load data when user changes
   useEffect(() => {
@@ -283,6 +310,11 @@ export function FeedList() {
             );
           }
           break;
+        case "r":
+          // İçeriği yenile
+          e.preventDefault();
+          handleRefresh();
+          break;
         case "?":
           // Klavye kısayolları yardımını göster
           e.preventDefault();
@@ -354,7 +386,7 @@ export function FeedList() {
       });
 
       if (typeof toggleItemRead === "function") {
-        toggleItemRead({ itemId, isRead });
+        toggleItemRead(itemId, isRead);
       } else {
         console.error("toggleItemRead is not a function");
 
@@ -391,7 +423,7 @@ export function FeedList() {
       });
 
       if (typeof toggleItemFavorite === "function") {
-        toggleItemFavorite({ itemId, isFavorite });
+        toggleItemFavorite(itemId, isFavorite);
       } else {
         console.error("toggleItemFavorite is not a function");
 
@@ -430,7 +462,7 @@ export function FeedList() {
       if (typeof toggleItemReadLater === "function") {
         console.log("toggleItemReadLater function exists, calling it now");
         try {
-          toggleItemReadLater({ itemId, isReadLater });
+          toggleItemReadLater(itemId, isReadLater);
         } catch (error) {
           console.error("Error calling toggleItemReadLater:", error);
 
@@ -467,7 +499,7 @@ export function FeedList() {
       window.open(link, "_blank");
       // Automatically mark as read when opened
       if (itemId && typeof toggleItemRead === "function") {
-        toggleItemRead({ itemId, isRead: true });
+        toggleItemRead(itemId, true);
       }
     },
     [toggleItemRead]
@@ -513,141 +545,304 @@ export function FeedList() {
     [filters, setFilters]
   );
 
+  // Veri yenileme işlemi
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast.success(t("feeds.refreshSuccess"));
+    } catch (error) {
+      toast.error(t("feeds.refreshError"));
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Kart Layout Hesaplama
+  const cardLayoutClass = useMemo(() => {
+    if (compactMode) {
+      return "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3";
+    } else {
+      return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4";
+    }
+  }, [compactMode]);
+
   // Render
   return (
     <div
-      className="container py-6 space-y-6"
+      className="container max-w-[1600px] py-6 space-y-6"
       role="feed"
-      aria-label={t("feeds.feedList.title")}
+      aria-label={t("feeds.feedList.contentList")}
     >
-      {/* Filtre ve Sıralama Araçları */}
-      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Feed Seçici */}
-          <Select
-            value={
-              selectedFeedIds.length === 0 ? "all" : selectedFeedIds.join(",")
-            }
-            onValueChange={(value) => {
-              if (value === "all") {
-                setSelectedFeedIds([]);
-              } else {
-                setSelectedFeedIds(value.split(","));
+      {/* Üst Bilgi Çubuğu */}
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md p-3 rounded-xl border shadow-sm">
+        <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Feed Seçici */}
+            <Select
+              value={
+                selectedFeedIds.length === 0 ? "all" : selectedFeedIds.join(",")
               }
-            }}
-            aria-label={t("feeds.feedList.selectFeeds")}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder={t("feeds.feedList.allFeeds")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {t("feeds.feedList.allFeeds")}
-              </SelectItem>
-              {feeds.map((feed) => (
-                <SelectItem key={feed.id} value={feed.id}>
+              onValueChange={(value) => {
+                if (value === "all") {
+                  setSelectedFeedIds([]);
+                } else {
+                  setSelectedFeedIds(value.split(","));
+                }
+              }}
+            >
+              <SelectTrigger className="w-[200px] h-9">
+                <SelectValue placeholder={t("feeds.feedList.allFeeds")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
                   <div className="flex items-center gap-2">
-                    {feed.site_favicon ? (
-                      <Image
-                        src={feed.site_favicon}
-                        alt={t("feeds.feedList.siteLogo", { site: feed.title })}
-                        width={16}
-                        height={16}
-                        className="rounded-sm"
-                      />
-                    ) : (
-                      <RssIcon className="h-4 w-4" />
-                    )}
-                    <span>{feed.title}</span>
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span>{t("feeds.feedList.allFeeds")}</span>
                   </div>
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
-          {/* Filtre Butonu */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsFilterDialogOpen(true)}
-            className="flex items-center gap-1.5"
-            aria-label={t("feeds.feedList.openFilters")}
-          >
-            <Filter className="h-4 w-4" />
-            <span>{t("feeds.feedList.filters")}</span>
-            {Object.values(filters).some((value) =>
-              typeof value === "object"
-                ? Object.values(value).some((v) => !v)
-                : !value
-            ) && (
-              <Badge variant="secondary" className="ml-1">
-                {t("feeds.feedList.activeFilters")}
-              </Badge>
-            )}
-          </Button>
+                {feeds && feeds.length > 0 ? (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                      RSS Beslemeleri
+                    </div>
+                    {feeds
+                      .filter((feed) => feed.type === "rss")
+                      .map((feed) => (
+                        <SelectItem key={feed.id} value={feed.id}>
+                          <div className="flex items-center gap-2">
+                            {feed.site_favicon ? (
+                              <Image
+                                src={feed.site_favicon}
+                                alt=""
+                                width={16}
+                                height={16}
+                                className="rounded-sm"
+                                unoptimized={true}
+                              />
+                            ) : (
+                              <Rss className="h-4 w-4 text-orange-500" />
+                            )}
+                            <span className="truncate">{feed.title}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
 
-          {/* Klavye Kısayolları */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowKeyboardHelp(true)}
-            className="flex items-center gap-1.5"
-            aria-label={t("feeds.feedList.openKeyboardShortcuts")}
-          >
-            <KeyboardIcon className="h-4 w-4" />
-            <span>{t("feeds.feedList.keyboardShortcuts")}</span>
-          </Button>
+                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                      YouTube Kanalları
+                    </div>
+                    {feeds
+                      .filter((feed) => feed.type === "youtube")
+                      .map((feed) => (
+                        <SelectItem key={feed.id} value={feed.id}>
+                          <div className="flex items-center gap-2">
+                            {feed.site_favicon ? (
+                              <Image
+                                src={feed.site_favicon}
+                                alt=""
+                                width={16}
+                                height={16}
+                                className="rounded-full"
+                                unoptimized={true}
+                              />
+                            ) : (
+                              <Youtube className="h-4 w-4 text-red-500" />
+                            )}
+                            <span className="truncate">{feed.title}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </>
+                ) : null}
+              </SelectContent>
+            </Select>
+
+            {/* Yenile Butonu */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="h-9"
+            >
+              <RefreshCw
+                className={cn("h-4 w-4 mr-1", isRefreshing && "animate-spin")}
+              />
+              <span>
+                {isRefreshing ? t("feeds.refreshing") : t("feeds.refresh")}
+              </span>
+            </Button>
+
+            {/* Filtre Butonu */}
+            <Button
+              variant={activeFilterCount > 0 ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setIsFilterDialogOpen(true)}
+              className="h-9"
+            >
+              <SlidersHorizontal className="h-4 w-4 mr-1" />
+              <span>{t("feeds.feedList.filters")}</span>
+              {activeFilterCount > 0 && (
+                <Badge variant="primary" className="ml-1 h-5 min-w-5 px-1">
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+
+            {/* Klavye Kısayolları */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowKeyboardHelp(true)}
+              className="h-9"
+            >
+              <KeyboardIcon className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">
+                {t("feeds.feedList.keyboardShortcuts")}
+              </span>
+            </Button>
+          </div>
+
+          {/* Sağ Taraf Butonları */}
+          <div className="flex-shrink-0 flex items-center gap-2">
+            {/* Görünüm Modu Değiştirici */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleCompactMode}
+              className="h-9"
+              title={
+                compactMode
+                  ? t("feeds.feedList.normalView")
+                  : t("feeds.feedList.compactView")
+              }
+            >
+              {compactMode ? (
+                <LayoutList className="h-4 w-4 mr-1" />
+              ) : (
+                <LayoutGrid className="h-4 w-4 mr-1" />
+              )}
+              <span className="hidden sm:inline">
+                {compactMode
+                  ? t("feeds.feedList.normalView")
+                  : t("feeds.feedList.compactView")}
+              </span>
+            </Button>
+
+            {/* Feed Ekle Butonu */}
+            <AddFeedButton />
+          </div>
         </div>
 
-        {/* Feed Ekle Butonu */}
-        <AddFeedButton />
+        {/* Sekme Seçicisi */}
+        <div className="mt-3">
+          <Tabs
+            value={selectedTab}
+            onValueChange={setSelectedTab}
+            className="w-full"
+          >
+            <TabsList className="grid grid-cols-3 max-w-[400px]">
+              <TabsTrigger value="all" className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Tümü</span>
+                {items && (
+                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1">
+                    {items.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="unread" className="flex items-center gap-1.5">
+                <EyeOff className="h-3.5 w-3.5" />
+                <span>Okunmamış</span>
+                {items && (
+                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1">
+                    {items.filter((item) => !item.is_read).length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="favorites"
+                className="flex items-center gap-1.5"
+              >
+                <Star className="h-3.5 w-3.5" />
+                <span>Favoriler</span>
+                {items && (
+                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1">
+                    {items.filter((item) => item.is_favorite).length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
-      {/* İçerik Listesi */}
+      {/* Feed İçeriği */}
       {isLoading ? (
-        <div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
-          role="status"
-          aria-label={t("common.loading")}
-        >
-          {Array(6)
+        /* Yükleme durumu için gelişmiş iskelet animasyonu */
+        <div className={cardLayoutClass}>
+          {Array(12)
             .fill(null)
             .map((_, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="h-[400px] rounded-lg bg-muted animate-pulse"
-                aria-hidden="true"
-              />
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
+              >
+                <Card className="h-full overflow-hidden">
+                  <div className="aspect-video bg-muted-foreground/10 relative">
+                    <div className="absolute inset-0 skeleton-wave"></div>
+                  </div>
+                  <CardContent className="p-3">
+                    <Skeleton className="h-5 w-full mb-2" />
+                    <Skeleton className="h-5 w-3/4 mb-3" />
+
+                    <div className="flex items-center gap-2 mb-3">
+                      <Skeleton className="h-4 w-4 rounded-full" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+
+                    <div className="pt-2 border-t flex gap-2 mt-2">
+                      <Skeleton className="h-6 w-6 rounded-md" />
+                      <Skeleton className="h-6 w-6 rounded-md" />
+                      <Skeleton className="h-6 w-6 rounded-md" />
+                      <div className="flex-1"></div>
+                      <Skeleton className="h-6 w-6 rounded-md" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
         </div>
-      ) : filteredItems.length > 0 ? (
-        <div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
-          role="feed"
-          aria-label={t("feeds.feedList.contentList")}
-        >
+      ) : filteredItems && filteredItems.length > 0 ? (
+        /* Içerik kartları */
+        <div className={cardLayoutClass}>
           <AnimatePresence mode="popLayout">
             {filteredItems.map((item, index) => (
               <motion.div
                 key={item.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.2 }}
+                layout="position"
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 25,
+                  delay: Math.min(index * 0.04, 0.5),
+                }}
                 id={`feed-item-${item.id}`}
+                className="h-full"
               >
                 <FeedCard
                   item={item}
-                  feed={feeds.find((f) => f.id === item.feed_id)}
+                  feed={feeds && feeds.find((f) => f.id === item.feed_id)}
                   compact={compactMode}
-                  onToggleRead={(id, value) => toggleItemRead(id, value)}
-                  onToggleFavorite={(id, value) =>
-                    toggleItemFavorite(id, value)
-                  }
-                  onToggleReadLater={(id, value) =>
-                    toggleItemReadLater(id, value)
-                  }
+                  onToggleRead={handleToggleRead}
+                  onToggleFavorite={handleToggleFavorite}
+                  onToggleReadLater={handleToggleReadLater}
                   isFocused={focusedItemIndex === index}
                 />
               </motion.div>
@@ -660,10 +855,10 @@ export function FeedList() {
 
       {/* Filtre Dialog */}
       <FilterDialog
-        open={isFilterDialogOpen}
+        isOpen={isFilterDialogOpen}
         onOpenChange={setIsFilterDialogOpen}
         filters={filters}
-        onFiltersChange={setFilters}
+        onApplyFilters={setFilters}
       />
 
       {/* Klavye Kısayolları */}
@@ -674,106 +869,156 @@ export function FeedList() {
     </div>
   );
 }
-// Memoized FeedCard component
-const FeedCardMemo = memo(FeedCard);
 
-// EmptyState bileşenini güncelleyelim
+// EmptyState bileşeni
 export const EmptyState = memo(function EmptyState({ onAddFeed }) {
   const { t } = useLanguage();
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="bg-primary/5 rounded-full p-6 mb-6">
-        <Rss className="h-12 w-12 text-primary" />
-      </div>
-      <h2 className="text-2xl font-bold mb-3">{t("feeds.emptyState.title")}</h2>
-      <p className="text-muted-foreground max-w-md mb-8">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col items-center justify-center py-14 px-4 text-center"
+    >
+      <motion.div
+        className="bg-primary/10 rounded-full p-8 mb-8"
+        whileHover={{ scale: 1.05 }}
+        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+      >
+        <Rss className="h-16 w-16 text-primary" />
+      </motion.div>
+
+      <h2 className="text-3xl font-bold mb-4">{t("feeds.emptyState.title")}</h2>
+      <p className="text-muted-foreground max-w-md mb-10 text-lg">
         {t("feeds.emptyState.description")}
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg w-full mb-8">
-        <div className="bg-card border rounded-lg p-4 text-left">
-          <div className="flex items-center mb-2">
-            <Rss className="h-5 w-5 text-orange-500 mr-2" />
-            <h3 className="font-medium">RSS Beslemeleri</h3>
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-lg w-full mb-10"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          visible: {
+            transition: {
+              staggerChildren: 0.1,
+            },
+          },
+        }}
+      >
+        <motion.div
+          className="bg-card border rounded-lg p-6 text-left hover:shadow-md transition-all"
+          whileHover={{ y: -5 }}
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
+        >
+          <div className="flex items-center mb-3">
+            <div className="bg-orange-100 dark:bg-orange-950/30 p-2 rounded-full mr-3">
+              <Rss className="h-6 w-6 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-medium">RSS Beslemeleri</h3>
           </div>
-          <p className="text-sm text-muted-foreground mb-3">
+          <p className="text-sm text-muted-foreground mb-5">
             Haber siteleri, bloglar ve podcast'leri takip edin
           </p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => onAddFeed("rss")}
-          >
-            <PlusCircle className="h-4 w-4 mr-1.5" />
+          <Button onClick={() => onAddFeed("rss")} className="w-full">
+            <PlusCircle className="h-4 w-4 mr-2" />
             RSS Ekle
           </Button>
-        </div>
+        </motion.div>
 
-        <div className="bg-card border rounded-lg p-4 text-left">
-          <div className="flex items-center mb-2">
-            <RssIcon className="h-5 w-5 text-red-500 mr-2" />
-            <h3 className="font-medium">YouTube Kanalları</h3>
+        <motion.div
+          className="bg-card border rounded-lg p-6 text-left hover:shadow-md transition-all"
+          whileHover={{ y: -5 }}
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
+        >
+          <div className="flex items-center mb-3">
+            <div className="bg-red-100 dark:bg-red-950/30 p-2 rounded-full mr-3">
+              <Youtube className="h-6 w-6 text-red-500" />
+            </div>
+            <h3 className="text-xl font-medium">YouTube Kanalları</h3>
           </div>
-          <p className="text-sm text-muted-foreground mb-3">
+          <p className="text-sm text-muted-foreground mb-5">
             Favori YouTube kanallarınızı takip edin
           </p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => onAddFeed("youtube")}
-          >
-            <PlusCircle className="h-4 w-4 mr-1.5" />
+          <Button onClick={() => onAddFeed("youtube")} className="w-full">
+            <PlusCircle className="h-4 w-4 mr-2" />
             Kanal Ekle
           </Button>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+      <motion.div
+        className="flex items-center justify-center gap-3 p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      >
         <KeyboardIcon className="h-4 w-4" />
         <span>
           Klavye kısayolları için{" "}
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">?</kbd> tuşuna
-          basın
+          <kbd className="px-1.5 py-0.5 text-xs font-mono bg-background border rounded">
+            ?
+          </kbd>{" "}
+          tuşuna basın
         </span>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 });
 
-// EmptyFilterState bileşenini güncelleyelim
+// EmptyFilterState bileşeni
 export const EmptyFilterState = memo(function EmptyFilterState({
   onResetFilters,
 }) {
   const { t } = useLanguage();
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="bg-yellow-50 rounded-full p-6 mb-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col items-center justify-center py-12 px-4 text-center"
+    >
+      <motion.div
+        className="bg-yellow-100 dark:bg-yellow-950/30 rounded-full p-6 mb-6"
+        whileHover={{ scale: 1.05 }}
+        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+      >
         <Filter className="h-12 w-12 text-yellow-500" />
-      </div>
+      </motion.div>
+
       <h2 className="text-2xl font-bold mb-3">
         {t("feeds.emptyFilterState.title")}
       </h2>
-      <p className="text-muted-foreground max-w-md mb-6">
+      <p className="text-muted-foreground max-w-md mb-8">
         {t("feeds.emptyFilterState.description")}
       </p>
-      <Button onClick={onResetFilters} className="mb-4">
-        <Filter className="h-4 w-4 mr-1.5" />
-        {t("feeds.emptyFilterState.resetFilters")}
-      </Button>
 
-      <div className="flex flex-col sm:flex-row items-center gap-2 p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground max-w-md">
-        <div className="flex items-center justify-center bg-background rounded-full p-2">
-          <Search className="h-4 w-4" />
+      <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+        <Button onClick={onResetFilters} className="mb-6 px-6" size="lg">
+          <Filter className="h-4 w-4 mr-2" />
+          {t("feeds.emptyFilterState.resetFilters")}
+        </Button>
+      </motion.div>
+
+      <motion.div
+        className="flex flex-col sm:flex-row items-center gap-3 p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground max-w-md"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        <div className="flex items-center justify-center bg-background rounded-full p-3">
+          <Search className="h-5 w-5 text-muted-foreground" />
         </div>
         <p className="text-center sm:text-left">
-          Filtreleri sıfırlamak, tüm beslemelerinizi ve öğelerinizi
-          görüntülemenizi sağlar.
+          Ayarladığınız filtreler sonucunda gösterilecek içerik bulunamadı.
+          Lütfen filtrelerinizi düzenleyin veya sıfırlayın.
         </p>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 });

@@ -16,15 +16,24 @@ export function AddFeedButton() {
     setOpen(true);
   };
 
+  const handleSuccess = () => {
+    setOpen(false);
+  };
+
   return (
     <>
       <AddFeedDialog
         open={open}
         onOpenChange={setOpen}
         defaultPlatform={defaultPlatform}
+        onSuccess={handleSuccess}
       />
 
-      <Button onClick={handleOpenDialog} className="h-9 px-3 gap-1.5">
+      <Button
+        onClick={handleOpenDialog}
+        className="h-9 px-3 gap-1.5"
+        aria-label={t("feeds.feedList.addFeed")}
+      >
         <PlusCircle className="h-4 w-4" />
         <span className="text-sm">{t("feeds.feedList.addFeed")}</span>
       </Button>

@@ -144,7 +144,7 @@ export default function YoutubeFeedForm({
   const channelsContainerRef = useRef(null);
 
   const { parseYoutubeChannel, addYoutubeChannel } = useYoutubeFeeds();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const handlePreview = async (query) => {
     if (!query) return;
@@ -152,10 +152,10 @@ export default function YoutubeFeedForm({
     try {
       setIsLoading(true);
       const data = await parseYoutubeChannel(query);
-      setPreviewData(data);
+        setPreviewData(data);
       setIsPreview(true);
       onPreviewModeChange?.(true);
-    } catch (error) {
+      } catch (error) {
       toast.error(error.message);
       setIsPreview(false);
       setPreviewData(null);
@@ -295,21 +295,21 @@ export default function YoutubeFeedForm({
 
   // Besleme arama formunu render et
   const renderSearchForm = () => (
-    <div className="space-y-4">
-      <div>
-        <Label
+          <div className="space-y-4">
+            <div>
+              <Label
           htmlFor="channelUrl"
-          className="text-sm font-medium mb-1.5 block"
-        >
+                className="text-sm font-medium mb-1.5 block"
+              >
           {t("feeds.addYoutubeFeed.searchPlaceholder")}
-        </Label>
-        <div className="relative">
-          <Input
+              </Label>
+              <div className="relative">
+                <Input
             id="channelUrl"
             name="channelUrl"
             type="text"
-            value={channelId}
-            onChange={(e) => setChannelId(e.target.value)}
+                  value={channelId}
+                  onChange={(e) => setChannelId(e.target.value)}
             placeholder={t("feeds.addYoutubeFeed.searchPlaceholder")}
             disabled={isLoading}
             aria-invalid={!!error}
@@ -318,31 +318,31 @@ export default function YoutubeFeedForm({
               error ? "border-destructive" : ""
             )}
             maxLength={2000}
-          />
-          {channelId && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                />
+                {channelId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
               onClick={() => {
                 setChannelId("");
                 setError("");
               }}
               aria-label={t("common.clear")}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
         {error ? (
           <p className="text-xs text-destructive mt-1.5">{error}</p>
         ) : (
-          <p className="text-xs text-muted-foreground mt-1.5">
+              <p className="text-xs text-muted-foreground mt-1.5">
             {t("feeds.addYoutubeFeed.searchDescription")}
-          </p>
+              </p>
         )}
-      </div>
+            </div>
 
       {/* Bulunan Kanallar */}
       {previewData?.suggestedChannels.length > 0 && (
@@ -421,7 +421,7 @@ export default function YoutubeFeedForm({
 
     // API kota hatası için özel görünüm
     if (previewData.channel?.quotaExceeded) {
-      return (
+    return (
         <div
           className="p-5 sm:p-8 flex flex-col items-center justify-center border rounded-lg bg-amber-50 dark:bg-amber-900/10 text-amber-800 dark:text-amber-300 space-y-5"
           role="alert"
@@ -488,9 +488,9 @@ export default function YoutubeFeedForm({
                 <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
                 {t("common.retry")}
               </Button>
-            </div>
-          </div>
-        </div>
+                  </div>
+                  </div>
+                </div>
       );
     }
 
@@ -523,8 +523,8 @@ export default function YoutubeFeedForm({
               />
               {/* Banner üzerinde karartma efekti */}
               <div className="absolute inset-0 bg-card/60 dark:bg-card/80 backdrop-blur-[2px]"></div>
-            </div>
-          ) : (
+                      </div>
+                    ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 opacity-50" />
           )}
 
@@ -549,8 +549,8 @@ export default function YoutubeFeedForm({
               ) : (
                 <YoutubeIcon className="w-1/2 h-1/2 text-muted-foreground" />
               )}
-            </div>
           </div>
+        </div>
 
           {/* Kanal bilgileri */}
           <div className="relative z-10 flex-1 text-center sm:text-left">
@@ -592,7 +592,7 @@ export default function YoutubeFeedForm({
                   })}
                 </Badge>
               )}
-            </div>
+                    </div>
 
             {previewData.channel.description && (
               <p className="text-xs md:text-sm text-muted-foreground mt-2 md:mt-3 line-clamp-2 md:line-clamp-3">
@@ -624,7 +624,7 @@ export default function YoutubeFeedForm({
               </Button>
             </div>
           </div>
-        </div>
+            </div>
 
         {/* Son Videolar - Kaydırmalı Görünüm */}
         {videos.length > 0 && (
@@ -643,14 +643,14 @@ export default function YoutubeFeedForm({
                   <Badge variant="secondary" className="ml-2">
                     {t("feeds.articleCount", { count: videos.length })}
                   </Badge>
-                </div>
+                      </div>
                 <div className="flex items-center gap-1 sm:gap-2">
                   <HoverCard openDelay={0} closeDelay={200}>
                     <HoverCardTrigger asChild>
                       <div className="hidden sm:flex items-center cursor-help text-xs text-muted-foreground border border-dashed border-muted-foreground/40 rounded-md px-1.5 py-0.5">
                         <MousePointerClick className="h-3 w-3 mr-1" />
                         <span>Fare tekerleği ile kaydır</span>
-                      </div>
+                  </div>
                     </HoverCardTrigger>
                     <HoverCardContent
                       className="w-80 text-sm p-3"
@@ -660,21 +660,21 @@ export default function YoutubeFeedForm({
                         <div className="space-y-1">
                           <h4 className="text-sm font-semibold">
                             Kolay Kaydırma
-                          </h4>
+                  </h4>
                           <p className="text-xs text-muted-foreground">
                             Videolar arasında geçiş yapmak için fare imlecini
                             videoların üzerine getirip fare tekerleğini
                             kullanabilirsiniz.
-                          </p>
-                        </div>
-                      </div>
+                  </p>
+                </div>
+            </div>
                     </HoverCardContent>
                   </HoverCard>
 
                   {/* Mobil cihazlar için kaydırma ipucu */}
                   <div className="flex sm:hidden items-center text-[9px] text-muted-foreground">
                     <span className="animate-pulse">← kaydır →</span>
-                  </div>
+        </div>
                 </div>
               </div>
             </CardContent>
@@ -873,13 +873,13 @@ const VideoCard = memo(function VideoCard({ item }) {
     if (!dateString) return "";
 
     try {
-      const date = new Date(dateString);
-      return new Intl.DateTimeFormat(i18n.language, {
+      return new Intl.DateTimeFormat(language, {
         year: "numeric",
-        month: "short",
+        month: "long",
         day: "numeric",
-      }).format(date);
-    } catch (e) {
+      }).format(new Date(dateString));
+    } catch (error) {
+      console.error("Date formatting error:", error);
       return dateString;
     }
   };

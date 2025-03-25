@@ -1,8 +1,18 @@
 import { Suspense } from "react";
-import { FeedContent } from "@/components/features/feeds/FeedContent";
 import { Loader2 } from "lucide-react";
+import { FeedsContainer } from "@/app/feeds/components/FeedsContainer";
 
+// Sayfanın her istek için yeniden oluşturulmasını sağla
 export const dynamic = "force-dynamic";
+
+// Metadata ve OpenGraph bilgileri
+export async function generateMetadata() {
+  return {
+    title: "Feed İçerikleri | FeedTune",
+    description:
+      "RSS beslemeleriniz ve YouTube kanallarınızdan içerikleri görüntüleyin.",
+  };
+}
 
 export default function FeedsPage() {
   return (
@@ -14,7 +24,8 @@ export default function FeedsPage() {
           </div>
         }
       >
-        <FeedContent />
+        {/* Client component olarak işaretlenmiş FeedsContainer bileşeni */}
+        <FeedsContainer />
       </Suspense>
     </div>
   );

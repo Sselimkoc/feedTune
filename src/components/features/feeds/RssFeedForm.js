@@ -1,39 +1,37 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import {
-  Loader2,
-  Check,
-  Rss,
-  X,
-  ExternalLink,
-  Calendar,
-  Clock,
-  MousePointerClick,
-  ArrowLeft,
-  ChevronRight,
-  AlertCircle,
-  RefreshCw,
-  Eye,
-} from "lucide-react";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useRssFeeds } from "@/hooks/features/useRssFeeds";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { useTranslation } from "react-i18next";
-import { Label } from "@/components/ui/label";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import {
+  Calendar,
+  Clock,
+  ExternalLink,
+  Loader2 as LucideLoader2,
+  Rss,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
+import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { useRssFeeds } from "@/hooks/features/useRssFeeds";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { cn, stripHtml } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
+import { Check, X, MousePointerClick, ArrowLeft, Eye } from "lucide-react";
 import {
   HoverCard,
   HoverCardContent,
@@ -90,10 +88,9 @@ export default function RssFeedForm({
   const prevStateRef = useRef(null); // usePreviewEffectSync için
 
   const { user } = useAuthStore();
-  const { t } = useLanguage();
+  const { language } = useLanguage();
   const { addRssFeed, validateUrl, parseRssFeed, isAddingRssFeed } =
     useRssFeeds();
-  const { i18n } = useTranslation();
 
   // initialQuery değiştiğinde otomatik olarak preview başlat
   useEffect(() => {
@@ -341,7 +338,7 @@ export default function RssFeedForm({
       // Başarı bildirimini gösterme işlemi useRssFeeds hook'unda yapılıyor
       onSuccess?.();
     } catch (error) {
-      toast.error(error.message || t("feeds.addRssFeed.error"));
+      toast.error(error.message || "RssFeed.addRssFeed.error");
     } finally {
       setIsSubmitting(false);
     }
@@ -352,13 +349,13 @@ export default function RssFeedForm({
     if (!dateString) return "";
 
     try {
-      const date = new Date(dateString);
-      return new Intl.DateTimeFormat(i18n.language, {
+      return new Intl.DateTimeFormat(language, {
         year: "numeric",
-        month: "short",
+        month: "long",
         day: "numeric",
-      }).format(date);
-    } catch (e) {
+      }).format(new Date(dateString));
+    } catch (error) {
+      console.error("Date formatting error:", error);
       return dateString;
     }
   };
@@ -470,7 +467,7 @@ export default function RssFeedForm({
         <div>
           {isSubmitting ? (
             <div className="p-4 sm:p-6 py-8 flex flex-col items-center justify-center space-y-5 text-center border rounded-lg bg-background/50">
-              <Loader2 className="w-10 h-10 animate-spin text-primary" />
+              <LucideLoader2 className="w-10 h-10 animate-spin text-primary" />
                 <div>
                 <h3 className="text-lg font-medium">Besleme Yükleniyor</h3>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -577,9 +574,7 @@ export default function RssFeedForm({
                         className="text-[10px] sm:text-xs py-1 sm:py-1.5 whitespace-nowrap"
                       >
                         <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
-                            {t("feeds.lastUpdated", {
-                              date: formatDate(previewData.feed.lastBuildDate),
-                            })}
+                        {formatDate(previewData.feed.lastBuildDate)}
                       </Badge>
                     )}
 
@@ -592,7 +587,7 @@ export default function RssFeedForm({
                     >
                       {isAddingRssFeed ? (
                         <>
-                          <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                              <LucideLoader2 className="mr-1.5 h-3 w-3 animate-spin" />
                           Ekleniyor...
                         </>
                       ) : (
@@ -623,9 +618,7 @@ export default function RssFeedForm({
                       Son Makaleler
                     </h4>
                         <Badge variant="secondary" className="ml-2">
-                          {t("feeds.articleCount", {
-                            count: previewData.items.length,
-                          })}
+                          {previewData.items.length}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-1 sm:gap-2">
@@ -732,10 +725,10 @@ export default function RssFeedForm({
                     <Input
                       id="url"
                       name="url"
-                      type="text"
+                      type="url"
                       value={url}
                       onChange={handleUrlChange}
-                      placeholder={t("feeds.addRssFeed.urlPlaceholder")}
+                      placeholder="RSS Besleme URL'si"
                       disabled={isSubmitting}
                       aria-invalid={!!error}
                       className={cn(
@@ -764,7 +757,7 @@ export default function RssFeedForm({
                     <p className="text-xs text-destructive mt-1.5">{error}</p>
                   ) : (
                     <p className="text-xs text-muted-foreground mt-1.5">
-                      {t("feeds.addRssFeed.urlHelp")}
+                      URL&apos;yi doğru girdiğinizden emin olun.
                     </p>
                   )}
                 </div>
@@ -776,8 +769,8 @@ export default function RssFeedForm({
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t("feeds.addRssFeed.checking")}
+                      <LucideLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Önizleme
                     </>
                   ) : (
                     <>
@@ -806,13 +799,13 @@ const ArticleCard = ({ item }) => {
     if (!dateString) return "";
 
     try {
-      const date = new Date(dateString);
-      return new Intl.DateTimeFormat("tr-TR", {
+      return new Intl.DateTimeFormat(language, {
         year: "numeric",
-        month: "short",
+        month: "long",
         day: "numeric",
-      }).format(date);
-    } catch (e) {
+      }).format(new Date(dateString));
+    } catch (error) {
+      console.error("Date formatting error:", error);
       return dateString;
     }
   };

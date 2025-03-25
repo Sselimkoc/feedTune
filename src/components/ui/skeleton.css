@@ -1,0 +1,19 @@
+@keyframes skeletonWave {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton-wave {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--muted-foreground) / 0.05) 50%,
+    transparent 100%
+  );
+  background-size: 200px 100%;
+  animation: skeletonWave 1.5s infinite linear;
+} 

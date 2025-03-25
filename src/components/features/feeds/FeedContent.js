@@ -220,23 +220,6 @@ export function FeedContent() {
 
   return (
     <div className="w-full">
-      {/* <div className="flex justify-end mb-6">
-        <div className="flex items-center gap-2">
-          <AddFeedButton />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowKeyboardHelp(true)}
-            className="h-9 px-3"
-          >
-            <Keyboard className="h-4 w-4 mr-2" />
-            <span className="text-sm">
-              {t("feeds.keyboardShortcuts.title")}
-            </span>
-          </Button>
-        </div>
-      </div> */}
-
       <FeedList
         onRemoveFeed={removeFeed}
         onToggleRead={toggleItemRead}
