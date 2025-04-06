@@ -19,10 +19,11 @@ export class FeedService {
    */
   async getFeeds(userId) {
     try {
-      return await this.repository.getFeeds(userId);
+      const timestamp = Date.now();
+      return await this.repository.getFeeds(userId, timestamp);
     } catch (error) {
-      console.error("Feed getirme hatası:", error);
-      toast.error("Feed'ler yüklenirken bir hata oluştu.");
+      console.error("Feed listesi getirme hatası:", error);
+      toast.error("Feed listesi yüklenirken bir hata oluştu.");
       return [];
     }
   }
@@ -36,7 +37,9 @@ export class FeedService {
   async getFeedItems(feedIds, limit = 10) {
     try {
       if (!feedIds || feedIds.length === 0) return [];
-      return await this.repository.getFeedItems(feedIds, limit);
+
+      const timestamp = Date.now();
+      return await this.repository.getFeedItems(feedIds, limit, timestamp);
     } catch (error) {
       console.error("Feed öğeleri getirme hatası:", error);
       toast.error("Feed içerikleri yüklenirken bir hata oluştu.");
@@ -51,7 +54,8 @@ export class FeedService {
    */
   async getFavorites(userId) {
     try {
-      return await this.repository.getFavoriteItems(userId);
+      const timestamp = Date.now();
+      return await this.repository.getFavoriteItems(userId, timestamp);
     } catch (error) {
       console.error("Favorileri getirme hatası:", error);
       toast.error("Favoriler yüklenirken bir hata oluştu.");
@@ -66,7 +70,8 @@ export class FeedService {
    */
   async getReadLaterItems(userId) {
     try {
-      return await this.repository.getReadLaterItems(userId);
+      const timestamp = Date.now();
+      return await this.repository.getReadLaterItems(userId, timestamp);
     } catch (error) {
       console.error("Okuma listesini getirme hatası:", error);
       toast.error("Okuma listesi yüklenirken bir hata oluştu.");
@@ -229,6 +234,41 @@ export class FeedService {
       return await this.repository.deleteFeed(feedId, userId);
     } catch (error) {
       console.error("Feed silme hatası:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Eski içerikleri temizler
+   * @param {string} userId Kullanıcı ID'si
+   * @param {number} olderThanDays Belirtilen günden daha eski öğeleri siler (varsayılan: 30 gün)
+   * @param {boolean} keepFavorites Favorileri korur (varsayılan: true)
+   * @param {boolean} keepReadLater "Sonra Oku" olarak işaretlenmiş öğeleri korur (varsayılan: true)
+   * @returns {Promise<{deleted: number, error: any}>} Silinen öğe sayısı ve varsa hata bilgisi
+   */
+  async cleanUpOldItems(
+    userId,
+    olderThanDays = 30,
+    keepFavorites = true,
+    keepReadLater = true
+  ) {
+    try {
+      if (!userId) throw new Error("Kullanıcı ID'si gerekli");
+
+      const result = await this.repository.cleanUpOldItems(
+        userId,
+        olderThanDays,
+        keepFavorites,
+        keepReadLater
+      );
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Eski içerikleri temizleme hatası:", error);
       throw error;
     }
   }

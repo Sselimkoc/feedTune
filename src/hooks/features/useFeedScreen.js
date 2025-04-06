@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useFeedService } from "./useFeedService";
+import { useLanguage } from "@/hooks/useLanguage";
+import { toast } from "sonner";
 
 /**
  * Feed ekranı için özelleştirilmiş hook
@@ -11,7 +13,10 @@ import { useFeedService } from "./useFeedService";
 export function useFeedScreen() {
   // URL parametreleri
   const searchParams = useSearchParams();
-  
+
+  // Çeviri hook'u
+  const { t } = useLanguage();
+
   // Feed servisi
   const {
     feeds,
@@ -23,6 +28,8 @@ export function useFeedScreen() {
     toggleRead,
     toggleFavorite,
     toggleReadLater,
+    cleanupOldItems: serviceCleanupOldItems,
+    isCleaningUp,
   } = useFeedService();
 
   // Durum yönetimi
@@ -57,42 +64,46 @@ export function useFeedScreen() {
   // Filtrelenmiş öğeleri hesapla
   const filteredItems = useMemo(() => {
     if (!items) return [];
-    
+
     let filtered = [...items];
-    
+
     // Feed ID'ye göre filtrele
     if (selectedFeedId) {
-      filtered = filtered.filter(item => item.feed_id === selectedFeedId);
+      filtered = filtered.filter((item) => item.feed_id === selectedFeedId);
     }
-    
+
     // Okuma durumuna göre filtrele
     if (!filters.showRead) {
-      filtered = filtered.filter(item => !item.is_read);
+      filtered = filtered.filter((item) => !item.is_read);
     }
-    
+
     if (!filters.showUnread) {
-      filtered = filtered.filter(item => item.is_read);
+      filtered = filtered.filter((item) => item.is_read);
     }
-    
+
     // Feed türüne göre filtrele
     if (!filters.feedTypes.rss || !filters.feedTypes.youtube) {
-      const feedTypeMap = new Map(feeds?.map(feed => [feed.id, feed.type]));
-      
-      filtered = filtered.filter(item => {
+      const feedTypeMap = new Map(feeds?.map((feed) => [feed.id, feed.type]));
+
+      filtered = filtered.filter((item) => {
         const feedType = feedTypeMap.get(item.feed_id);
         if (feedType === "rss" && !filters.feedTypes.rss) return false;
         if (feedType === "youtube" && !filters.feedTypes.youtube) return false;
         return true;
       });
     }
-    
+
     // Sıralama
     switch (filters.sortBy) {
       case "newest":
-        filtered.sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+        filtered.sort(
+          (a, b) => new Date(b.published_at) - new Date(a.published_at)
+        );
         break;
       case "oldest":
-        filtered.sort((a, b) => new Date(a.published_at) - new Date(b.published_at));
+        filtered.sort(
+          (a, b) => new Date(a.published_at) - new Date(b.published_at)
+        );
         break;
       case "unread":
         filtered.sort((a, b) => {
@@ -111,14 +122,14 @@ export function useFeedScreen() {
         });
         break;
     }
-    
+
     return filtered;
   }, [items, feeds, selectedFeedId, filters]);
 
   // Feed seçme
   const handleFeedSelect = useCallback((feedId) => {
     setSelectedFeedId(feedId);
-    
+
     // URL'yi güncelle
     const url = new URL(window.location);
     url.searchParams.set("feedId", feedId);
@@ -135,6 +146,51 @@ export function useFeedScreen() {
     setViewMode(mode);
   }, []);
 
+  // Refresh fonksiyonu geliştirmesi
+  const refresh = useCallback(() => {
+    toast.info(
+      t("feeds.refreshing") === "feeds.refreshing"
+        ? "İçerikler yenileniyor..."
+        : t("feeds.refreshing"),
+      {
+        duration: 2000,
+        id: "feed-refresh-toast", // Aynı toast'un üst üste gelmesini engeller
+      }
+    );
+
+    return refreshAll()
+      .then(() => {
+        toast.success(
+          t("feeds.refreshSuccess") === "feeds.refreshSuccess"
+            ? "İçerikler başarıyla yenilendi"
+            : t("feeds.refreshSuccess"),
+          {
+            duration: 2000,
+            id: "feed-refresh-toast",
+          }
+        );
+      })
+      .catch((error) => {
+        toast.error(
+          t("feeds.refreshError") === "feeds.refreshError"
+            ? "İçerikler yenilenirken bir hata oluştu"
+            : t("feeds.refreshError"),
+          {
+            duration: 3000,
+          }
+        );
+        console.error("Feed yenileme hatası:", error);
+      });
+  }, [refreshAll, t]);
+
+  // Eski içerikleri temizleme (service fonksiyonuna proxy)
+  const cleanupOldItems = useCallback(
+    (options = {}) => {
+      return serviceCleanupOldItems(options);
+    },
+    [serviceCleanupOldItems]
+  );
+
   return {
     // Veriler
     feeds,
@@ -146,16 +202,18 @@ export function useFeedScreen() {
     isLoading,
     isError,
     error,
-    
+
     // Feed seçimi ve filtreleme
     handleFeedSelect,
     applyFilters,
     changeViewMode,
-    
+
     // Eylemler
-    refresh: refreshAll,
+    refresh,
     toggleRead,
     toggleFavorite,
     toggleReadLater,
+    cleanupOldItems,
+    isCleaningUp,
   };
-} 
+}

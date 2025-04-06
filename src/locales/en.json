@@ -61,6 +61,23 @@
   "feeds": {
     "title": "My Feeds",
     "description": "View content from your followed sources",
+    "allItems": "All Items",
+    "unread": "Unread",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This Week",
+    "older": "Older",
+    "noItems": "No items found.",
+    "noFeeds": "You haven't added any feeds yet.",
+    "addYourFirst": "Add your first feed",
+    "refreshing": "Refreshing feeds...",
+    "markAllAsRead": "Mark all as read",
+    "markAsRead": "Mark as read",
+    "markAsUnread": "Mark as unread",
+    "addToFavorites": "Add to favorites",
+    "removeFromFavorites": "Remove from favorites",
+    "addToReadLater": "Read later",
+    "removeFromReadLater": "Remove from read later list",
     "new": "New",
     "noDescription": "No description available",
     "markRead": "Mark as read",
@@ -69,6 +86,8 @@
     "favorite": "Favorite",
     "readLater": "Read Later",
     "refreshed": "Feeds refreshed",
+    "syncSuccess": "Feeds updated successfully",
+    "syncError": "Error synchronizing feeds",
     "addFeedTitle": "Add Feed",
     "feedUrl": "Feed URL",
     "youtubeUrl": "YouTube URL",
@@ -84,6 +103,15 @@
     "keyboardShortcuts": "Keyboard Shortcuts",
     "refresh": "Refresh",
     "refreshFeeds": "Refresh Feeds",
+    "sync": "Sync",
+    "syncFeeds": "Update Feeds on Server",
+    "syncDescription": "Get the latest content from source sites",
+    "markingAllAsRead": "Marking all items as read...",
+    "allItemsAlreadyRead": "All items have already been read",
+    "allItemsMarkedAsRead": "{{count}} items marked as read",
+    "items": "Items",
+    "all": "All",
+    "read": "Read",
     "filterTitle": "Filters",
     "sortBy": "Sort By",
     "newest": "Newest",
@@ -94,10 +122,11 @@
     "feedTypes": "Feed Types",
     "resetFilters": "Reset Filters",
     "applyFilters": "Apply Filters",
-    "emptyFilter": {
+    "emptyFilterState": {
       "title": "No Content Found",
-      "description": "No content matches your active filters",
-      "resetFilters": "Reset Filters"
+      "description": "No content matches your filter criteria. You can try changing your filters or viewing all content.",
+      "resetFilters": "Reset Filters",
+      "refresh": "Refresh Page"
     },
     "addFeed": {
       "title": "Add Feed",
@@ -198,19 +227,6 @@
       "openKeyboardShortcuts": "Open keyboard shortcuts",
       "keyboardShortcuts": "Keyboard Shortcuts",
       "contentList": "Content list"
-    },
-    "keyboardShortcuts": {
-      "title": "Keyboard Shortcuts",
-      "description": "You can use the following keyboard shortcuts to navigate faster",
-      "navigation": "Navigation",
-      "actions": "Actions",
-      "nextItem": "Next item",
-      "previousItem": "Previous item",
-      "openItem": "Open item",
-      "markAsRead": "Mark as read/unread",
-      "addToFavorites": "Add to/remove from favorites",
-      "addToReadLater": "Add to/remove from read later",
-      "showHelp": "Show this help"
     },
     "emptyState": {
       "title": "No feeds yet",
@@ -345,7 +361,8 @@
     "networkError": "Network error",
     "tryAgain": "Please try again",
     "unknownError": "Unknown error occurred",
-    "refreshFailed": "Failed to refresh feeds"
+    "refreshFailed": "Failed to refresh feeds",
+    "markReadFailed": "Error marking items"
   },
   "shortcuts": {
     "title": "Keyboard Shortcuts",
@@ -362,6 +379,13 @@
     "listView": "List view",
     "openShortcuts": "Show keyboard shortcuts",
     "close": "Close"
+  },
+  "refreshButton": {
+    "justNow": "just now",
+    "minuteAgo": "1 minute ago",
+    "minutesAgo": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hours ago",
+    "lastRefresh": "Last refresh"
   },
   "timeAgo": {
     "justNow": "Just now",

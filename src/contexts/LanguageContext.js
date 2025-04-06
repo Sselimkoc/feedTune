@@ -41,7 +41,7 @@ export function LanguageProvider({ children }) {
   };
 
   // Çeviri fonksiyonu
-  const t = (key) => {
+  const t = (key, params) => {
     // Nokta notasyonu ile nested objelere erişim (örn: "home.title")
     const keys = key.split(".");
     let value = translations[language];
@@ -51,10 +51,19 @@ export function LanguageProvider({ children }) {
         if (value && value[k] !== undefined) {
           value = value[k];
         } else {
-          // Çeviri bulunamadı, key'i döndür ama sessizce çalışmaya devam et
-          return key; // Çeviri bulunamazsa key'i döndür
+          // Eğer çeviri bulunamazsa, geri dönüş değeri olarak key'i döndürme
+          console.warn(`Çeviri anahtarı bulunamadı: ${key}`);
+          return key;
         }
       }
+
+      // Parametre değişkenleri varsa değiştir
+      if (params && typeof value === "string") {
+        Object.keys(params).forEach((param) => {
+          value = value.replace(`{{${param}}}`, params[param]);
+        });
+      }
+
       return value;
     } catch (error) {
       console.warn(`Çeviri anahtarı işlenirken hata: ${key}`, error);

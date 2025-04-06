@@ -112,6 +112,8 @@
     "favorite": "Favori",
     "readLater": "Sonra Oku",
     "refreshed": "Beslemeler yenilendi",
+    "syncSuccess": "Feed'ler başarıyla güncellendi",
+    "syncError": "Feed'ler senkronize edilirken bir hata oluştu",
     "addFeedTitle": "Besleme Ekle",
     "feedUrl": "Besleme URL'si",
     "youtubeUrl": "YouTube URL'si",
@@ -137,10 +139,33 @@
     "feedTypes": "Besleme Türleri",
     "resetFilters": "Filtreleri Sıfırla",
     "applyFilters": "Filtreleri Uygula",
-    "emptyFilter": {
+    "emptyFilterState": {
       "title": "İçerik Bulunamadı",
-      "description": "Aktif filtrelerle eşleşen içerik bulunamadı",
-      "resetFilters": "Filtreleri Sıfırla"
+      "description": "Filtreleme kriterlerinize uygun içerik bulunamadı. Filtrelerinizi değiştirmeyi veya tüm içerikleri görüntülemeyi deneyebilirsiniz.",
+      "resetFilters": "Filtreleri Sıfırla",
+      "refresh": "Sayfayı Yenile"
+    },
+    "sync": "Senkronize Et",
+    "syncFeeds": "Feed'leri Sunucuda Güncelle",
+    "syncDescription": "Kaynak sitelerden en güncel verileri alır",
+    "markingAllAsRead": "Tüm öğeler okundu olarak işaretleniyor...",
+    "allItemsAlreadyRead": "Tüm öğeler zaten okundu",
+    "allItemsMarkedAsRead": "{{count}} öğe okundu olarak işaretlendi",
+    "items": "Öğeler",
+    "all": "Tümü",
+    "read": "Okunmuş",
+    "emptyState": {
+      "title": "Henüz hiç besleme eklemediniz",
+      "description": "RSS veya YouTube beslemesi ekleyerek başlayın",
+      "addFeedButton": "Besleme Ekle"
+    },
+    "loadingState": {
+      "description": "Beslemeleriniz yükleniyor..."
+    },
+    "errorState": {
+      "title": "Bir Hata Oluştu",
+      "description": "Beslemeler yüklenirken bir sorun oluştu",
+      "retry": "Tekrar Dene"
     },
     "addFeed": {
       "title": "Besleme Ekle",
@@ -261,14 +286,6 @@
       "addToFavorites": "Favorilere ekle/çıkar",
       "addToReadLater": "Okuma listesine ekle/çıkar",
       "showHelp": "Bu yardımı göster"
-    },
-    "emptyState": {
-      "title": "Henüz hiç besleme eklemediniz",
-      "description": "RSS veya YouTube beslemesi ekleyerek başlayın",
-      "addFeedButton": "Besleme Ekle"
-    },
-    "loadingState": {
-      "description": "Beslemeleriniz yükleniyor..."
     },
     "articleCount": "{{count}} makale",
     "lastUpdated": "Son güncelleme: {{date}}"
@@ -410,7 +427,8 @@
     "serverError": "Sunucu hatası. Lütfen daha sonra tekrar deneyin.",
     "networkError": "İnternet bağlantınızı kontrol edin.",
     "unknownError": "Bilinmeyen bir hata oluştu.",
-    "refreshFailed": "Feed'ler yenilenirken bir hata oluştu"
+    "refreshFailed": "Feed'ler yenilenirken bir hata oluştu",
+    "markReadFailed": "Öğeler işaretlenirken bir hata oluştu"
   },
   "shortcuts": {
     "title": "Klavye Kısayolları",
@@ -442,5 +460,12 @@
     "month_other": "{{count}} ay önce",
     "year_one": "1 yıl önce",
     "year_other": "{{count}} yıl önce"
+  },
+  "refreshButton": {
+    "justNow": "az önce",
+    "minuteAgo": "1 dakika önce",
+    "minutesAgo": "{{count}} dakika önce",
+    "hoursAgo": "{{count}} saat önce",
+    "lastRefresh": "Son yenileme"
   }
 } 

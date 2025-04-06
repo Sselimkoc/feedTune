@@ -14,63 +14,120 @@ export class FeedRepository {
   /**
    * Kullanıcının feedlerini çeker
    * @param {string} userId Kullanıcı ID'si
+   * @param {string} timestamp Timestamp
    * @returns {Promise<Array>} Kullanıcının feedleri
    */
-  async getFeeds(userId) {
-    const { data, error } = await this.supabase
-      .from("feeds")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
+  async getFeeds(userId, timestamp = null) {
+    try {
+      if (!userId) return [];
 
-    if (error) throw new Error(error.message);
-    return data;
+      // Timestamp parametresi ekledik, böylece her çağrı eşsiz olacak
+      // ve Supabase önbelleği kullanmayacak (verileri yeniden çekecek)
+      const options = timestamp
+        ? { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } }
+        : undefined;
+
+      const { data, error } = await this.supabase
+        .from("feeds")
+        .select(
+          `
+          id,
+          url,
+          type,
+          title,
+          description,
+          site_url,
+          site_favicon,
+          channel_id,
+          is_active,
+          created_at,
+          updated_at
+        `
+        )
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .select(undefined, options);
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching feeds:", error);
+      throw error;
+    }
   }
 
   /**
    * Feed öğelerini çeker
    * @param {Array<string>} feedIds Feed ID'leri
    * @param {number} limit Her feed için maksimum öğe sayısı
+   * @param {string} timestamp Timestamp
    * @returns {Promise<Array>} Feed öğeleri
    */
-  async getFeedItems(feedIds, limit = 10) {
-    if (!feedIds || feedIds.length === 0) return [];
+  async getFeedItems(feedIds, limit = 10, timestamp = null) {
+    try {
+      if (!feedIds || !Array.isArray(feedIds) || feedIds.length === 0)
+        return [];
 
-    // Her feed için ayrı ayrı sorgu yap ve her birinden sadece limit kadar öğe al
-    const promises = feedIds.map(async (feedId) => {
+      // Zaman damgası parametresi ekledik
+      const options = timestamp
+        ? { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } }
+        : undefined;
+
       const { data, error } = await this.supabase
         .from("feed_items")
-        .select("*")
-        .eq("feed_id", feedId)
+        .select(
+          `
+          id,
+          feed_id,
+          title,
+          description,
+          url,
+          link,
+          guid,
+          published_at,
+          thumbnail,
+          author,
+          categories
+        `
+        )
+        .in("feed_id", feedIds)
         .order("published_at", { ascending: false })
-        .limit(limit);
+        .select(undefined, options);
 
-      if (error) throw new Error(error.message);
-      return data;
-    });
+      if (error) throw error;
 
-    // Tüm sorguların sonuçlarını bekle ve birleştir
-    const results = await Promise.all(promises);
-    return results.flat();
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching feed items:", error);
+      throw error;
+    }
   }
 
   /**
    * Kullanıcının favorilerini çeker
    * @param {string} userId Kullanıcı ID'si
+   * @param {string} timestamp Timestamp
    * @returns {Promise<Array>} Favori öğeler
    */
-  async getFavoriteItems(userId) {
+  async getFavoriteItems(userId, timestamp = null) {
     if (!userId) return [];
 
     try {
+      // Zaman damgası parametresi ekledik
+      const options = timestamp
+        ? { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } }
+        : undefined;
+
       // Önce kullanıcının favori etkileşimlerini al
       const { data: interactions, error: interactionsError } =
         await this.supabase
           .from("user_item_interactions")
           .select("item_id")
           .eq("user_id", userId)
-          .eq("is_favorite", true);
+          .eq("is_favorite", true)
+          .select(undefined, options);
 
       if (interactionsError) throw interactionsError;
 
@@ -94,7 +151,8 @@ export class FeedRepository {
         `
         )
         .in("id", itemIds)
-        .order("published_at", { ascending: false });
+        .order("published_at", { ascending: false })
+        .select(undefined, options);
 
       if (itemsError) throw itemsError;
 
@@ -109,7 +167,7 @@ export class FeedRepository {
 
       return itemsWithInteractions;
     } catch (error) {
-      console.error("Error fetching favorites:", error);
+      console.error("Error fetching favorite items:", error);
       throw error;
     }
   }
@@ -117,19 +175,26 @@ export class FeedRepository {
   /**
    * Kullanıcının daha sonra okuma listesindeki öğeleri çeker
    * @param {string} userId Kullanıcı ID'si
+   * @param {string} timestamp Timestamp
    * @returns {Promise<Array>} Daha sonra okunacak öğeler
    */
-  async getReadLaterItems(userId) {
+  async getReadLaterItems(userId, timestamp = null) {
     if (!userId) return [];
 
     try {
+      // Zaman damgası parametresi ekledik
+      const options = timestamp
+        ? { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } }
+        : undefined;
+
       // Önce kullanıcının okuma listesi etkileşimlerini al
       const { data: interactions, error: interactionsError } =
         await this.supabase
           .from("user_item_interactions")
           .select("item_id")
           .eq("user_id", userId)
-          .eq("is_read_later", true);
+          .eq("is_read_later", true)
+          .select(undefined, options);
 
       if (interactionsError) throw interactionsError;
 
@@ -153,7 +218,8 @@ export class FeedRepository {
         `
         )
         .in("id", itemIds)
-        .order("published_at", { ascending: false });
+        .order("published_at", { ascending: false })
+        .select(undefined, options);
 
       if (itemsError) throw itemsError;
 
@@ -301,6 +367,115 @@ export class FeedRepository {
     } catch (error) {
       console.error("Error deleting feed:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Eski ve etkileşimsiz feed öğelerini temizler
+   * @param {string} userId Kullanıcı ID'si
+   * @param {number} olderThanDays Belirtilen günden daha eski öğeleri siler (varsayılan: 30 gün)
+   * @param {boolean} keepFavorites Favorileri korur (varsayılan: true)
+   * @param {boolean} keepReadLater "Sonra Oku" olarak işaretlenmiş öğeleri korur (varsayılan: true)
+   * @returns {Promise<{deleted: number, error: any}>} Silinen öğe sayısı ve varsa hata
+   */
+  async cleanUpOldItems(
+    userId,
+    olderThanDays = 30,
+    keepFavorites = true,
+    keepReadLater = true
+  ) {
+    try {
+      if (!userId) throw new Error("Kullanıcı ID'si gerekli");
+
+      // Belirtilen günden önceki tarih
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+      const cutoffDateStr = cutoffDate.toISOString();
+
+      // 1. Önce, etkileşim olmayan feed öğelerini bul
+      const { data: interactionItems, error: interactionError } =
+        await this.supabase
+          .from("user_item_interactions")
+          .select("item_id")
+          .eq("user_id", userId);
+
+      if (interactionError) throw interactionError;
+
+      // Korunacak öğe ID'leri
+      const interactionItemIds =
+        interactionItems?.map((item) => item.item_id) || [];
+
+      // 2. Favoriler ve "Sonra Oku" öğelerini listeye ekle (eğer korunacaksa)
+      let protectedItems = [];
+
+      if (keepFavorites || keepReadLater) {
+        const query = this.supabase
+          .from("user_item_interactions")
+          .select("item_id")
+          .eq("user_id", userId);
+
+        if (keepFavorites && keepReadLater) {
+          query.or("is_favorite.eq.true,is_read_later.eq.true");
+        } else if (keepFavorites) {
+          query.eq("is_favorite", true);
+        } else if (keepReadLater) {
+          query.eq("is_read_later", true);
+        }
+
+        const { data: protectedRecords, error: protectedError } = await query;
+
+        if (protectedError) throw protectedError;
+        protectedItems = protectedRecords?.map((item) => item.item_id) || [];
+      }
+
+      // 3. Silinecek öğeleri filtrelemek için kullanıcının feed ID'lerini al
+      const { data: userFeeds, error: feedsError } = await this.supabase
+        .from("feeds")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("is_active", true);
+
+      if (feedsError) throw feedsError;
+
+      const userFeedIds = userFeeds?.map((feed) => feed.id) || [];
+
+      if (userFeedIds.length === 0) {
+        return { deleted: 0, error: null };
+      }
+
+      // 4. Kriterlere göre öğeleri sil:
+      // - Belirtilen günden daha eski
+      // - Kullanıcının feed'lerine ait
+      // - Korunmayacak öğelerde olmayanlar
+      let deleteQuery = this.supabase
+        .from("feed_items")
+        .delete()
+        .lt("published_at", cutoffDateStr)
+        .in("feed_id", userFeedIds);
+
+      // Korunacak öğe ID'leri varsa, bunları filtrelemeye dahil et
+      if (protectedItems.length > 0) {
+        deleteQuery = deleteQuery.not(
+          "id",
+          "in",
+          `(${protectedItems.join(",")})`
+        );
+      }
+
+      const { data, error, count } = await deleteQuery;
+
+      if (error) throw error;
+
+      return {
+        deleted: count || 0,
+        error: null,
+      };
+    } catch (error) {
+      console.error("Eski öğeleri temizleme hatası:", error);
+      return {
+        deleted: 0,
+        error: error.message || "Bilinmeyen hata",
+      };
     }
   }
 }
