@@ -46,16 +46,20 @@ export function LanguageProvider({ children }) {
     const keys = key.split(".");
     let value = translations[language];
 
-    for (const k of keys) {
-      if (value && value[k]) {
-        value = value[k];
-      } else {
-        console.warn(`Translation key not found: ${key}`);
-        return key; // Çeviri bulunamazsa key'i döndür
+    try {
+      for (const k of keys) {
+        if (value && value[k] !== undefined) {
+          value = value[k];
+        } else {
+          // Çeviri bulunamadı, key'i döndür ama sessizce çalışmaya devam et
+          return key; // Çeviri bulunamazsa key'i döndür
+        }
       }
+      return value;
+    } catch (error) {
+      console.warn(`Çeviri anahtarı işlenirken hata: ${key}`, error);
+      return key;
     }
-
-    return value;
   };
 
   return (

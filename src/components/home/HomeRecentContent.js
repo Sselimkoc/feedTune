@@ -8,10 +8,9 @@ import Image from "next/image";
 import { cn, stripHtml } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Clock, ExternalLink, BookmarkCheck, Star } from "lucide-react";
-import { i18n } from "@/i18n";
 
 export function HomeRecentContent({ recentItems }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   return (
     <section className="py-6 lg:py-8">
@@ -61,6 +60,7 @@ export function HomeRecentContent({ recentItems }) {
                             src={item.thumbnail}
                             alt={item.title || ""}
                             fill
+                            priority={index < 2}
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             className="object-cover"
                           />
@@ -95,7 +95,7 @@ export function HomeRecentContent({ recentItems }) {
                                 : new Date(
                                     item.published_at
                                   ).toLocaleDateString(
-                                    i18n.language === "tr" ? "tr-TR" : "en-US",
+                                    language === "tr" ? "tr-TR" : "en-US",
                                     {
                                       year: "numeric",
                                       month: "long",

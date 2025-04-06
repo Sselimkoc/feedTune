@@ -11,9 +11,9 @@ import { HomeRecentContent } from "@/components/home/HomeRecentContent";
 import { HomeHero } from "@/components/home/HomeHero";
 import { HomeFeatures } from "@/components/home/HomeFeatures";
 import { HomeModals } from "@/components/home/HomeModals";
-import { EmptyState } from "@/components/features/feeds/EmptyState";
-import { LoadingState } from "@/components/features/feeds/LoadingState";
-import { ErrorState } from "@/components/features/feeds/ErrorState";
+import { EmptyState } from "@/components/ui-states/EmptyState";
+import { LoadingState } from "@/components/ui-states/LoadingState";
+import { ErrorState } from "@/components/ui-states/ErrorState";
 
 export function HomeContent() {
   // State yönetimi
@@ -28,8 +28,6 @@ export function HomeContent() {
   const { feeds, setFeeds, recentItems, isLoading, isError, stats } =
     useHomeData();
   const { isDeleting, handleRemoveFeed } = useDeleteFeed();
-
-  
 
   // Feed silme işleyicisi
   const handleDeleteFeed = async () => {
@@ -77,7 +75,6 @@ export function HomeContent() {
             setFeedToDelete(feedId);
             setShowDeleteDialog(true);
           }}
-         
         />
         <HomeRecentContent recentItems={recentItems} />
       </div>
