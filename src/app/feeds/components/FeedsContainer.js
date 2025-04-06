@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { FeedLayout } from "./FeedLayout";
 import { FeedHeader } from "./FeedHeader";
 import { FeedGrid } from "./FeedGrid";
@@ -71,6 +71,7 @@ export function FeedsContainer() {
     applyFilters,
     changeViewMode,
     refresh,
+    silentRefresh,
     toggleRead,
     toggleFavorite,
     toggleReadLater,
@@ -78,25 +79,80 @@ export function FeedsContainer() {
     isCleaningUp,
   } = useFeedScreen();
 
+  // Dialogs için memoized handlers
+  const handleOpenFilterDialog = useCallback(() => {
+    setFilterDialogOpen(true);
+  }, []);
+
+  const handleCloseFilterDialog = useCallback(() => {
+    setFilterDialogOpen(false);
+  }, []);
+
+  const handleOpenShortcutsDialog = useCallback(() => {
+    setShortcutsDialogOpen(true);
+  }, []);
+
+  const handleCloseShortcutsDialog = useCallback(() => {
+    setShortcutsDialogOpen(false);
+  }, []);
+
+  const handleOpenAddFeedDialog = useCallback(() => {
+    setAddFeedDialogOpen(true);
+  }, []);
+
+  const handleCloseAddFeedDialog = useCallback(() => {
+    setAddFeedDialogOpen(false);
+  }, []);
+
+  // Optimized feed toggling functions
+  const handleToggleRead = useCallback(
+    (itemId, isRead) => {
+      toggleRead(itemId, isRead);
+    },
+    [toggleRead]
+  );
+
+  const handleToggleFavorite = useCallback(
+    (itemId, isFavorite) => {
+      toggleFavorite(itemId, isFavorite);
+    },
+    [toggleFavorite]
+  );
+
+  const handleToggleReadLater = useCallback(
+    (itemId, isReadLater) => {
+      toggleReadLater(itemId, isReadLater);
+    },
+    [toggleReadLater]
+  );
+
+  const handleViewModeChange = useCallback(
+    (mode) => {
+      changeViewMode(mode);
+    },
+    [changeViewMode]
+  );
+
   // Otomatik yenileme için timer kurma
   useEffect(() => {
     // Ayarlardaki refreshInterval değerini dakikaya çevir
     const refreshTimeInMinutes = settings.refreshInterval || 5;
 
-    console.log(
+      console.log(
       `Feed yenileme aralığı: ${refreshTimeInMinutes} dakika olarak ayarlandı`
     );
 
     const intervalId = setInterval(() => {
       console.log("Otomatik yenileme gerçekleşiyor...");
-      refresh();
+      // Değişiklik: Sessiz yenileme fonksiyonunu kullan
+      silentRefresh();
     }, refreshTimeInMinutes * 60 * 1000); // Dakika cinsinden ayarlanan süreyi milisaniyeye çevir
 
     return () => clearInterval(intervalId);
-  }, [refresh, settings.refreshInterval]); // settings.refreshInterval değiştiğinde yeniden oluştur
+  }, [silentRefresh, settings.refreshInterval]); // settings.refreshInterval değiştiğinde yeniden oluştur
 
   // Hem yenileme hem de otomatik senkronizasyon yapar
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     // Önce senkronizasyon işlemi
     if (!isSyncing) {
       setIsSyncing(true);
@@ -166,10 +222,10 @@ export function FeedsContainer() {
 
     // Sonra normal yenileme işlemi (cache'i güncelle)
     refresh();
-  };
+  }, [isSyncing, refresh, cleanupOldItems, t]);
 
   // Server-side senkronizasyon (artık sadece handleSyncFeeds fonksiyonu için)
-  const handleSyncFeeds = async () => {
+  const handleSyncFeeds = useCallback(async () => {
     if (isSyncing) return;
 
     setIsSyncing(true);
@@ -234,10 +290,10 @@ export function FeedsContainer() {
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, [isSyncing, t, cleanupOldItems, refresh]);
 
   // Tüm öğeleri okundu/okunmadı olarak işaretle
-  const handleMarkAllRead = async () => {
+  const handleMarkAllRead = useCallback(async () => {
     if (!items || items.length === 0) return;
 
     // Okunmamış öğeleri bul
@@ -279,10 +335,10 @@ export function FeedsContainer() {
           : t("errors.markReadFailed")
       );
     }
-  };
+  }, [items, toggleRead, refresh, t]);
 
-  // Tab'a göre öğeleri filtrele
-  const getTabItems = () => {
+  // Tab'a göre öğeleri filtrele - use memoized value
+  const filteredItems = useMemo(() => {
     if (!items) return [];
 
     switch (activeTab) {
@@ -304,12 +360,33 @@ export function FeedsContainer() {
       default:
         return items;
     }
-  };
+  }, [items, feeds, activeTab]);
 
   // Filtreleme seçimini yap
-  const handleFilterSelect = (type) => {
+  const handleFilterSelect = useCallback((type) => {
     setActiveTab(type);
-  };
+  }, []);
+
+  // Feed istatistikleri - useMemo ile optimize edildi
+  const stats = useMemo(
+    () => ({
+      total: items?.length || 0,
+      unread: items?.filter((item) => !item.is_read)?.length || 0,
+      favorites: items?.filter((item) => item.is_favorite)?.length || 0,
+      readLater: items?.filter((item) => item.is_read_later)?.length || 0,
+      youtube:
+        items?.filter((item) => {
+          const feed = feeds.find((f) => f.id === item.feed_id);
+          return feed && feed.type === "youtube";
+        })?.length || 0,
+      rss:
+        items?.filter((item) => {
+          const feed = feeds.find((f) => f.id === item.feed_id);
+          return feed && feed.type === "rss";
+        })?.length || 0,
+    }),
+    [items, feeds]
+  );
 
   // İçerik görüntüleme
   if (isLoading) {
@@ -323,36 +400,15 @@ export function FeedsContainer() {
   if (!feeds || feeds.length === 0) {
     return (
       <>
-        <EmptyState onAddFeed={() => setAddFeedDialogOpen(true)} />
+        <EmptyState onAddFeed={handleOpenAddFeedDialog} />
         <AddFeedDialog
           isOpen={addFeedDialogOpen}
-          onOpenChange={setAddFeedDialogOpen}
+          onOpenChange={handleCloseAddFeedDialog}
           onFeedAdded={refresh}
         />
       </>
     );
   }
-
-  // Feed istatistikleri
-  const stats = {
-    total: items?.length || 0,
-    unread: items?.filter((item) => !item.is_read)?.length || 0,
-    favorites: items?.filter((item) => item.is_favorite)?.length || 0,
-    readLater: items?.filter((item) => item.is_read_later)?.length || 0,
-    youtube:
-      items?.filter((item) => {
-        const feed = feeds.find((f) => f.id === item.feed_id);
-        return feed && feed.type === "youtube";
-      })?.length || 0,
-    rss:
-      items?.filter((item) => {
-        const feed = feeds.find((f) => f.id === item.feed_id);
-        return feed && feed.type === "rss";
-      })?.length || 0,
-  };
-
-  // Filtrelenmiş öğeler
-  const filteredItems = getTabItems();
 
   return (
     <FeedLayout>
@@ -361,12 +417,12 @@ export function FeedsContainer() {
         feeds={feeds}
         selectedFeedId={selectedFeedId}
         onFeedSelect={handleFeedSelect}
-        onOpenFilters={() => setFilterDialogOpen(true)}
-        onShowKeyboardShortcuts={() => setShortcutsDialogOpen(true)}
+        onOpenFilters={handleOpenFilterDialog}
+        onShowKeyboardShortcuts={handleOpenShortcutsDialog}
         onRefresh={handleRefresh}
         viewMode={viewMode}
-        onViewModeChange={changeViewMode}
-        onAddFeed={() => setAddFeedDialogOpen(true)}
+        onViewModeChange={handleViewModeChange}
+        onAddFeed={handleOpenAddFeedDialog}
         onSync={handleSyncFeeds}
         isSyncing={isSyncing}
       />
@@ -519,15 +575,15 @@ export function FeedsContainer() {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
         >
-          <FeedGrid
+      <FeedGrid
             items={filteredItems}
-            feeds={feeds}
-            viewMode={viewMode}
-            onToggleRead={toggleRead}
-            onToggleFavorite={toggleFavorite}
-            onToggleReadLater={toggleReadLater}
+        feeds={feeds}
+        viewMode={viewMode}
+        onToggleRead={handleToggleRead}
+        onToggleFavorite={handleToggleFavorite}
+        onToggleReadLater={handleToggleReadLater}
             isLoading={isLoading}
-          />
+      />
         </motion.div>
       </AnimatePresence>
 

@@ -45,7 +45,7 @@ export function useHomeFeeds() {
   // Son eklenen öğeleri al (tüm feed'lerden en son 10 öğe)
   const recentItems = useMemo(() => {
     if (!items) return [];
-    
+
     return items
       .sort((a, b) => new Date(b.published_at) - new Date(a.published_at))
       .slice(0, 10);
@@ -70,11 +70,11 @@ export function useHomeFeeds() {
     isLoading,
     isError,
     error,
-    
+
     // Ana fonksiyonlar
     refresh: refreshAll,
     toggleRead,
     toggleFavorite,
     toggleReadLater,
   };
-} 
+}

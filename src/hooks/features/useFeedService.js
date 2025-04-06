@@ -18,14 +18,14 @@ export function useFeedService() {
   const userId = user?.id;
 
   // Cache ayarları
-  const STALE_TIME = 2 * 60 * 1000; // 2 dakika
+  const STALE_TIME = 5 * 60 * 1000; // 5 dakika (arttırıldı)
   const CACHE_TIME = 60 * 60 * 1000; // 60 dakika
-  const REFRESH_INTERVAL = 1000 * 60 * 5; // 5 dakika (otomatik yenileme için)
+  const REFRESH_INTERVAL = 1000 * 60 * 10; // 10 dakika (arttırıldı)
 
   // Son yenileme zamanını takip etmek için state
   const [lastRefreshTime, setLastRefreshTime] = useState(null);
 
-  // Feed listesini getir
+  // Feed listesini getir - öncelikli veri
   const {
     data: feeds,
     isLoading: isLoadingFeeds,
@@ -39,9 +39,12 @@ export function useFeedService() {
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
     onSuccess: () => setLastRefreshTime(new Date()),
+    // Değişiklik: Hata yönetimini geliştirme
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  // Feed öğelerini getir
+  // Feed öğelerini getir - optimize edilmiş sorgu
   const {
     data: items,
     isLoading: isLoadingItems,
@@ -49,15 +52,20 @@ export function useFeedService() {
     error: itemsError,
     refetch: refetchItems,
   } = useQuery({
-    queryKey: ["feedItems", userId, feeds],
+    queryKey: ["feedItems", userId, feeds?.length],
     queryFn: () => {
-      const feedIds = feeds?.map((feed) => feed.id) || [];
+      if (!feeds || feeds.length === 0) return [];
+      const feedIds = feeds.map((feed) => feed.id);
       return feedService.getFeedItems(feedIds, 100);
     },
     enabled: !!userId && !!feeds && feeds.length > 0,
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
     onSuccess: () => setLastRefreshTime(new Date()),
+    // Değişiklik: Sayfa yüklenirken daha hızlı hale getirmek için
+    keepPreviousData: true,
+    // Değişiklik: feed değiştiğinde bile eski verileri göster
+    placeholderData: (previousData) => previousData,
   });
 
   // Favori öğeleri getir
@@ -71,6 +79,8 @@ export function useFeedService() {
     enabled: !!userId,
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
+    // Değişiklik: Eski verileri göster
+    keepPreviousData: true,
   });
 
   // Daha sonra oku listesini getir
@@ -84,6 +94,8 @@ export function useFeedService() {
     enabled: !!userId,
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
+    // Değişiklik: Eski verileri göster
+    keepPreviousData: true,
   });
 
   // Otomatik yenileme gerçekleştiğinde son yenileme zamanını güncelle
@@ -93,21 +105,52 @@ export function useFeedService() {
     }
   }, [items]);
 
-  // Otomatik yenileme için zamanlayıcı (5 dakikada bir)
+  // Otomatik yenileme için zamanlayıcı
   useEffect(() => {
     // Feed otomatik yenileme için periyodik zamanlayıcı (ek güvence olarak)
     const autoRefreshTimer = setInterval(() => {
-      // Son yenilemeden beri 5 dakika geçtiyse yenile
-      const timeSinceLastRefresh = new Date() - lastRefreshTime;
-      if (timeSinceLastRefresh > REFRESH_INTERVAL) {
-        refreshAll();
+      // Son yenilemeden beri belirlenen süre geçtiyse yenile
+      const timeSinceLastRefresh = new Date() - (lastRefreshTime || 0);
+      if (lastRefreshTime && timeSinceLastRefresh > REFRESH_INTERVAL) {
+        // Değişiklik: Otomatik yenilemede sessiz çalışma
+        silentRefresh();
       }
     }, REFRESH_INTERVAL);
 
     return () => clearInterval(autoRefreshTimer);
   }, [lastRefreshTime]);
 
-  // Tüm verileri yenile
+  // Değişiklik: Sessiz yenileme - kullanıcıya bildirim göstermeden yeniler
+  const silentRefresh = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      await Promise.all([
+        queryClient.refetchQueries({
+          queryKey: ["feeds", userId],
+          exact: true,
+        }),
+        queryClient.refetchQueries({
+          queryKey: ["feedItems", userId],
+          exact: false,
+        }),
+        queryClient.refetchQueries({
+          queryKey: ["favorites", userId],
+          exact: true,
+        }),
+        queryClient.refetchQueries({
+          queryKey: ["readLater", userId],
+          exact: true,
+        }),
+      ]);
+
+      setLastRefreshTime(new Date());
+    } catch (error) {
+      console.error("Sessiz yenileme hatası:", error);
+    }
+  }, [userId, queryClient]);
+
+  // Tüm verileri yenile - kullanıcı tarafından tetiklenen
   const refreshAll = useCallback(async () => {
     if (!userId) return;
 
@@ -121,11 +164,7 @@ export function useFeedService() {
 
       setLastRefreshTime(new Date());
 
-      // Sadece kullanıcı tarafından manuel yenileme yapıldığında mesaj göster
-      if (results[0].isSuccess || results[1].isSuccess) {
-        toast.success(t("feeds.refreshed"));
-      }
-
+      // Sonuçları döndür
       return results;
     } catch (error) {
       console.error("Yenileme hatası:", error);
@@ -141,105 +180,177 @@ export function useFeedService() {
     t,
   ]);
 
-  // Okuma durumunu değiştir
+  // Değişiklik: Cache güncelleme yardımcı fonksiyonu - daha verimli
+  const updateItemInCache = useCallback(
+    (itemId, updates) => {
+      // Tüm feed öğeleri cache'inde güncelleme yap
+      queryClient.setQueriesData({ queryKey: ["feedItems"] }, (oldData) => {
+        if (!oldData) return oldData;
+        return oldData.map((item) =>
+          item.id === itemId ? { ...item, ...updates } : item
+        );
+      });
+
+      // Favoriler cache'inde güncelleme yap
+      if ("is_favorite" in updates) {
+        if (updates.is_favorite) {
+          // Favorilere ekle
+          queryClient.setQueriesData({ queryKey: ["favorites"] }, (oldData) => {
+            if (!oldData) return oldData;
+            const item = items?.find((i) => i.id === itemId);
+            if (!item) return oldData;
+            const existingItem = oldData.find((i) => i.id === itemId);
+            if (existingItem) return oldData;
+            return [...oldData, { ...item, ...updates }];
+          });
+        } else {
+          // Favorilerden çıkar
+          queryClient.setQueriesData({ queryKey: ["favorites"] }, (oldData) => {
+            if (!oldData) return oldData;
+            return oldData.filter((item) => item.id !== itemId);
+          });
+        }
+      }
+
+      // Sonra oku cache'inde güncelleme yap
+      if ("is_read_later" in updates) {
+        if (updates.is_read_later) {
+          // Sonra oku'ya ekle
+          queryClient.setQueriesData({ queryKey: ["readLater"] }, (oldData) => {
+            if (!oldData) return oldData;
+            const item = items?.find((i) => i.id === itemId);
+            if (!item) return oldData;
+            const existingItem = oldData.find((i) => i.id === itemId);
+            if (existingItem) return oldData;
+            return [...oldData, { ...item, ...updates }];
+          });
+        } else {
+          // Sonra oku'dan çıkar
+          queryClient.setQueriesData({ queryKey: ["readLater"] }, (oldData) => {
+            if (!oldData) return oldData;
+            return oldData.filter((item) => item.id !== itemId);
+          });
+        }
+      }
+    },
+    [queryClient, items]
+  );
+
+  // Okuma durumunu değiştir - Optimistic updates ile geliştirildi
   const toggleReadMutation = useMutation({
     mutationFn: ({ itemId, isRead }) =>
       feedService.toggleItemReadStatus(userId, itemId, isRead),
-    onSuccess: (result, variables) => {
-      // Cache'i güncelleme
-      queryClient.invalidateQueries(["feedItems"]);
+    onMutate: async ({ itemId, isRead }) => {
+      // Önceki sorgulardan gelen verileri yedekle
+      const previousData = queryClient.getQueryData([
+        "feedItems",
+        userId,
+        feeds?.length,
+      ]);
 
-      // Doğrudan Cache güncelleme
-      queryClient.setQueriesData(["feedItems"], (oldData) => {
-        if (!oldData) return oldData;
-        return oldData.map((item) =>
-          item.id === variables.itemId
-            ? { ...item, is_read: variables.isRead }
-            : item
-        );
-      });
+      // Optimistic update - Cache'i hemen güncelle
+      updateItemInCache(itemId, { is_read: isRead });
+
+      return { previousData };
     },
-    onError: (error) => {
+    onError: (error, { itemId, isRead }, context) => {
+      // Hata durumunda önceki verileri geri yükle
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          ["feedItems", userId, feeds?.length],
+          context.previousData
+        );
+      }
       console.error("Okuma durumu güncelleme hatası:", error);
       toast.error(t("errors.updateFailed"));
     },
+    onSettled: () => {
+      // İşlem tamamlandığında verileri bir kere daha yenile (opsiyonel)
+      // queryClient.invalidateQueries(["feedItems"]);
+    },
   });
 
-  // Favori durumunu değiştir
+  // Favori durumunu değiştir - Optimistic updates ile geliştirildi
   const toggleFavoriteMutation = useMutation({
     mutationFn: ({ itemId, isFavorite }) =>
       feedService.toggleItemFavoriteStatus(userId, itemId, isFavorite),
-    onSuccess: (result, variables) => {
-      // Cache'i güncelle - UI güncellemesi için önemli
-      queryClient.invalidateQueries(["feedItems"]);
-      queryClient.invalidateQueries(["favorites"]);
+    onMutate: async ({ itemId, isFavorite }) => {
+      // Önceki verileri yedekle
+      const previousItems = queryClient.getQueryData([
+        "feedItems",
+        userId,
+        feeds?.length,
+      ]);
+      const previousFavorites = queryClient.getQueryData(["favorites", userId]);
 
-      // Doğrudan Cache güncelleme
-      queryClient.setQueriesData(["feedItems"], (oldData) => {
-        if (!oldData) return oldData;
-        return oldData.map((item) =>
-          item.id === variables.itemId
-            ? { ...item, is_favorite: variables.isFavorite }
-            : item
-        );
-      });
+      // Optimistic update - Cache'i hemen güncelle
+      updateItemInCache(itemId, { is_favorite: isFavorite });
 
-      // Favoriler listesini de güncelle
-      if (variables.isFavorite) {
-        queryClient.setQueriesData(["favorites"], (oldData) => {
-          const newItem = items?.find((item) => item.id === variables.itemId);
-          if (!oldData || !newItem) return oldData;
-          return [...oldData, newItem];
-        });
-      } else {
-        queryClient.setQueriesData(["favorites"], (oldData) => {
-          if (!oldData) return oldData;
-          return oldData.filter((item) => item.id !== variables.itemId);
-        });
-      }
+      return { previousItems, previousFavorites };
     },
-    onError: (error) => {
+    onError: (error, { itemId, isFavorite }, context) => {
+      // Hata durumunda önceki verileri geri yükle
+      if (context?.previousItems) {
+        queryClient.setQueryData(
+          ["feedItems", userId, feeds?.length],
+          context.previousItems
+        );
+      }
+      if (context?.previousFavorites) {
+        queryClient.setQueryData(
+          ["favorites", userId],
+          context.previousFavorites
+        );
+      }
       console.error("Favori durumu güncelleme hatası:", error);
       toast.error(t("errors.updateFailed"));
     },
+    onSettled: () => {
+      // İşlem tamamlandığında (isteğe bağlı olarak) gerçek verileri alabilirsiniz
+      // queryClient.invalidateQueries(["feedItems"]);
+      // queryClient.invalidateQueries(["favorites"]);
+    },
   });
 
-  // Daha sonra oku durumunu değiştir
+  // Daha sonra oku durumunu değiştir - Optimistic updates ile geliştirildi
   const toggleReadLaterMutation = useMutation({
     mutationFn: ({ itemId, isReadLater }) =>
       feedService.toggleItemReadLaterStatus(userId, itemId, isReadLater),
-    onSuccess: (result, variables) => {
-      // Cache'i güncelle - UI güncellemesi için önemli
-      queryClient.invalidateQueries(["feedItems"]);
-      queryClient.invalidateQueries(["readLater"]);
+    onMutate: async ({ itemId, isReadLater }) => {
+      // Önceki verileri yedekle
+      const previousItems = queryClient.getQueryData([
+        "feedItems",
+        userId,
+        feeds?.length,
+      ]);
+      const previousReadLater = queryClient.getQueryData(["readLater", userId]);
 
-      // Doğrudan Cache güncelleme
-      queryClient.setQueriesData(["feedItems"], (oldData) => {
-        if (!oldData) return oldData;
-        return oldData.map((item) =>
-          item.id === variables.itemId
-            ? { ...item, is_read_later: variables.isReadLater }
-            : item
-        );
-      });
+      // Optimistic update - Cache'i hemen güncelle
+      updateItemInCache(itemId, { is_read_later: isReadLater });
 
-      // Daha sonra oku listesini de güncelle
-      if (variables.isReadLater) {
-        queryClient.setQueriesData(["readLater"], (oldData) => {
-          const newItem = items?.find((item) => item.id === variables.itemId);
-          if (!oldData || !newItem) return oldData;
-          return [...oldData, newItem];
-        });
-      } else {
-        queryClient.setQueriesData(["readLater"], (oldData) => {
-          if (!oldData) return oldData;
-          return oldData.filter((item) => item.id !== variables.itemId);
-        });
-      }
+      return { previousItems, previousReadLater };
     },
-    onError: (error) => {
+    onError: (error, { itemId, isReadLater }, context) => {
+      // Hata durumunda önceki verileri geri yükle
+      if (context?.previousItems) {
+        queryClient.setQueryData(
+          ["feedItems", userId, feeds?.length],
+          context.previousItems
+        );
+      }
+      if (context?.previousReadLater) {
+        queryClient.setQueryData(
+          ["readLater", userId],
+          context.previousReadLater
+        );
+      }
       console.error("Daha sonra oku durumu güncelleme hatası:", error);
       toast.error(t("errors.updateFailed"));
+    },
+    onSettled: () => {
+      // İşlem tamamlandığında (isteğe bağlı olarak) gerçek verileri alabilirsiniz
+      // queryClient.invalidateQueries(["feedItems"]);
+      // queryClient.invalidateQueries(["readLater"]);
     },
   });
 
@@ -257,7 +368,7 @@ export function useFeedService() {
         keepReadLater
       ),
     onSuccess: (result) => {
-      // Verileri yenilemek için invalidate
+      // Temizlik sonrası verileri bir kere yenile
       queryClient.invalidateQueries(["feedItems", userId]);
 
       // Sonuçları döndür
@@ -365,6 +476,7 @@ export function useFeedService() {
 
     // Yenileme fonksiyonları
     refreshAll,
+    silentRefresh,
     refetchFeeds,
     refetchItems,
     refetchFavorites,

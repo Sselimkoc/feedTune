@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, memo } from "react";
+import { useState, memo, useCallback } from "react";
 import { format } from "date-fns";
 import { tr, enUS } from "date-fns/locale";
 import {
@@ -32,7 +32,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-function FeedCard({
+const FeedCard = memo(function FeedCard({
   item,
   feed,
   isCompact,
@@ -67,23 +67,29 @@ function FeedCard({
   const imageUrl = item.thumbnail || item.image_url;
 
   // Tıklama işleyicileri
-  const handleToggleRead = (e) => {
-    e.stopPropagation();
-    console.log("handleToggleRead çağrıldı", item.id, !item.is_read);
-    onToggleRead(item.id, !item.is_read);
-  };
+  const handleToggleRead = useCallback(
+    (e) => {
+      e.stopPropagation();
+      onToggleRead(item.id, !item.is_read);
+    },
+    [item.id, item.is_read, onToggleRead]
+  );
 
-  const handleToggleFavorite = (e) => {
-    e.stopPropagation();
-    console.log("handleToggleFavorite çağrıldı", item.id, !item.is_favorite);
-    onToggleFavorite(item.id, !item.is_favorite);
-  };
+  const handleToggleFavorite = useCallback(
+    (e) => {
+      e.stopPropagation();
+      onToggleFavorite(item.id, !item.is_favorite);
+    },
+    [item.id, item.is_favorite, onToggleFavorite]
+  );
 
-  const handleToggleReadLater = (e) => {
-    e.stopPropagation();
-    console.log("handleToggleReadLater çağrıldı", item.id, !item.is_read_later);
-    onToggleReadLater(item.id, !item.is_read_later);
-  };
+  const handleToggleReadLater = useCallback(
+    (e) => {
+      e.stopPropagation();
+      onToggleReadLater(item.id, !item.is_read_later);
+    },
+    [item.id, item.is_read_later, onToggleReadLater]
+  );
 
   // Favori ve Daha Sonra Oku için yerelleştirme metinleri
   const getFavoriteText = () => {
@@ -557,7 +563,7 @@ function FeedCard({
       </Card>
     </motion.div>
   );
-}
+});
 
 // Göreceli zaman hesaplaması (şimdi, X dk önce, X saat önce, vb.)
 function getRelativeTime(date, language) {
@@ -591,5 +597,18 @@ function getRelativeTime(date, language) {
   }
 }
 
-// Performans optimizasyonu için memo kullanımı
-export default memo(FeedCard);
+// Değişiklik: props'ların eşit olup olmadığını karşılaştırmak için özel bir fonksiyon
+function arePropsEqual(prevProps, nextProps) {
+  // ID'ler aynıysa ve diğer kritik değişiklikler yoksa, yeniden render edilmesini önle
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.item.is_read === nextProps.item.is_read &&
+    prevProps.item.is_favorite === nextProps.item.is_favorite &&
+    prevProps.item.is_read_later === nextProps.item.is_read_later &&
+    prevProps.isFocused === nextProps.isFocused &&
+    prevProps.isCompact === nextProps.isCompact
+  );
+}
+
+// arePropsEqual fonksiyonunu kullanarak optimize edilmiş bileşeni dışa aktar
+export default memo(FeedCard, arePropsEqual);

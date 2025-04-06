@@ -27,8 +27,8 @@ export class FeedRepository {
         ? { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } }
         : undefined;
 
-      const { data, error } = await this.supabase
-        .from("feeds")
+    const { data, error } = await this.supabase
+      .from("feeds")
         .select(
           `
           id,
@@ -44,8 +44,8 @@ export class FeedRepository {
           updated_at
         `
         )
-        .eq("user_id", userId)
-        .eq("is_active", true)
+      .eq("user_id", userId)
+      .eq("is_active", true)
         .order("created_at", { ascending: false })
         .select(undefined, options);
 
