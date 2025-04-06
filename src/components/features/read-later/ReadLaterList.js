@@ -11,23 +11,30 @@ import {
   BookmarkPlus,
   BookmarkCheck,
   Loader2,
-  Badge,
-  Youtube,
-  RssIcon,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import { cn, stripHtml } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
+import { RssIcon, YoutubeIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { ErrorState } from "@/components/ui-states/ErrorState";
+import { EmptyState } from "@/components/ui-states/EmptyState";
 
-export function ReadLaterList({ initialItems, isLoading }) {
+export function ReadLaterList({
+  initialItems,
+  isLoading,
+  isError,
+  error,
+  onToggleRead,
+  onToggleFavorite,
+  onToggleReadLater,
+  onRefresh,
+}) {
   const [items, setItems] = useState(initialItems || []);
-  const supabase = createClientComponentClient();
-  const { user } = useAuthStore();
   const { t, language } = useLanguage();
 
   // Debug bilgisi
@@ -42,11 +49,6 @@ export function ReadLaterList({ initialItems, isLoading }) {
   }, [initialItems, isLoading]);
 
   const toggleItemRead = async (itemId, isRead) => {
-    if (!user.id) {
-      toast.error(t("errors.needToBeLoggedIn"));
-      return;
-    }
-
     try {
       // Optimistic update
       const updatedItems = items.map((item) =>
@@ -54,46 +56,8 @@ export function ReadLaterList({ initialItems, isLoading }) {
       );
       setItems(updatedItems);
 
-      // API call
-      const { data: existingInteraction } = await supabase
-        .from("user_item_interactions")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("item_id", itemId)
-        .single();
-
-      if (existingInteraction) {
-        // Etkileşim varsa güncelle
-        const { error } = await supabase
-          .from("user_item_interactions")
-          .update({ is_read: isRead })
-          .eq("user_id", user.id)
-          .eq("item_id", itemId);
-
-        if (error) throw error;
-      } else {
-        // Etkileşim yoksa oluştur
-        const { error } = await supabase.from("user_item_interactions").insert([
-          {
-            user_id: user.id,
-            item_id: itemId,
-            is_read: isRead,
-            is_favorite: false,
-            is_read_later: true,
-          },
-        ]);
-
-        if (error) throw error;
-      }
-
-      // Başarılı işlem sonrası kullanıcıya bildirim göster
-      toast.success(
-        isRead ? t("feeds.itemMarkedAsRead") : t("feeds.itemMarkedAsUnread"),
-        {
-          duration: 2000,
-          position: "bottom-right",
-        }
-      );
+      // API call via props
+      await onToggleRead(itemId, isRead);
     } catch (error) {
       console.error("Error updating read status:", error);
       toast.error(t("errors.general"));
@@ -107,66 +71,15 @@ export function ReadLaterList({ initialItems, isLoading }) {
   };
 
   const toggleItemFavorite = async (itemId, isFavorite) => {
-    if (!user.id) {
-      toast.error(t("errors.needToBeLoggedIn"));
-      return;
-    }
-
     try {
-      console.log(
-        "Toggling favorite status in ReadLaterList:",
-        itemId,
-        isFavorite
-      );
-
       // Optimistic update
       const updatedItems = items.map((item) =>
         item.id === itemId ? { ...item, is_favorite: isFavorite } : item
       );
       setItems(updatedItems);
 
-      // API call
-      const { data: existingInteraction } = await supabase
-        .from("user_item_interactions")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("item_id", itemId)
-        .single();
-
-      if (existingInteraction) {
-        // Etkileşim varsa güncelle
-        const { error } = await supabase
-          .from("user_item_interactions")
-          .update({ is_favorite: isFavorite })
-          .eq("user_id", user.id)
-          .eq("item_id", itemId);
-
-        if (error) throw error;
-      } else {
-        // Etkileşim yoksa oluştur
-        const { error } = await supabase.from("user_item_interactions").insert([
-          {
-            user_id: user.id,
-            item_id: itemId,
-            is_read: false,
-            is_favorite: isFavorite,
-            is_read_later: true,
-          },
-        ]);
-
-        if (error) throw error;
-      }
-
-      // Başarılı işlem sonrası kullanıcıya bildirim göster
-      toast.success(
-        isFavorite
-          ? t("feeds.itemAddedToFavorites")
-          : t("feeds.itemRemovedFromFavorites"),
-        {
-          duration: 2000,
-          position: "bottom-right",
-        }
-      );
+      // API call via props
+      await onToggleFavorite(itemId, isFavorite);
     } catch (error) {
       console.error("Error updating favorite status:", error);
       toast.error(t("errors.general"));
@@ -180,11 +93,6 @@ export function ReadLaterList({ initialItems, isLoading }) {
   };
 
   const toggleItemReadLater = async (itemId, isReadLater) => {
-    if (!user.id) {
-      toast.error(t("errors.needToBeLoggedIn"));
-      return;
-    }
-
     try {
       // Optimistic update - Okuma listesinden çıkarılıyorsa, öğeyi listeden kaldır
       if (isReadLater === false) {
@@ -197,57 +105,24 @@ export function ReadLaterList({ initialItems, isLoading }) {
         );
       }
 
-      // API call
-      const { data: existingInteraction } = await supabase
-        .from("user_item_interactions")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("item_id", itemId)
-        .single();
-
-      if (existingInteraction) {
-        // Etkileşim varsa güncelle
-        const { error } = await supabase
-          .from("user_item_interactions")
-          .update({ is_read_later: isReadLater })
-          .eq("user_id", user.id)
-          .eq("item_id", itemId);
-
-        if (error) throw error;
-      } else {
-        // Etkileşim yoksa oluştur
-        const { error } = await supabase.from("user_item_interactions").insert([
-          {
-            user_id: user.id,
-            item_id: itemId,
-            is_read: false,
-            is_favorite: false,
-            is_read_later: isReadLater,
-          },
-        ]);
-
-        if (error) throw error;
-      }
-
-      // Başarılı işlem sonrası kullanıcıya bildirim göster
-      toast.success(
-        isReadLater
-          ? t("feeds.itemAddedToReadLater")
-          : t("feeds.itemRemovedFromReadLater"),
-        {
-          duration: 2000,
-          position: "bottom-right",
-        }
-      );
+      // API call via props
+      await onToggleReadLater(itemId, isReadLater);
     } catch (error) {
       console.error("Error updating read later status:", error);
       toast.error(t("errors.general"));
 
-      // Rollback on error
-      const rollbackItems = items.map((item) =>
-        item.id === itemId ? { ...item, is_read_later: !isReadLater } : item
-      );
-      setItems(rollbackItems);
+      // Rollback on error - Okuma listesinden çıkarma işlemi başarısız olduysa
+      if (isReadLater === false) {
+        const itemToRestore = initialItems.find((item) => item.id === itemId);
+        if (itemToRestore) {
+          setItems([...items, itemToRestore]);
+        }
+      } else {
+        const rollbackItems = items.map((item) =>
+          item.id === itemId ? { ...item, is_read_later: !isReadLater } : item
+        );
+        setItems(rollbackItems);
+      }
     }
   };
 
@@ -259,154 +134,163 @@ export function ReadLaterList({ initialItems, isLoading }) {
     }
   };
 
+  // Hata durumu
+  if (isError) {
+    return (
+      <ErrorState
+        error={error}
+        onRetry={onRefresh}
+        title={t("readLater.errorTitle")}
+        description={t("readLater.errorDescription")}
+      />
+    );
+  }
+
+  // Boş durum
+  if (!isLoading && (!items || items.length === 0)) {
+    return (
+      <EmptyState
+        title={t("readLater.emptyTitle")}
+        description={t("readLater.emptyDescription")}
+        icon={<BookmarkCheck className="h-10 w-10 opacity-20" />}
+      />
+    );
+  }
+
+  // Yükleme durumu için dönen loading ekranı
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] loading-container rounded-xl p-8">
+        <div className="relative mb-6">
+          <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl"></div>
+          <div className="relative z-10 bg-background/80 backdrop-blur-sm rounded-full p-4 shadow-lg border">
+            <BookmarkCheck className="h-12 w-12 text-primary loading-spinner" />
+          </div>
+        </div>
+
+        <h3 className="text-xl font-medium mb-2 loading-pulse">
+          {t("readLater.title")}
+        </h3>
+        <p className="text-muted-foreground text-center max-w-md mb-4 loading-pulse">
+          {t("common.loading")}
+        </p>
+
+        <div className="flex items-center gap-2 mt-2">
+          <div
+            className="h-2 w-2 rounded-full bg-primary animate-bounce"
+            style={{ animationDelay: "0ms" }}
+          ></div>
+          <div
+            className="h-2 w-2 rounded-full bg-primary animate-bounce"
+            style={{ animationDelay: "150ms" }}
+          ></div>
+          <div
+            className="h-2 w-2 rounded-full bg-primary animate-bounce"
+            style={{ animationDelay: "300ms" }}
+          ></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] loading-container rounded-xl p-8">
-          <div className="relative mb-6">
-            <div className="absolute inset-0 rounded-full bg-blue-500/20 blur-xl"></div>
-            <div className="relative z-10 bg-background/80 backdrop-blur-sm rounded-full p-4 shadow-lg border">
-              <BookmarkCheck className="h-12 w-12 text-blue-500 loading-spinner" />
-            </div>
-          </div>
-
-          <h3 className="text-xl font-medium mb-2 loading-pulse">
-            {t("readLater.title")}
-          </h3>
-          <p className="text-muted-foreground text-center max-w-md mb-4 loading-pulse">
-            {t("common.loading")}
-          </p>
-
-          <div className="flex items-center gap-2 mt-2">
-            <div
-              className="h-2 w-2 rounded-full bg-blue-500 animate-bounce"
-              style={{ animationDelay: "0ms" }}
-            ></div>
-            <div
-              className="h-2 w-2 rounded-full bg-blue-500 animate-bounce"
-              style={{ animationDelay: "150ms" }}
-            ></div>
-            <div
-              className="h-2 w-2 rounded-full bg-blue-500 animate-bounce"
-              style={{ animationDelay: "300ms" }}
-            ></div>
-          </div>
-        </div>
-      ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-          <div className="mb-4 rounded-full bg-muted p-3">
-            <BookmarkCheck className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <h3 className="mb-2 text-lg font-medium">{t("readLater.noItems")}</h3>
-          <p className="mb-6 max-w-md text-sm text-muted-foreground">
-            {t("readLater.addToReadLater")}
-          </p>
-          <Button asChild>
-            <Link href="/feeds">
-              <RssIcon className="h-4 w-4 mr-2" />
-              {t("feeds.title")}
-            </Link>
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((item) => (
-            <Card key={item.id} className="overflow-hidden border">
-              <CardContent className="p-0 flex flex-col h-full">
-                {/* Thumbnail */}
-                <div className="relative w-full aspect-video bg-muted mb-3">
-                  {item.thumbnail ? (
-                    <Image
-                      src={item.thumbnail}
-                      alt={item.title}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <BookmarkCheck className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-4 flex-1 flex flex-col">
-                  {/* Kaynak ve Tarih */}
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5">
-                      {item.site_favicon ? (
-                        <div className="relative w-4 h-4 flex-shrink-0">
-                          <Image
-                            src={item.site_favicon}
-                            alt=""
-                            width={16}
-                            height={16}
-                            className="object-cover rounded"
-                            unoptimized={true}
-                          />
-                        </div>
-                      ) : item.feed_type === "youtube" ? (
-                        <Youtube className="h-3.5 w-3.5 text-red-500" />
-                      ) : (
-                        <RssIcon className="h-3.5 w-3.5 text-orange-500" />
-                      )}
-                      <span className="text-xs text-muted-foreground truncate max-w-[150px]">
-                        {item.feed_title ||
-                          t("home.recentContent.unknownSource")}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex items-center text-xs text-muted-foreground">
-                      <span className="line-clamp-1">
-                        {
-                          item.timeAgoData
-                            ? item.timeAgoData.isJustNow
-                              ? t("timeAgo.justNow")
-                              : item.timeAgoData.value === 1
-                              ? t(`timeAgo.${item.timeAgoData.unit}_one`)
-                              : t(`timeAgo.${item.timeAgoData.unit}_other`, {
-                                  count: item.timeAgoData.value,
-                                })
-                            : new Date(item.published_at).toLocaleDateString() // timeAgoData yoksa basit tarih formatı
-                        }
-                      </span>
-                    </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {items.map((item) => (
+          <Card key={item.id} className="overflow-hidden border">
+            <CardContent className="p-0 flex flex-col h-full">
+              {/* Thumbnail */}
+              <div className="relative w-full aspect-video bg-muted mb-3">
+                {item.thumbnail ? (
+                  <Image
+                    src={item.thumbnail}
+                    alt={item.title}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <BookmarkCheck className="h-8 w-8 text-muted-foreground" />
                   </div>
+                )}
+              </div>
 
-                  {/* Başlık */}
-                  <h3 className="font-semibold text-base mb-2 line-clamp-2">
-                    {item.title}
-                  </h3>
-
-                  {/* Açıklama */}
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                    {stripHtml(item.description || "")}
-                  </p>
-
-                  {/* Butonlar */}
-                  <div className="flex items-center gap-1 mt-auto pt-2 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 rounded-md flex-1"
-                      onClick={() => handleOpenLink(item.link)}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-1.5" />
-                      {t("home.recentContent.read")}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 rounded-md"
-                      onClick={() => toggleItemReadLater(item.id, false)}
-                    >
-                      <BookmarkCheck className="h-4 w-4 fill-current text-blue-500" />
-                    </Button>
+              <div className="p-4 flex-1 flex flex-col">
+                {/* Kaynak ve Tarih */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    {item.site_favicon ? (
+                      <div className="relative w-4 h-4 flex-shrink-0">
+                        <Image
+                          src={item.site_favicon}
+                          alt=""
+                          width={16}
+                          height={16}
+                          className="object-cover rounded"
+                          unoptimized={true}
+                        />
+                      </div>
+                    ) : item.feed_type === "youtube" ? (
+                      <YoutubeIcon className="h-3.5 w-3.5 text-red-500" />
+                    ) : (
+                      <RssIcon className="h-3.5 w-3.5 text-orange-500" />
+                    )}
+                    <span className="text-xs text-muted-foreground truncate max-w-[150px]">
+                      {item.feed_title || t("home.recentContent.unknownSource")}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center text-xs text-muted-foreground">
+                    <span className="line-clamp-1">
+                      {
+                        item.timeAgoData
+                          ? item.timeAgoData.isJustNow
+                            ? t("timeAgo.justNow")
+                            : item.timeAgoData.value === 1
+                            ? t(`timeAgo.${item.timeAgoData.unit}_one`)
+                            : t(`timeAgo.${item.timeAgoData.unit}_other`, {
+                                count: item.timeAgoData.value,
+                              })
+                          : new Date(item.published_at).toLocaleDateString() // timeAgoData yoksa basit tarih formatı
+                      }
+                    </span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+
+                {/* Başlık */}
+                <h3 className="font-semibold text-base mb-2 line-clamp-2">
+                  {item.title}
+                </h3>
+
+                {/* Açıklama */}
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                  {stripHtml(item.description || "")}
+                </p>
+
+                {/* Butonlar */}
+                <div className="flex items-center gap-1 mt-auto pt-2 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 rounded-md flex-1"
+                    onClick={() => handleOpenLink(item.link)}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1.5" />
+                    {t("home.recentContent.read")}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-md"
+                    onClick={() => toggleItemReadLater(item.id, false)}
+                  >
+                    <BookmarkCheck className="h-4 w-4 fill-current text-blue-500" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

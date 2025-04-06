@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useFeeds } from "@/hooks/features/useFeeds";
-import { useHomeData } from "@/hooks/features/useHomeData";
-import { useDeleteFeed } from "@/hooks/features/useDeleteFeed";
+import { useHomeFeeds } from "@/hooks/features/useHomeFeeds";
+import { useFeedManagement } from "@/hooks/features/useFeedManagement";
 import { HomeStats } from "@/components/home/HomeStats";
 import { HomeFeedManagement } from "@/components/home/HomeFeedManagement";
 import { HomeRecentContent } from "@/components/home/HomeRecentContent";
@@ -24,19 +23,14 @@ export function HomeContent() {
 
   // Hook'lar
   const { user } = useAuthStore();
-  const { refetch } = useFeeds();
-  const { feeds, setFeeds, recentItems, isLoading, isError, stats } =
-    useHomeData();
-  const { isDeleting, handleRemoveFeed } = useDeleteFeed();
+  const { feeds, recentItems, stats, isLoading, isError, error, refresh } =
+    useHomeFeeds();
+  const { deleteFeed, isDeleting } = useFeedManagement();
 
   // Feed silme işleyicisi
   const handleDeleteFeed = async () => {
-    const success = await handleRemoveFeed(feedToDelete, () => {
-      setFeeds((prevFeeds) => prevFeeds.filter((f) => f.id !== feedToDelete));
-      refetch();
-    });
-
-    if (success) {
+    if (feedToDelete) {
+      await deleteFeed(feedToDelete);
       setShowDeleteDialog(false);
       setFeedToDelete(null);
     }
@@ -58,7 +52,7 @@ export function HomeContent() {
     }
 
     if (isError) {
-      return <ErrorState onRetry={refetch} />;
+      return <ErrorState onRetry={refresh} error={error} />;
     }
 
     if (!feeds || feeds.length === 0) {
@@ -95,7 +89,7 @@ export function HomeContent() {
         setShowDeleteDialog={setShowDeleteDialog}
         onDeleteFeed={handleDeleteFeed}
         isDeleting={isDeleting}
-        onFeedAdded={refetch}
+        onFeedAdded={refresh}
       />
     </div>
   );

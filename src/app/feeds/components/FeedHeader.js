@@ -10,7 +10,7 @@ import { KeyboardButton } from "@/components/features/feeds/buttons/KeyboardButt
 import { RefreshButton } from "@/components/features/feeds/buttons/RefreshButton";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export function FeedHeader({
   feeds,
@@ -21,6 +21,7 @@ export function FeedHeader({
   onRefresh,
   viewMode,
   onViewModeChange,
+  onAddFeed,
 }) {
   const { t } = useLanguage();
 
@@ -52,7 +53,7 @@ export function FeedHeader({
               <KeyboardButton
                 onShowKeyboardShortcuts={onShowKeyboardShortcuts}
               />
-              <AddFeedButton />
+              <AddFeedButton onAddFeed={onAddFeed} />
             </div>
           </div>
         </CardContent>

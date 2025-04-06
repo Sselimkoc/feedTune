@@ -221,7 +221,89 @@ export class FeedRepository {
     if (error) throw new Error(error.message);
     return data;
   }
+
+  /**
+   * Yeni bir feed ekler
+   * @param {object} feedData Feed verileri
+   * @returns {Promise<object>} Eklenen feed
+   */
+  async addFeed(feedData) {
+    try {
+      // Feed için gerekli alanları kontrol et
+      if (!feedData.url) throw new Error("Feed URL'si gerekli");
+      if (!feedData.user_id) throw new Error("Kullanıcı ID'si gerekli");
+      if (!feedData.type) throw new Error("Feed türü gerekli");
+
+      // Aynı URL'ye sahip feed var mı kontrol et
+      const { data: existingFeed, error: checkError } = await this.supabase
+        .from("feeds")
+        .select("id")
+        .eq("url", feedData.url)
+        .eq("user_id", feedData.user_id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      // Eğer zaten varsa hata fırlat
+      if (existingFeed) {
+        throw new Error("Bu feed zaten eklenmiş");
+      }
+
+      // Yeni feed ekle
+      const { data, error } = await this.supabase
+        .from("feeds")
+        .insert({
+          url: feedData.url,
+          user_id: feedData.user_id,
+          type: feedData.type,
+          title: feedData.title || null,
+          description: feedData.description || null,
+          site_url: feedData.site_url || null,
+          site_favicon: feedData.site_favicon || null,
+          channel_id: feedData.channel_id || null,
+          is_active:
+            feedData.is_active !== undefined ? feedData.is_active : true,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Feed işleme kuyruğuna ekle (burada bir event gönderebilirsiniz)
+      // Bu adım backend tarafında feed içeriklerini okuyacak bir servis için olabilir
+
+      return data;
+    } catch (error) {
+      console.error("Error adding feed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Feed siler (soft delete)
+   * @param {string} feedId Feed ID'si
+   * @param {string} userId Kullanıcı ID'si
+   * @returns {Promise<boolean>} İşlem başarılı mı?
+   */
+  async deleteFeed(feedId, userId) {
+    try {
+      // Soft delete (is_active = false olarak işaretle)
+      const { error } = await this.supabase
+        .from("feeds")
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq("id", feedId)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error deleting feed:", error);
+      throw error;
+    }
+  }
 }
 
-// Singleton instance - Uygulama boyunca tek bir örnek kullanmak için
+// Singleton instance - Tek bir repository örneği kullanmak için
 export const feedRepository = new FeedRepository();

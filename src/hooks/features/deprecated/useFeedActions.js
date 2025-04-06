@@ -4,7 +4,8 @@ import { useCallback } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useFeeds } from "@/hooks/features/useFeeds";
+import { useFeedService } from "@/hooks/features/useFeedService";
+import { useFeedManagement } from "@/hooks/features/useFeedManagement";
 
 /**
  * Feed etkileşimleri için hook
@@ -12,12 +13,8 @@ import { useFeeds } from "@/hooks/features/useFeeds";
  */
 export function useFeedActions() {
   const { user } = useAuthStore();
-  const supabase = createClientComponentClient();
-  const {
-    toggleItemRead: apiToggleRead,
-    toggleItemFavorite: apiToggleFavorite,
-    toggleItemReadLater: apiToggleReadLater,
-  } = useFeeds();
+  const { toggleRead, toggleFavorite, toggleReadLater } = useFeedService();
+  const { deleteFeed } = useFeedManagement();
 
   // API yanıtlarını işlemek için yardımcı fonksiyon
   const handleApiResponse = useCallback(
@@ -37,7 +34,7 @@ export function useFeedActions() {
     []
   );
 
-  // Feed silme
+  // Feed silme - Yeni hook kullanarak
   const removeFeed = useCallback(
     async (feedId) => {
       if (!user) {
@@ -46,18 +43,9 @@ export function useFeedActions() {
       }
 
       try {
-        // Feeds tablosundan silme
-        const { error } = await supabase
-          .from("feeds")
-          .delete()
-          .eq("id", feedId)
-          .eq("user_id", user.id);
-
-        return handleApiResponse(
-          error,
-          "Feed başarıyla silindi",
-          "Feed silinirken bir hata oluştu"
-        );
+        // Yeni servis katmanı üzerinden silme
+        await deleteFeed(feedId);
+        return true;
       } catch (error) {
         return handleApiResponse(
           error,
@@ -66,7 +54,7 @@ export function useFeedActions() {
         );
       }
     },
-    [user, supabase, handleApiResponse]
+    [user, deleteFeed, handleApiResponse]
   );
 
   // İçeriği okundu/okunmadı olarak işaretleme
@@ -78,35 +66,26 @@ export function useFeedActions() {
       }
 
       // Parametreleri normalize et (hem obje hem de ayrı parametreler olarak çağrılabilir)
-      let itemId, isRead, shouldRefetch;
+      let itemId, isRead;
 
       if (typeof itemIdOrParams === "object") {
         // Obje olarak geçilmiş: { itemId, isRead, ... }
         const params = itemIdOrParams;
         itemId = params.itemId;
         isRead = params.isRead;
-        shouldRefetch =
-          params.shouldRefetch !== undefined ? params.shouldRefetch : true;
       } else {
         // Ayrı parametreler olarak geçilmiş: (itemId, isRead, shouldRefetch)
         itemId = itemIdOrParams;
         isRead = isReadMaybe;
-        shouldRefetch = shouldRefetchMaybe;
       }
 
       console.log(
-        `toggleItemRead çağrıldı: itemId=${itemId}, isRead=${isRead}, shouldRefetch=${shouldRefetch}`
+        `toggleItemRead çağrıldı: itemId=${itemId}, isRead=${isRead}`
       );
 
       try {
-        // React Query API'si üzerinden işlem
-        await apiToggleRead({
-          itemId,
-          isRead,
-          userId: user.id,
-          skipInvalidation: !shouldRefetch,
-        });
-
+        // Yeni servis katmanı üzerinden işlem
+        await toggleRead(itemId, isRead);
         console.log("İçerik okundu/okunmadı durumu güncellendi");
         return true;
       } catch (error) {
@@ -117,7 +96,7 @@ export function useFeedActions() {
         );
       }
     },
-    [user, apiToggleRead, handleApiResponse]
+    [user, toggleRead, handleApiResponse]
   );
 
   // İçeriği favorilere ekleme/çıkarma
@@ -129,35 +108,26 @@ export function useFeedActions() {
       }
 
       // Parametreleri normalize et (hem obje hem de ayrı parametreler olarak çağrılabilir)
-      let itemId, isFavorite, shouldRefetch;
+      let itemId, isFavorite;
 
       if (typeof itemIdOrParams === "object") {
         // Obje olarak geçilmiş: { itemId, isFavorite, ... }
         const params = itemIdOrParams;
         itemId = params.itemId;
         isFavorite = params.isFavorite;
-        shouldRefetch =
-          params.shouldRefetch !== undefined ? params.shouldRefetch : true;
       } else {
         // Ayrı parametreler olarak geçilmiş: (itemId, isFavorite, shouldRefetch)
         itemId = itemIdOrParams;
         isFavorite = isFavoriteMaybe;
-        shouldRefetch = shouldRefetchMaybe;
       }
 
       console.log(
-        `toggleItemFavorite çağrıldı: itemId=${itemId}, isFavorite=${isFavorite}, shouldRefetch=${shouldRefetch}`
+        `toggleItemFavorite çağrıldı: itemId=${itemId}, isFavorite=${isFavorite}`
       );
 
       try {
-        // React Query API'si üzerinden işlem
-        await apiToggleFavorite({
-          itemId,
-          isFavorite,
-          userId: user.id,
-          skipInvalidation: !shouldRefetch,
-        });
-
+        // Yeni servis katmanı üzerinden işlem
+        await toggleFavorite(itemId, isFavorite);
         console.log("İçerik favori durumu güncellendi");
         return true;
       } catch (error) {
@@ -168,7 +138,7 @@ export function useFeedActions() {
         );
       }
     },
-    [user, apiToggleFavorite, handleApiResponse]
+    [user, toggleFavorite, handleApiResponse]
   );
 
   // İçeriği daha sonra oku listesine ekleme/çıkarma
@@ -180,35 +150,26 @@ export function useFeedActions() {
       }
 
       // Parametreleri normalize et (hem obje hem de ayrı parametreler olarak çağrılabilir)
-      let itemId, isReadLater, shouldRefetch;
+      let itemId, isReadLater;
 
       if (typeof itemIdOrParams === "object") {
         // Obje olarak geçilmiş: { itemId, isReadLater, ... }
         const params = itemIdOrParams;
         itemId = params.itemId;
         isReadLater = params.isReadLater;
-        shouldRefetch =
-          params.shouldRefetch !== undefined ? params.shouldRefetch : true;
       } else {
         // Ayrı parametreler olarak geçilmiş: (itemId, isReadLater, shouldRefetch)
         itemId = itemIdOrParams;
         isReadLater = isReadLaterMaybe;
-        shouldRefetch = shouldRefetchMaybe;
       }
 
       console.log(
-        `toggleItemReadLater çağrıldı: itemId=${itemId}, isReadLater=${isReadLater}, shouldRefetch=${shouldRefetch}`
+        `toggleItemReadLater çağrıldı: itemId=${itemId}, isReadLater=${isReadLater}`
       );
 
       try {
-        // React Query API'si üzerinden işlem
-        await apiToggleReadLater({
-          itemId,
-          isReadLater,
-          userId: user.id,
-          skipInvalidation: !shouldRefetch,
-        });
-
+        // Yeni servis katmanı üzerinden işlem
+        await toggleReadLater(itemId, isReadLater);
         console.log("İçerik daha sonra oku durumu güncellendi");
         return true;
       } catch (error) {
@@ -219,7 +180,7 @@ export function useFeedActions() {
         );
       }
     },
-    [user, apiToggleReadLater, handleApiResponse]
+    [user, toggleReadLater, handleApiResponse]
   );
 
   return {

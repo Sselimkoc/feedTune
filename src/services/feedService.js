@@ -132,6 +132,108 @@ export class FeedService {
   }
 
   /**
+   * Yeni bir RSS feed ekler
+   * @param {string} url RSS feed URL'si
+   * @param {string} userId Kullanıcı ID'si
+   * @returns {Promise<object>} Eklenen feed
+   */
+  async addRssFeed(url, userId) {
+    try {
+      if (!userId) throw new Error("Kullanıcı ID'si gerekli");
+      if (!url) throw new Error("Feed URL'si gerekli");
+
+      // URL validasyonu
+      try {
+        new URL(url);
+      } catch (e) {
+        throw new Error("Geçerli bir URL giriniz");
+      }
+
+      // Repository çağrısı
+      return await this.repository.addFeed({
+        url,
+        user_id: userId,
+        type: "rss",
+        is_active: true,
+      });
+    } catch (error) {
+      console.error("RSS Feed ekleme hatası:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Yeni bir YouTube feed ekler
+   * @param {string} channelId YouTube kanal ID'si veya URL'si
+   * @param {string} userId Kullanıcı ID'si
+   * @returns {Promise<object>} Eklenen feed
+   */
+  async addYoutubeFeed(channelId, userId) {
+    try {
+      if (!userId) throw new Error("Kullanıcı ID'si gerekli");
+      if (!channelId) throw new Error("Kanal ID'si veya URL'si gerekli");
+
+      // URL'den kanal ID'si çıkarma
+      let actualChannelId = channelId;
+      if (channelId.includes("youtube.com")) {
+        try {
+          const url = new URL(channelId);
+          if (url.pathname.includes("/channel/")) {
+            actualChannelId = url.pathname.split("/channel/")[1];
+          } else if (
+            url.pathname.includes("/c/") ||
+            url.pathname.includes("/@")
+          ) {
+            // Kanal adı formatını ID'ye çevirme burada yapılabilir
+            // Gerçek implementasyonda YouTube API kullanmak gerekebilir
+          }
+        } catch (e) {
+          throw new Error("Geçerli bir YouTube URL'si giriniz");
+        }
+      }
+
+      // Repository çağrısı
+      return await this.repository.addFeed({
+        url: `https://www.youtube.com/feeds/videos.xml?channel_id=${actualChannelId}`,
+        user_id: userId,
+        type: "youtube",
+        channel_id: actualChannelId,
+        is_active: true,
+      });
+    } catch (error) {
+      console.error("YouTube Feed ekleme hatası:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Feed siler
+   * @param {string} feedId Feed ID'si
+   * @param {string} userId Kullanıcı ID'si
+   * @returns {Promise<boolean>} İşlem başarılı mı?
+   */
+  async deleteFeed(feedId, userId) {
+    try {
+      if (!userId) throw new Error("Kullanıcı ID'si gerekli");
+      if (!feedId) throw new Error("Feed ID'si gerekli");
+
+      // Kullanıcının feed'i olup olmadığını kontrol et
+      const userFeeds = await this.repository.getFeeds(userId);
+      const feedExists = userFeeds.some((feed) => feed.id === feedId);
+
+      if (!feedExists) {
+        throw new Error("Bu feed size ait değil veya bulunamadı");
+      }
+
+      // İşlemi gerçekleştir
+      return await this.repository.deleteFeed(feedId, userId);
+    } catch (error) {
+      console.error("Feed silme hatası:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Her feed için öğe sayısını sınırlar
    * @param {Array} feeds Feed'ler
    * @param {Array} items Öğeler

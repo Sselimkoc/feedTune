@@ -22,10 +22,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
 import { RssIcon, YoutubeIcon, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useFeedManagement } from "@/hooks/features/useFeedManagement";
 
 // Form şeması
 const formSchema = z.object({
@@ -33,19 +34,9 @@ const formSchema = z.object({
   type: z.enum(["rss", "youtube"]),
 });
 
-export function AddFeedDialog({ isOpen, onOpenChange }) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export function AddFeedDialog({ isOpen, onOpenChange, onFeedAdded }) {
   const { t } = useLanguage();
-  const texts = {
-    addFeedTitle: t("feeds.addFeedTitle"),
-    feedUrl: t("feeds.feedUrl"),
-    youtubeUrl: t("feeds.youtubeUrl"),
-    cancel: t("common.cancel"),
-    add: t("common.add"),
-    loading: t("common.loading"),
-    addSuccess: t("feeds.addSuccess"),
-    addError: t("feeds.addError"),
-  };
+  const { addRssFeed, addYoutubeFeed, isAdding } = useFeedManagement();
 
   // Form oluşturma
   const form = useForm({
@@ -58,23 +49,23 @@ export function AddFeedDialog({ isOpen, onOpenChange }) {
 
   // Form gönderme işlemi
   const onSubmit = async (values) => {
-    setIsSubmitting(true);
-
     try {
-      // Burada API'ye gönderme işlemini yapabiliriz
-      console.log("Gönderilen değerler:", values);
+      if (values.type === "rss") {
+        await addRssFeed(values.url);
+      } else {
+        await addYoutubeFeed(values.url);
+      }
 
-      // Simüle edilmiş başarılı yanıt
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      toast.success(texts.addSuccess);
       form.reset();
       onOpenChange(false);
+
+      // Opsiyonel callback
+      if (onFeedAdded) {
+        onFeedAdded();
+      }
     } catch (error) {
       console.error("Feed eklenirken hata:", error);
-      toast.error(texts.addError);
-    } finally {
-      setIsSubmitting(false);
+      // Hata mesajı useFeedManagement tarafından gösteriliyor
     }
   };
 
@@ -82,7 +73,7 @@ export function AddFeedDialog({ isOpen, onOpenChange }) {
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{texts.addFeedTitle}</DialogTitle>
+          <DialogTitle>{t("feeds.addFeedTitle")}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -111,12 +102,12 @@ export function AddFeedDialog({ isOpen, onOpenChange }) {
                   name="url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{texts.feedUrl}</FormLabel>
+                      <FormLabel>{t("feeds.feedUrl")}</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="https://example.com/rss"
                           {...field}
-                          disabled={isSubmitting}
+                          disabled={isAdding}
                         />
                       </FormControl>
                       <FormMessage />
@@ -131,12 +122,12 @@ export function AddFeedDialog({ isOpen, onOpenChange }) {
                   name="url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{texts.youtubeUrl}</FormLabel>
+                      <FormLabel>{t("feeds.youtubeUrl")}</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="https://youtube.com/channel/..."
                           {...field}
-                          disabled={isSubmitting}
+                          disabled={isAdding}
                         />
                       </FormControl>
                       <FormMessage />
@@ -148,18 +139,18 @@ export function AddFeedDialog({ isOpen, onOpenChange }) {
 
             <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
               <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  {texts.cancel}
+                <Button type="button" variant="outline" disabled={isAdding}>
+                  {t("common.cancel")}
                 </Button>
               </DialogClose>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
+              <Button type="submit" disabled={isAdding}>
+                {isAdding ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {texts.loading}
+                    {t("common.loading")}
                   </>
                 ) : (
-                  texts.add
+                  t("common.add")
                 )}
               </Button>
             </DialogFooter>
