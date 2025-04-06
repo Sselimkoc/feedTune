@@ -13,7 +13,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-export function FeedNavigation({ feeds = [], selectedFeedId, onFeedSelect }) {
+export function FeedSelector({ feeds = [], selectedFeedId, onFeedSelect }) {
   const { t } = useLanguage();
 
   // Uygun feed seçilmemişse ve feedler varsa ilkini seç

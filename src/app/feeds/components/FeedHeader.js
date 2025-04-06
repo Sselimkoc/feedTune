@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { AddFeedButton } from "./buttons/AddFeedButton";
-import { FeedNavigation } from "./navigation/FeedNavigation";
-import { ViewToggle } from "./buttons/ViewToggle";
-import { FilterButton } from "./buttons/FilterButton";
-import { KeyboardButton } from "./buttons/KeyboardButton";
-import { RefreshButton } from "./buttons/RefreshButton";
+import { AddFeedButton } from "@/components/features/feeds/buttons/AddFeedButton";
+import { FeedSelector } from "./navigation/FeedSelector";
+import { ViewToggle } from "@/components/features/feeds/buttons/ViewToggle";
+import { FilterButton } from "@/components/features/feeds/buttons/FilterButton";
+import { KeyboardButton } from "@/components/features/feeds/buttons/KeyboardButton";
+import { RefreshButton } from "@/components/features/feeds/buttons/RefreshButton";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -35,7 +35,7 @@ export function FeedHeader({
         <CardContent className="p-2 sm:p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <FeedNavigation
+              <FeedSelector
                 feeds={feeds}
                 selectedFeedId={selectedFeedId}
                 onFeedSelect={onFeedSelect}

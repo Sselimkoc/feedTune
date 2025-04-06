@@ -3,15 +3,11 @@
 import { RssIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { useState } from "react";
-
+import { useLanguage } from "@/hooks/useLanguage";
 import { motion } from "framer-motion";
-import { AddFeedDialog } from "../../../components/features/feeds/dialogs/AddFeedDialog";
 
-export function EmptyState() {
+export function EmptyState({ onAddFeed }) {
   const { t } = useLanguage();
-  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <motion.div
@@ -34,11 +30,9 @@ export function EmptyState() {
             {t("feeds.emptyState.description")}
           </p>
 
-          <Button onClick={() => setIsOpen(true)}>
+          <Button onClick={onAddFeed}>
             {t("feeds.emptyState.addFeedButton")}
           </Button>
-
-          <AddFeedDialog isOpen={isOpen} onOpenChange={setIsOpen} />
         </CardContent>
       </Card>
     </motion.div>

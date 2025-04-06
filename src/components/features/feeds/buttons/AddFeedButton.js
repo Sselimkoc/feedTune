@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AddFeedDialog } from "../dialogs/AddFeedDialog";
+import { AddFeedDialog } from "@/components/features/feeds/dialogs/AddFeedDialog";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 

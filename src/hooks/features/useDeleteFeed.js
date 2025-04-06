@@ -15,19 +15,18 @@ export function useDeleteFeed() {
       setIsDeleting(true);
       const toastId = toast.loading(t("feeds.deleteFeed.deleting"));
 
-      // 1. Feed'e ait tüm öğeleri bul
+      // Find all items in the feed
       const { data: feedItems, error: itemsError } = await supabase
         .from("feed_items")
         .select("id")
         .eq("feed_id", feedId);
 
       if (itemsError) {
-        console.error("Feed öğeleri alınırken hata:", itemsError);
         toast.error(t("errors.general"), { id: toastId });
         return false;
       }
 
-      // 2. Kullanıcı etkileşimlerini sil
+      // Delete user interactions for the feed items
       if (feedItems && feedItems.length > 0) {
         const itemIds = feedItems.map((item) => item.id);
         const { error: interactionsError } = await supabase
@@ -36,25 +35,23 @@ export function useDeleteFeed() {
           .in("item_id", itemIds);
 
         if (interactionsError) {
-          console.error("Etkileşimler silinirken hata:", interactionsError);
           toast.error(t("errors.general"), { id: toastId });
           return false;
         }
       }
 
-      // 3. Feed öğelerini sil
+      // Delete feed items
       const { error: deleteItemsError } = await supabase
         .from("feed_items")
         .delete()
         .eq("feed_id", feedId);
 
       if (deleteItemsError) {
-        console.error("Feed öğeleri silinirken hata:", deleteItemsError);
         toast.error(t("errors.general"), { id: toastId });
         return false;
       }
 
-      // 4. Feed'in türünü kontrol et ve ilgili tablodan sil
+      // Check the feed type and delete from the relevant table
       const { data: feedData, error: feedTypeError } = await supabase
         .from("feeds")
         .select("type")
@@ -62,7 +59,6 @@ export function useDeleteFeed() {
         .single();
 
       if (feedTypeError) {
-        console.error("Feed türü alınırken hata:", feedTypeError);
         toast.error(t("errors.general"), { id: toastId });
         return false;
       }
@@ -74,7 +70,6 @@ export function useDeleteFeed() {
           .eq("id", feedId);
 
         if (rssError) {
-          console.error("RSS feed silinirken hata:", rssError);
           toast.error(t("errors.general"), { id: toastId });
           return false;
         }
@@ -85,20 +80,18 @@ export function useDeleteFeed() {
           .eq("id", feedId);
 
         if (youtubeError) {
-          console.error("YouTube feed silinirken hata:", youtubeError);
           toast.error(t("errors.general"), { id: toastId });
           return false;
         }
       }
 
-      // 5. Ana feed'i sil
+      // Delete the main feed
       const { error: deleteFeedError } = await supabase
         .from("feeds")
         .delete()
         .eq("id", feedId);
 
       if (deleteFeedError) {
-        console.error("Feed silinirken hata:", deleteFeedError);
         toast.error(t("errors.general"), { id: toastId });
         return false;
       }
@@ -107,7 +100,6 @@ export function useDeleteFeed() {
       if (onSuccess) onSuccess();
       return true;
     } catch (error) {
-      console.error("Feed silme hatası:", error);
       toast.error(t("feeds.deleteFeed.error"));
       return false;
     } finally {

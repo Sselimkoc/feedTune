@@ -198,7 +198,7 @@ export function FilterDialog({
             </div>
           </div>
 
-          {/* Feed tipleri */}
+          {/* Feed türleri */}
           <div className="space-y-3">
             <h4 className="text-sm font-medium">
               {t("feeds.feedTypes") || "Besleme Türleri"}
@@ -207,14 +207,14 @@ export function FilterDialog({
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="feed-type-rss"
-                  checked={localFilters.feedTypes.rss}
+                  id="show-rss"
+                  checked={localFilters.feedTypes?.rss}
                   onCheckedChange={(checked) =>
                     handleFeedTypeChange("rss", checked)
                   }
                 />
                 <label
-                  htmlFor="feed-type-rss"
+                  htmlFor="show-rss"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   RSS
@@ -223,14 +223,14 @@ export function FilterDialog({
 
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="feed-type-youtube"
-                  checked={localFilters.feedTypes.youtube}
+                  id="show-youtube"
+                  checked={localFilters.feedTypes?.youtube}
                   onCheckedChange={(checked) =>
                     handleFeedTypeChange("youtube", checked)
                   }
                 />
                 <label
-                  htmlFor="feed-type-youtube"
+                  htmlFor="show-youtube"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   YouTube
@@ -240,12 +240,20 @@ export function FilterDialog({
           </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={handleResetFilters}>
-            {t("feeds.resetFilters") || "Filtreleri Sıfırla"}
+        <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleResetFilters}
+            className="sm:ml-0 sm:mr-auto"
+          >
+            {t("common.reset") || "Sıfırla"}
           </Button>
-          <Button onClick={handleApplyFilters}>
-            {t("feeds.applyFilters") || "Filtreleri Uygula"}
+          <DialogClose asChild>
+            <Button variant="outline">{t("common.cancel") || "İptal"}</Button>
+          </DialogClose>
+          <Button type="submit" onClick={handleApplyFilters}>
+            {t("common.apply") || "Uygula"}
           </Button>
         </DialogFooter>
       </DialogContent>

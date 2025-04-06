@@ -12,7 +12,7 @@ export function useFeedOperations() {
   const { addRssFeed, deleteRssFeed } = useRssFeeds();
   const { addYoutubeChannel, deleteYoutubeChannel } = useYoutubeFeeds();
 
-  // RSS Feed Ekleme (eskisine yönlendirme)
+  // RSS Feed Ekleme (eskisine yönlendirme) 
   const { isLoading: isAddingRss } = useMutation({
     mutationFn: async ({ url }) => {
       return await addRssFeed(url);
