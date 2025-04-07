@@ -4,14 +4,15 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
 /**
- * Feed senkronizasyon endpoint'i
- * Kullanıcının tüm feed'lerini yeniler
+ * Feed synchronization endpoint
+ * Refreshes all user feeds
  *
- * POST metodu ile çağrılır ve parametresiz çalışır.
+ * Called via POST method and works without parameters.
+ * Handles both RSS and YouTube feed updates.
  */
 export async function POST(request) {
   try {
-    // Oturum kontrolü
+    // Session check
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
@@ -26,7 +27,7 @@ export async function POST(request) {
       );
     }
 
-    // Kullanıcının tüm aktif feed'lerini al
+    // Get all active feeds of the user
     const { data: userFeeds, error: feedsError } = await supabase
       .from("feeds")
       .select("id, type")
@@ -41,11 +42,9 @@ export async function POST(request) {
       );
     }
 
-    // Her bir feed'i güncelle
+    // Update each feed
     const updatePromises = userFeeds.map(async (feed) => {
       try {
-        // Şu an için sadece RSS feed'leri güncelleniyor
-        // İleride YouTube feed'leri için de güncelleme eklenebilir
         if (feed.type === "rss") {
           await updateRssFeed(feed.id);
           return { id: feed.id, success: true };

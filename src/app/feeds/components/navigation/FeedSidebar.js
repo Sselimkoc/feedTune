@@ -244,8 +244,6 @@ export function FeedSidebar({
               )}
             </div>
 
-          
-
             {/* RSS Beslemeleri */}
             <Collapsible
               defaultOpen={expandedCategories.rss}
@@ -426,8 +424,7 @@ export function FeedSidebar({
                     <Home className="h-5 w-5" />
                   </Button>
                 </TooltipTrigger>
-               
-              
+
                 <TooltipContent side="right">
                   <p>{t("feeds.sidebar.rssFeeds")}</p>
                 </TooltipContent>
