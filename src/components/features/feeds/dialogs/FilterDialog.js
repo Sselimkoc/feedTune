@@ -30,6 +30,13 @@ import { useForm } from "react-hook-form";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 import { ArrowDownAZ, ArrowUpAZ, Filter, RefreshCw, Star } from "lucide-react";
+import {
+  RadioGroup,
+  RadioGroupItem,
+  RadioGroupValue,
+} from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Rss, Youtube } from "lucide-react";
 
 export function FilterDialog({
   isOpen,
@@ -93,169 +100,117 @@ export function FilterDialog({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            {t("feeds.filterTitle") || "Filtreler"}
+          <DialogTitle className="text-lg font-medium">
+            {t("feeds.filterTitle")}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="py-4 space-y-6">
-          {/* Sıralama seçenekleri */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">
-              {t("feeds.sortBy") || "Sıralama"}
-            </h4>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={
-                  localFilters.sortBy === "newest" ? "default" : "outline"
-                }
-                size="sm"
-                className="justify-start"
-                onClick={() => handleSortByChange("newest")}
+        <form onSubmit={handleApplyFilters}>
+          <div className="grid gap-5 py-4">
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm">{t("feeds.sortBy")}</h4>
+              <RadioGroup
+                value={filters.sortBy || "newest"}
+                onValueChange={handleSortByChange}
+                className="flex flex-col space-y-1"
               >
-                <ArrowDownAZ className="mr-2 h-4 w-4" />
-                {t("feeds.newest") || "En Yeni"}
-              </Button>
-
-              <Button
-                variant={
-                  localFilters.sortBy === "oldest" ? "default" : "outline"
-                }
-                size="sm"
-                className="justify-start"
-                onClick={() => handleSortByChange("oldest")}
-              >
-                <ArrowUpAZ className="mr-2 h-4 w-4" />
-                {t("feeds.oldest") || "En Eski"}
-              </Button>
-
-              <Button
-                variant={
-                  localFilters.sortBy === "unread" ? "default" : "outline"
-                }
-                size="sm"
-                className="justify-start"
-                onClick={() => handleSortByChange("unread")}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                {t("feeds.unreadFeeds") || "Okunmamış Beslemeler"}
-              </Button>
-
-              <Button
-                variant={
-                  localFilters.sortBy === "favorites" ? "default" : "outline"
-                }
-                size="sm"
-                className="justify-start"
-                onClick={() => handleSortByChange("favorites")}
-              >
-                <Star className="mr-2 h-4 w-4" />
-                {t("feeds.favorites") || "Favoriler"}
-              </Button>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="newest" id="newest" />
+                  <Label htmlFor="newest">{t("feeds.newest")}</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="oldest" id="oldest" />
+                  <Label htmlFor="oldest">{t("feeds.oldest")}</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="unread" id="unread-first" />
+                  <Label htmlFor="unread-first">{t("feeds.unreadFeeds")}</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="favorites" id="favorites" />
+                  <Label htmlFor="favorites">{t("feeds.favorites")}</Label>
+                </div>
+              </RadioGroup>
             </div>
-          </div>
-
-          {/* Okuma durumu */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">
-              {t("feeds.readStatus") || "Okuma Durumu"}
-            </h4>
 
             <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="show-read"
-                  checked={localFilters.showRead}
-                  onCheckedChange={(checked) =>
-                    handleReadStatusChange("showRead", checked)
-                  }
-                />
-                <label
-                  htmlFor="show-read"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {t("feeds.showRead") || "Okunmuşları Göster"}
-                </label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="show-unread"
-                  checked={localFilters.showUnread}
-                  onCheckedChange={(checked) =>
-                    handleReadStatusChange("showUnread", checked)
-                  }
-                />
-                <label
-                  htmlFor="show-unread"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {t("feeds.showUnread") || "Okunmamışları Göster"}
-                </label>
+              <h4 className="font-medium text-sm">{t("feeds.readStatus")}</h4>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-read"
+                    checked={filters.showRead}
+                    onCheckedChange={(checked) =>
+                      handleReadStatusChange("showRead", checked)
+                    }
+                  />
+                  <Label htmlFor="show-read">{t("feeds.showRead")}</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-unread"
+                    checked={filters.showUnread}
+                    onCheckedChange={(checked) =>
+                      handleReadStatusChange("showUnread", checked)
+                    }
+                  />
+                  <Label htmlFor="show-unread">{t("feeds.showUnread")}</Label>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Feed türleri */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">
-              {t("feeds.feedTypes") || "Besleme Türleri"}
-            </h4>
 
             <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="show-rss"
-                  checked={localFilters.feedTypes?.rss}
-                  onCheckedChange={(checked) =>
-                    handleFeedTypeChange("rss", checked)
-                  }
-                />
-                <label
-                  htmlFor="show-rss"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  RSS
-                </label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="show-youtube"
-                  checked={localFilters.feedTypes?.youtube}
-                  onCheckedChange={(checked) =>
-                    handleFeedTypeChange("youtube", checked)
-                  }
-                />
-                <label
-                  htmlFor="show-youtube"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  YouTube
-                </label>
+              <h4 className="font-medium text-sm">{t("feeds.feedTypes")}</h4>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-rss"
+                    checked={filters.feedTypes?.rss}
+                    onCheckedChange={(checked) =>
+                      handleFeedTypeChange("rss", checked)
+                    }
+                  />
+                  <div className="grid gap-1">
+                    <Label htmlFor="show-rss" className="flex items-center">
+                      <Rss className="mr-1 h-3.5 w-3.5 text-orange-500" />
+                      <span>RSS</span>
+                    </Label>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-youtube"
+                    checked={filters.feedTypes?.youtube}
+                    onCheckedChange={(checked) =>
+                      handleFeedTypeChange("youtube", checked)
+                    }
+                  />
+                  <div className="grid gap-1">
+                    <Label htmlFor="show-youtube" className="flex items-center">
+                      <Youtube className="mr-1 h-3.5 w-3.5 text-red-500" />
+                      <span>YouTube</span>
+                    </Label>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleResetFilters}
-            className="sm:ml-0 sm:mr-auto"
-          >
-            {t("common.reset") || "Sıfırla"}
-          </Button>
-          <DialogClose asChild>
-            <Button variant="outline">{t("common.cancel") || "İptal"}</Button>
-          </DialogClose>
-          <Button type="submit" onClick={handleApplyFilters}>
-            {t("common.apply") || "Uygula"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleResetFilters}
+              size="sm"
+            >
+              {t("common.reset")}
+            </Button>
+            <DialogClose asChild>
+              <Button variant="outline">{t("common.cancel")}</Button>
+            </DialogClose>
+            <Button type="submit">{t("common.apply")}</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

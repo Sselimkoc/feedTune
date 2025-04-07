@@ -67,24 +67,16 @@ export function SyncButton({ onSync, isSyncing }) {
                 )}
               />
               <span className="hidden sm:inline text-sm">
-                {t("feeds.sync") === "feeds.sync"
-                  ? "Senkronize Et"
-                  : t("feeds.sync")}
+                {t("feeds.sync")}
               </span>
             </Button>
           </motion.div>
         </TooltipTrigger>
         <TooltipContent side="bottom">
           <div className="flex flex-col">
-            <p>
-              {t("feeds.syncFeeds") === "feeds.syncFeeds"
-                ? "Feed'leri Sunucuda Güncelle"
-                : t("feeds.syncFeeds")}
-            </p>
+            <p>{t("feeds.syncFeeds")}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {t("feeds.syncDescription") === "feeds.syncDescription"
-                ? "Kaynak sitelerden en güncel verileri alır"
-                : t("feeds.syncDescription")}
+              {t("feeds.syncDescription")}
             </p>
           </div>
         </TooltipContent>

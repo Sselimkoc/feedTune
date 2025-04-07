@@ -30,7 +30,7 @@ export function KeyboardButton({ onShowKeyboardShortcuts }) {
           </motion.div>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>{t("feeds.keyboardShortcuts") || "Klavye Kısayolları"}</p>
+          <p>{t("feeds.keyboardShortcuts")}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

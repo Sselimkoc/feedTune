@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { feedService } from "@/services/feedService";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -456,6 +456,16 @@ export function useFeedService() {
     [cleanupMutation]
   );
 
+  // İstatistikleri hesapla
+  const stats = useMemo(() => {
+    return {
+      totalItems: items?.length || 0,
+      unreadItems: items?.filter((item) => !item.is_read)?.length || 0,
+      favoriteItems: Array.isArray(favorites) ? favorites.length : 0,
+      readLaterItems: Array.isArray(readLaterItems) ? readLaterItems.length : 0,
+    };
+  }, [items, favorites, readLaterItems]);
+
   return {
     // Veriler
     feeds,
@@ -500,5 +510,8 @@ export function useFeedService() {
     // Feed ekleme ve silme fonksiyonları
     addFeed,
     deleteFeed,
+
+    // İstatistikler
+    stats,
   };
 }

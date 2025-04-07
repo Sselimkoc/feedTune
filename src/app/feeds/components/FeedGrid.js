@@ -1,281 +1,383 @@
 "use client";
 
-import { useState, useEffect, useRef, memo, useCallback } from "react";
-import FeedCard from "./FeedCard";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { FeedCard } from "./items/FeedCard";
+import { FeedListItem } from "./items/FeedListItem";
 import { EmptyFilterState } from "./EmptyFilterState";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { useInView } from "framer-motion";
+import { useLanguage } from "@/hooks/useLanguage";
 
-// Memoize edilmiş grid bileşeni - alt bileşenler değişmedikçe yeniden render olmaz
-export const FeedGrid = memo(
-  function FeedGrid({
-    items = [],
-    feeds = [],
-    viewMode = "grid",
-    onToggleRead,
-    onToggleFavorite,
-    onToggleReadLater,
-    isLoading = false,
-  }) {
-    const { t } = useLanguage();
-    const [focusedIndex, setFocusedIndex] = useState(-1);
-    const gridRef = useRef(null);
-    const gridContainerRef = useRef(null);
+export function FeedGrid({
+  items = [],
+  isLoading = false,
+  viewMode = "grid",
+  onItemClick,
+  onItemMarkRead,
+  onItemMarkUnread,
+  onItemFavorite,
+  onItemReadLater,
+  onItemShare,
+  onRefresh,
+  loadMoreItems,
+  hasMoreItems = false,
+  isLoadingMore = false,
+  focusedItemId,
+}) {
+  const { t } = useLanguage();
+  const [visibleItems, setVisibleItems] = useState(items);
+  const loadMoreRef = useRef(null);
+  const isLoadMoreVisible = useInView(loadMoreRef, {
+    amount: 0.01, // Çok küçük bir kısmı görünse bile tetikle
+    rootMargin: "800px 0px", // Görünüm alanını 800px aşağıya doğru genişlet
+  });
+  const focusedItemRef = useRef(null);
+  const [initialLoad, setInitialLoad] = useState(true);
+  const [isLoadingInitiated, setIsLoadingInitiated] = useState(false);
+  const [loadingAttemptCount, setLoadingAttemptCount] = useState(0);
 
-    // Callback'leri memoize et
-    const handleToggleRead = useCallback(
-      (itemId, isRead) => {
-        onToggleRead(itemId, isRead);
-      },
-      [onToggleRead]
-    );
-
-    const handleToggleFavorite = useCallback(
-      (itemId, isFavorite) => {
-        onToggleFavorite(itemId, isFavorite);
-      },
-      [onToggleFavorite]
-    );
-
-    const handleToggleReadLater = useCallback(
-      (itemId, isReadLater) => {
-        onToggleReadLater(itemId, isReadLater);
-      },
-      [onToggleReadLater]
-    );
-
-    // Kompakt ve grid görünümü için klavye kısayolları
-    useEffect(() => {
-      if (!gridRef.current) return;
-
-      const handleKeyDown = (e) => {
-        // Eğer bir form elemanı odaktaysa kısayolları kullanma
-        if (
-          document.activeElement.tagName === "INPUT" ||
-          document.activeElement.tagName === "TEXTAREA" ||
-          document.activeElement.tagName === "SELECT" ||
-          document.activeElement.hasAttribute("contenteditable")
-        ) {
-          return;
-        }
-
-        switch (e.key) {
-          case "j": // Aşağı / sonraki öğe
-            e.preventDefault();
-            setFocusedIndex((prev) => {
-              const nextIndex = prev < items.length - 1 ? prev + 1 : prev;
-              scrollToItem(nextIndex);
-              return nextIndex;
-            });
-            break;
-          case "k": // Yukarı / önceki öğe
-            e.preventDefault();
-            setFocusedIndex((prev) => {
-              const nextIndex = prev > 0 ? prev - 1 : prev;
-              scrollToItem(nextIndex);
-              return nextIndex;
-            });
-            break;
-          case "o": // Öğeyi aç
-            e.preventDefault();
-            if (focusedIndex >= 0 && focusedIndex < items.length) {
-              window.open(
-                items[focusedIndex].url || items[focusedIndex].link,
-                "_blank"
-              );
-              if (!items[focusedIndex].is_read) {
-                handleToggleRead(items[focusedIndex].id, true);
-              }
-            }
-            break;
-          case "m": // Okundu/okunmadı olarak işaretle
-            e.preventDefault();
-            if (focusedIndex >= 0 && focusedIndex < items.length) {
-              handleToggleRead(
-                items[focusedIndex].id,
-                !items[focusedIndex].is_read
-              );
-            }
-            break;
-          case "s": // Favorilere ekle/çıkar
-            e.preventDefault();
-            if (focusedIndex >= 0 && focusedIndex < items.length) {
-              handleToggleFavorite(
-                items[focusedIndex].id,
-                !items[focusedIndex].is_favorite
-              );
-            }
-            break;
-          case "b": // Daha sonra oku listesine ekle/çıkar
-            e.preventDefault();
-            if (focusedIndex >= 0 && focusedIndex < items.length) {
-              handleToggleReadLater(
-                items[focusedIndex].id,
-                !items[focusedIndex].is_read_later
-              );
-            }
-            break;
-          default:
-            break;
-        }
-      };
-
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [
-      items,
-      focusedIndex,
-      handleToggleRead,
-      handleToggleFavorite,
-      handleToggleReadLater,
-    ]);
-
-    // Odaklanılan elemana scroll - useCallback ile optimize edildi
-    const scrollToItem = useCallback(
-      (index) => {
-        if (index < 0 || index >= items.length || !gridContainerRef.current)
-          return;
-
-        const container = gridContainerRef.current;
-        const itemElement = container.children[index];
-
-        if (!itemElement) return;
-
-        const containerRect = container.getBoundingClientRect();
-        const itemRect = itemElement.getBoundingClientRect();
-
-        // Öğe container'ın görünür alanının dışındaysa scroll et
-        if (itemRect.bottom > containerRect.bottom) {
-          container.scrollTop += itemRect.bottom - containerRect.bottom + 16; // 16: margin
-        } else if (itemRect.top < containerRect.top) {
-          container.scrollTop -= containerRect.top - itemRect.top + 16; // 16: margin
-        }
-      },
-      [items.length]
-    );
-
-    // İçerik yoksa boş durum göster
-    if (items.length === 0) {
-      return (
-        <EmptyFilterState
-          onResetFilters={() => {
-            if (typeof window !== "undefined") {
-              const allTabsButton = document.querySelector('[value="all"]');
-              if (allTabsButton) {
-                allTabsButton.click();
-              }
-            }
-          }}
-        />
-      );
+  // DEBUG mesajı
+  useEffect(() => {
+    if (isLoadMoreVisible) {
+      console.log("Load more bölgesi görünür durumda");
     }
+  }, [isLoadMoreVisible]);
 
-    // Feed ID'den feed nesnesini bul - useCallback ile optimize edildi
-    const getFeedById = useCallback(
-      (feedId) => {
-        return feeds.find((feed) => feed.id === feedId) || null;
-      },
-      [feeds]
+  // İçerik listesi değiştiğinde güncelle
+  useEffect(() => {
+    setVisibleItems(items);
+    // İlk yüklemeden sonra loading durumunu false yap
+    if (items.length > 0 && initialLoad) {
+      setInitialLoad(false);
+    }
+  }, [items, initialLoad]);
+
+  // Yeni içerik yükle - tamamen düzeltildi
+  useEffect(() => {
+    console.log(
+      "Infinite scroll efekti tetiklendi, görünür:",
+      isLoadMoreVisible
     );
+    console.log("loadingMore:", isLoadingMore, "hasMoreItems:", hasMoreItems);
 
-    // Geçiş animasyonları için yapılandırma
-    const container = {
-      hidden: { opacity: 0 },
-      show: {
-        opacity: 1,
-        transition: {
-          staggerChildren: 0.05,
-        },
-      },
+    // Yükleme fonksiyonu
+    const handleLoadMore = async () => {
+      if (!loadMoreItems || !hasMoreItems || isLoadingMore || isLoading) {
+        console.log("Yükleme koşulları sağlanmıyor, atlanıyor");
+        return;
+      }
+
+      // Yüklemeyi başlat
+      setIsLoadingInitiated(true);
+      console.log("Yükleme başlatılıyor...");
+
+      try {
+        // Yükleme fonksiyonunu çağır
+        const result = await loadMoreItems();
+        console.log("Yükleme sonucu:", result);
+
+        // Deneme sayacını sıfırla, başarılı yükleme yapıldı
+        if (result) {
+          setLoadingAttemptCount(0);
+        }
+      } catch (error) {
+        console.error("Daha fazla içerik yüklenirken hata:", error);
+      } finally {
+        console.log("Yükleme tamamlandı");
+        // Yükleme tamamlandı
+        setIsLoadingInitiated(false);
+      }
     };
 
-    const item = {
-      hidden: { opacity: 0, y: 20 },
-      show: { opacity: 1, y: 0 },
-    };
+    // Tetikleme kontrolü: görünür ve yükleme başlamadı
+    if (
+      isLoadMoreVisible &&
+      hasMoreItems &&
+      !isLoadingMore &&
+      !isLoading &&
+      !isLoadingInitiated
+    ) {
+      console.log("Yükleme tetikleniyor");
+      // Deneme sayısını artır
+      setLoadingAttemptCount((prev) => prev + 1);
 
-    // Yükleme durumu gösterimi
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center min-h-[300px]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      );
+      // Hemen yükle
+      handleLoadMore();
     }
 
-    // Grid görünümü
-    if (viewMode === "grid") {
-      return (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`grid-${items.length}`}
-            ref={(el) => {
-              gridRef.current = el;
-              gridContainerRef.current = el;
-            }}
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6"
-          >
-            {items.map((feedItem, index) => (
-              <motion.div key={feedItem.id} variants={item} layout>
-                <FeedCard
-                  item={feedItem}
-                  feed={getFeedById(feedItem.feed_id)}
-                  isCompact={false}
-                  onToggleRead={handleToggleRead}
-                  onToggleFavorite={handleToggleFavorite}
-                  onToggleReadLater={handleToggleReadLater}
-                  isFocused={focusedIndex === index}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
-        </AnimatePresence>
-      );
+    // Birkaç kez denedik ama hala daha fazla içerik var ve yüklenemiyor
+    // Manuel buton ile yükleme seçeneği göster
+    if (
+      loadingAttemptCount > 3 &&
+      hasMoreItems &&
+      !isLoadingMore &&
+      !isLoading
+    ) {
+      console.log("Manuel yükleme gösterilecek, otomatik yükleme çalışmadı");
     }
+  }, [
+    isLoadMoreVisible,
+    hasMoreItems,
+    isLoadingMore,
+    isLoading,
+    isLoadingInitiated,
+    loadMoreItems,
+    loadingAttemptCount,
+  ]);
 
-    // Liste (kompakt) görünümü
-    return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`list-${items.length}`}
-          ref={(el) => {
-            gridRef.current = el;
-            gridContainerRef.current = el;
-          }}
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="flex flex-col divide-y divide-border"
-        >
-          {items.map((feedItem, index) => (
-            <motion.div key={feedItem.id} variants={item} layout>
-              <FeedCard
-                item={feedItem}
-                feed={getFeedById(feedItem.feed_id)}
-                isCompact={true}
-                onToggleRead={handleToggleRead}
-                onToggleFavorite={handleToggleFavorite}
-                onToggleReadLater={handleToggleReadLater}
-                isFocused={focusedIndex === index}
-              />
-            </motion.div>
-          ))}
-        </motion.div>
-      </AnimatePresence>
-    );
-  },
-  (prevProps, nextProps) => {
-    // Sadece önemli değişikliklerde yeniden render et
-    // items dizisi değiştiyse veya görüntüleme modu değiştiyse yeniden render edilmeli
-    return (
-      prevProps.viewMode === nextProps.viewMode &&
-      prevProps.isLoading === nextProps.isLoading &&
-      prevProps.items === nextProps.items &&
-      prevProps.feeds === nextProps.feeds
-    );
+  // Odaklanılan içeriğe scroll
+  useEffect(() => {
+    if (focusedItemId && focusedItemRef.current) {
+      focusedItemRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [focusedItemId]);
+
+  // Referans alma yardımcı fonksiyonu
+  const getItemRef = useCallback(
+    (itemId) => {
+      if (itemId === focusedItemId) {
+        return focusedItemRef;
+      }
+      return null;
+    },
+    [focusedItemId]
+  );
+
+  // İçerik yoksa boş durumu göster
+  if (!isLoading && items.length === 0) {
+    return <EmptyFilterState onRefresh={onRefresh} />;
   }
-);
+
+  // Manuel yükleme işleyicisi
+  const handleManualLoadMore = () => {
+    if (loadMoreItems && hasMoreItems && !isLoadingMore) {
+      loadMoreItems();
+    }
+  };
+
+  // İskelet yükleyici oluşturma - optimize edildi
+  const renderSkeletons = useCallback(() => {
+    const skeletonCount = viewMode === "grid" ? 12 : 8;
+    const skeletons = [];
+
+    for (let i = 0; i < skeletonCount; i++) {
+      if (viewMode === "grid") {
+        skeletons.push(
+          <div key={`skeleton-${i}`} className="h-full">
+            <Skeleton className="h-40 w-full rounded-t-lg" />
+            <div className="p-4 space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+              <div className="flex justify-between pt-2">
+                <Skeleton className="h-3 w-20" />
+                <div className="flex space-x-1">
+                  <Skeleton className="h-6 w-6 rounded-full" />
+                  <Skeleton className="h-6 w-6 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      } else {
+        skeletons.push(
+          <div key={`skeleton-${i}`} className="p-4 border-b">
+            <div className="flex space-x-4">
+              <Skeleton className="h-16 w-16 rounded flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <div className="flex justify-between">
+                  <Skeleton className="h-3 w-20" />
+                  <div className="flex space-x-1">
+                    <Skeleton className="h-5 w-5 rounded-full" />
+                    <Skeleton className="h-5 w-5 rounded-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    return skeletons;
+  }, [viewMode]);
+
+  return (
+    <>
+      <motion.div
+        layout
+        className={cn("w-full", {
+          "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5":
+            viewMode === "grid",
+          "flex flex-col space-y-2": viewMode === "list",
+        })}
+      >
+        <AnimatePresence mode="popLayout">
+          {isLoading && initialLoad
+            ? renderSkeletons()
+            : visibleItems.map((item) => {
+                const isRead = item.isRead || item.is_read || false;
+                const isFavorite = item.isFavorite || item.is_favorite || false;
+                const isReadLater =
+                  item.isReadLater || item.is_read_later || false;
+                const isFocused = focusedItemId === item.id;
+
+                // Feed bilgilerini standardize et
+                const feedTitle =
+                  item.feedTitle ||
+                  item.feed_title ||
+                  (item.feed ? item.feed.title : "") ||
+                  "";
+                const feedType =
+                  item.type ||
+                  item.feed_type ||
+                  (item.feed ? item.feed.type : "") ||
+                  "rss";
+
+                // item nesnesini zenginleştir
+                const enhancedItem = {
+                  ...item,
+                  isRead,
+                  is_read: isRead,
+                  isFavorite,
+                  is_favorite: isFavorite,
+                  isReadLater,
+                  is_read_later: isReadLater,
+                  feedTitle,
+                  feed_title: feedTitle,
+                  type: feedType,
+                  feed_type: feedType,
+                };
+
+                return viewMode === "grid" ? (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ duration: 0.2 }}
+                    ref={getItemRef(item.id)}
+                    className={cn("h-full", {
+                      "ring-2 ring-primary ring-offset-2": isFocused,
+                    })}
+                  >
+                    <FeedCard
+                      item={enhancedItem}
+                      isRead={isRead}
+                      isFavorite={isFavorite}
+                      isReadLater={isReadLater}
+                      onClick={() => onItemClick && onItemClick(enhancedItem)}
+                      onMarkRead={() =>
+                        onItemMarkRead && onItemMarkRead(enhancedItem)
+                      }
+                      onMarkUnread={() =>
+                        onItemMarkUnread && onItemMarkUnread(enhancedItem)
+                      }
+                      onFavorite={() =>
+                        onItemFavorite && onItemFavorite(enhancedItem)
+                      }
+                      onReadLater={() =>
+                        onItemReadLater && onItemReadLater(enhancedItem)
+                      }
+                      onShare={() => onItemShare && onItemShare(enhancedItem)}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    ref={getItemRef(item.id)}
+                    className={cn("w-full", {
+                      "ring-1 ring-primary bg-accent": isFocused,
+                    })}
+                  >
+                    <FeedListItem
+                      item={enhancedItem}
+                      isRead={isRead}
+                      isFavorite={isFavorite}
+                      isReadLater={isReadLater}
+                      onClick={() => onItemClick && onItemClick(enhancedItem)}
+                      onMarkRead={() =>
+                        onItemMarkRead && onItemMarkRead(enhancedItem)
+                      }
+                      onMarkUnread={() =>
+                        onItemMarkUnread && onItemMarkUnread(enhancedItem)
+                      }
+                      onFavorite={() =>
+                        onItemFavorite && onItemFavorite(enhancedItem)
+                      }
+                      onReadLater={() =>
+                        onItemReadLater && onItemReadLater(enhancedItem)
+                      }
+                      onShare={() => onItemShare && onItemShare(enhancedItem)}
+                    />
+                  </motion.div>
+                );
+              })}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Daha fazla yükleme göstergesi - tamamen yeniden tasarlandı */}
+      <div
+        ref={loadMoreRef}
+        className="w-full flex justify-center items-center py-6 mt-4"
+      >
+        {isLoadingMore ? (
+          <div className="flex flex-col items-center space-y-2">
+            <div className="relative w-8 h-8">
+              <div className="absolute top-0 left-0 w-full h-full border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {t("feeds.loadingMore") || "Daha fazla yükleniyor..."}
+            </p>
+          </div>
+        ) : hasMoreItems ? (
+          <>
+            {/* Otomatik yükleme mesajı */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.7 }}
+              className="flex flex-col items-center"
+            >
+              <p className="text-sm text-muted-foreground mb-2">
+                {t("feeds.autoLoading") || "Otomatik yükleniyor..."}
+              </p>
+
+              {/* Manuel yükleme butonu (3 denemeden sonra göster) */}
+              {loadingAttemptCount > 3 && (
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="px-4 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-full text-sm mt-2 transition-colors"
+                  onClick={handleManualLoadMore}
+                >
+                  {t("feeds.loadMoreManually") || "Daha Fazla Göster"}
+                </motion.button>
+              )}
+            </motion.div>
+          </>
+        ) : items.length > 0 ? (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-sm text-muted-foreground py-2"
+          >
+            {t("feeds.noMoreItems") || "Tüm içerikler yüklendi"}
+          </motion.p>
+        ) : null}
+      </div>
+    </>
+  );
+}

@@ -7,7 +7,7 @@ import { useFeedManagement } from "@/hooks/features/useFeedManagement";
 import { HomeStats } from "@/components/home/HomeStats";
 import { HomeFeedManagement } from "@/components/home/HomeFeedManagement";
 import { HomeRecentContent } from "@/components/home/HomeRecentContent";
-import { HomeHero } from "@/components/home/HomeHero";
+import HomeHero from "@/components/home/HomeHero";
 import { HomeFeatures } from "@/components/home/HomeFeatures";
 import { HomeModals } from "@/components/home/HomeModals";
 import { EmptyState } from "@/components/ui-states/EmptyState";

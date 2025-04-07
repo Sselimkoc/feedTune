@@ -18,34 +18,33 @@ export function KeyboardShortcutsDialog({ isOpen, onOpenChange }) {
 
   // Klavye kısayolları
   const shortcuts = [
-    { key: "j", description: t("shortcuts.nextItem") || "Sonraki öğe" },
-    { key: "k", description: t("shortcuts.prevItem") || "Önceki öğe" },
-    { key: "o", description: t("shortcuts.openItem") || "Öğeyi aç" },
+    { key: "j", description: t("shortcuts.nextItem") },
+    { key: "k", description: t("shortcuts.prevItem") },
+    { key: "o", description: t("shortcuts.openItem") },
     {
       key: "m",
-      description:
-        t("shortcuts.markAsRead") || "Okundu/Okunmadı olarak işaretle",
+      description: t("shortcuts.markAsRead"),
     },
     {
       key: "s",
-      description: t("shortcuts.toggleFavorite") || "Favorilere ekle/çıkar",
+      description: t("shortcuts.toggleFavorite"),
     },
     {
       key: "b",
-      description: t("shortcuts.saveForLater") || "Sonra okumak üzere kaydet",
+      description: t("shortcuts.saveForLater"),
     },
     {
       key: "r",
-      description: t("shortcuts.refreshFeeds") || "Feed'leri yenile",
+      description: t("shortcuts.refreshFeeds"),
     },
-    { key: "f", description: t("shortcuts.openFilter") || "Filtreleri aç" },
-    { key: "g", description: t("shortcuts.gridView") || "Izgara görünümü" },
-    { key: "l", description: t("shortcuts.listView") || "Liste görünümü" },
+    { key: "f", description: t("shortcuts.openFilter") },
+    { key: "g", description: t("shortcuts.gridView") },
+    { key: "l", description: t("shortcuts.listView") },
     {
       key: "?",
-      description: t("shortcuts.openShortcuts") || "Klavye kısayollarını aç",
+      description: t("shortcuts.openShortcuts"),
     },
-    { key: "Esc", description: t("shortcuts.close") || "Kapat" },
+    { key: "Esc", description: t("shortcuts.close") },
   ];
 
   return (
@@ -54,15 +53,14 @@ export function KeyboardShortcutsDialog({ isOpen, onOpenChange }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Keyboard className="h-5 w-5" />
-            {t("shortcuts.title") || "Klavye Kısayolları"}
+            {t("shortcuts.title")}
           </DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="h-[400px] px-1">
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground mb-4">
-              {t("shortcuts.description") ||
-                "Daha hızlı gezinmek için aşağıdaki klavye kısayollarını kullanabilirsiniz"}
+              {t("shortcuts.description")}
             </p>
 
             <div className="grid grid-cols-1 gap-2">

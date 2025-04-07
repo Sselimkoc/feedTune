@@ -7,7 +7,10 @@
     "favorites": "Favoriler",
     "readLater": "Daha Sonra Oku",
     "history": "Geçmiş",
-    "settings": "Ayarlar"
+    "settings": "Ayarlar",
+    "lightMode": "Açık Tema",
+    "darkMode": "Koyu Tema",
+    "signOut": "Çıkış Yap"
   },
   "common": {
     "appName": "FeedTune",
@@ -34,7 +37,8 @@
     "account": "Hesap",
     "logout": "Çıkış Yap",
     "confirm": "Onayla",
-    "submit": "Gönder"
+    "submit": "Gönder",
+    "language": "Dil"
   },
   "nav": {
     "menu": "Menü",
@@ -87,7 +91,16 @@
   "feeds": {
     "title": "Beslemelerim",
     "description": "Takip ettiğiniz kaynaklardan içeriklere göz atın",
+    "yourFeeds": "Beslemeleriniz",
+    "searchFeeds": "Besleme ara...",
+    "categories": "Kategoriler",
+    "smartFilters": "Akıllı Filtreler",
+    "addFeed": "Besleme Ekle",
+    "rssFeeds": "RSS Besleme",
+    "youtubeFeeds": "YouTube Kanalları",
     "allItems": "Tüm Öğeler",
+    "unreadItems": "Okunmamışlar",
+    "total": "Toplam",
     "unread": "Okunmamış",
     "today": "Bugün",
     "yesterday": "Dün",
@@ -95,6 +108,9 @@
     "older": "Daha Eski",
     "noItems": "Hiç öğe bulunamadı.",
     "noFeeds": "Henüz hiç besleme eklemediniz.",
+    "noRssFeeds": "RSS beslemesi eklenmemiş",
+    "noYoutubeFeeds": "YouTube kanalı eklenmemiş",
+    "noSearchResults": "Arama sonucu bulunamadı",
     "addYourFirst": "İlk beslemenizi ekleyin",
     "refreshing": "Beslemeler yenileniyor...",
     "markAllAsRead": "Tümünü okundu olarak işaretle",
@@ -104,6 +120,9 @@
     "removeFromFavorites": "Favorilerden çıkar",
     "addToReadLater": "Daha sonra oku",
     "removeFromReadLater": "Daha sonra oku listesinden çıkar",
+    "removeFeed": "Beslemeyi Sil",
+    "expandSidebar": "Filtreleme Menüsünü Aç",
+    "collapseSidebar": "Filtreleme Menüsünü Kapat",
     "new": "Yeni",
     "noDescription": "Açıklama yok",
     "markRead": "Okundu işaretle",
@@ -150,7 +169,7 @@
     "syncDescription": "Kaynak sitelerden en güncel verileri alır",
     "markingAllAsRead": "Tüm öğeler okundu olarak işaretleniyor...",
     "allItemsAlreadyRead": "Tüm öğeler zaten okundu",
-    "allItemsMarkedAsRead": "{{count}} öğe okundu olarak işaretlendi",
+    "allItemsMarkedAsRead": "Tüm içerikler okundu olarak işaretlendi.",
     "items": "Öğeler",
     "all": "Tümü",
     "read": "Okunmuş",
@@ -288,7 +307,54 @@
       "showHelp": "Bu yardımı göster"
     },
     "articleCount": "{{count}} makale",
-    "lastUpdated": "Son güncelleme: {{date}}"
+    "lastUpdated": "Son güncelleme: {{date}}",
+    "rssItems": "RSS Kaynakları",
+    "youtubeItems": "YouTube Kaynakları",
+    "cleanupSuccess": "Temizleme Başarılı",
+    "cleanupDescription": "{{count}} eski içerik başarıyla kaldırıldı.",
+    "allMarkedAsRead": "Hepsi Okundu Olarak İşaretlendi",
+    "feedMarkedAsRead": "\"{{title}}\" içeriği okundu olarak işaretlendi.",
+    "allItemsMarkedAsRead": "Tüm içerikler okundu olarak işaretlendi.",
+    "markAsReadError": "İşlem Hatası",
+    "markAsReadErrorDescription": "İçerikler okundu olarak işaretlenirken bir sorun oluştu.",
+    "noContentFound": "İçerik Bulunamadı",
+    "emptyContentDescription": "Görüntülemek için içerik bulunamadı. Filtreleri sıfırlayabilir, yeni bir feed ekleyebilir veya mevcut içeriği yenileyebilirsiniz.",
+    "refreshContent": "İçeriği Yenile",
+    "addNewFeed": "Yeni Feed Ekle",
+    "loadingMore": "Daha fazla yükleniyor...",
+    "autoLoading": "Otomatik yükleniyor...",
+    "loadMoreManually": "Daha Fazla Göster",
+    "scrollToLoadMore": "Daha fazla yüklemek için kaydırın",
+    "noMoreItems": "Tüm içerikler yüklendi",
+    "emptyFeedTitle": "Feed İçeriği Bulunamadı",
+    "emptyFeedDescription": "Bu feed için görüntülenecek içerik bulunamadı. Daha sonra tekrar kontrol edin veya beklemeyi deneyin.",
+    "emptyFavoritesTitle": "Favorilerde İçerik Yok",
+    "emptyFavoritesDescription": "Henüz favori içeriğiniz bulunmuyor. İçerikleri favorilere eklemek için kalp simgesine tıklayın.",
+    "emptyReadLaterTitle": "Okuma Listesi Boş",
+    "emptyReadLaterDescription": "Okuma listenizde henüz içerik yok. İçerikleri okuma listenize eklemek için yer imi simgesine tıklayın.",
+    "emptySearchTitle": "Arama Sonucu Bulunamadı",
+    "emptySearchDescription": "Arama sorgunuzla eşleşen içerik bulunamadı. Başka anahtar kelimeler deneyebilir veya tüm içerikleri görüntüleyebilirsiniz.",
+    "emptyFilterTitle": "Filtrelenmiş İçerik Bulunamadı",
+    "emptyFilterDescription": "Seçtiğiniz filtrelerle eşleşen içerik bulunamadı. Filtrelerinizi değiştirmeyi veya daha az kısıtlayıcı filtreler kullanmayı deneyebilirsiniz.",
+    "emptyDefaultTitle": "İçerik Bulunamadı",
+    "emptyDefaultDescription": "Bu bölümde görüntülenecek içerik bulunamadı. Daha sonra tekrar kontrol edin veya yeni kaynaklar eklemeyi deneyin.",
+    "minutesAgo": "dk önce",
+    "hoursAgo": "saat önce",
+    "daysAgo": "gün önce",
+    "expand": "Genişlet",
+    "collapse": "Daralt",
+    "share": "Paylaş",
+    "sidebar": {
+      "search": "Feed ara...",
+      "allFeeds": "Tüm Feedler",
+      "unread": "Okunmamışlar",
+      "favorites": "Favoriler",
+      "readLater": "Sonra Oku",
+      "rssFeeds": "RSS Beslemeleri",
+      "youtubeFeeds": "YouTube Kanalları",
+      "remove": "Beslemeyi Sil"
+    },
+    "filters": "Filtreler"
   },
   "home": {
     "title": "Ana Sayfa",
@@ -299,6 +365,13 @@
     "trendingContent": "Trend İçerikler",
     "emptyState": "Henüz hiç besleme eklemediniz.",
     "emptyStateAction": "Başlamak için besleme ekleyin",
+    "hero": {
+      "tagline": "RSS ve YouTube içeriklerinizi tek bir yerde yönetin",
+      "getStarted": "Hemen Başlayın",
+      "learnMore": "Daha Fazla Öğren",
+      "availableIn": "Kullanılabilir diller",
+      "dashboardImageAlt": "FeedTune kontrol paneli önizlemesi"
+    },
     "feedManagement": {
       "title": "Beslemeleriniz",
       "description": "Takip ettiğiniz kaynaklar",
@@ -337,6 +410,18 @@
       "readLaterItems": "Okuma Listesi"
     },
     "features": {
+      "onboarding": {
+        "title": "Kolay Kullanım",
+        "description": "Basit arayüz ile hızlıca başlayın ve kaynaklarınızı takip edin"
+      },
+      "analytics": {
+        "title": "İçerik Analizi",
+        "description": "Okuma alışkanlıklarınızı takip edin ve en sevdiğiniz kaynakları keşfedin"
+      },
+      "customization": {
+        "title": "Özelleştirme",
+        "description": "Görünümü ve özellikleri kendi ihtiyaçlarınıza göre ayarlayın"
+      },
       "title": "Özellikler",
       "subtitle": "FeedTune'un Sunduğu Avantajlar",
       "description": "FeedTune ile içeriklerinizi daha verimli yönetin",
@@ -363,7 +448,67 @@
       "darkMode": {
         "title": "Karanlık Mod",
         "desc": "Gözlerinizi yormayan karanlık mod desteği"
+      },
+      "cards": {
+        "layout": {
+          "title": "Modern Arayüz",
+          "description": "Kullanıcı dostu ve özelleştirilebilir arayüz ile içeriklerinize anında erişin."
+        },
+        "filter": {
+          "title": "Gelişmiş Filtreleme",
+          "description": "İçerikleri tipine, durumuna veya kaynak türüne göre kolayca filtreleyebilirsiniz."
+        },
+        "rss": {
+          "title": "RSS Desteği",
+          "description": "Tüm RSS ve Atom beslemelerini destekler, içerikleri düzenli olarak günceller."
+        },
+        "youtube": {
+          "title": "YouTube Entegrasyonu",
+          "description": "YouTube kanallarını takip edin ve yeni videoları kaçırmayın."
+        },
+        "favorites": {
+          "title": "Favori İçerikler",
+          "description": "Önemli içerikleri favorilerinize ekleyerek daha sonra kolayca erişin."
+        },
+        "readLater": {
+          "title": "Sonra Oku",
+          "description": "İçerikleri okuma listenize ekleyerek daha sonra okuyabilirsiniz."
+        },
+        "languages": {
+          "title": "Çoklu Dil Desteği",
+          "description": "Farklı dil seçenekleriyle uygulamayı kendi dilinizde kullanın."
+        },
+        "darkMode": {
+          "title": "Karanlık Mod",
+          "description": "Göz yorgunluğunu azaltan karanlık mod ile gece de rahatlıkla kullanın."
+        },
+        "search": {
+          "title": "Hızlı Arama",
+          "description": "İçerikleriniz arasında anında arama yaparak istediğinizi bulun."
+        }
       }
+    },
+    "performanceTitle": "Hızlı & Performanslı",
+    "performanceSubtitle": "Modern teknolojilerle geliştirilmiş performans",
+    "performanceDescription": "FeedTune, en modern web teknolojileri kullanılarak geliştirilmiştir. Hızlı yükleme süreleri, anlık güncellemeler ve sorunsuz deneyim sunar.",
+    "performanceFeature1": "Server Side Rendering",
+    "performanceFeature1Description": "Hızlı sayfa yüklemeleri için Next.js SSR kullanılmıştır.",
+    "performanceFeature2": "Verimli Animasyonlar",
+    "performanceFeature2Description": "Framer Motion ile akıcı ve performanslı animasyonlar.",
+    "performanceFeature3": "Responsive Tasarım",
+    "performanceFeature3Description": "Tüm cihazlarda mükemmel görüntüleme deneyimi.",
+    "feedManagement": {
+      "title": "Beslemeleriniz",
+      "description": "Takip ettiğiniz kaynaklar",
+      "lastUpdated": "Son güncelleme",
+      "viewContent": "İçerikleri Gör",
+      "websiteLink": "Web sitesini ziyaret et",
+      "addFeed": "Feed Ekle",
+      "addFeedDescription": "Yeni bir RSS veya YouTube kaynağı ekleyin",
+      "noFeedsTitle": "Henüz feed eklenmemiş",
+      "noFeeds": "Takip etmek istediğiniz RSS veya YouTube kaynaklarını ekleyin",
+      "addFirstFeed": "İlk Feed'i Ekle",
+      "viewAllFeeds": "Tüm Feed'leri Görüntüle"
     }
   },
   "explore": {
@@ -447,7 +592,7 @@
     "close": "Kapat"
   },
   "timeAgo": {
-    "justNow": "Az önce",
+    "justNow": "şimdi",
     "minute_one": "1 dk önce",
     "minute_other": "{{count}} dk önce",
     "hour_one": "1 saat önce",

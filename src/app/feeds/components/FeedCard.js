@@ -55,7 +55,7 @@ const FeedCard = memo(function FeedCard({
   const publishedDate = new Date(item.published_at);
   const formattedDate = format(publishedDate, "PPP", { locale: dateLocale });
   const formattedTime = format(publishedDate, "p", { locale: dateLocale });
-  const relativeTime = getRelativeTime(publishedDate, language);
+  const relativeTime = getRelativeTime(publishedDate, language, t);
 
   // Feed tipi için badge rengi
   const feedTypeBadge =
@@ -94,14 +94,14 @@ const FeedCard = memo(function FeedCard({
   // Favori ve Daha Sonra Oku için yerelleştirme metinleri
   const getFavoriteText = () => {
     return item.is_favorite
-      ? t("feeds.removeFromFavorites") || "Favorilerden çıkar"
-      : t("feeds.addToFavorites") || "Favorilere ekle";
+      ? t("feeds.removeFromFavorites")
+      : t("feeds.addToFavorites");
   };
 
   const getReadLaterText = () => {
     return item.is_read_later
-      ? t("feeds.removeFromReadLater") || "Daha sonra oku listesinden çıkar"
-      : t("feeds.addToReadLater") || "Daha sonra oku";
+      ? t("feeds.removeFromReadLater")
+      : t("feeds.addToReadLater");
   };
 
   // Kompakt kart görünümü
@@ -251,10 +251,8 @@ const FeedCard = memo(function FeedCard({
                         <TooltipContent side="bottom">
                           <p>
                             {item.is_favorite
-                              ? t("feeds.feedList.removeFromFavorites") ||
-                                getFavoriteText()
-                              : t("feeds.feedList.addToFavorites") ||
-                                getFavoriteText()}
+                              ? t("feeds.feedList.removeFromFavorites")
+                              : t("feeds.feedList.addToFavorites")}
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -282,10 +280,8 @@ const FeedCard = memo(function FeedCard({
                         <TooltipContent side="bottom">
                           <p>
                             {item.is_read_later
-                              ? t("feeds.feedList.removeFromReadLater") ||
-                                getReadLaterText()
-                              : t("feeds.feedList.addToReadLater") ||
-                                getReadLaterText()}
+                              ? t("feeds.feedList.removeFromReadLater")
+                              : t("feeds.feedList.addToReadLater")}
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -520,10 +516,8 @@ const FeedCard = memo(function FeedCard({
                   <TooltipContent side="top">
                     <p>
                       {item.is_favorite
-                        ? t("feeds.feedList.removeFromFavorites") ||
-                          getFavoriteText()
-                        : t("feeds.feedList.addToFavorites") ||
-                          getFavoriteText()}
+                        ? t("feeds.feedList.removeFromFavorites")
+                        : t("feeds.feedList.addToFavorites")}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -549,10 +543,8 @@ const FeedCard = memo(function FeedCard({
                   <TooltipContent side="top">
                     <p>
                       {item.is_read_later
-                        ? t("feeds.feedList.removeFromReadLater") ||
-                          getReadLaterText()
-                        : t("feeds.feedList.addToReadLater") ||
-                          getReadLaterText()}
+                        ? t("feeds.feedList.removeFromReadLater")
+                        : t("feeds.feedList.addToReadLater")}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -566,7 +558,7 @@ const FeedCard = memo(function FeedCard({
 });
 
 // Göreceli zaman hesaplaması (şimdi, X dk önce, X saat önce, vb.)
-function getRelativeTime(date, language) {
+function getRelativeTime(date, language, t) {
   const now = new Date();
   const diffMs = now - date;
   const diffSeconds = Math.floor(diffMs / 1000);
@@ -575,19 +567,13 @@ function getRelativeTime(date, language) {
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffSeconds < 60) {
-    return language === "tr" ? "şimdi" : "just now";
+    return t("feeds.justNow");
   } else if (diffMinutes < 60) {
-    return language === "tr"
-      ? `${diffMinutes} dk önce`
-      : `${diffMinutes} min${diffMinutes === 1 ? "" : "s"} ago`;
+    return `${diffMinutes} ${t("feeds.minutesAgo")}`;
   } else if (diffHours < 24) {
-    return language === "tr"
-      ? `${diffHours} saat önce`
-      : `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+    return `${diffHours} ${t("feeds.hoursAgo")}`;
   } else if (diffDays < 7) {
-    return language === "tr"
-      ? `${diffDays} gün önce`
-      : `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+    return `${diffDays} ${t("feeds.daysAgo")}`;
   } else {
     const options = { month: "short", day: "numeric" };
     return new Date(date).toLocaleDateString(

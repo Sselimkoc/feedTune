@@ -38,7 +38,7 @@ export function ViewToggle({ viewMode, onViewModeChange }) {
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p>{t("feeds.gridView") || "Izgara Görünümü"}</p>
+            <p>{t("feeds.gridView")}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -57,7 +57,7 @@ export function ViewToggle({ viewMode, onViewModeChange }) {
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p>{t("feeds.listView") || "Liste Görünümü"}</p>
+            <p>{t("feeds.listView")}</p>
           </TooltipContent>
         </Tooltip>
       </motion.div>

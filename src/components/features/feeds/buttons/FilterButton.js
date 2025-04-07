@@ -30,7 +30,7 @@ export function FilterButton({ onOpenFilters }) {
           </motion.div>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>{t("feeds.filterFeeds") || "Beslemeleri Filtrele"}</p>
+          <p>{t("feeds.filterFeeds")}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

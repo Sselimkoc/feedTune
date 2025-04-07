@@ -1,6 +1,14 @@
 {
   "navigation": {
-    "tagline": "Manage your RSS and YouTube content in one place"
+    "tagline": "Manage your RSS and YouTube content in one place",
+    "home": "Home",
+    "feeds": "Feeds",
+    "favorites": "Favorites",
+    "readLater": "Read Later",
+    "settings": "Settings",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "signOut": "Sign Out"
   },
   "common": {
     "loading": "Loading...",
@@ -21,7 +29,8 @@
     "no": "No",
     "ok": "OK",
     "continue": "Continue",
-    "deleting": "Deleting..."
+    "deleting": "Deleting...",
+    "language": "Language"
   },
   "nav": {
     "menu": "Menu",
@@ -61,7 +70,16 @@
   "feeds": {
     "title": "My Feeds",
     "description": "View content from your followed sources",
+    "yourFeeds": "Your Feeds",
+    "searchFeeds": "Search feeds...",
+    "categories": "Categories",
+    "smartFilters": "Smart Filters",
+    "addFeed": "Add Feed",
+    "rssFeeds": "RSS Feeds",
+    "youtubeFeeds": "YouTube Channels",
     "allItems": "All Items",
+    "unreadItems": "Unread Items",
+    "total": "Total",
     "unread": "Unread",
     "today": "Today",
     "yesterday": "Yesterday",
@@ -69,6 +87,9 @@
     "older": "Older",
     "noItems": "No items found.",
     "noFeeds": "You haven't added any feeds yet.",
+    "noRssFeeds": "No RSS feeds added",
+    "noYoutubeFeeds": "No YouTube channels added",
+    "noSearchResults": "No search results found",
     "addYourFirst": "Add your first feed",
     "refreshing": "Refreshing feeds...",
     "markAllAsRead": "Mark all as read",
@@ -78,6 +99,9 @@
     "removeFromFavorites": "Remove from favorites",
     "addToReadLater": "Read later",
     "removeFromReadLater": "Remove from read later list",
+    "removeFeed": "Delete Feed",
+    "expandSidebar": "Expand Filter Menu",
+    "collapseSidebar": "Collapse Filter Menu",
     "new": "New",
     "noDescription": "No description available",
     "markRead": "Mark as read",
@@ -128,6 +152,19 @@
       "resetFilters": "Reset Filters",
       "refresh": "Refresh Page"
     },
+    "rssItems": "RSS Sources",
+    "youtubeItems": "YouTube Sources",
+    "cleanupSuccess": "Cleanup Successful",
+    "cleanupDescription": "{{count}} old items successfully removed.",
+    "allMarkedAsRead": "All Marked as Read",
+    "feedMarkedAsRead": "\"{{title}}\" content marked as read.",
+    "allItemsMarkedAsRead": "All items marked as read.",
+    "markAsReadError": "Operation Error",
+    "markAsReadErrorDescription": "There was a problem marking items as read.",
+    "noContentFound": "No Content Found",
+    "emptyContentDescription": "No content found to display. You can reset filters, add a new feed, or refresh existing content.",
+    "refreshContent": "Refresh Content",
+    "addNewFeed": "Add New Feed",
     "addFeed": {
       "title": "Add Feed",
       "description": "Select the type of feed you want to follow",
@@ -237,12 +274,139 @@
       "description": "Loading your feeds..."
     },
     "articleCount": "{{count}} articles",
-    "lastUpdated": "Last updated: {{date}}"
+    "lastUpdated": "Last updated: {{date}}",
+    "emptyFeedTitle": "No Feed Content Found",
+    "emptyFeedDescription": "No content found for this feed. Check back later or try refreshing.",
+    "emptyFavoritesTitle": "No Favorites Content",
+    "emptyFavoritesDescription": "You don't have any favorite content yet. Click the heart icon to add content to favorites.",
+    "emptyReadLaterTitle": "Reading List Empty",
+    "emptyReadLaterDescription": "Your reading list is empty. Click the bookmark icon to add content to your reading list.",
+    "emptySearchTitle": "No Search Results",
+    "emptySearchDescription": "No content matches your search query. Try different keywords or view all content.",
+    "emptyFilterTitle": "No Filtered Content Found",
+    "emptyFilterDescription": "No content matches your selected filters. Try changing your filters or using less restrictive ones.",
+    "emptyDefaultTitle": "No Content Found",
+    "emptyDefaultDescription": "No content found to display in this section. Check back later or try adding new sources.",
+    "minutesAgo": "min ago",
+    "hoursAgo": "hours ago",
+    "daysAgo": "days ago",
+    "justNow": "just now",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "share": "Share",
+    "sidebar": {
+      "search": "Search feeds...",
+      "allFeeds": "All Feeds",
+      "unread": "Unread",
+      "favorites": "Favorites",
+      "readLater": "Read Later",
+      "rssFeeds": "RSS Feeds",
+      "youtubeFeeds": "YouTube Channels",
+      "collapse": "Collapse",
+      "expand": "Expand",
+      "remove": "Delete Feed"
+    },
+    "filters": "Filters"
   },
   "home": {
     "title": "Manage Your Content with FeedTune",
     "subtitle": "Collect, organize, and follow your RSS feeds and YouTube channels in one place.",
     "getStarted": "Get Started",
+    "hero": {
+      "tagline": "Manage your RSS and YouTube content in one place",
+      "getStarted": "Get Started",
+      "learnMore": "Learn More",
+      "availableIn": "Available in",
+      "dashboardImageAlt": "FeedTune dashboard preview"
+    },
+    "features": {
+      "onboarding": {
+        "title": "Easy Onboarding",
+        "description": "Start quickly with a simple interface and track your sources"
+      },
+      "analytics": {
+        "title": "Content Analytics",
+        "description": "Track your reading habits and discover your favorite sources"
+      },
+      "customization": {
+        "title": "Customization",
+        "description": "Adjust the appearance and features to your own needs"
+      },
+      "title": "Features",
+      "subtitle": "Benefits of FeedTune",
+      "description": "Manage your content more efficiently with FeedTune",
+      "rssFeeds": {
+        "title": "RSS Feeds",
+        "desc": "Follow the latest content from your favorite websites"
+      },
+      "youtube": {
+        "title": "YouTube Channels",
+        "desc": "Follow your favorite YouTube channels like RSS feeds"
+      },
+      "autoUpdates": {
+        "title": "Auto Updates",
+        "desc": "Your content is automatically updated"
+      },
+      "organization": {
+        "title": "Content Organization",
+        "desc": "Add content to favorites or save for later reading"
+      },
+      "keyboard": {
+        "title": "Keyboard Shortcuts",
+        "desc": "Navigate faster with keyboard shortcuts"
+      },
+      "darkMode": {
+        "title": "Dark Mode",
+        "desc": "Dark mode support that doesn't strain your eyes"
+      },
+      "cards": {
+        "layout": {
+          "title": "Modern Interface",
+          "description": "Access your content instantly with a user-friendly and customizable interface."
+        },
+        "filter": {
+          "title": "Advanced Filtering",
+          "description": "Easily filter content by type, status, or source type."
+        },
+        "rss": {
+          "title": "RSS Support",
+          "description": "Supports all RSS and Atom feeds, regularly updates content."
+        },
+        "youtube": {
+          "title": "YouTube Integration",
+          "description": "Follow YouTube channels and never miss new videos."
+        },
+        "favorites": {
+          "title": "Favorite Content",
+          "description": "Add important content to your favorites for easy access later."
+        },
+        "readLater": {
+          "title": "Read Later",
+          "description": "Add content to your reading list to read later."
+        },
+        "languages": {
+          "title": "Multi-Language Support",
+          "description": "Use the app in your own language with different language options."
+        },
+        "darkMode": {
+          "title": "Dark Mode",
+          "description": "Use it comfortably at night with dark mode that reduces eye strain."
+        },
+        "search": {
+          "title": "Quick Search",
+          "description": "Find what you want instantly by searching among your content."
+        }
+      }
+    },
+    "performanceTitle": "Fast & Performant",
+    "performanceSubtitle": "Performance developed with modern technologies",
+    "performanceDescription": "FeedTune is developed using the most modern web technologies. It offers fast loading times, instant updates, and a seamless experience.",
+    "performanceFeature1": "Server Side Rendering",
+    "performanceFeature1Description": "Next.js SSR is used for fast page loads.",
+    "performanceFeature2": "Efficient Animations",
+    "performanceFeature2Description": "Smooth and performant animations with Framer Motion.",
+    "performanceFeature3": "Responsive Design",
+    "performanceFeature3Description": "Perfect viewing experience on all devices.",
     "feedManagement": {
       "title": "Your Feeds",
       "description": "Sources you follow",
@@ -284,35 +448,6 @@
       "unreadItems": "Unread",
       "favoriteItems": "Favorites",
       "readLaterItems": "Read Later"
-    },
-    "features": {
-      "title": "Features",
-      "subtitle": "Benefits of FeedTune",
-      "description": "Manage your content more efficiently with FeedTune",
-      "rssFeeds": {
-        "title": "RSS Feeds",
-        "desc": "Follow the latest content from your favorite websites"
-      },
-      "youtube": {
-        "title": "YouTube Channels",
-        "desc": "Follow your favorite YouTube channels like RSS feeds"
-      },
-      "autoUpdates": {
-        "title": "Auto Updates",
-        "desc": "Your content is automatically updated"
-      },
-      "organization": {
-        "title": "Content Organization",
-        "desc": "Add content to favorites or save for later reading"
-      },
-      "keyboard": {
-        "title": "Keyboard Shortcuts",
-        "desc": "Navigate faster with keyboard shortcuts"
-      },
-      "darkMode": {
-        "title": "Dark Mode",
-        "desc": "Dark mode support that doesn't strain your eyes"
-      }
     }
   },
   "favorites": {

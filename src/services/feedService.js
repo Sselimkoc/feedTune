@@ -280,7 +280,7 @@ export class FeedService {
    * @param {number} limit Her feed başına maksimum öğe sayısı
    * @returns {Array} Sınırlandırılmış öğeler
    */
-  limitItemsPerFeed(feeds, items, limit = 10) {
+  limitItemsPerFeed(feeds, items, limit = 12) {
     if (!feeds || !items) return { feeds: [], items: [] };
 
     const itemsByFeed = items.reduce((acc, item) => {
@@ -297,6 +297,69 @@ export class FeedService {
     });
 
     return { feeds, items: limitedItems };
+  }
+
+  /**
+   * Sayfalı olarak feed öğelerini getirir
+   * @param {string} userId Kullanıcı ID'si
+   * @param {number} page Sayfa numarası
+   * @param {number} pageSize Sayfa başına öğe sayısı
+   * @param {Object} filters Filtre parametreleri
+   * @returns {Promise<Object>} Sayfalı feed öğeleri
+   */
+  async getPaginatedFeedItems(userId, page = 1, pageSize = 12, filters = {}) {
+    try {
+      if (!userId) return { data: [], total: 0, hasMore: false };
+
+      // Önce kullanıcının feed'lerini al
+      const feeds = await this.getFeeds(userId);
+
+      if (!feeds || feeds.length === 0) {
+        return { data: [], total: 0, hasMore: false };
+      }
+
+      // Feed ID'lerini çıkar
+      const feedIds = feeds.map((feed) => feed.id);
+
+      // Seçilen feed'e göre filtreleme
+      if (filters.selectedFeedId) {
+        const selectedFeedExists = feeds.some(
+          (feed) => feed.id === filters.selectedFeedId
+        );
+        if (selectedFeedExists) {
+          // Sadece seçilen feed'i kullan
+          return await this.repository.getPaginatedFeedItems(
+            [filters.selectedFeedId],
+            page,
+            pageSize,
+            filters,
+            Date.now()
+          );
+        }
+      }
+
+      // Zaman damgası
+      const timestamp = Date.now();
+
+      // Repository'yi çağır
+      const result = await this.repository.getPaginatedFeedItems(
+        feedIds,
+        page,
+        pageSize,
+        filters,
+        timestamp
+      );
+
+      // Eğer filtrelenmiş sonuçlar boşsa ve ilk sayfa ise
+      if (result.data.length === 0 && page === 1) {
+        return { data: [], total: 0, hasMore: false };
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Sayfalı feed öğeleri getirme hatası:", error);
+      throw error;
+    }
   }
 }
 
