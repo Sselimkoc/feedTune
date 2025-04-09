@@ -4,13 +4,12 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
 /**
- * YouTube kanal silme endpoint'i
+ * YouTube channel delete endpoint
  *
- * DELETE isteği ile gelen feedId parametresi ile kanalı siler
+ * Deletes a channel using the feedId parameter from the DELETE request
  */
 export async function DELETE(request) {
   try {
-    // Oturum kontrolü
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
@@ -20,12 +19,11 @@ export async function DELETE(request) {
 
     if (!session) {
       return NextResponse.json(
-        { error: "Oturum açmanız gerekiyor" },
+        { error: "You must be logged in" },
         { status: 401 }
       );
     }
 
-    // İstek parametrelerini al
     const { searchParams } = new URL(request.url);
     const feedId = searchParams.get("feedId");
 
@@ -36,7 +34,6 @@ export async function DELETE(request) {
       );
     }
 
-    // Kullanıcının bu beslemeye sahip olup olmadığını kontrol et
     const { data: feed, error: feedError } = await supabase
       .from("feeds")
       .select("*")
@@ -51,20 +48,18 @@ export async function DELETE(request) {
       );
     }
 
-    // YouTube kanalını sil
     const result = await deleteYoutubeChannel(feedId);
 
-    // Başarılı cevabı döndür
     return NextResponse.json({
       success: true,
-      message: "YouTube kanalı başarıyla silindi",
+      message: "YouTube channel deleted successfully",
       result: result,
     });
   } catch (error) {
-    console.error("YouTube kanal silme hatası:", error);
+    console.error("YouTube channel delete error:", error);
 
     return NextResponse.json(
-      { error: error.message || "YouTube kanalı silinirken hata oluştu" },
+      { error: error.message || "YouTube channel delete error" },
       { status: 500 }
     );
   }

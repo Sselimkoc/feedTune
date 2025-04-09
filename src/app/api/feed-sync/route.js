@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateRssFeed } from "@/lib/rss-service";
+import { updateYoutubeChannel } from "@/lib/youtube-service";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
@@ -22,7 +23,7 @@ export async function POST(request) {
 
     if (!session) {
       return NextResponse.json(
-        { error: "Oturum açmanız gerekiyor" },
+        { error: "You must be logged in" },
         { status: 401 }
       );
     }
@@ -35,9 +36,8 @@ export async function POST(request) {
       .eq("is_active", true);
 
     if (feedsError) {
-      console.error("Feed'leri alma hatası:", feedsError);
       return NextResponse.json(
-        { error: "Feed'ler alınırken bir hata oluştu" },
+        { error: "Feeds fetching failed" },
         { status: 500 }
       );
     }
@@ -47,39 +47,44 @@ export async function POST(request) {
       try {
         if (feed.type === "rss") {
           await updateRssFeed(feed.id);
-          return { id: feed.id, success: true };
+          return { id: feed.id, type: "rss", success: true };
+        } else if (feed.type === "youtube") {
+          await updateYoutubeChannel(feed.id);
+          return { id: feed.id, type: "youtube", success: true };
         }
         return {
           id: feed.id,
+          type: feed.type,
           success: false,
-          message: "Desteklenmeyen feed türü",
+          message: "Unsupported feed type",
         };
       } catch (error) {
-        console.error(`Feed ${feed.id} güncelleme hatası:`, error);
-        return { id: feed.id, success: false, error: error.message };
+        return {
+          id: feed.id,
+          type: feed.type,
+          success: false,
+          error: error.message,
+        };
       }
     });
 
-    // Tüm güncelleme sonuçlarını bekle
     const results = await Promise.all(updatePromises);
-
-    // Başarılı ve başarısız güncelleme sayılarını hesapla
     const successCount = results.filter((r) => r.success).length;
     const failCount = results.filter((r) => !r.success).length;
 
     return NextResponse.json({
       success: true,
-      message: `${successCount} feed başarıyla güncellendi${
-        failCount > 0 ? `, ${failCount} feed güncellenemedi` : ""
+      message: `${successCount} feed updated successfully${
+        failCount > 0 ? `, ${failCount} feed update failed` : ""
       }`,
       results,
     });
   } catch (error) {
-    console.error("Feed senkronizasyon hatası:", error);
+    console.error("Feed sync failed:", error);
 
     return NextResponse.json(
       {
-        error: error.message || "Feed'ler güncellenirken bir hata oluştu",
+        error: error.message ,
       },
       { status: 500 }
     );
@@ -87,18 +92,18 @@ export async function POST(request) {
 }
 
 /**
- * Feed senkronizasyon durum endpoint'i
- * İsteğe bağlı olarak kullanılabilir
+ * Feed synchronization status endpoint
+ * Optional, can be used for monitoring
  */
 export async function GET(request) {
   try {
     return NextResponse.json({
       status: "available",
-      message: "Feed senkronizasyon servisi çalışıyor",
+      message: "Feed synchronization service is running",
     });
   } catch (error) {
     return NextResponse.json(
-      { error: "Feed senkronizasyon servisi hatası" },
+      { error: "Feed synchronization service error" },
       { status: 500 }
     );
   }

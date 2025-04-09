@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
-import { FeedsContainer } from "@/app/feeds/components/FeedsContainer";
+import { FeedContainer } from "@/components/features/feeds/layout/FeedContainer";
 
-// Sayfanın her istek için yeniden oluşturulmasını sağla
 export const dynamic = "force-dynamic";
 
 // Metadata ve OpenGraph bilgileri
@@ -24,8 +23,7 @@ export default function FeedsPage() {
           </div>
         }
       >
-        {/* Client component olarak işaretlenmiş FeedsContainer bileşeni */}
-        <FeedsContainer />
+        <FeedContainer />
       </Suspense>
     </div>
   );

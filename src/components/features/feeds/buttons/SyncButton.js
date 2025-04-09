@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
@@ -14,39 +14,42 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
-export function SyncButton({ onSync, isSyncing }) {
+export function SyncButton({ onSync, isSyncing, feedType }) {
   const { t } = useLanguage();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSync = async () => {
-    if (isSyncing) return;
+    if (isSyncing || isProcessing) return;
 
+    setIsProcessing(true);
     try {
       if (onSync) {
         await onSync();
       } else {
-        // Fallback - özel prop sağlanmadıysa doğrudan API'yi çağır
         const response = await fetch("/api/feed-sync", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({ type: feedType || "all" }),
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Feed senkronizasyon hatası");
+          throw new Error(data.error);
         }
 
-        toast.success(data.message || "Feed'ler başarıyla güncellendi");
+        toast.success(data.message);
       }
     } catch (error) {
-      console.error("Feed senkronizasyon hatası:", error);
-      toast.error(
-        error.message || "Feed'ler senkronize edilirken bir hata oluştu"
-      );
+      toast.error(error.message);
+    } finally {
+      setIsProcessing(false);
     }
   };
+
+  const isLoading = isSyncing || isProcessing;
 
   return (
     <TooltipProvider>
@@ -58,12 +61,12 @@ export function SyncButton({ onSync, isSyncing }) {
               size="sm"
               className="h-9 px-3 gap-1.5"
               onClick={handleSync}
-              disabled={isSyncing}
+              disabled={isLoading}
             >
               <Server
                 className={cn(
                   "h-4 w-4",
-                  isSyncing && "animate-pulse text-primary"
+                  isLoading && "animate-pulse text-primary"
                 )}
               />
               <span className="hidden sm:inline text-sm">

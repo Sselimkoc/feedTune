@@ -2,7 +2,7 @@
 
 import { LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {

@@ -6,7 +6,7 @@ export async function GET(request) {
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-    // Admin yetkisi kontrolü
+    // Admin check
     const {
       data: { session },
       error: sessionError,
@@ -16,7 +16,6 @@ export async function GET(request) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // YouTube feed'lerini ve ilgili logoları al
     const { data: youtubeFeeds, error: feedsError } = await supabase
       .from("youtube_feeds")
       .select("id, channel_avatar");
@@ -29,7 +28,6 @@ export async function GET(request) {
       );
     }
 
-    // Her YouTube feed için logo bilgisini feeds tablosuna aktar
     let updatedCount = 0;
     let errorCount = 0;
 

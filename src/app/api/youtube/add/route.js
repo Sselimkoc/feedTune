@@ -4,13 +4,12 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
 /**
- * YouTube kanal ekleme endpoint'i
+ * YouTube channel add endpoint
  *
- * POST isteği ile gelen channelId parametresi ile YouTube kanalı ekler.
+ * Adds a YouTube channel using the channelId parameter from the POST request.
  */
 export async function POST(request) {
   try {
-    // Oturum kontrolü
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
@@ -20,36 +19,33 @@ export async function POST(request) {
 
     if (!session) {
       return NextResponse.json(
-        { error: "Oturum açmanız gerekiyor" },
+        { error: "You must be logged in" },
         { status: 401 }
       );
     }
 
-    // İstek gövdesinden channelId'yi al
     const body = await request.json();
     const channelId = body.channelId;
 
     if (!channelId) {
       return NextResponse.json(
-        { error: "channelId parametresi gereklidir" },
+        { error: "channelId parameter is required" },
         { status: 400 }
       );
     }
 
-    // YouTube kanalını ekle
     const newFeed = await addYoutubeChannel(channelId, session.user.id);
 
-    // Başarılı cevabı döndür
     return NextResponse.json({
       success: true,
-      message: "YouTube kanalı başarıyla eklendi",
+      message: "YouTube channel added successfully",
       feed: newFeed,
     });
   } catch (error) {
-    console.error("YouTube kanal ekleme hatası:", error);
+    console.error("YouTube channel add error:", error);
 
     return NextResponse.json(
-      { error: error.message || "YouTube kanalı eklenirken hata oluştu" },
+      { error: error.message || "YouTube channel add error" },
       { status: 500 }
     );
   }

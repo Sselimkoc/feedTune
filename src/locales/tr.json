@@ -38,7 +38,9 @@
     "logout": "Çıkış Yap",
     "confirm": "Onayla",
     "submit": "Gönder",
-    "language": "Dil"
+    "language": "Dil",
+    "apply": "Uygula",
+    "reset": "Sıfırla"
   },
   "nav": {
     "menu": "Menü",
@@ -95,7 +97,21 @@
     "searchFeeds": "Besleme ara...",
     "categories": "Kategoriler",
     "smartFilters": "Akıllı Filtreler",
-    "addFeed": "Besleme Ekle",
+    "addFeed": {
+      "title": "Besleme Ekle",
+      "description": "Takip etmek istediğiniz besleme türünü seçin",
+      "selectPlatform": "Platform Seçin",
+      "rss": "RSS Beslemesi",
+      "youtube": "YouTube Kanalı",
+      "success": "Besleme başarıyla eklendi",
+      "error": "Besleme eklenirken bir hata oluştu",
+      "keepAdding": "Eklemeye devam et",
+      "submit": "Besleme Ekle",
+      "rssUrl": "RSS Besleme URL'si",
+      "rssUrlPlaceholder": "https://example.com/feed",
+      "youtubeUrl": "YouTube URL'si",
+      "youtubeUrlPlaceholder": "YouTube kanal URL'si veya video ID'si girin"
+    },
     "rssFeeds": "RSS Besleme",
     "youtubeFeeds": "YouTube Kanalları",
     "allItems": "Tüm Öğeler",
@@ -136,9 +152,11 @@
     "addFeedTitle": "Besleme Ekle",
     "feedUrl": "Besleme URL'si",
     "youtubeUrl": "YouTube URL'si",
+    "youtubeUrlPlaceholder": "YouTube kanal URL'si veya video ID'si girin",
     "addSuccess": "Besleme başarıyla eklendi",
     "addError": "Besleme eklenirken hata oluştu",
     "allFeeds": "Tüm Beslemeler",
+    "allFeedsDescription": "Tüm feed içeriklerinizi görüntüleyin",
     "selectFeed": "Besleme Seçin",
     "unreadFeeds": "Okunmamış Beslemeler",
     "favorites": "Favoriler",
@@ -148,6 +166,7 @@
     "keyboardShortcuts": "Klavye Kısayolları",
     "refresh": "Yenile",
     "refreshFeeds": "Beslemeleri Yenile",
+    "openInNewTab": "Yeni sekmede aç",
     "filterTitle": "Filtreler",
     "sortBy": "Sıralama",
     "newest": "En Yeni",
@@ -156,6 +175,7 @@
     "showRead": "Okunmuşları Göster",
     "showUnread": "Okunmamışları Göster",
     "feedTypes": "Besleme Türleri",
+    "multiSelect": "Çoklu Seçim",
     "resetFilters": "Filtreleri Sıfırla",
     "applyFilters": "Filtreleri Uygula",
     "emptyFilterState": {
@@ -185,16 +205,6 @@
       "title": "Bir Hata Oluştu",
       "description": "Beslemeler yüklenirken bir sorun oluştu",
       "retry": "Tekrar Dene"
-    },
-    "addFeed": {
-      "title": "Besleme Ekle",
-      "description": "Takip etmek istediğiniz besleme türünü seçin",
-      "selectPlatform": "Platform Seçin",
-      "rss": "RSS Beslemesi",
-      "youtube": "YouTube Kanalı",
-      "success": "Besleme başarıyla eklendi",
-      "error": "Besleme eklenirken bir hata oluştu",
-      "keepAdding": "Eklemeye devam et"
     },
     "addRssFeed": {
       "title": "RSS Beslemesi Ekle",
@@ -591,20 +601,46 @@
     "openShortcuts": "Klavye kısayollarını aç",
     "close": "Kapat"
   },
-  "timeAgo": {
-    "justNow": "şimdi",
-    "minute_one": "1 dk önce",
-    "minute_other": "{{count}} dk önce",
-    "hour_one": "1 saat önce",
-    "hour_other": "{{count}} saat önce",
-    "day_one": "1 gün önce",
-    "day_other": "{{count}} gün önce",
-    "week_one": "1 hafta önce",
-    "week_other": "{{count}} hafta önce",
-    "month_one": "1 ay önce",
-    "month_other": "{{count}} ay önce",
-    "year_one": "1 yıl önce",
-    "year_other": "{{count}} yıl önce"
+  "time": {
+    "relative": {
+      "past": {
+        "justNow": "Az önce",
+        "minutes": "{{count}} dakika önce",
+        "hours": "{{count}} saat önce",
+        "days": "{{count}} gün önce",
+        "weeks": "{{count}} hafta önce",
+        "months": "{{count}} ay önce",
+        "years": "{{count}} yıl önce"
+      },
+      "future": {
+        "minutes": "{{count}} dakika içinde",
+        "hours": "{{count}} saat içinde",
+        "days": "{{count}} gün içinde",
+        "weeks": "{{count}} hafta içinde",
+        "months": "{{count}} ay içinde",
+        "years": "{{count}} yıl içinde"
+      }
+    },
+    "formats": {
+      "short": "d MMM",
+      "medium": "d MMM yyyy",
+      "long": "d MMMM yyyy",
+      "full": "d MMMM yyyy HH:mm"
+    },
+    "units": {
+      "minute_one": "dakika",
+      "minute_other": "dakika",
+      "hour_one": "saat",
+      "hour_other": "saat",
+      "day_one": "gün",
+      "day_other": "gün",
+      "week_one": "hafta",
+      "week_other": "hafta",
+      "month_one": "ay",
+      "month_other": "ay",
+      "year_one": "yıl",
+      "year_other": "yıl"
+    }
   },
   "refreshButton": {
     "justNow": "az önce",
@@ -613,4 +649,4 @@
     "hoursAgo": "{{count}} saat önce",
     "lastRefresh": "Son yenileme"
   }
-} 
+}

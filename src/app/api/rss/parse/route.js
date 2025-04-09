@@ -4,17 +4,17 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
 /**
- * RSS besleme ayrıştırma timeout'u - 15 saniye
- * Çok büyük RSS beslemeleri için koruma ekledik
+ * RSS feed parsing timeout - 15 seconds
+ * Added protection for large RSS feeds
  */
 const PARSE_TIMEOUT = 15000;
 
 /**
- * Timeout ile Promise döndüren fonksiyon
- * @param {Promise} promise - Asıl promise
- * @param {number} timeout - Milisaniye cinsinden timeout
- * @param {string} errorMessage - Timeout durumunda gösterilecek hata mesajı
- * @returns {Promise} - Timeout eklenmiş promise
+ * Function that returns a Promise with a timeout
+ * @param {Promise} promise - The original promise
+ * @param {number} timeout - Timeout in milliseconds
+ * @param {string} errorMessage - Error message to display if timeout occurs
+ * @returns {Promise} - Promise with timeout
  */
 const withTimeout = (promise, timeout, errorMessage) => {
   const timeoutPromise = new Promise((_, reject) => {
@@ -27,14 +27,14 @@ const withTimeout = (promise, timeout, errorMessage) => {
 };
 
 /**
- * RSS besleme ayrıştırma endpoint'i
+ * RSS feed parsing endpoint
  *
- * ?url=https://example.com/rss şeklinde bir sorgu parametresi kabul eder
- * ve RSS beslemesini ayrıştırarak döndürür.
+ * Accepts a query parameter in the format ?url=https://example.com/rss
+ * and parses the RSS feed, returning the result.
  */
 export async function GET(request) {
   try {
-    // Oturum kontrolü
+   
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
@@ -44,46 +44,42 @@ export async function GET(request) {
 
     if (!session) {
       return NextResponse.json(
-        { error: "Oturum açmanız gerekiyor" },
+        { error: "You must be logged in" },
         { status: 401 }
       );
     }
 
-    // URL parametresini al
+ 
     const { searchParams } = new URL(request.url);
     const url = searchParams.get("url");
 
     if (!url) {
       return NextResponse.json(
-        { error: "URL parametresi gereklidir" },
+        { error: "URL parameter is required" },
         { status: 400 }
       );
     }
 
-    // URL validasyonu
     try {
       new URL(url.startsWith("http") ? url : `https://${url}`);
     } catch (e) {
       return NextResponse.json(
-        { error: "Geçerli bir URL giriniz" },
+        { error: "Please enter a valid URL" },
         { status: 400 }
       );
     }
 
-    // RSS beslemesini ayrıştır - timeout ile
     const feedData = await withTimeout(
       parseRssFeed(url),
       PARSE_TIMEOUT,
-      "RSS beslemesi yükleme zaman aşımı. Lütfen daha küçük bir besleme deneyin."
+      "RSS feed loading timeout. Please try a smaller feed."
     );
 
-    // Büyük veri yapılarına karşı koruma - sadece belirli sayıda öğe döndür
     const responseItems = (feedData.items || []).slice(0, 10);
 
-    // Dönüştürülmüş feed verisini döndür
     return NextResponse.json({
       feed: {
-        title: feedData.title || "İsimsiz Besleme",
+        title: feedData.title || "Untitled Feed",
         description: feedData.description || "",
         link: feedData.link || url,
         language: feedData.language || null,
@@ -92,10 +88,9 @@ export async function GET(request) {
       items: responseItems,
     });
   } catch (error) {
-    console.error("RSS ayrıştırma hatası:", error);
+    console.error("RSS parsing error:", error);
 
-    // Timeout hatası için özel mesaj
-    if (error.message && error.message.includes("zaman aşımı")) {
+    if (error.message && error.message.includes("timeout")) {
       return NextResponse.json(
         { error: error.message },
         { status: 408 } // Request Timeout status
@@ -103,7 +98,7 @@ export async function GET(request) {
     }
 
     return NextResponse.json(
-      { error: error.message || "RSS beslemesi ayrıştırılamadı" },
+      { error: error.message || "RSS feed parsing failed" },
       { status: 500 }
     );
   }

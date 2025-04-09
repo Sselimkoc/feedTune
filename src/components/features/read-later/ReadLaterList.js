@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ErrorState } from "@/components/ui-states/ErrorState";
 import { EmptyState } from "@/components/ui-states/EmptyState";
+import { Badge } from "@/components/ui/badge";
 
 export function ReadLaterList({
   initialItems,
@@ -197,9 +198,9 @@ export function ReadLaterList({
   return (
     <AnimatePresence mode="popLayout">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-5">
-        {items.map((item) => (
+        {Array.isArray(items) && items.map((item) => (
           <motion.div
-            key={item.id}
+            key={item?.id || `item-${Math.random()}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -244,25 +245,6 @@ export function ReadLaterList({
 
                   {/* Actions bar */}
                   <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-2 flex justify-between items-center text-white">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full hover:bg-white/20 text-white"
-                      onClick={() => toggleItemRead(item.id, !item.is_read)}
-                    >
-                      <Check
-                        className={cn(
-                          "h-4 w-4",
-                          item.is_read ? "text-green-400" : "text-white/70"
-                        )}
-                      />
-                      <span className="sr-only">
-                        {item.is_read
-                          ? t("feedItem.markAsUnread")
-                          : t("feedItem.markAsRead")}
-                      </span>
-                    </Button>
-
                     <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"

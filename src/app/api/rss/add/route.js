@@ -4,13 +4,13 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
 /**
- * RSS besleme ekleme endpoint'i
+ * RSS feed add endpoint
  *
- * POST metodu ile çağrılır ve body'de url parametresi bekler.
+ * Called via POST method and expects url parameter in the body.
  */
 export async function POST(request) {
   try {
-    // Oturum kontrolü
+    // Session check
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
@@ -25,7 +25,6 @@ export async function POST(request) {
       );
     }
 
-    // Request body'den URL'yi al
     const { url } = await request.json();
 
     if (!url) {
@@ -35,7 +34,7 @@ export async function POST(request) {
       );
     }
 
-    // Mevcut kullanıcının feed listesinde bu URL'nin olup olmadığını kontrol et
+    // Check if the URL already exists in the user's feed list
     const { data: existingFeeds, error: feedCheckError } = await supabase
       .from("rss_feeds")
       .select("id, feeds!inner(user_id)")
@@ -51,20 +50,18 @@ export async function POST(request) {
       );
     }
 
-    // Eğer feed zaten eklenmiş ise hata döndür
     if (existingFeeds && existingFeeds.length > 0) {
       return NextResponse.json(
-        { error: "Bu RSS beslemesi zaten eklenmiş" },
+        { error: "This RSS feed is already added" },
         { status: 409 }
       );
     }
 
-    // RSS beslemesini ekle
     const newFeed = await addRssFeed(url, session.user.id);
 
     return NextResponse.json({
       success: true,
-      message: "RSS beslemesi başarıyla eklendi",
+      message: "RSS feed added successfully",
       feed: {
         id: newFeed.id,
         title: newFeed.title,
@@ -73,10 +70,10 @@ export async function POST(request) {
       },
     });
   } catch (error) {
-    console.error("RSS besleme ekleme hatası:", error);
+    console.error("RSS feed add error:", error);
 
     return NextResponse.json(
-      { error: error.message || "RSS beslemesi eklenirken bir hata oluştu" },
+      { error: error.message || "Error adding RSS feed" },
       { status: 500 }
     );
   }

@@ -20,7 +20,7 @@ export async function PUT(request) {
 
     if (!session) {
       return NextResponse.json(
-        { error: "Oturum açmanız gerekiyor" },
+        { error: "You must be logged in" },
         { status: 401 }
       );
     }
@@ -31,12 +31,12 @@ export async function PUT(request) {
 
     if (!feedId) {
       return NextResponse.json(
-        { error: "feedId parametresi gereklidir" },
+        { error: "feedId parameter is required" },
         { status: 400 }
       );
     }
 
-    // Kullanıcının bu beslemeye sahip olup olmadığını kontrol et
+    // Check if the user has this feed
     const { data: feed, error: feedError } = await supabase
       .from("feeds")
       .select("*")
@@ -46,25 +46,24 @@ export async function PUT(request) {
 
     if (feedError || !feed) {
       return NextResponse.json(
-        { error: "Beslemeyi güncelleme yetkiniz yok veya besleme bulunamadı" },
+        { error: "You don't have permission to update this feed or the feed was not found" },
         { status: 403 }
       );
     }
 
-    // YouTube kanalını güncelle
+    // Update the YouTube channel
     const result = await updateYoutubeChannel(feedId);
 
-    // Başarılı cevabı döndür
     return NextResponse.json({
       success: true,
-      message: "YouTube kanalı başarıyla güncellendi",
+      message: "YouTube channel updated successfully",
       result: result,
     });
   } catch (error) {
-    console.error("YouTube kanal güncelleme hatası:", error);
+    console.error("YouTube channel update error:", error);
 
     return NextResponse.json(
-      { error: error.message || "YouTube kanalı güncellenirken hata oluştu" },
+      { error: error.message || "YouTube channel update failed" },
       { status: 500 }
     );
   }

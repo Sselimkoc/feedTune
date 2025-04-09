@@ -9,7 +9,7 @@
 Aşağıdaki değişiklikler başarıyla tamamlanmıştır:
 
 - ✅ Servis katmanı oluşturuldu: Tüm feed işlemleri `feedService.js` içinde toplanmıştır.
-- ✅ Yeni hook yapısı kuruldu: `useFeedService`, `useHomeFeeds`, `useFeedScreen`, `useFeedManagement` hook'ları oluşturuldu.
+- ✅ Yeni hook yapısı kuruldu: `useFeedService`, `useHomeFeeds`, `useFeedScreen` hook'ları oluşturuldu.
 - ✅ Ekran-özgü hook'lar eklendi: `useFavoritesScreen` ve `useReadLaterScreen` hook'ları eklendi.
 - ✅ İlgili bileşenler güncellendi: Tüm bileşenler yeni hook'ları kullanacak şekilde refactor edilmiştir.
 - ✅ Eski hook'lar kaldırıldı: Artık eski hook'lar kullanılmamaktadır ve deprecated klasörüne taşınmıştır.
@@ -18,7 +18,11 @@ Aşağıdaki değişiklikler başarıyla tamamlanmıştır:
 
 ### Temel Hook'lar
 - `useFeedService.js`: Tüm feed operasyonları için temel servis hook'u.
-- `useFeedManagement.js`: Feed ekleme, silme, güncelleme işlemleri için hook.
+
+### Feed Screen Hook'ları
+- `useFilters.js`: Filtre yönetimi için hook.
+- `usePagination.js`: Sayfalama işlemleri için hook.
+- `useFeedActions.js`: Feed işlemleri (ekleme, silme, senkronizasyon) için hook.
 
 ### Ekran-Özgü Hook'lar
 - `useHomeFeeds.js`: Ana sayfa için özelleştirilmiş hook.
@@ -30,16 +34,17 @@ Aşağıdaki değişiklikler başarıyla tamamlanmıştır:
 
 Aşağıdaki eski hook'lar artık kullanılmamaktadır ve deprecated klasörüne taşınmıştır:
 - ❌ `useFeeds.js`: Temel feed işlemleri artık `useFeedService` tarafından sağlanmaktadır.
-- ❌ `useFeedActions.js`: `useFeedManagement` ve ekran-özgü hook'lara taşınmıştır.
+- ❌ `useFeedActions.js`: `useFeedActions` ve ekran-özgü hook'lara taşınmıştır.
 - ❌ `useFeedData.js`: `useFeedService` hook'una taşınmıştır.
 - ❌ `useFeedItems.js`: `useFeedService` hook'una taşınmıştır.
-- ❌ `useFeedOperations.js`: `useFeedManagement` hook'una taşınmıştır.
+- ❌ `useFeedOperations.js`: `useFeedActions` hook'una taşınmıştır.
 - ❌ `useFeedQueries.js`: `useFeedService` hook'una taşınmıştır.
-- ❌ `useDeleteFeed.js`: `useFeedManagement` hook'una taşınmıştır.
-- ❌ `useRssFeeds.js`: Gerekli fonksiyonlar `useFeedManagement` hook'una taşınmıştır.
-- ❌ `useYoutubeFeeds.js`: Gerekli fonksiyonlar `useFeedManagement` hook'una taşınmıştır.
+- ❌ `useDeleteFeed.js`: `useFeedActions` hook'una taşınmıştır.
+- ❌ `useRssFeeds.js`: Gerekli fonksiyonlar `useFeedActions` hook'una taşınmıştır.
+- ❌ `useYoutubeFeeds.js`: Gerekli fonksiyonlar `useFeedActions` hook'una taşınmıştır.
 - ❌ `useHomeData.js`: `useHomeFeeds` hook'una taşınmıştır.
 - ❌ `useHomeModals.js`: İlgili bileşenlere entegre edilmiştir.
+- ❌ `useFeedManagement.js`: `useFeedActions` hook'una taşınmıştır.
 
 ## Gelecek İyileştirmeler
 

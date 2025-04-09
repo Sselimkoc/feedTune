@@ -309,55 +309,74 @@ export class FeedService {
    */
   async getPaginatedFeedItems(userId, page = 1, pageSize = 12, filters = {}) {
     try {
-      if (!userId) return { data: [], total: 0, hasMore: false };
+      if (!userId) {
+        console.log("Kullanıcı ID'si bulunamadı");
+        return { data: [], total: 0, hasMore: false };
+      }
 
       // Önce kullanıcının feed'lerini al
       const feeds = await this.getFeeds(userId);
+      console.log("Kullanıcı feed'leri:", feeds?.length || 0);
 
       if (!feeds || feeds.length === 0) {
+        console.log("Kullanıcının feed'i bulunamadı");
         return { data: [], total: 0, hasMore: false };
       }
 
       // Feed ID'lerini çıkar
-      const feedIds = feeds.map((feed) => feed.id);
+      let feedIds = feeds.map((feed) => feed.id);
 
-      // Seçilen feed'e göre filtreleme
+      // Filtreleme işlemlerini logla
+      console.log("Filtreleme başlatılıyor:", {
+        selectedFeedId: filters.selectedFeedId, 
+        feedType: filters.feedType
+      });
+
+      // Seçilen feed'e göre filtreleme (en yüksek öncelik)
       if (filters.selectedFeedId) {
-        const selectedFeedExists = feeds.some(
-          (feed) => feed.id === filters.selectedFeedId
-        );
-        if (selectedFeedExists) {
-          // Sadece seçilen feed'i kullan
-          return await this.repository.getPaginatedFeedItems(
-            [filters.selectedFeedId],
-            page,
-            pageSize,
-            filters,
-            Date.now()
-          );
+        console.log("Seçili feed:", filters.selectedFeedId);
+        feedIds = [filters.selectedFeedId];
+        // Eğer seçilen feed bulunamazsa, boş sonuç döndür
+        if (!feeds.some(feed => feed.id === filters.selectedFeedId)) {
+          console.log("Seçili feed bulunamadı");
+          return { data: [], total: 0, hasMore: false };
         }
       }
-
-      // Zaman damgası
-      const timestamp = Date.now();
+      // Seçilen feed yoksa ve feed türü belirtilmişse, türe göre filtrele
+      else if (filters.feedType && filters.feedType !== "all") {
+        console.log("Feed türü filtresi:", filters.feedType);
+        const filteredFeeds = feeds.filter(feed => feed.type === filters.feedType);
+        if (filteredFeeds.length === 0) {
+          console.log("Belirtilen türde feed bulunamadı");
+          return { data: [], total: 0, hasMore: false };
+        }
+        feedIds = filteredFeeds.map(feed => feed.id);
+      }
 
       // Repository'yi çağır
-      const result = await this.repository.getPaginatedFeedItems(
+      console.log("Repository'ye gönderilen parametreler:", {
         feedIds,
         page,
         pageSize,
         filters,
-        timestamp
+      });
+
+      const result = await this.repository.getPaginatedFeedItems(
+        feedIds,
+        page,
+        pageSize,
+        filters
       );
 
-      // Eğer filtrelenmiş sonuçlar boşsa ve ilk sayfa ise
-      if (result.data.length === 0 && page === 1) {
-        return { data: [], total: 0, hasMore: false };
-      }
+      console.log("Repository'den dönen sonuç:", {
+        itemCount: result.data?.length || 0,
+        total: result.total,
+        hasMore: result.hasMore,
+      });
 
       return result;
     } catch (error) {
-      console.error("Sayfalı feed öğeleri getirme hatası:", error);
+      console.error("Feed öğeleri getirme hatası:", error);
       throw error;
     }
   }

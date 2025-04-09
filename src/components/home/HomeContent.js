@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useHomeFeeds } from "@/hooks/features/useHomeFeeds";
-import { useFeedManagement } from "@/hooks/features/useFeedManagement";
+import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
 import { HomeStats } from "@/components/home/HomeStats";
 import { HomeFeedManagement } from "@/components/home/HomeFeedManagement";
 import { HomeRecentContent } from "@/components/home/HomeRecentContent";
@@ -25,12 +25,12 @@ export function HomeContent() {
   const { user } = useAuthStore();
   const { feeds, recentItems, stats, isLoading, isError, error, refresh } =
     useHomeFeeds();
-  const { deleteFeed, isDeleting } = useFeedManagement();
+  const { removeFeed } = useFeedActions({ user, refreshAll: refresh });
 
   // Feed silme işleyicisi
   const handleDeleteFeed = async () => {
     if (feedToDelete) {
-      await deleteFeed(feedToDelete);
+      await removeFeed(feedToDelete);
       setShowDeleteDialog(false);
       setFeedToDelete(null);
     }
@@ -88,7 +88,7 @@ export function HomeContent() {
         showDeleteDialog={showDeleteDialog}
         setShowDeleteDialog={setShowDeleteDialog}
         onDeleteFeed={handleDeleteFeed}
-        isDeleting={isDeleting}
+        isDeleting={false}
         onFeedAdded={refresh}
       />
     </div>

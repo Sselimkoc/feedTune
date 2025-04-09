@@ -187,7 +187,7 @@ export function MobileNavigation() {
                     }}
                   >
                     <LogOut className="w-5 h-5 mr-3" />
-                    {t("auth.signOut")}
+                    {t("navigation.signOut")}
                   </Button>
                 </>
               )}

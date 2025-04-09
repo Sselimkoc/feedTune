@@ -1,161 +1,131 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/hooks/useLanguage";
-import { toast } from "sonner";
-import { RssIcon, YoutubeIcon, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFeedManagement } from "@/hooks/features/useFeedManagement";
-
-// Form şeması
-const formSchema = z.object({
-  url: z.string().url({ message: "Geçerli bir URL giriniz" }),
-  type: z.enum(["rss", "youtube"]),
-});
+import { useLanguage } from "@/hooks/useLanguage";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
+import { useFeedService } from "@/hooks/features/useFeedService";
 
 export function AddFeedDialog({ isOpen, onOpenChange, onFeedAdded }) {
   const { t } = useLanguage();
-  const { addRssFeed, addYoutubeFeed, isAdding } = useFeedManagement();
-
-  // Form oluşturma
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      url: "",
-      type: "rss",
-    },
+  const { user } = useAuthStore();
+  const feedService = useFeedService();
+  const { addFeed } = useFeedActions({ user, feedService });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    rssUrl: "",
+    youtubeUrl: "",
   });
 
-  // Form gönderme işlemi
   const onSubmit = async (values) => {
+    if (!values.rssUrl && !values.youtubeUrl) return;
+
+    setIsSubmitting(true);
     try {
-      if (values.type === "rss") {
-        await addRssFeed(values.url);
-      } else {
-        await addYoutubeFeed(values.url);
+      if (values.rssUrl) {
+        await addFeed(values.rssUrl, "rss");
+      } else if (values.youtubeUrl) {
+        await addFeed(values.youtubeUrl, "youtube");
       }
 
-      form.reset();
+      setFormData({ rssUrl: "", youtubeUrl: "" });
+      onFeedAdded?.();
       onOpenChange(false);
-
-      // Opsiyonel callback
-      if (onFeedAdded) {
-        onFeedAdded();
-      }
     } catch (error) {
-      console.error("Feed eklenirken hata:", error);
-      // Hata mesajı useFeedManagement tarafından gösteriliyor
+      // Hata mesajı useFeedActions tarafından gösteriliyor
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("feeds.addFeedTitle")}</DialogTitle>
+          <DialogTitle>{t("feeds.addFeed.title")}</DialogTitle>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <Tabs
-              defaultValue="rss"
-              onValueChange={(value) => form.setValue("type", value)}
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="rss" className="flex items-center gap-2">
-                  <RssIcon className="h-4 w-4" />
-                  <span>RSS</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="youtube"
-                  className="flex items-center gap-2"
-                >
-                  <YoutubeIcon className="h-4 w-4" />
-                  <span>YouTube</span>
-                </TabsTrigger>
-              </TabsList>
+        <Tabs defaultValue="rss">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="rss">RSS</TabsTrigger>
+            <TabsTrigger value="youtube">YouTube</TabsTrigger>
+          </TabsList>
 
-              <TabsContent value="rss" className="mt-4">
-                <FormField
-                  control={form.control}
-                  name="url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("feeds.feedUrl")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://example.com/rss"
-                          {...field}
-                          disabled={isAdding}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
+          <TabsContent value="rss">
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="rssUrl">{t("feeds.addFeed.rssUrl")}</Label>
+                  <Input
+                    id="rssUrl"
+                    type="url"
+                    placeholder={t("feeds.addFeed.rssUrlPlaceholder")}
+                    value={formData.rssUrl}
+                    onChange={(e) =>
+                      setFormData({ ...formData, rssUrl: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
 
-              <TabsContent value="youtube" className="mt-4">
-                <FormField
-                  control={form.control}
-                  name="url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("feeds.youtubeUrl")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://youtube.com/channel/..."
-                          {...field}
-                          disabled={isAdding}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
-            </Tabs>
-
-            <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
-              <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={isAdding}>
-                  {t("common.cancel")}
+              <DialogFooter>
+                <Button type="submit" disabled={isSubmitting || !formData.rssUrl}>
+                  {isSubmitting
+                    ? t("common.processing")
+                    : t("feeds.addFeed.submit")}
                 </Button>
-              </DialogClose>
-              <Button type="submit" disabled={isAdding}>
-                {isAdding ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("common.loading")}
-                  </>
-                ) : (
-                  t("common.add")
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              </DialogFooter>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="youtube">
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="youtubeUrl">
+                    {t("feeds.addFeed.youtubeUrl")}
+                  </Label>
+                  <Input
+                    id="youtubeUrl"
+                    type="url"
+                    placeholder={t("feeds.addFeed.youtubeUrlPlaceholder")}
+                    value={formData.youtubeUrl}
+                    onChange={(e) =>
+                      setFormData({ ...formData, youtubeUrl: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !formData.youtubeUrl}
+                >
+                  {isSubmitting
+                    ? t("common.processing")
+                    : t("feeds.addFeed.submit")}
+                </Button>
+              </DialogFooter>
+            </form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

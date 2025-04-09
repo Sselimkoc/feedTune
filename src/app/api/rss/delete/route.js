@@ -4,13 +4,13 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
 /**
- * RSS besleme silme endpoint'i
+ * RSS feed delete endpoint
  *
- * DELETE metodu ile çağrılır ve URL parametresi olarak feedId bekler.
+ * Called via DELETE method and expects feedId as a URL parameter.
  */
 export async function DELETE(request) {
   try {
-    // Oturum kontrolü
+    // Session check
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
@@ -25,7 +25,6 @@ export async function DELETE(request) {
       );
     }
 
-    // URL parametresinden feedId'yi al
     const { searchParams } = new URL(request.url);
     const feedId = searchParams.get("feedId");
 
@@ -36,7 +35,6 @@ export async function DELETE(request) {
       );
     }
 
-    // Beslemenin mevcut kullanıcıya ait olup olmadığını kontrol et
     const { data: feedExists, error: feedCheckError } = await supabase
       .from("feeds")
       .select("id")
@@ -46,40 +44,38 @@ export async function DELETE(request) {
       .single();
 
     if (feedCheckError) {
-      // Eğer hata not_found ise
+      // If error is not_found
       if (feedCheckError.code === "PGRST116") {
         return NextResponse.json(
-          { error: "Besleme bulunamadı veya bu beslemeye erişim izniniz yok" },
+          { error: "Feed not found or you don't have access to this feed" },
           { status: 404 }
         );
       }
 
-      console.error("Feed kontrol hatası:", feedCheckError);
       return NextResponse.json(
-        { error: "RSS besleme kontrolü sırasında bir hata oluştu" },
+        { error: "Error checking RSS feed" },
         { status: 500 }
       );
     }
 
     if (!feedExists) {
       return NextResponse.json(
-        { error: "Besleme bulunamadı veya bu beslemeye erişim izniniz yok" },
+        { error: "Feed not found or you don't have access to this feed" },
         { status: 404 }
       );
     }
 
-    // RSS beslemesini sil (soft delete)
     await deleteRssFeed(feedId);
 
     return NextResponse.json({
       success: true,
-      message: "RSS beslemesi başarıyla silindi",
+      message: "RSS feed deleted successfully",
     });
   } catch (error) {
-    console.error("RSS besleme silme hatası:", error);
+    console.error("RSS feed delete error:", error);
 
     return NextResponse.json(
-      { error: error.message || "RSS beslemesi silinirken bir hata oluştu" },
+      { error: error.message || "Error deleting RSS feed" },
       { status: 500 }
     );
   }

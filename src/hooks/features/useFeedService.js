@@ -513,5 +513,8 @@ export function useFeedService() {
 
     // İstatistikler
     stats,
+
+    // Feed servisi
+    feedService,
   };
 }

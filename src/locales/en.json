@@ -30,7 +30,9 @@
     "ok": "OK",
     "continue": "Continue",
     "deleting": "Deleting...",
-    "language": "Language"
+    "language": "Language",
+    "apply": "Apply",
+    "reset": "Reset"
   },
   "nav": {
     "menu": "Menu",
@@ -69,7 +71,7 @@
   },
   "feeds": {
     "title": "My Feeds",
-    "description": "View content from your followed sources",
+    "description": "Browse content from your followed sources",
     "yourFeeds": "Your Feeds",
     "searchFeeds": "Search feeds...",
     "categories": "Categories",
@@ -78,7 +80,7 @@
     "rssFeeds": "RSS Feeds",
     "youtubeFeeds": "YouTube Channels",
     "allItems": "All Items",
-    "unreadItems": "Unread Items",
+    "unreadItems": "Unread",
     "total": "Total",
     "unread": "Unread",
     "today": "Today",
@@ -98,26 +100,27 @@
     "addToFavorites": "Add to favorites",
     "removeFromFavorites": "Remove from favorites",
     "addToReadLater": "Read later",
-    "removeFromReadLater": "Remove from read later list",
-    "removeFeed": "Delete Feed",
+    "removeFromReadLater": "Remove from read later",
+    "removeFeed": "Remove Feed",
     "expandSidebar": "Expand Filter Menu",
     "collapseSidebar": "Collapse Filter Menu",
     "new": "New",
-    "noDescription": "No description available",
-    "markRead": "Mark as read",
-    "markUnread": "Mark as unread",
+    "noDescription": "No description",
+    "markRead": "Mark read",
+    "markUnread": "Mark unread",
     "readMore": "Read More",
     "favorite": "Favorite",
     "readLater": "Read Later",
     "refreshed": "Feeds refreshed",
-    "syncSuccess": "Feeds updated successfully",
-    "syncError": "Error synchronizing feeds",
+    "syncSuccess": "Feeds synced successfully",
+    "syncError": "Error syncing feeds",
     "addFeedTitle": "Add Feed",
     "feedUrl": "Feed URL",
     "youtubeUrl": "YouTube URL",
     "addSuccess": "Feed added successfully",
     "addError": "Error adding feed",
     "allFeeds": "All Feeds",
+    "allFeedsDescription": "View all your feed content",
     "selectFeed": "Select Feed",
     "unreadFeeds": "Unread Feeds",
     "favorites": "Favorites",
@@ -127,6 +130,7 @@
     "keyboardShortcuts": "Keyboard Shortcuts",
     "refresh": "Refresh",
     "refreshFeeds": "Refresh Feeds",
+    "openInNewTab": "Open in new tab",
     "sync": "Sync",
     "syncFeeds": "Update Feeds on Server",
     "syncDescription": "Get the latest content from source sites",
@@ -165,6 +169,7 @@
     "emptyContentDescription": "No content found to display. You can reset filters, add a new feed, or refresh existing content.",
     "refreshContent": "Refresh Content",
     "addNewFeed": "Add New Feed",
+    "multiSelect": "Multi Select",
     "addFeed": {
       "title": "Add Feed",
       "description": "Select the type of feed you want to follow",
@@ -271,7 +276,14 @@
       "addFeedButton": "Add Feed"
     },
     "loadingState": {
-      "description": "Loading your feeds..."
+      "description": "Loading your feeds...",
+      "subdescritpion": "Please wait while we fetch your content"
+    },
+    "stats": {
+      "feeds": "Total Feeds",
+      "unread": "Unread Items",
+      "favorites": "Favorites",
+      "readLater": "Read Later"
     },
     "articleCount": "{{count}} articles",
     "lastUpdated": "Last updated: {{date}}",
@@ -306,7 +318,8 @@
       "expand": "Expand",
       "remove": "Delete Feed"
     },
-    "filters": "Filters"
+    "filters": "Filters",
+    "stats": "Statistics"
   },
   "home": {
     "title": "Manage Your Content with FeedTune",

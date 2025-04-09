@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { useFeedService } from "./useFeedService";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
@@ -29,10 +29,11 @@ export function useFavoritesScreen() {
 
   // Favori içerikleri sırala (en yeni üstte)
   const sortedFavorites = useMemo(() => {
-    if (!favorites) return [];
+    if (!favorites || favorites.length === 0) return [];
 
+    // Doğrudan filtreleri ve sıralamayı birleştirerek daha verimli hale getiriyoruz
     return [...favorites].sort(
-      (a, b) => new Date(b.published_at) - new Date(a.published_at)
+      (a, b) => new Date(b.published_at || 0) - new Date(a.published_at || 0)
     );
   }, [favorites]);
 
@@ -41,7 +42,7 @@ export function useFavoritesScreen() {
     async (itemId) => {
       if (!user) {
         toast.error(t("errors.loginRequired"));
-        return;
+        return false;
       }
 
       try {

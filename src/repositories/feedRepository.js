@@ -27,8 +27,8 @@ export class FeedRepository {
         ? { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } }
         : undefined;
 
-      const { data, error } = await this.supabase
-        .from("feeds")
+    const { data, error } = await this.supabase
+      .from("feeds")
         .select(
           `
           id,
@@ -44,8 +44,8 @@ export class FeedRepository {
           updated_at
         `
         )
-        .eq("user_id", userId)
-        .eq("is_active", true)
+      .eq("user_id", userId)
+      .eq("is_active", true)
         .order("created_at", { ascending: false })
         .select(undefined, options);
 
@@ -488,107 +488,43 @@ export class FeedRepository {
    * @param {string} timestamp Timestamp
    * @returns {Promise<Object>} Feed öğeleri ve toplam sayı
    */
-  async getPaginatedFeedItems(
-    feedIds,
-    page = 1,
-    pageSize = 12,
-    filters = {},
-    timestamp = null
-  ) {
+  async getPaginatedFeedItems(feedIds, page = 1, pageSize = 12, filters = {}) {
     try {
-      if (!feedIds || !Array.isArray(feedIds) || feedIds.length === 0)
+      if (!feedIds || !Array.isArray(feedIds) || feedIds.length === 0) {
         return { data: [], total: 0, hasMore: false };
-
-      // Geçerli sayfa numarası doğrulama
-      const currentPage = page < 1 ? 1 : page;
-      const offset = (currentPage - 1) * pageSize;
-
-      // Zaman damgası parametresi ekledik
-      const options = timestamp
-        ? { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } }
-        : undefined;
-
-      // İlk olarak toplam kayıt sayısını almak için sorgu yapalım
-      const countQuery = this.supabase
-        .from("feed_items")
-        .select("id", { count: "exact" })
-        .in("feed_id", feedIds);
-
-      // Filtreleri uygula
-      if (filters.readStatus === "read") {
-        countQuery.eq("is_read", true);
-      } else if (filters.readStatus === "unread") {
-        countQuery.eq("is_read", false);
       }
 
-      if (filters.feedType) {
-        // Feed türü filtreleme için iç sorgu kullanabiliriz
-        // Not: Supabase'in kısıtlamaları nedeniyle bu varsayımsal bir örnektir
-        // Gerçek sorgu yapınıza göre değiştirmeniz gerekebilir
-        const { data: filteredFeedIds } = await this.supabase
-          .from("feeds")
-          .select("id")
-          .eq("type", filters.feedType)
-          .in("id", feedIds);
+      console.log("Filtreleme parametreleri:", { feedIds, page, pageSize, filters });
 
-        if (filteredFeedIds && filteredFeedIds.length > 0) {
-          countQuery.in(
-            "feed_id",
-            filteredFeedIds.map((f) => f.id)
-          );
-        }
-      }
-
-      const { count, error: countError } = await countQuery;
-
-      if (countError) throw countError;
-
-      // Ana sorgu - sayfalanmış verileri al
-      const query = this.supabase
+      // Ana sorguyu oluştur
+      let query = this.supabase
         .from("feed_items")
-        .select(
-          `
-          id,
-          feed_id,
-          title,
-          description,
-          url,
-          link,
-          guid,
-          published_at,
-          thumbnail,
-          author,
-          categories,
-          feeds:feed_id (
-            id,
-            title,
-            site_favicon,
-            type
-          )
-          `
-        )
+        .select("*, feeds!inner(*)", { count: "exact" })
         .in("feed_id", feedIds)
-        .order("published_at", { ascending: false })
-        .range(offset, offset + pageSize - 1)
-        .select(undefined, options);
+        .order("published_at", { ascending: false });
 
-      // Aynı filtreleri ana sorgumuz için de uygulayalım
-      if (filters.readStatus === "read") {
-        query.eq("is_read", true);
-      } else if (filters.readStatus === "unread") {
-        query.eq("is_read", false);
+      // Feed türü filtresi (RSS/YouTube)
+      if (filters.feedType && filters.feedType !== "all") {
+        query = query.eq("feeds.type", filters.feedType);
       }
 
-      if (filters.feedType && filteredFeedIds && filteredFeedIds.length > 0) {
-        query.in(
-          "feed_id",
-          filteredFeedIds.map((f) => f.id)
-        );
+      // RSS feed ismi filtresi
+      if (filters.feedName && filters.feedType === "rss") {
+        query = query.ilike("feeds.title", `%${filters.feedName}%`);
       }
 
-      const { data, error } = await query;
+      // Sayfalama
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
 
-      if (error) throw error;
+      // Sorguyu çalıştır
+      const { data, count, error } = await query;
+
+      if (error) {
+        console.error("Feed öğeleri getirme hatası:", error);
+        throw error;
+      }
 
       // Sonuçları formatla
       const formattedData = data.map((item) => ({
@@ -598,18 +534,17 @@ export class FeedRepository {
         site_favicon: item.feeds?.site_favicon || null,
       }));
 
-      // Daha fazla sayfa var mı kontrolü
-      const hasMore = offset + pageSize < count;
+      // Toplam sayfa sayısını hesapla
+      const totalPages = Math.ceil((count || 0) / pageSize);
+      const hasMore = page < totalPages;
 
       return {
         data: formattedData || [],
         total: count || 0,
-        page: currentPage,
-        pageSize,
         hasMore,
       };
     } catch (error) {
-      console.error("Error fetching paginated feed items:", error);
+      console.error("Feed öğeleri getirme hatası:", error);
       throw error;
     }
   }
