@@ -35,7 +35,10 @@ export function usePagination({
       filterObj.selectedFeedId = selectedFeedId;
     }
     
-    if (activeFilter === "rss" || activeFilter === "youtube") {
+    if (filters?.feedType && filters?.feedType !== 'all') {
+      filterObj.feedType = filters.feedType;
+    } 
+    else if (activeFilter === "rss" || activeFilter === "youtube") {
       filterObj.feedType = activeFilter;
     }
     
@@ -43,8 +46,12 @@ export function usePagination({
       filterObj.feedName = filters.feedName;
     }
     
-    if (filters?.readStatus !== null && filters?.readStatus !== undefined) {
+    if (filters?.readStatus) {
       filterObj.readStatus = filters.readStatus;
+    }
+    
+    if (filters?.sortBy) {
+      filterObj.sortBy = filters.sortBy;
     }
     
     console.log("Oluşturulan filtre objesi:", filterObj);
@@ -68,18 +75,57 @@ export function usePagination({
       );
 
       if (result?.data) {
+        let filteredData = result.data;
+        
+        if (filters?.feedType && filters.feedType !== 'all') {
+          filteredData = filteredData.filter(item => 
+            item.feed_type === filters.feedType
+          );
+        }
+        
+        if (filters?.readStatus === 'read') {
+          filteredData = filteredData.filter(item => item.is_read);
+        } else if (filters?.readStatus === 'unread') {
+          filteredData = filteredData.filter(item => !item.is_read);
+        }
+        
+        if (filters?.sortBy) {
+          if (filters.sortBy === 'newest') {
+            filteredData = filteredData.sort((a, b) => 
+              new Date(b.published_at) - new Date(a.published_at)
+            );
+          } else if (filters.sortBy === 'oldest') {
+            filteredData = filteredData.sort((a, b) => 
+              new Date(a.published_at) - new Date(b.published_at)
+            );
+          } else if (filters.sortBy === 'unread') {
+            filteredData = filteredData.sort((a, b) => {
+              if (!a.is_read && b.is_read) return -1;
+              if (a.is_read && !b.is_read) return 1;
+              return new Date(b.published_at) - new Date(a.published_at);
+            });
+          } else if (filters.sortBy === 'favorites') {
+            filteredData = filteredData.sort((a, b) => {
+              if (a.is_favorite && !b.is_favorite) return -1;
+              if (!a.is_favorite && b.is_favorite) return 1;
+              return new Date(b.published_at) - new Date(a.published_at);
+            });
+          }
+        }
+
         setIsTransitioning(false);
-        setPaginatedItems(result.data);
+        setPaginatedItems(filteredData);
         setPagination((prev) => ({
           ...prev,
           page: 1,
-          total: result.total || 0,
+          total: filteredData.length || 0,
           hasMore: result.hasMore || false,
         }));
 
         setLastLoadedFilters({
           feedId: selectedFeedId,
           activeFilter: activeFilter,
+          filters: {...filters},
         });
       }
     } catch (error) {
@@ -97,6 +143,7 @@ export function usePagination({
     createFilterObject,
     selectedFeedId,
     activeFilter,
+    filters,
   ]);
 
   useEffect(() => {
@@ -135,7 +182,7 @@ export function usePagination({
   useEffect(() => {
     console.log("Component mounted, initial load starting");
     loadInitialItems();
-  }, []);
+  }, [loadInitialItems]);
 
   const loadMoreItems = useCallback(async () => {
     if (

@@ -27,8 +27,8 @@ export class FeedRepository {
         ? { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } }
         : undefined;
 
-    const { data, error } = await this.supabase
-      .from("feeds")
+      const { data, error } = await this.supabase
+        .from("feeds")
         .select(
           `
           id,
@@ -36,7 +36,6 @@ export class FeedRepository {
           type,
           title,
           description,
-          site_url,
           site_favicon,
           channel_id,
           is_active,
@@ -44,8 +43,8 @@ export class FeedRepository {
           updated_at
         `
         )
-      .eq("user_id", userId)
-      .eq("is_active", true)
+        .eq("user_id", userId)
+        .eq("is_active", true)
         .order("created_at", { ascending: false })
         .select(undefined, options);
 
@@ -63,9 +62,10 @@ export class FeedRepository {
    * @param {Array<string>} feedIds Feed ID'leri
    * @param {number} limit Her feed için maksimum öğe sayısı
    * @param {string} timestamp Timestamp
+   * @param {string} userId Kullanıcı ID'si - etkileşim bilgilerini çekmek için
    * @returns {Promise<Array>} Feed öğeleri
    */
-  async getFeedItems(feedIds, limit = 10, timestamp = null) {
+  async getFeedItems(feedIds, limit = 10, timestamp = null, userId = null) {
     try {
       if (!feedIds || !Array.isArray(feedIds) || feedIds.length === 0)
         return [];
@@ -75,7 +75,8 @@ export class FeedRepository {
         ? { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } }
         : undefined;
 
-      const { data, error } = await this.supabase
+      // Feed öğelerini çek
+      const { data: feedItems, error } = await this.supabase
         .from("feed_items")
         .select(
           `
@@ -84,7 +85,6 @@ export class FeedRepository {
           title,
           description,
           url,
-          link,
           guid,
           published_at,
           thumbnail,
@@ -94,11 +94,45 @@ export class FeedRepository {
         )
         .in("feed_id", feedIds)
         .order("published_at", { ascending: false })
+        .limit(limit)
         .select(undefined, options);
 
       if (error) throw error;
 
-      return data || [];
+      if (!feedItems || feedItems.length === 0) return [];
+
+      // Kullanıcı ID'si varsa, etkileşim bilgilerini de çek
+      if (userId) {
+        // Çekilen öğelerin ID'lerini al
+        const itemIds = feedItems.map((item) => item.id);
+
+        // Kullanıcının bu öğelerle olan etkileşimlerini çek
+        const { data: interactions, error: interactionsError } =
+          await this.supabase
+            .from("user_item_interactions")
+            .select("item_id, is_favorite, is_read_later, is_read")
+            .eq("user_id", userId)
+            .in("item_id", itemIds);
+
+        if (interactionsError) throw interactionsError;
+
+        // Etkileşim bilgilerini öğelere ekle
+        const itemsWithInteractions = feedItems.map((item) => {
+          // Bu öğe için etkileşim bilgisi var mı?
+          const interaction = interactions?.find((i) => i.item_id === item.id);
+
+          return {
+            ...item,
+            is_favorite: interaction?.is_favorite || false,
+            is_read_later: interaction?.is_read_later || false,
+            is_read: interaction?.is_read || false,
+          };
+        });
+
+        return itemsWithInteractions;
+      }
+
+      return feedItems || [];
     } catch (error) {
       console.error("Error fetching feed items:", error);
       throw error;
@@ -294,13 +328,14 @@ export class FeedRepository {
    * @returns {Promise<object>} Eklenen feed
    */
   async addFeed(feedData) {
+    console.log("Feed data:", feedData);
     try {
-      // Feed için gerekli alanları kontrol et
-      if (!feedData.url) throw new Error("Feed URL'si gerekli");
-      if (!feedData.user_id) throw new Error("Kullanıcı ID'si gerekli");
-      if (!feedData.type) throw new Error("Feed türü gerekli");
+      // Check required fields
+      if (!feedData.url) throw new Error("Feed URL is required");
+      if (!feedData.user_id) throw new Error("User ID is required");
+      if (!feedData.type) throw new Error("Feed type is required");
 
-      // Aynı URL'ye sahip feed var mı kontrol et
+      // Check if feed with same URL exists
       const { data: existingFeed, error: checkError } = await this.supabase
         .from("feeds")
         .select("id")
@@ -311,12 +346,12 @@ export class FeedRepository {
 
       if (checkError) throw checkError;
 
-      // Eğer zaten varsa hata fırlat
+      // If feed already exists, throw error
       if (existingFeed) {
-        throw new Error("Bu feed zaten eklenmiş");
+        throw new Error("This feed has already been added");
       }
 
-      // Yeni feed ekle
+      // Add new feed
       const { data, error } = await this.supabase
         .from("feeds")
         .insert({
@@ -325,9 +360,7 @@ export class FeedRepository {
           type: feedData.type,
           title: feedData.title || null,
           description: feedData.description || null,
-          site_url: feedData.site_url || null,
           site_favicon: feedData.site_favicon || null,
-          channel_id: feedData.channel_id || null,
           is_active:
             feedData.is_active !== undefined ? feedData.is_active : true,
           created_at: new Date().toISOString(),
@@ -337,8 +370,8 @@ export class FeedRepository {
 
       if (error) throw error;
 
-      // Feed işleme kuyruğuna ekle (burada bir event gönderebilirsiniz)
-      // Bu adım backend tarafında feed içeriklerini okuyacak bir servis için olabilir
+      // Add to feed processing queue (you could emit an event here)
+      // This step could be for a backend service that will fetch feed contents
 
       return data;
     } catch (error) {
@@ -494,7 +527,12 @@ export class FeedRepository {
         return { data: [], total: 0, hasMore: false };
       }
 
-      console.log("Filtreleme parametreleri:", { feedIds, page, pageSize, filters });
+      console.log("Filtreleme parametreleri:", {
+        feedIds,
+        page,
+        pageSize,
+        filters,
+      });
 
       // Ana sorguyu oluştur
       let query = this.supabase

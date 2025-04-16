@@ -13,7 +13,6 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Session değişikliklerini dinle
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -22,14 +21,13 @@ export function AuthProvider({ children }) {
       if (session) {
         await setSession(session);
 
-        // Force a refresh of the current route to update UI components
         if (event === "SIGNED_IN") {
           router.refresh();
         }
       } else {
         await setSession(null);
 
-        // Oturum yoksa ve korumalı sayfadaysak ana sayfaya yönlendir
+        // Redirect to home page if no session and on protected route
         const protectedRoutes = ["/settings", "/feeds", "/favorites"];
         const isProtectedRoute = protectedRoutes.some((route) =>
           pathname.startsWith(route)
@@ -43,7 +41,6 @@ export function AuthProvider({ children }) {
       }
     });
 
-    // İlk yüklemede session kontrolü
     const initializeAuth = async () => {
       try {
         await checkSession();
@@ -54,7 +51,6 @@ export function AuthProvider({ children }) {
 
     initializeAuth();
 
-    // Periyodik session kontrolü (5 dakikada bir)
     const interval = setInterval(() => {
       checkSession();
     }, 5 * 60 * 1000);
@@ -65,7 +61,6 @@ export function AuthProvider({ children }) {
     };
   }, [pathname, router, setSession, checkSession, supabase.auth]);
 
-  // Global loading state
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">

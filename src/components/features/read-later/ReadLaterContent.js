@@ -1,10 +1,14 @@
 "use client";
 
-import { ReadLaterList } from "@/components/features/read-later/ReadLaterList";
+import { useState, useCallback, memo } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useReadLaterScreen } from "@/hooks/features/useReadLaterScreen";
+import { useHotkeys } from "react-hotkeys-hook";
+import { BookmarkCheck } from "lucide-react";
+import { ContentContainer } from "@/components/shared/ContentContainer";
+import { toast } from "sonner";
 
-export function ReadLaterContent() {
+export const ReadLaterContent = memo(function ReadLaterContent() {
   const { t } = useLanguage();
   const {
     items,
@@ -18,25 +22,88 @@ export function ReadLaterContent() {
     totalReadLater,
   } = useReadLaterScreen();
 
-  return (
-    <div className="w-full">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{t("readLater.title")}</h1>
-          <p className="text-muted-foreground">{t("readLater.description")}</p>
-        </div>
-      </div>
+  // State
+  const [viewMode, setViewMode] = useState("grid");
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
 
-      <ReadLaterList
-        initialItems={items}
-        isLoading={isLoading}
-        onToggleRead={toggleRead}
-        onToggleFavorite={toggleFavorite}
-        onToggleReadLater={toggleReadLater}
-        onRefresh={refresh}
-        isError={isError}
-        error={error}
-      />
-    </div>
+  // Event Handlers
+  const handleShowKeyboardShortcuts = useCallback(() => {
+    setShowKeyboardShortcuts(true);
+  }, []);
+
+  const handleKeyboardShortcutsChange = useCallback((isOpen) => {
+    setShowKeyboardShortcuts(isOpen);
+  }, []);
+
+  const handleViewModeChange = useCallback((mode) => {
+    setViewMode(mode);
+  }, []);
+
+  const handleToggleFavorite = useCallback(
+    async (itemId, newValue) => {
+      return await toggleFavorite(itemId, newValue);
+    },
+    [toggleFavorite]
   );
-}
+
+  const handleToggleReadLater = useCallback(
+    async (itemId, newValue) => {
+      return await toggleReadLater(itemId, newValue);
+    },
+    [toggleReadLater]
+  );
+
+  const handleItemClick = useCallback(
+    async (url, item) => {
+      if (url) {
+        window.open(url, "_blank");
+        if (item && !item.is_read) {
+          try {
+            await toggleRead(item.id, true);
+            toast.success(t("notifications.itemRead"), {
+              position: "bottom-right",
+              duration: 2000,
+            });
+          } catch (error) {
+            console.error("İçerik okundu işaretlenemedi:", error);
+          }
+        }
+      }
+    },
+    [toggleRead, t]
+  );
+
+  // Keyboard Shortcuts
+  useHotkeys("r", refresh, { enableOnFormTags: false });
+  useHotkeys("v", () => setViewMode(viewMode === "grid" ? "list" : "grid"), {
+    enableOnFormTags: false,
+  });
+  useHotkeys("k", () => setShowKeyboardShortcuts(true), {
+    enableOnFormTags: false,
+  });
+
+  return (
+    <ContentContainer
+      viewMode={viewMode}
+      onViewModeChange={handleViewModeChange}
+      onRefresh={refresh}
+      headerIcon={<BookmarkCheck className="h-6 w-6 text-blue-500" />}
+      headerTitle={t("readLater.title")}
+      headerDescription={t("readLater.description")}
+      items={items}
+      isLoading={isLoading}
+      isError={isError}
+      error={error}
+      cardType="readLater"
+      emptyIcon={<BookmarkCheck className="h-10 w-10 opacity-20" />}
+      emptyTitle={t("readLater.emptyTitle")}
+      emptyDescription={t("readLater.emptyDescription")}
+      onToggleFavorite={handleToggleFavorite}
+      onToggleReadLater={handleToggleReadLater}
+      onItemClick={handleItemClick}
+      showKeyboardShortcuts={showKeyboardShortcuts}
+      onShowKeyboardShortcuts={handleShowKeyboardShortcuts}
+      onKeyboardShortcutsChange={handleKeyboardShortcutsChange}
+    />
+  );
+});

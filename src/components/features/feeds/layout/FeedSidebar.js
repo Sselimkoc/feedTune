@@ -12,6 +12,7 @@ import {
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Rss, Youtube } from "lucide-react";
+import Image from "next/image";
 
 export const FeedSidebar = memo(function FeedSidebar({
   feeds = [],
@@ -176,7 +177,7 @@ const FeedItem = memo(function FeedItem({
     >
       <div className="w-3.5 h-3.5 flex-shrink-0">
         {feed.icon ? (
-          <img
+          <Image
             src={feed.icon}
             alt=""
             className="w-full h-full object-contain rounded-sm"
@@ -191,7 +192,7 @@ const FeedItem = memo(function FeedItem({
       {feed.unread_count > 0 && (
         <span
           className={cn(
-            "ml-auto text-xs px-1.5 py-0.5 rounded-full text-xs",
+            "ml-auto text-xs px-1.5 py-0.5 rounded-full ",
             categoryType === "youtube"
               ? "bg-red-500/10 text-red-500"
               : "bg-primary/10 text-primary"

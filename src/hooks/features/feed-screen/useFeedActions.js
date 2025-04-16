@@ -40,95 +40,119 @@ export function useFeedActions({ user, feedService, refreshAll }) {
       router.refresh();
       return data;
     } catch (error) {
-      console.error("Feed senkronizasyon hatası:", error);
+      console.error("Error syncing feeds:", error);
       toast.error(error.message || t("feeds.syncError"));
       throw error;
     }
   }, [user, refreshAll, router, t]);
 
   // Feed ekleme
-  const addFeed = useCallback(async (url, type) => {
-    if (!userId) {
-      toast.error(t("errors.loginRequired"));
-      return;
-    }
-
-    try {
-      await feedService.addFeed(url, type);
-      toast.success(t("feeds.addFeedSuccess"));
-      return true;
-    } catch (error) {
-      console.error("Feed ekleme hatası:", error);
-      toast.error(error.message || t("feeds.addFeedError"));
-      throw error;
-    }
-  }, [userId, feedService, t]);
-
-  // Feed silme
-  const removeFeed = useCallback(async (feedId) => {
-    if (!userId || !feedId) {
-      toast.error(t("errors.loginRequired"));
-      return;
-    }
-
-    try {
-      await feedService.deleteFeed(feedId);
-      toast.success(t("feeds.deleteFeedSuccess"));
-      return true;
-    } catch (error) {
-      console.error("Feed silme hatası:", error);
-      toast.error(t("feeds.deleteFeedError"));
-      throw error;
-    }
-  }, [userId, feedService, t]);
-
-  // Tüm öğeleri okundu olarak işaretle
-  const markAllRead = useCallback(async (items, feedId = null) => {
-    if (!userId) {
-      toast.error(t("errors.loginRequired"));
-      return;
-    }
-
-    try {
-      const itemsToMark = feedId
-        ? items.filter(item => item.feed_id === feedId && !item.is_read)
-        : items.filter(item => !item.is_read);
-
-      if (itemsToMark.length === 0) {
-        toast.info(t("feeds.noUnreadItems"));
+  const addFeed = useCallback(
+    async (url, type) => {
+      if (!userId) {
+        toast.error(t("errors.loginRequired"));
         return;
       }
 
-      const promises = itemsToMark.map(item => feedService.toggleRead(item.id, true));
-      await Promise.all(promises);
-      return itemsToMark.length;
-    } catch (error) {
-      console.error("Toplu okundu işaretleme hatası:", error);
-      toast.error(t("feeds.markAllReadError"));
-      throw error;
-    }
-  }, [userId, feedService, t]);
+      try {
+        await feedService.addFeed(url, type, userId);
+        toast.success(t("feeds.addFeedSuccess"));
+
+        if (refreshAll) {
+          await refreshAll();
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Error adding feed:", error);
+        toast.error(error.message || t("feeds.addFeedError"));
+        throw error;
+      }
+    },
+    [userId, feedService, t, refreshAll]
+  );
+
+  // Feed silme
+  const removeFeed = useCallback(
+    async (feedId) => {
+      if (!userId || !feedId) {
+        toast.error(t("errors.loginRequired"));
+        return;
+      }
+
+      try {
+        await feedService.deleteFeed(feedId, userId);
+        toast.success(t("feeds.deleteFeedSuccess"));
+
+        if (refreshAll) {
+          await refreshAll();
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Error deleting feed:", error);
+        toast.error(error.message || t("feeds.deleteFeedError"));
+        throw error;
+      }
+    },
+    [userId, feedService, t, refreshAll]
+  );
+
+  // Tüm öğeleri okundu olarak işaretle
+  const markAllRead = useCallback(
+    async (items, feedId = null) => {
+      if (!userId) {
+        toast.error(t("errors.loginRequired"));
+        return;
+      }
+
+      try {
+        const itemsToMark = feedId
+          ? items.filter((item) => item.feed_id === feedId && !item.is_read)
+          : items.filter((item) => !item.is_read);
+
+        if (itemsToMark.length === 0) {
+          toast.info(t("feeds.noUnreadItems"));
+          return;
+        }
+
+        const promises = itemsToMark.map((item) =>
+          feedService.toggleRead(item.id, true)
+        );
+        await Promise.all(promises);
+        return itemsToMark.length;
+      } catch (error) {
+        console.error("Error marking all items as read:", error);
+        toast.error(t("feeds.markAllReadError"));
+        throw error;
+      }
+    },
+    [userId, feedService, t]
+  );
 
   // Öğe paylaşma
-  const shareItem = useCallback((item) => {
-    if (!item) return;
+  const shareItem = useCallback(
+    (item) => {
+      if (!item) return;
 
-    try {
-      if (navigator.share) {
-        navigator.share({
-          title: item.title,
-          text: item.description || item.title,
-          url: item.url || item.link,
-        });
-      } else {
-        navigator.clipboard.writeText(item.url || item.link);
-        toast.success(t("feeds.urlCopied"));
+      try {
+        if (navigator.share) {
+          navigator.share({
+            title: item.title,
+            text: item.description || item.title,
+            url: item.url || item.url,
+          });
+        } else {
+          navigator.clipboard.writeText(item.url || item.url);
+          toast.success(t("feeds.urlCopied"));
+        }
+      } catch (error) {
+        console.error("Error sharing item:", error);
+        toast.error(t("feeds.shareError"));
       }
-    } catch (error) {
-      console.error("Paylaşım hatası:", error);
-      toast.error(t("feeds.shareError"));
-    }
-  }, [t]);
+    },
+    [t]
+  );
 
   return {
     syncFeeds,
@@ -137,4 +161,4 @@ export function useFeedActions({ user, feedService, refreshAll }) {
     markAllRead,
     shareItem,
   };
-} 
+}

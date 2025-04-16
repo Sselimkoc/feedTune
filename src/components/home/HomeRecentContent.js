@@ -7,10 +7,54 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn, stripHtml } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Clock, ExternalLink, BookmarkCheck, Star } from "lucide-react";
+import {
+  Clock,
+  ExternalLink,
+  BookmarkCheck,
+  Star,
+  Loader2,
+} from "lucide-react";
 
-export function HomeRecentContent({ recentItems }) {
+export function HomeRecentContent({ recentItems, isLoading }) {
   const { t, language } = useLanguage();
+
+  // Yükleme durumu
+  if (isLoading) {
+    return (
+      <section className="py-6 lg:py-8">
+        <div className="container">
+          <motion.div
+            className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div>
+              <h2 className="text-xl font-bold mb-1">
+                {t("home.recentContent.title")}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {t("home.recentContent.description")}
+              </p>
+            </div>
+          </motion.div>
+
+          <Card className="p-8 flex flex-col items-center justify-center text-center">
+            <div className="relative mb-4">
+              <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl"></div>
+              <div className="relative z-10 bg-background/80 backdrop-blur-sm rounded-full p-4 shadow-lg border">
+                <Loader2 className="h-10 w-10 text-primary animate-spin" />
+              </div>
+            </div>
+            <h3 className="text-lg font-medium mb-2">{t("common.loading")}</h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              {t("home.recentContent.loading")}
+            </p>
+          </Card>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-6 lg:py-8">
@@ -49,7 +93,7 @@ export function HomeRecentContent({ recentItems }) {
                 <Card className="h-full bg-card hover:bg-accent/5 transition-all duration-300 border-muted hover:shadow-md">
                   <CardContent className="p-3 h-full flex flex-col">
                     <a
-                      href={item.link}
+                      href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block flex-1"
@@ -119,7 +163,7 @@ export function HomeRecentContent({ recentItems }) {
                     <div className="p-3 pt-0 mt-auto">
                       <div className="flex items-center gap-1">
                         <a
-                          href={item.link}
+                          href={item.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full h-7 text-xs group inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"

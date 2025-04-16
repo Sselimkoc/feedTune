@@ -149,7 +149,7 @@ async function getRecentVideos(playlistId) {
           new Date().toISOString(),
         channelId: item.snippet.channelId,
         channelTitle: item.snippet.channelTitle || "İsimsiz Kanal",
-        link: `https://www.youtube.com/watch?v=${item.contentDetails.videoId}`,
+        url: `https://www.youtube.com/watch?v=${item.contentDetails.videoId}`,
       }));
     } finally {
       clearTimeout(timeoutId);
@@ -183,6 +183,8 @@ export async function addYoutubeChannel(channelId, userId) {
 
     const channel = channelData.channel;
 
+    console.log(channel, "channel------------------");
+
     // Feeds tablosuna ekle
     const { data: newFeed, error: feedError } = await supabase
       .from("feeds")
@@ -191,7 +193,7 @@ export async function addYoutubeChannel(channelId, userId) {
           user_id: userId,
           type: "youtube",
           title: channel.title,
-          link: `https://www.youtube.com/channel/${channel.id}`,
+          url: `https://www.youtube.com/channel/${channel.id}`,
           description: channel.description,
           site_favicon: channel.thumbnailUrl,
           is_active: true,
@@ -224,7 +226,7 @@ export async function addYoutubeChannel(channelId, userId) {
       const feedItems = channelData.videos.map((video) => ({
         feed_id: newFeed.id,
         title: video.title,
-        link: video.link,
+        url: video.url,
         description: video.description,
         content: video.description,
         author: video.channelTitle,
@@ -322,13 +324,13 @@ export async function updateYoutubeChannel(feedId) {
     }
 
     const channel = channelData.channel;
-
+    
     // Feeds tablosunu güncelle
     const { error: feedError } = await supabase
       .from("feeds")
       .update({
         title: channel.title,
-        link: `https://www.youtube.com/channel/${channel.id}`,
+        url: `https://www.youtube.com/channel/${channel.id}`,
         description: channel.description,
         site_favicon: channel.thumbnailUrl,
         last_fetched_at: new Date().toISOString(),
@@ -356,7 +358,7 @@ export async function updateYoutubeChannel(feedId) {
       const feedItems = channelData.videos.map((video) => ({
         feed_id: feedId,
         title: video.title,
-        link: video.link,
+        url: video.url,
         description: video.description,
         content: video.description,
         author: video.channelTitle,

@@ -66,7 +66,7 @@ export async function POST(request) {
         id: newFeed.id,
         title: newFeed.title,
         description: newFeed.description,
-        link: newFeed.link,
+        url: newFeed.url,
       },
     });
   } catch (error) {

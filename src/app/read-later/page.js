@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { ReadLaterList } from "@/components/features/read-later/ReadLaterList";
 import { ReadLaterContent } from "@/components/features/read-later/ReadLaterContent";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";

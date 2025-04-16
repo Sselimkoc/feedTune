@@ -99,7 +99,7 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
                       </Button>
 
                       <div className="flex items-center">
-                        {feed.site_url && (
+                        {feed.url && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -107,7 +107,7 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
                             asChild
                           >
                             <Link
-                              href={feed.site_url}
+                              href={feed.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               title={t("home.feedManagement.websiteLink")}

@@ -56,7 +56,7 @@ export function useFeedService() {
     queryFn: () => {
       if (!feeds || feeds.length === 0) return [];
       const feedIds = feeds.map((feed) => feed.id);
-      return feedService.getFeedItems(feedIds, 100);
+      return feedService.getFeedItems(feedIds, 100, userId);
     },
     enabled: !!userId && !!feeds && feeds.length > 0,
     staleTime: STALE_TIME,
@@ -404,12 +404,8 @@ export function useFeedService() {
   // Feed ekleme
   const addFeedMutation = useMutation({
     mutationFn: ({ url, type }) => {
-      if (type === "rss") {
-        return feedService.addRssFeed(url, userId);
-      } else if (type === "youtube") {
-        return feedService.addYoutubeFeed(url, userId);
-      }
-      throw new Error("Geçersiz feed türü");
+      if (!userId) throw new Error("User ID is required");
+      return feedService.addFeed(url, type, userId);
     },
     onSuccess: () => {
       // Feed eklendiğinde feed listesini güncelle

@@ -1,80 +1,147 @@
-# FeedTune - Modern RSS Feed Reader
+# FeedTune - Modern RSS Okuyucu Uygulaması
 
-FeedTune is a modern, user-friendly RSS feed reader built with Next.js, React, and Tailwind CSS. It provides a clean and intuitive interface for managing and reading your favorite RSS feeds.
+FeedTune, modern web teknolojileriyle geliştirilmiş kullanıcı dostu bir RSS ve YouTube abonelik yönetim uygulamasıdır. Bu uygulama, favori web sitelerinizi ve YouTube kanallarınızı tek bir yerde takip etmenizi sağlar.
 
-## Features
+## 🚀 Özellikler
 
-- 📱 Responsive design that works on all devices
-- 🌓 Light/Dark theme support
-- 📊 Feed statistics and tracking
-- ⚡ Fast and efficient feed parsing
-- 🔍 Advanced search capabilities
-- 📂 Feed categorization
-- ⭐ Favorite feeds management
-- 🔔 Read/Unread tracking
+- **RSS Feed Yönetimi**: Web sitelerinin RSS beslemelerini ekleyebilir, kategorize edebilir ve takip edebilirsiniz
+- **YouTube RSS Desteği**: YouTube kanallarını RSS üzerinden takip edebilirsiniz
+- **Favori İçerikler**: Beğendiğiniz içerikleri favorilere ekleyebilirsiniz
+- **Daha Sonra Oku**: İlginizi çeken içerikleri daha sonra okumak üzere kaydedebilirsiniz
+- **Kullanıcı Yönetimi**: Kayıt olabilir ve giriş yapabilirsiniz
+- **Tema Desteği**: Karanlık ve aydınlık temalar arasında geçiş yapabilirsiniz
+- **Dil Desteği**: Uygulama farklı dil seçenekleri sunar
+- **Responsive Tasarım**: Mobil ve masaüstü cihazlara uyumlu arayüz
 
-## Tech Stack
+## 🔧 Kullanılan Teknolojiler
 
-- **Framework:** Next.js 14
-- **UI Components:** Shadcn UI
-- **Styling:** Tailwind CSS
-- **Icons:** Lucide Icons
-- **State Management:** React Hooks
-- **Feed Parsing:** RSS Parser (coming soon)
+- **Frontend Framework**: Next.js 14 (App Router)
+- **UI Bileşenleri**: Radix UI ve Shadcn
+- **Stil**: Tailwind CSS
+- **Durum Yönetimi**: Zustand
+- **Veri Çekme**: TanStack Query (React Query)
+- **Veritabanı**: Supabase
+- **Kimlik Doğrulama**: Supabase Auth
+- **Dil Desteği**: react-i18next
+- **Form Yönetimi**: react-hook-form
+- **Şema Doğrulama**: Zod
+- **İkonlar**: Lucide React
 
-## Project Structure
+## 📂 Proje Yapısı
 
 ```
 src/
-├── app/
-│   ├── layout.js       # Root layout with navigation
-│   └── page.js         # Home page
-├── components/
-│   ├── layout/
-│   │   └── navigation.js   # Main navigation component
-│   └── ui/
-│       ├── button.js       # Button component
-│       ├── card.js         # Card component
-│       └── input.js        # Input component
-└── styles/
-    └── globals.css     # Global styles and Tailwind config
+├── app/                  # Next.js App Router sayfaları
+│   ├── api/              # API rotaları
+│   ├── feeds/            # Feed listeleme sayfası
+│   ├── favorites/        # Favoriler sayfası
+│   ├── read-later/       # Daha sonra oku sayfası
+│   ├── settings/         # Ayarlar sayfası
+│   ├── layout.js         # Ana sayfa düzeni
+│   └── page.js           # Ana sayfa
+├── components/           # React bileşenleri
+│   ├── ui/               # Temel UI bileşenleri
+│   ├── layout/           # Düzen bileşenleri
+│   └── features/         # Özellik bileşenleri
+├── hooks/                # Özel React hookları
+├── lib/                  # Yardımcı fonksiyonlar ve kütüphaneler
+├── locales/              # Dil dosyaları
+├── providers/            # Context sağlayıcılar
+├── store/                # Zustand durum mağazaları
+├── database/             # Veritabanı bağlantı ve modelleri
+└── services/             # Harici servislerle iletişim
 ```
 
-## Getting Started
+## 🏁 Başlangıç
 
-1. Clone the repository:
+### Ön Koşullar
+
+- Node.js (16.x veya üzeri)
+- npm veya yarn
+- Supabase hesabı
+
+### Kurulum
+
+1. Projeyi klonlayın:
    ```bash
    git clone https://github.com/sselimkoc/feedtune.git
-   ```
-
-2. Install dependencies:
-   ```bash
    cd feedtune
-   npm install
    ```
 
-3. Run the development server:
+2. Bağımlılıkları yükleyin:
+   ```bash
+   npm install
+   # veya
+   yarn
+   ```
+
+3. `.env.local` dosyasını oluşturun ve gerekli ortam değişkenlerini ekleyin:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-url.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+   ```
+
+4. Geliştirme sunucusunu başlatın:
    ```bash
    npm run dev
+   # veya
+   yarn dev
    ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+5. Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresini açın.
 
-## Current Progress
+## 📱 Uygulama Kullanımı
 
-- ✅ Project setup with Next.js and Tailwind CSS
-- ✅ Basic UI components implementation
-- ✅ Responsive layout with navigation
-- ✅ Home page with feed management cards
-- 🚧 Theme implementation (in progress)
-- 🚧 Feed management functionality (planned)
-- 🚧 User authentication (planned)
-- 🚧 Feed parsing and storage (planned)
+### RSS Besleme Ekleme
 
-## Contributing
+1. "Beslemeler" sayfasına gidin
+2. "Yeni Besleme Ekle" düğmesine tıklayın
+3. RSS URL'sini girin ve "Ekle" düğmesine tıklayın
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+### YouTube Kanalı Ekleme
 
-## License
+1. "Beslemeler" sayfasına gidin
+2. "YouTube Kanalı Ekle" düğmesine tıklayın
+3. YouTube kanal URL'sini girin ve "Ekle" düğmesine tıklayın
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Favori İçerikler
+
+1. Herhangi bir içeriğin yanındaki "Favorilere Ekle" simgesine tıklayın
+2. Tüm favorilerinizi "Favoriler" sayfasında görüntüleyebilirsiniz
+
+### Daha Sonra Oku
+
+1. Herhangi bir içeriğin yanındaki "Daha Sonra Oku" simgesine tıklayın
+2. Bu içerikleri "Daha Sonra Oku" sayfasında bulabilirsiniz
+
+## 💡 Gelecek Özellikler
+
+- [ ] RSS içeriklerini otomatik güncelleme
+- [ ] İçerik filtreleme ve sıralama
+- [ ] İçerik paylaşma
+- [ ] Mobil uygulama
+- [ ] Daha gelişmiş kategorilendirme
+- [ ] İçerik önerileri
+- [ ] Offline modu
+
+## 🤝 Katkıda Bulunma
+
+Katkıda bulunmak istiyorsanız:
+
+1. Projeyi forklayın
+2. Özellik dalını oluşturun (`git checkout -b yeni-ozellik`)
+3. Değişikliklerinizi commit edin (`git commit -m 'Yeni özellik eklendi'`)
+4. Dalınıza push yapın (`git push origin yeni-ozellik`)
+5. Bir Pull Request oluşturun
+
+## 📄 Lisans
+
+Bu proje MIT lisansı altında lisanslanmıştır - detaylar için [LICENSE](LICENSE) dosyasına bakın.
+
+## 🙏 Teşekkürler
+
+- [Next.js](https://nextjs.org/) ekibi
+- [Tailwind CSS](https://tailwindcss.com/) ekibi
+- [Radix UI](https://www.radix-ui.com/) ekibi
+- [Supabase](https://supabase.io/) ekibi
+- Açık kaynak topluluğu

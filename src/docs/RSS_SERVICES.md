@@ -48,7 +48,7 @@ RSS besleme verileri aşağıdaki tablolarda saklanır:
    - `user_id`: Kullanıcı ID'si (auth.users tablosuyla ilişkili)
    - `type`: Besleme türü ('rss', 'youtube', vb.)
    - `title`: Besleme başlığı
-   - `link`: Besleme bağlantısı
+   - `url`: Besleme bağlantısı
    - `description`: Besleme açıklaması
    - `site_favicon`: Site favicon URL'si
    - `is_active`: Beslemenin aktif olup olmadığı
@@ -65,7 +65,7 @@ RSS besleme verileri aşağıdaki tablolarda saklanır:
    - `id`: UUID, birincil anahtar
    - `feed_id`: Besleme ID'si (feeds tablosuyla ilişkili)
    - `title`: Öğe başlığı
-   - `link`: Öğe bağlantısı
+   - `url`: Öğe bağlantısı
    - `description`: Öğe açıklaması
    - `content`: Öğe içeriği
    - `published_at`: Yayınlanma tarihi

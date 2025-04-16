@@ -9,19 +9,21 @@ export async function middleware(req) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Harici URL'leri kontrol et
+  // check if url starts with http and redirect to https
   const url = req.nextUrl.clone();
   if (url.pathname.startsWith("/http")) {
     return NextResponse.redirect(url.pathname.slice(1));
   }
 
-  // Korumalı rotalar
-  const protectedRoutes = ["/settings", "/feeds", "/favorites"];
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    req.nextUrl.pathname.startsWith(route)
+  // Protected routes
+  const protectedRoutes = ["/settings", "/feeds", "/favorites", "/read-later"];
+  const isProtectedRoute = protectedRoutes.some(
+    (route) =>
+      req.nextUrl.pathname === route ||
+      req.nextUrl.pathname.startsWith(`${route}/`)
   );
 
-  // API rotaları için auth kontrolü
+  // Auth check for API routes
   if (req.nextUrl.pathname.startsWith("/api/")) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -29,9 +31,10 @@ export async function middleware(req) {
     return res;
   }
 
-  // Korumalı sayfalar için yönlendirme
+  // Redirect to home page if no session and on protected route
   if (isProtectedRoute && !session) {
     const redirectUrl = new URL("/", req.url);
+    redirectUrl.searchParams.set("message", "login_required");
     return NextResponse.redirect(redirectUrl);
   }
 

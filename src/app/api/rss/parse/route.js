@@ -81,7 +81,7 @@ export async function GET(request) {
       feed: {
         title: feedData.title || "Untitled Feed",
         description: feedData.description || "",
-        link: feedData.link || url,
+        url: feedData.url || url,
         language: feedData.language || null,
         lastBuildDate: feedData.lastBuildDate || null,
       },

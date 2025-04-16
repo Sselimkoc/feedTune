@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useHomeFeeds } from "@/hooks/features/useHomeFeeds";
 import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
+import { feedService } from "@/services/feedService";
 import { HomeStats } from "@/components/home/HomeStats";
 import { HomeFeedManagement } from "@/components/home/HomeFeedManagement";
 import { HomeRecentContent } from "@/components/home/HomeRecentContent";
@@ -15,28 +16,35 @@ import { LoadingState } from "@/components/ui-states/LoadingState";
 import { ErrorState } from "@/components/ui-states/ErrorState";
 
 export function HomeContent() {
-  // State yönetimi
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAddFeedDialog, setShowAddFeedDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [feedToDelete, setFeedToDelete] = useState(null);
 
-  // Hook'lar
+  // Hooks
   const { user } = useAuthStore();
   const { feeds, recentItems, stats, isLoading, isError, error, refresh } =
     useHomeFeeds();
-  const { removeFeed } = useFeedActions({ user, refreshAll: refresh });
+  const { removeFeed } = useFeedActions({
+    user,
+    feedService,
+    refreshAll: refresh,
+  });
 
-  // Feed silme işleyicisi
   const handleDeleteFeed = async () => {
     if (feedToDelete) {
-      await removeFeed(feedToDelete);
-      setShowDeleteDialog(false);
-      setFeedToDelete(null);
+      try {
+        await removeFeed(feedToDelete);
+        setShowDeleteDialog(false);
+        setFeedToDelete(null);
+      } catch (error) {
+        console.error("Error deleting feed:", error);
+        // Dialog will remain open so user can try again
+      }
     }
   };
 
-  // İçerik render fonksiyonu
+  // Content render function
   const renderContent = () => {
     if (!user) {
       return (
@@ -70,7 +78,7 @@ export function HomeContent() {
             setShowDeleteDialog(true);
           }}
         />
-        <HomeRecentContent recentItems={recentItems} />
+        <HomeRecentContent recentItems={recentItems} isLoading={isLoading} />
       </div>
     );
   };

@@ -15,12 +15,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
-import { useFeedService } from "@/hooks/features/useFeedService";
+import { feedService } from "@/services/feedService";
 
 export function AddFeedDialog({ isOpen, onOpenChange, onFeedAdded }) {
   const { t } = useLanguage();
   const { user } = useAuthStore();
-  const feedService = useFeedService();
   const { addFeed } = useFeedActions({ user, feedService });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -85,7 +84,10 @@ export function AddFeedDialog({ isOpen, onOpenChange, onFeedAdded }) {
               </div>
 
               <DialogFooter>
-                <Button type="submit" disabled={isSubmitting || !formData.rssUrl}>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !formData.rssUrl}
+                >
                   {isSubmitting
                     ? t("common.processing")
                     : t("feeds.addFeed.submit")}

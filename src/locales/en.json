@@ -330,7 +330,8 @@
       "getStarted": "Get Started",
       "learnMore": "Learn More",
       "availableIn": "Available in",
-      "dashboardImageAlt": "FeedTune dashboard preview"
+      "dashboardImageAlt": "FeedTune dashboard preview",
+      "newFeature": "New Feature"
     },
     "features": {
       "onboarding": {
@@ -427,10 +428,10 @@
       "viewAllContent": "View All Content",
       "viewContent": "View Content",
       "viewAllFeeds": "View All Feeds",
-      "websiteLink": "Visit website",
+      "websiteurl": "Visit website",
       "openInNewTab": "Open in new tab",
-      "copyLink": "Copy link",
-      "copyLinkSuccess": "Link copied",
+      "copyurl": "Copy url",
+      "copyurlSuccess": "url copied",
       "visitWebsite": "Visit website",
       "lastUpdated": "Last updated",
       "noFeeds": "Add RSS or YouTube sources you want to follow",
@@ -505,12 +506,41 @@
   },
   "errors": {
     "general": "An error occurred",
-    "unauthorized": "You must be logged in to perform this action",
+    "loginRequired": "Please log in",
+    "permissionDenied": "Permission denied",
+    "pageNotFound": "Page not found",
     "networkError": "Network error",
+    "serverError": "Server error",
+    "unauthorized": "Unauthorized action",
+    "userNotFound": "User not found",
+    "invalidCredentials": "Invalid credentials",
+    "emailExists": "This email is already in use",
+    "invalidEmail": "Invalid email address",
+    "invalidPassword": "Invalid password",
+    "passwordMismatch": "Passwords do not match",
+    "requiredField": "This field is required",
+    "invalidUrl": "Invalid URL",
+    "feedNotFound": "Feed not found",
+    "actionFailed": "Action failed",
     "tryAgain": "Please try again",
-    "unknownError": "Unknown error occurred",
-    "refreshFailed": "Failed to refresh feeds",
-    "markReadFailed": "Error marking items"
+    "toggleFavoriteFailed": "Could not toggle favorite status"
+  },
+  "notifications": {
+    "welcome": "Welcome to FeedTune!",
+    "feedAdded": "Feed successfully added",
+    "feedRemoved": "Feed successfully removed",
+    "feedsRefreshed": "Feeds refreshed",
+    "settingsSaved": "Settings saved",
+    "itemRead": "Item marked as read",
+    "itemUnread": "Item marked as unread",
+    "loginSuccess": "Successfully logged in",
+    "logoutSuccess": "Successfully logged out",
+    "addedToFavorites": "Added to favorites",
+    "removedFromFavorites": "Removed from favorites",
+    "addedToReadLater": "Added to read later",
+    "removedFromReadLater": "Removed from read later",
+    "urlCopied": "url copied to clipboard",
+    "allItemsMarkedAsRead": "All items marked as read"
   },
   "shortcuts": {
     "title": "Keyboard Shortcuts",
@@ -550,4 +580,4 @@
     "year_one": "1 year ago",
     "year_other": "{{count}} years ago"
   }
-} 
+}

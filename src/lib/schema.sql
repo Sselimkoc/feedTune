@@ -14,7 +14,8 @@ CREATE TABLE feeds (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   type VARCHAR(20) NOT NULL CHECK (type IN ('rss', 'youtube', 'twitter', 'reddit')),
   title TEXT NOT NULL,
-  link TEXT NOT NULL,
+  url TEXT NOT NULL,
+  channel_id TEXT,
   description TEXT,
   site_favicon TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -22,7 +23,7 @@ CREATE TABLE feeds (
   fetch_error TEXT,
   is_active BOOLEAN DEFAULT TRUE,
   refresh_frequency INTEGER DEFAULT 60,
-  UNIQUE(user_id, type, link)
+  UNIQUE(user_id, type, url)
 );
 
 -- RSS feedleri için özel tablo
@@ -69,7 +70,7 @@ CREATE TABLE feed_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   feed_id UUID REFERENCES feeds(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
-  link TEXT NOT NULL,
+  url TEXT NOT NULL,
   description TEXT,
   content TEXT,
   author TEXT,

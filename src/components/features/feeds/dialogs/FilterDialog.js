@@ -33,26 +33,35 @@ import { ArrowDownAZ, ArrowUpAZ, Filter, RefreshCw, Star } from "lucide-react";
 import {
   RadioGroup,
   RadioGroupItem,
-  RadioGroupValue,
 } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Rss, Youtube } from "lucide-react";
 
 export function FilterDialog({
-  isOpen,
+  open,
   onOpenChange,
-  filters,
+  filters = {},
   onApplyFilters,
+  onResetFilters,
+  activeFilter,
 }) {
   const { t } = useLanguage();
-  const [localFilters, setLocalFilters] = useState({ ...filters });
+  const [localFilters, setLocalFilters] = useState({
+    sortBy: "newest",
+    readStatus: null,
+    feedType: "all",
+  });
 
   // Filtreleri başlangıçta ve değiştiğinde güncelle
   useEffect(() => {
     if (filters) {
-      setLocalFilters({ ...filters });
+      setLocalFilters({
+        sortBy: filters.sortBy || "newest",
+        readStatus: filters.readStatus || null,
+        feedType: filters.feedType || "all",
+      });
     }
-  }, [filters]);
+  }, [filters, open]);
 
   // Filtreleri uygula
   const handleApplyFilters = () => {
@@ -64,16 +73,16 @@ export function FilterDialog({
   const handleResetFilters = () => {
     const defaultFilters = {
       sortBy: "newest",
-      showRead: true,
-      showUnread: true,
-      feedTypes: {
-        rss: true,
-        youtube: true,
-      },
+      readStatus: null,
+      feedType: "all",
     };
 
     setLocalFilters(defaultFilters);
-    onApplyFilters(defaultFilters);
+    if (onResetFilters) {
+      onResetFilters();
+    } else {
+      onApplyFilters(defaultFilters);
+    }
     onOpenChange(false);
   };
 
@@ -82,22 +91,16 @@ export function FilterDialog({
     setLocalFilters((prev) => ({ ...prev, sortBy: value }));
   };
 
-  const handleReadStatusChange = (key, value) => {
-    setLocalFilters((prev) => ({ ...prev, [key]: value }));
+  const handleReadStatusChange = (value) => {
+    setLocalFilters((prev) => ({ ...prev, readStatus: value }));
   };
 
-  const handleFeedTypeChange = (key, value) => {
-    setLocalFilters((prev) => ({
-      ...prev,
-      feedTypes: {
-        ...prev.feedTypes,
-        [key]: value,
-      },
-    }));
+  const handleFeedTypeChange = (value) => {
+    setLocalFilters((prev) => ({ ...prev, feedType: value }));
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-lg font-medium">
@@ -105,12 +108,12 @@ export function FilterDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleApplyFilters}>
+        <form onSubmit={(e) => { e.preventDefault(); handleApplyFilters(); }}>
           <div className="grid gap-5 py-4">
             <div className="space-y-2">
               <h4 className="font-medium text-sm">{t("feeds.sortBy")}</h4>
               <RadioGroup
-                value={filters.sortBy || "newest"}
+                value={localFilters.sortBy}
                 onValueChange={handleSortByChange}
                 className="flex flex-col space-y-1"
               >
@@ -135,64 +138,52 @@ export function FilterDialog({
 
             <div className="space-y-2">
               <h4 className="font-medium text-sm">{t("feeds.readStatus")}</h4>
-              <div className="space-y-2">
+              <RadioGroup
+                value={localFilters.readStatus}
+                onValueChange={handleReadStatusChange}
+                className="flex flex-col space-y-1"
+              >
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="show-read"
-                    checked={filters.showRead}
-                    onCheckedChange={(checked) =>
-                      handleReadStatusChange("showRead", checked)
-                    }
-                  />
+                  <RadioGroupItem value={null} id="show-all" />
+                  <Label htmlFor="show-all">{t("feeds.all")}</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="read" id="show-read" />
                   <Label htmlFor="show-read">{t("feeds.showRead")}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="show-unread"
-                    checked={filters.showUnread}
-                    onCheckedChange={(checked) =>
-                      handleReadStatusChange("showUnread", checked)
-                    }
-                  />
+                  <RadioGroupItem value="unread" id="show-unread" />
                   <Label htmlFor="show-unread">{t("feeds.showUnread")}</Label>
                 </div>
-              </div>
+              </RadioGroup>
             </div>
 
             <div className="space-y-2">
               <h4 className="font-medium text-sm">{t("feeds.feedTypes")}</h4>
-              <div className="space-y-2">
+              <RadioGroup
+                value={localFilters.feedType}
+                onValueChange={handleFeedTypeChange}
+                className="flex flex-col space-y-1"
+              >
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="show-rss"
-                    checked={filters.feedTypes?.rss}
-                    onCheckedChange={(checked) =>
-                      handleFeedTypeChange("rss", checked)
-                    }
-                  />
-                  <div className="grid gap-1">
-                    <Label htmlFor="show-rss" className="flex items-center">
-                      <Rss className="mr-1 h-3.5 w-3.5 text-orange-500" />
-                      <span>RSS</span>
-                    </Label>
-                  </div>
+                  <RadioGroupItem value="all" id="show-all-types" />
+                  <Label htmlFor="show-all-types">{t("feeds.all")}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="show-youtube"
-                    checked={filters.feedTypes?.youtube}
-                    onCheckedChange={(checked) =>
-                      handleFeedTypeChange("youtube", checked)
-                    }
-                  />
-                  <div className="grid gap-1">
-                    <Label htmlFor="show-youtube" className="flex items-center">
-                      <Youtube className="mr-1 h-3.5 w-3.5 text-red-500" />
-                      <span>YouTube</span>
-                    </Label>
-                  </div>
+                  <RadioGroupItem value="rss" id="show-rss" />
+                  <Label htmlFor="show-rss" className="flex items-center">
+                    <Rss className="mr-1 h-3.5 w-3.5 text-orange-500" />
+                    <span>RSS</span>
+                  </Label>
                 </div>
-              </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="youtube" id="show-youtube" />
+                  <Label htmlFor="show-youtube" className="flex items-center">
+                    <Youtube className="mr-1 h-3.5 w-3.5 text-red-500" />
+                    <span>YouTube</span>
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
 

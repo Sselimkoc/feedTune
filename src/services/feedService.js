@@ -2,6 +2,7 @@
 
 import { feedRepository } from "@/repositories/feedRepository";
 import { toast } from "sonner";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 /**
  * Feed işlemlerini yöneten servis katmanı.
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 export class FeedService {
   constructor() {
     this.repository = feedRepository;
+    this.supabase = createClientComponentClient();
   }
 
   /**
@@ -22,8 +24,8 @@ export class FeedService {
       const timestamp = Date.now();
       return await this.repository.getFeeds(userId, timestamp);
     } catch (error) {
-      console.error("Feed listesi getirme hatası:", error);
-      toast.error("Feed listesi yüklenirken bir hata oluştu.");
+      console.error("Error fetching feed list:", error);
+      toast.error("An error occurred while loading feeds.");
       return [];
     }
   }
@@ -41,8 +43,8 @@ export class FeedService {
       const timestamp = Date.now();
       return await this.repository.getFeedItems(feedIds, limit, timestamp);
     } catch (error) {
-      console.error("Feed öğeleri getirme hatası:", error);
-      toast.error("Feed içerikleri yüklenirken bir hata oluştu.");
+      console.error("Error fetching feed items:", error);
+      toast.error("An error occurred while loading feed content.");
       return [];
     }
   }
@@ -57,8 +59,8 @@ export class FeedService {
       const timestamp = Date.now();
       return await this.repository.getFavoriteItems(userId, timestamp);
     } catch (error) {
-      console.error("Favorileri getirme hatası:", error);
-      toast.error("Favoriler yüklenirken bir hata oluştu.");
+      console.error("Error fetching favorites:", error);
+      toast.error("An error occurred while loading favorites.");
       return [];
     }
   }
@@ -73,8 +75,8 @@ export class FeedService {
       const timestamp = Date.now();
       return await this.repository.getReadLaterItems(userId, timestamp);
     } catch (error) {
-      console.error("Okuma listesini getirme hatası:", error);
-      toast.error("Okuma listesi yüklenirken bir hata oluştu.");
+      console.error("Error fetching read later list:", error);
+      toast.error("An error occurred while loading read later list.");
       return [];
     }
   }
@@ -92,8 +94,8 @@ export class FeedService {
         is_read: isRead,
       });
     } catch (error) {
-      console.error("Okuma durumu güncelleme hatası:", error);
-      toast.error("Okuma durumu güncellenirken bir hata oluştu.");
+      console.error("Error updating read status:", error);
+      toast.error("An error occurred while updating read status.");
       throw error;
     }
   }
@@ -111,8 +113,8 @@ export class FeedService {
         is_favorite: isFavorite,
       });
     } catch (error) {
-      console.error("Favori durumu güncelleme hatası:", error);
-      toast.error("Favori durumu güncellenirken bir hata oluştu.");
+      console.error("Error updating favorite status:", error);
+      toast.error("An error occurred while updating favorite status.");
       throw error;
     }
   }
@@ -130,83 +132,63 @@ export class FeedService {
         is_read_later: isReadLater,
       });
     } catch (error) {
-      console.error("Daha sonra oku durumu güncelleme hatası:", error);
-      toast.error("Daha sonra oku durumu güncellenirken bir hata oluştu.");
+      console.error("Error updating read later status:", error);
+      toast.error("An error occurred while updating read later status.");
       throw error;
     }
   }
 
   /**
-   * Yeni bir RSS feed ekler
-   * @param {string} url RSS feed URL'si
+   * Feed ekler (RSS veya YouTube)
+   * @param {string} url Feed URL'si veya YouTube kanal bağlantısı
+   * @param {string} type Feed türü (rss, youtube)
    * @param {string} userId Kullanıcı ID'si
    * @returns {Promise<object>} Eklenen feed
    */
-  async addRssFeed(url, userId) {
+  async addFeed(url, type, userId) {
     try {
-      if (!userId) throw new Error("Kullanıcı ID'si gerekli");
-      if (!url) throw new Error("Feed URL'si gerekli");
+      if (!userId) throw new Error("User ID is required");
+      if (!url) throw new Error("Feed URL is required");
+      if (!type) throw new Error("Feed type is required");
 
-      // URL validasyonu
+      // URL validation
+      let feedUrl = url;
       try {
         new URL(url);
       } catch (e) {
-        throw new Error("Geçerli bir URL giriniz");
+        throw new Error("Please enter a valid URL");
       }
 
-      // Repository çağrısı
-      return await this.repository.addFeed({
-        url,
-        user_id: userId,
-        type: "rss",
-        is_active: true,
-      });
-    } catch (error) {
-      console.error("RSS Feed ekleme hatası:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Yeni bir YouTube feed ekler
-   * @param {string} channelId YouTube kanal ID'si veya URL'si
-   * @param {string} userId Kullanıcı ID'si
-   * @returns {Promise<object>} Eklenen feed
-   */
-  async addYoutubeFeed(channelId, userId) {
-    try {
-      if (!userId) throw new Error("Kullanıcı ID'si gerekli");
-      if (!channelId) throw new Error("Kanal ID'si veya URL'si gerekli");
-
-      // URL'den kanal ID'si çıkarma
-      let actualChannelId = channelId;
-      if (channelId.includes("youtube.com")) {
+      // YouTube URL handling
+      if (type === "youtube" && url.includes("youtube.com")) {
         try {
-          const url = new URL(channelId);
-          if (url.pathname.includes("/channel/")) {
-            actualChannelId = url.pathname.split("/channel/")[1];
+          const youtubeUrl = new URL(url);
+          if (youtubeUrl.pathname.includes("/channel/")) {
+            const channelId = youtubeUrl.pathname.split("/channel/")[1];
+            feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
           } else if (
-            url.pathname.includes("/c/") ||
-            url.pathname.includes("/@")
+            youtubeUrl.pathname.includes("/c/") ||
+            youtubeUrl.pathname.includes("/@")
           ) {
-            // Kanal adı formatını ID'ye çevirme burada yapılabilir
-            // Gerçek implementasyonda YouTube API kullanmak gerekebilir
+            // For channel name format, we can use as is - the server will handle conversion
+            feedUrl = `https://www.youtube.com/feeds/videos.xml?channel=${youtubeUrl.pathname.slice(
+              1
+            )}`;
           }
         } catch (e) {
-          throw new Error("Geçerli bir YouTube URL'si giriniz");
+          throw new Error("Please enter a valid YouTube URL");
         }
       }
 
-      // Repository çağrısı
+      // Repository call
       return await this.repository.addFeed({
-        url: `https://www.youtube.com/feeds/videos.xml?channel_id=${actualChannelId}`,
+        url: feedUrl,
         user_id: userId,
-        type: "youtube",
-        channel_id: actualChannelId,
+        type: type,
         is_active: true,
       });
     } catch (error) {
-      console.error("YouTube Feed ekleme hatası:", error);
+      console.error("Error adding feed:", error);
       throw error;
     }
   }
@@ -219,21 +201,21 @@ export class FeedService {
    */
   async deleteFeed(feedId, userId) {
     try {
-      if (!userId) throw new Error("Kullanıcı ID'si gerekli");
-      if (!feedId) throw new Error("Feed ID'si gerekli");
+      if (!userId) throw new Error("User ID is required");
+      if (!feedId) throw new Error("Feed ID is required");
 
-      // Kullanıcının feed'i olup olmadığını kontrol et
+      // Check if the feed belongs to the user
       const userFeeds = await this.repository.getFeeds(userId);
       const feedExists = userFeeds.some((feed) => feed.id === feedId);
 
       if (!feedExists) {
-        throw new Error("Bu feed size ait değil veya bulunamadı");
+        throw new Error("This feed doesn't exist or doesn't belong to you");
       }
 
-      // İşlemi gerçekleştir
+      // Execute the operation
       return await this.repository.deleteFeed(feedId, userId);
     } catch (error) {
-      console.error("Feed silme hatası:", error);
+      console.error("Error deleting feed:", error);
       throw error;
     }
   }
@@ -253,7 +235,7 @@ export class FeedService {
     keepReadLater = true
   ) {
     try {
-      if (!userId) throw new Error("Kullanıcı ID'si gerekli");
+      if (!userId) throw new Error("User ID is required");
 
       const result = await this.repository.cleanUpOldItems(
         userId,
@@ -268,7 +250,7 @@ export class FeedService {
 
       return result;
     } catch (error) {
-      console.error("Eski içerikleri temizleme hatası:", error);
+      console.error("Error cleaning up old items:", error);
       throw error;
     }
   }
@@ -310,51 +292,53 @@ export class FeedService {
   async getPaginatedFeedItems(userId, page = 1, pageSize = 12, filters = {}) {
     try {
       if (!userId) {
-        console.log("Kullanıcı ID'si bulunamadı");
+        console.log("User ID not found");
         return { data: [], total: 0, hasMore: false };
       }
 
-      // Önce kullanıcının feed'lerini al
+      // Get the user's feeds first
       const feeds = await this.getFeeds(userId);
-      console.log("Kullanıcı feed'leri:", feeds?.length || 0);
+      console.log("User feeds:", feeds?.length || 0);
 
       if (!feeds || feeds.length === 0) {
-        console.log("Kullanıcının feed'i bulunamadı");
+        console.log("No feeds found for user");
         return { data: [], total: 0, hasMore: false };
       }
 
-      // Feed ID'lerini çıkar
+      // Extract feed IDs
       let feedIds = feeds.map((feed) => feed.id);
 
-      // Filtreleme işlemlerini logla
-      console.log("Filtreleme başlatılıyor:", {
-        selectedFeedId: filters.selectedFeedId, 
-        feedType: filters.feedType
+      // Log filtering operations
+      console.log("Starting filtering:", {
+        selectedFeedId: filters.selectedFeedId,
+        feedType: filters.feedType,
       });
 
-      // Seçilen feed'e göre filtreleme (en yüksek öncelik)
+      // Filter by selected feed (highest priority)
       if (filters.selectedFeedId) {
-        console.log("Seçili feed:", filters.selectedFeedId);
+        console.log("Selected feed:", filters.selectedFeedId);
         feedIds = [filters.selectedFeedId];
-        // Eğer seçilen feed bulunamazsa, boş sonuç döndür
-        if (!feeds.some(feed => feed.id === filters.selectedFeedId)) {
-          console.log("Seçili feed bulunamadı");
+        // If the selected feed is not found, return empty result
+        if (!feeds.some((feed) => feed.id === filters.selectedFeedId)) {
+          console.log("Selected feed not found");
           return { data: [], total: 0, hasMore: false };
         }
       }
-      // Seçilen feed yoksa ve feed türü belirtilmişse, türe göre filtrele
+      // If no feed is selected and feed type is specified, filter by type
       else if (filters.feedType && filters.feedType !== "all") {
-        console.log("Feed türü filtresi:", filters.feedType);
-        const filteredFeeds = feeds.filter(feed => feed.type === filters.feedType);
+        console.log("Feed type filter:", filters.feedType);
+        const filteredFeeds = feeds.filter(
+          (feed) => feed.type === filters.feedType
+        );
         if (filteredFeeds.length === 0) {
-          console.log("Belirtilen türde feed bulunamadı");
+          console.log("No feeds found for specified type");
           return { data: [], total: 0, hasMore: false };
         }
-        feedIds = filteredFeeds.map(feed => feed.id);
+        feedIds = filteredFeeds.map((feed) => feed.id);
       }
 
-      // Repository'yi çağır
-      console.log("Repository'ye gönderilen parametreler:", {
+      // Call repository
+      console.log("Parameters sent to repository:", {
         feedIds,
         page,
         pageSize,
@@ -368,7 +352,7 @@ export class FeedService {
         filters
       );
 
-      console.log("Repository'den dönen sonuç:", {
+      console.log("Result from repository:", {
         itemCount: result.data?.length || 0,
         total: result.total,
         hasMore: result.hasMore,
@@ -376,7 +360,76 @@ export class FeedService {
 
       return result;
     } catch (error) {
-      console.error("Feed öğeleri getirme hatası:", error);
+      console.error("Error fetching feed items:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Toggles the read status of an item
+   * @param {string} itemId Item ID
+   * @param {boolean} isRead Read status
+   * @returns {Promise<object>} Updated data
+   */
+  async toggleRead(itemId, isRead) {
+    try {
+      if (!itemId) throw new Error("Item ID is required");
+
+      // Get the user ID from auth
+      const {
+        data: { user },
+      } = await this.supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      return await this.toggleItemReadStatus(user.id, itemId, isRead);
+    } catch (error) {
+      console.error("Error toggling read status:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Toggles the favorite status of an item
+   * @param {string} itemId Item ID
+   * @param {boolean} isFavorite Favorite status
+   * @returns {Promise<object>} Updated data
+   */
+  async toggleFavorite(itemId, isFavorite) {
+    try {
+      if (!itemId) throw new Error("Item ID is required");
+
+      // Get the user ID from auth
+      const {
+        data: { user },
+      } = await this.supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      return await this.toggleItemFavoriteStatus(user.id, itemId, isFavorite);
+    } catch (error) {
+      console.error("Error toggling favorite status:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Toggles the read later status of an item
+   * @param {string} itemId Item ID
+   * @param {boolean} isReadLater Read later status
+   * @returns {Promise<object>} Updated data
+   */
+  async toggleReadLater(itemId, isReadLater) {
+    try {
+      if (!itemId) throw new Error("Item ID is required");
+
+      // Get the user ID from auth
+      const {
+        data: { user },
+      } = await this.supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      return await this.toggleItemReadLaterStatus(user.id, itemId, isReadLater);
+    } catch (error) {
+      console.error("Error toggling read later status:", error);
       throw error;
     }
   }

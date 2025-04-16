@@ -71,7 +71,7 @@ export async function parseRssFeed(url) {
     const transformedFeed = {
       title: feed.title || "",
       description: feed.description || "",
-      link: feed.link || url,
+      url: feed.url || url,
       language: feed.language || null,
       lastBuildDate: feed.lastBuildDate || null,
       items: items.map((item) => transformFeedItem(item)),
@@ -137,12 +137,12 @@ function transformFeedItem(item) {
 
   return {
     title: item.title || "",
-    link: item.link || "",
+    url: item.url || "",
     description: item.contentEncoded || item.description || "",
     content: item.contentEncoded || item.content || item.description || "",
     pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
     author: item.creator || item.author || item.dc?.creator || "",
-    guid: item.guid || item.id || item.link || "",
+    guid: item.guid || item.id || item.url || "",
     thumbnail: thumbnail,
     categories: Array.isArray(item.categories) ? item.categories : [],
   };
@@ -164,10 +164,10 @@ export async function addRssFeed(url, userId) {
     // Favicon URL'si al (future enhancement: ayrı bir fonksiyon olarak)
     let favicon = null;
 
-    if (feedData.link) {
+    if (feedData.url) {
       try {
         // Favicon için origin'i al
-        const siteUrl = new URL(feedData.link).origin;
+        const siteUrl = new URL(feedData.url).origin;
         favicon = `${siteUrl}/favicon.ico`;
       } catch (error) {
         console.error("Favicon URL oluşturma hatası:", error);
@@ -182,7 +182,7 @@ export async function addRssFeed(url, userId) {
           user_id: userId,
           type: "rss",
           title: feedData.title || "İsimsiz Besleme",
-          link: feedData.link || url,
+          url: feedData.url || url,
           description: feedData.description || "",
           site_favicon: favicon,
           is_active: true,
@@ -213,7 +213,7 @@ export async function addRssFeed(url, userId) {
       const feedItems = feedData.items.map((item) => ({
         feed_id: newFeed.id,
         title: item.title,
-        link: item.link,
+        url: item.url,
         description: item.description,
         content: item.content,
         author: item.author,
@@ -267,7 +267,7 @@ export async function updateRssFeed(feedId) {
       .from("feeds")
       .update({
         title: feedData.title || "İsimsiz Besleme",
-        link: feedData.link || rssFeed.feed_url,
+        url: feedData.url || rssFeed.feed_url,
         description: feedData.description || "",
         last_fetched_at: new Date().toISOString(),
       })
@@ -293,7 +293,7 @@ export async function updateRssFeed(feedId) {
       const feedItems = feedData.items.map((item) => ({
         feed_id: feedId,
         title: item.title,
-        link: item.link,
+        url: item.url,
         description: item.description,
         content: item.content,
         author: item.author,

@@ -50,6 +50,8 @@ You are an expert in JavaScript, Node.js, Next.js App Router, React, Radix UI an
 ## Language Guidelines
 - Create json files for all text content.
 
-## Extras
-- Always add comments to the code using English.
+## Comment and Documentation
+- All comments should be in English
+- Avoid using Turkish characters
+- Use English comments for JSDoc
 
