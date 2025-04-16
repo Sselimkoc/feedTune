@@ -389,14 +389,14 @@ export const ContentCard = memo(
         >
           <Card
             className={cn(
-              "hover:shadow-md transition-all duration-200 group",
+              "light-card border border-border/40 hover:border-border/60 hover:shadow-md transition-all duration-200 group",
               cardStyles.highlightClass,
               className
             )}
           >
             <div className="flex gap-4 p-4">
               {/* Resim */}
-              <div className="relative w-48 h-32 flex-shrink-0">
+              <div className="relative w-48 h-32 flex-shrink-0 rounded-md overflow-hidden">
                 <Image
                   src={getValidImageUrl()}
                   alt={item.title}
@@ -458,14 +458,14 @@ export const ContentCard = memo(
       >
         <Card
           className={cn(
-            "w-full h-full overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02] flex flex-col group",
+            "w-full h-full overflow-hidden light-card border border-border/40 hover:border-border/60 rounded-xl hover:shadow-lg transition-all duration-200 hover:scale-[1.02] flex flex-col group",
             cardStyles.highlightClass,
             className
           )}
         >
           <div
             className={cn(
-              "relative w-full pt-[56.25%] bg-muted", // 16:9 aspect ratio
+              "relative w-full pt-[56.25%] bg-muted rounded-t-xl", // 16:9 aspect ratio
               !isImageLoaded && "animate-pulse"
             )}
           >
@@ -485,7 +485,10 @@ export const ContentCard = memo(
             {!getIsRead() && (
               <Badge
                 variant="secondary"
-                className={cn("absolute top-2 right-2", cardStyles.badgeClass)}
+                className={cn(
+                  "absolute top-2 right-2 shadow-sm",
+                  cardStyles.badgeClass
+                )}
               >
                 {t("feeds.new")}
               </Badge>

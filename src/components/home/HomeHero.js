@@ -38,15 +38,19 @@ export default function HomeHero({ onAuthClick }) {
       ref={ref}
       className="py-8 md:py-16 lg:py-24 overflow-hidden relative"
     >
-      {/* Arkaplan animasyonlu desenler */}
+      {/* Arkaplan animasyonlu desenler - İyileştirilmiş */}
       <div className="absolute inset-0 overflow-hidden -z-10">
         <div
-          className="absolute top-1/4 right-1/3 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/4 right-1/3 w-72 h-72 bg-primary/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "8s" }}
         ></div>
         <div
-          className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-blue-500/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "10s" }}
+        ></div>
+        <div
+          className="absolute top-1/2 left-2/3 w-64 h-64 bg-yellow-500/5 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "12s" }}
         ></div>
       </div>
 
@@ -69,9 +73,9 @@ export default function HomeHero({ onAuthClick }) {
                   duration: 0.5,
                   delay: 0.1,
                 }}
-                className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-2 relative overflow-hidden group"
+                className="inline-flex items-center px-3 py-1 rounded-full bg-primary/15 dark:bg-primary/10 text-primary text-sm font-medium mb-2 relative overflow-hidden group shadow-sm"
               >
-                <span className="absolute inset-0 bg-primary/5 w-full scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-500"></span>
+                <span className="absolute inset-0 bg-primary/10 dark:bg-primary/5 w-full scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-500"></span>
                 <Zap className="mr-2 h-3.5 w-3.5 animate-pulse" />
                 <span className="relative z-10">
                   {t("home.hero.newFeature")}
@@ -79,7 +83,7 @@ export default function HomeHero({ onAuthClick }) {
               </motion.div>
 
               <motion.h1
-                className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-6xl/none bg-gradient-to-br from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent"
+                className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-6xl/none bg-gradient-to-br from-primary via-primary/90 to-primary/70 dark:from-primary dark:via-primary/90 dark:to-primary/70 bg-clip-text text-transparent drop-shadow-sm"
                 initial={{ opacity: 0, y: 20 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{
@@ -94,7 +98,7 @@ export default function HomeHero({ onAuthClick }) {
               </motion.h1>
 
               <motion.p
-                className="max-w-[600px] text-xl text-muted-foreground mt-2"
+                className="max-w-[600px] text-xl text-muted-foreground dark:text-muted-foreground mt-2"
                 initial={{ opacity: 0, y: 20 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{
@@ -125,7 +129,7 @@ export default function HomeHero({ onAuthClick }) {
                 {staticContent.services.map((service, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-1.5 bg-background/80 border border-border/50 px-3 py-1 rounded-full shadow-sm"
+                    className="flex items-center gap-1.5 bg-background dark:bg-background/80 border border-border/50 px-3 py-1.5 rounded-full shadow-sm"
                   >
                     {service.icon}
                     <span className="text-sm font-medium">{service.name}</span>
@@ -161,14 +165,14 @@ export default function HomeHero({ onAuthClick }) {
                   {t("home.hero.getStarted")}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </span>
-                <span className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 opacity-100 group-hover:opacity-90 transition-opacity duration-300"></span>
+                <span className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary/80 opacity-100 group-hover:opacity-90 transition-opacity duration-300"></span>
               </Button>
 
               <Button
                 variant="outline"
                 size="lg"
                 asChild
-                className="rounded-full border-border/50 hover:bg-accent/30 transition-all duration-300"
+                className="rounded-full border-border/60 bg-white/80 dark:bg-transparent hover:bg-accent/30 hover:border-primary/30 transition-all duration-300"
               >
                 <Link href="#features">{t("home.hero.learnMore")}</Link>
               </Button>
@@ -188,7 +192,7 @@ export default function HomeHero({ onAuthClick }) {
               }}
               className="relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/20 rounded-xl blur-xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-blue-500/20 dark:from-primary/5 dark:to-primary/20 rounded-xl blur-xl"></div>
               <Image
                 src="/dashboard-preview.png"
                 alt={t("home.hero.dashboardImageAlt")}
@@ -215,7 +219,7 @@ export default function HomeHero({ onAuthClick }) {
               }}
               className="absolute right-[10%] top-[5%] hidden lg:block"
             >
-              <div className="bg-background/90 backdrop-blur-sm rounded-lg shadow-lg p-2 border border-border/50">
+              <div className="bg-white dark:bg-background/90 backdrop-blur-sm rounded-lg shadow-lg p-2 border border-border/50">
                 <FaRss className="text-orange-500 h-4 w-4" />
               </div>
               <span className="absolute top-full right-5 h-20 w-px bg-gradient-to-b from-border to-transparent" />
@@ -233,7 +237,7 @@ export default function HomeHero({ onAuthClick }) {
               }}
               className="absolute right-[5%] top-[25%] hidden lg:block"
             >
-              <div className="bg-background/90 backdrop-blur-sm rounded-lg shadow-lg p-2 border border-border/50">
+              <div className="bg-white dark:bg-background/90 backdrop-blur-sm rounded-lg shadow-lg p-2 border border-border/50">
                 <FaTimes className="text-red-500 h-4 w-4" />
               </div>
               <span className="absolute top-full right-5 h-20 w-px bg-gradient-to-b from-border to-transparent" />
@@ -251,7 +255,7 @@ export default function HomeHero({ onAuthClick }) {
               }}
               className="absolute left-[10%] bottom-[15%] hidden lg:block"
             >
-              <div className="bg-background/90 backdrop-blur-sm rounded-lg shadow-lg p-2 border border-border/50">
+              <div className="bg-white dark:bg-background/90 backdrop-blur-sm rounded-lg shadow-lg p-2 border border-border/50">
                 <FaYoutube className="text-red-500 h-4 w-4" />
               </div>
               <span className="absolute bottom-full right-5 h-20 w-px bg-gradient-to-b from-transparent to-border" />
@@ -271,7 +275,7 @@ export default function HomeHero({ onAuthClick }) {
             delay: 0.7,
           }}
         >
-          <div className="flex flex-col items-center space-y-3 border border-border/40 p-6 rounded-xl bg-card/30 backdrop-blur-sm hover:bg-card/50 hover:shadow-md transition-all duration-300">
+          <div className="flex flex-col items-center space-y-3 border border-border/40 p-6 rounded-xl bg-white/80 dark:bg-card/30 backdrop-blur-sm hover:border-primary/20 hover:bg-white dark:hover:bg-card/50 hover:shadow-md transition-all duration-300">
             <div className="p-3 bg-primary/10 rounded-full">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -297,7 +301,7 @@ export default function HomeHero({ onAuthClick }) {
             </p>
           </div>
 
-          <div className="flex flex-col items-center space-y-3 border border-border/40 p-6 rounded-xl bg-card/30 backdrop-blur-sm hover:bg-card/50 hover:shadow-md transition-all duration-300">
+          <div className="flex flex-col items-center space-y-3 border border-border/40 p-6 rounded-xl bg-white/80 dark:bg-card/30 backdrop-blur-sm hover:border-primary/20 hover:bg-white dark:hover:bg-card/50 hover:shadow-md transition-all duration-300">
             <div className="p-3 bg-primary/10 rounded-full">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -322,7 +326,7 @@ export default function HomeHero({ onAuthClick }) {
             </p>
           </div>
 
-          <div className="flex flex-col items-center space-y-3 border border-border/40 p-6 rounded-xl bg-card/30 backdrop-blur-sm hover:bg-card/50 hover:shadow-md transition-all duration-300">
+          <div className="flex flex-col items-center space-y-3 border border-border/40 p-6 rounded-xl bg-white/80 dark:bg-card/30 backdrop-blur-sm hover:border-primary/20 hover:bg-white dark:hover:bg-card/50 hover:shadow-md transition-all duration-300">
             <div className="p-3 bg-primary/10 rounded-full">
               <svg
                 xmlns="http://www.w3.org/2000/svg"

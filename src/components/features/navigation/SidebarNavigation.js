@@ -72,42 +72,55 @@ export function SidebarNavigation() {
   }
 
   return (
-    <div className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-64 border-r bg-background z-40">
+    <div className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-64 border-r border-border/40 bg-white dark:bg-background shadow-sm shadow-border/5 z-40">
       {/* Top Logo Section */}
-      <div className="p-4 flex items-center">
-        <Link href="/" className="flex items-center gap-2">
-          <Rss className="w-6 h-6 text-primary" />
-          <span className="font-bold text-xl">FeedTune</span>
+      <div className="p-5 flex items-center">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
+            <Rss className="w-5 h-5 text-primary" />
+            <div className="absolute -inset-0.5 bg-primary/5 blur-sm rounded-lg -z-10"></div>
+          </div>
+          <span className="font-bold text-xl bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            FeedTune
+          </span>
         </Link>
       </div>
 
-      <Separator />
+      <Separator className="bg-border/30" />
 
       {/* Main Menu */}
-      <ScrollArea className="flex-1 py-2">
-        <div className="px-3 space-y-1">
+      <ScrollArea className="flex-1 py-4">
+        <div className="px-3 space-y-1.5">
           {activeMenuItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 pathname === item.href
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:bg-muted"
+                  ? "bg-primary/10 text-primary shadow-sm"
+                  : "text-foreground/80 hover:bg-muted/50 hover:text-foreground"
               )}
             >
-              {item.icon}
+              <span
+                className={
+                  pathname === item.href
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                }
+              >
+                {item.icon}
+              </span>
               {item.name}
             </Link>
           ))}
         </div>
       </ScrollArea>
 
-      <Separator />
+      <Separator className="bg-border/30" />
 
       {/* Bottom Menu */}
-      <div className="p-3 space-y-1">
+      <div className="p-3 space-y-1.5">
         {bottomMenuItems.map((item) => {
           if (item.protected && !user) {
             return null;
@@ -118,13 +131,21 @@ export function SidebarNavigation() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 pathname === item.href
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:bg-muted"
+                  ? "bg-primary/10 text-primary shadow-sm"
+                  : "text-foreground/80 hover:bg-muted/50 hover:text-foreground"
               )}
             >
-              {item.icon}
+              <span
+                className={
+                  pathname === item.href
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                }
+              >
+                {item.icon}
+              </span>
               {item.name}
             </Link>
           );
@@ -133,9 +154,11 @@ export function SidebarNavigation() {
         {/* User Info */}
         {user && (
           <>
-            <Separator className="my-2" />
-            <div className="flex items-center gap-3 px-3 py-2">
-              <User className="w-5 h-5 text-muted-foreground" />
+            <Separator className="my-3 bg-border/30" />
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-accent/30 mb-2">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+                <User className="w-4 h-4 text-primary" />
+              </div>
               <div className="flex-1 overflow-hidden">
                 <p className="text-sm font-medium truncate">{user.email}</p>
               </div>
@@ -143,10 +166,10 @@ export function SidebarNavigation() {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start text-destructive px-3 py-2 rounded-md text-sm font-medium"
+              className="w-full justify-start text-destructive px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-destructive/10 hover:text-destructive"
               onClick={signOut}
             >
-              <LogOut className="w-5 h-5 mr-3" />
+              <LogOut className="w-4 h-4 mr-3" />
               {t("navigation.signOut")}
             </Button>
           </>

@@ -4,35 +4,35 @@
 
 @layer base {
   :root {
-    /* Modern Light Theme */
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    /* Modern Light Theme - İyileştirilmiş */
+    --background: 210 40% 99%; /* Daha açık ve ferah arka plan */
+    --foreground: 222 47% 12%; /* Biraz daha koyu metin rengi kontrastı artırmak için */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 222 47% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 222 47% 12%;
     --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 16% 47%;
+    --secondary: 210 40% 96.5%; /* Biraz daha açık ikincil ton */
+    --secondary-foreground: 222 47% 12%;
+    --muted: 210 40% 96.5%; /* Muted arka planı biraz daha belirgin */
+    --muted-foreground: 215 16% 50%; /* Biraz daha koyu muted metin kontrastı artırmak için */
     --accent: 221 83% 53%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 90%; /* Form input sınırlarını biraz daha belirgin yapalım */
     --ring: 221 83% 53%;
     --radius: 0.75rem;
 
-    /* Feed Item States */
-    --read: 220 14% 96%;
-    --read-hover: 220 14% 94%;
+    /* Feed Item States - İyileştirilmiş */
+    --read: 220 14% 97%;
+    --read-hover: 220 14% 95%;
     --unread: 221 83% 98%;
     --unread-hover: 221 83% 96%;
-    --favorite: 48 96% 89%;
-    --favorite-hover: 48 96% 86%;
+    --favorite: 48 96% 91%;
+    --favorite-hover: 48 96% 88%;
 
     /* Tema geçişleri için değişkenler */
     --theme-transition-duration: 800ms;
@@ -110,14 +110,19 @@
     @apply bg-[hsl(var(--favorite))] hover:bg-[hsl(var(--favorite-hover))] border-l-4 border-l-yellow-400;
   }
   
-  /* Glass effect for cards */
+  /* Improved Glass effect for cards - light mode biraz daha belirgin */
   .glass {
-    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-700/30;
+    @apply bg-white/80 dark:bg-slate-900/70 backdrop-blur-md border border-white/30 dark:border-slate-700/30 shadow-sm;
   }
   
   /* Animated underline for links */
   .animated-underline {
     @apply relative after:absolute after:bg-primary after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:transition-all after:duration-300 hover:after:w-full;
+  }
+
+  /* Light mod için kart gölgeleri */
+  .light-card {
+    @apply bg-white shadow-sm hover:shadow-md transition-shadow duration-300;
   }
 }
 

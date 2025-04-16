@@ -31,7 +31,7 @@ export function HeaderNav() {
   );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-background/85 backdrop-blur-md border-b shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-lg shadow-sm dark:border-b dark:shadow-none">
       <div className="container mx-auto px-4 h-16 flex justify-between items-center">
         {/* Logo */}
         <motion.div
@@ -40,7 +40,10 @@ export function HeaderNav() {
           transition={{ duration: 0.5 }}
         >
           <Link href="/" className="flex items-center gap-2">
-            <Rss className="w-6 h-6 text-primary" />
+            <div className="relative w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Rss className="w-5 h-5 text-primary" />
+              <div className="absolute -inset-0.5 bg-primary/10 blur-sm rounded-lg -z-10"></div>
+            </div>
             <span className="font-bold text-xl hidden sm:inline bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               FeedTune
             </span>
@@ -65,9 +68,15 @@ export function HeaderNav() {
             }
           >
             {theme === "dark" ? (
-              <Sun className="h-[18px] w-[18px] text-amber-400" />
+              <div className="relative">
+                <Sun className="h-[18px] w-[18px] text-amber-400" />
+                <div className="absolute -inset-1 bg-amber-400/20 blur-sm rounded-full -z-10"></div>
+              </div>
             ) : (
-              <Moon className="h-[18px] w-[18px] text-blue-600" />
+              <div className="relative">
+                <Moon className="h-[18px] w-[18px] text-blue-600" />
+                <div className="absolute -inset-1 bg-blue-600/20 blur-sm rounded-full -z-10"></div>
+              </div>
             )}
           </Button>
 
@@ -80,7 +89,10 @@ export function HeaderNav() {
                 className="rounded-full w-10 h-10 flex items-center justify-center hover:bg-accent/50 transition-all duration-300"
                 aria-label="Dil değiştir"
               >
-                <Languages className="h-[18px] w-[18px]" />
+                <div className="relative">
+                  <Languages className="h-[18px] w-[18px] text-primary" />
+                  <div className="absolute -inset-1 bg-primary/10 blur-sm rounded-full -z-10"></div>
+                </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
