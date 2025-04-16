@@ -36,15 +36,15 @@ export class FeedRepository {
           type,
           title,
           description,
-          site_favicon,
-          channel_id,
-          is_active,
+          icon,
+          category_id,
+          last_fetched,
           created_at,
           updated_at
         `
         )
         .eq("user_id", userId)
-        .eq("is_active", true)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .select(undefined, options);
 
@@ -89,7 +89,7 @@ export class FeedRepository {
           published_at,
           thumbnail,
           author,
-          categories
+          content
         `
         )
         .in("feed_id", feedIds)
@@ -179,7 +179,7 @@ export class FeedRepository {
           feeds:feed_id (
             id,
             title,
-            site_favicon,
+            icon,
             type
           )
         `
@@ -196,7 +196,7 @@ export class FeedRepository {
         is_favorite: true, // Zaten favorilerde olduğunu biliyoruz
         feed_title: item.feeds?.title || "Bilinmeyen Kaynak",
         feed_type: item.feeds?.type || "rss",
-        site_favicon: item.feeds?.site_favicon || null,
+        site_favicon: item.feeds?.icon || null,
       }));
 
       return itemsWithInteractions;
@@ -246,7 +246,7 @@ export class FeedRepository {
           feeds:feed_id (
             id,
             title,
-            site_favicon,
+            icon,
             type
           )
         `
@@ -263,7 +263,7 @@ export class FeedRepository {
         is_read_later: true, // Zaten okuma listesinde olduğunu biliyoruz
         feed_title: item.feeds?.title || "Bilinmeyen Kaynak",
         feed_type: item.feeds?.type || "rss",
-        site_favicon: item.feeds?.site_favicon || null,
+        site_favicon: item.feeds?.icon || null,
       }));
 
       return itemsWithInteractions;
@@ -289,6 +289,7 @@ export class FeedRepository {
             user_id: userId,
             item_id: itemId,
             ...updates,
+            updated_at: new Date().toISOString(),
           },
           {
             onConflict: "user_id,item_id",
@@ -341,7 +342,7 @@ export class FeedRepository {
         .select("id")
         .eq("url", feedData.url)
         .eq("user_id", feedData.user_id)
-        .eq("is_active", true)
+        .is("deleted_at", null)
         .maybeSingle();
 
       if (checkError) throw checkError;
@@ -358,20 +359,17 @@ export class FeedRepository {
           url: feedData.url,
           user_id: feedData.user_id,
           type: feedData.type,
-          title: feedData.title || null,
+          title: feedData.title || feedData.url, // URL'yi de alternatif başlık olarak kullanabiliriz
           description: feedData.description || null,
-          site_favicon: feedData.site_favicon || null,
-          is_active:
-            feedData.is_active !== undefined ? feedData.is_active : true,
+          icon: feedData.icon || null,
+          category_id: feedData.category_id || null,
           created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single();
 
       if (error) throw error;
-
-      // Add to feed processing queue (you could emit an event here)
-      // This step could be for a backend service that will fetch feed contents
 
       return data;
     } catch (error) {
@@ -388,10 +386,13 @@ export class FeedRepository {
    */
   async deleteFeed(feedId, userId) {
     try {
-      // Soft delete (is_active = false olarak işaretle)
+      // Soft delete (deleted_at alanını güncelle)
       const { error } = await this.supabase
         .from("feeds")
-        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .update({
+          deleted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", feedId)
         .eq("user_id", userId);
 
@@ -466,7 +467,7 @@ export class FeedRepository {
         .from("feeds")
         .select("id")
         .eq("user_id", userId)
-        .eq("is_active", true);
+        .is("deleted_at", null);
 
       if (feedsError) throw feedsError;
 
@@ -569,7 +570,7 @@ export class FeedRepository {
         ...item,
         feed_title: item.feeds?.title || "Bilinmeyen Kaynak",
         feed_type: item.feeds?.type || "rss",
-        site_favicon: item.feeds?.site_favicon || null,
+        site_favicon: item.feeds?.icon || null,
       }));
 
       // Toplam sayfa sayısını hesapla

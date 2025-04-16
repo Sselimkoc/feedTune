@@ -67,7 +67,25 @@
     "switchToRegister": "Don't have an account? Register",
     "switchToLogin": "Already have an account? Login",
     "loginButton": "Login",
-    "registerButton": "Register"
+    "registerButton": "Register",
+    "welcome": "Welcome to FeedTune",
+    "createAccount": "Create New Account",
+    "termsNotice": "By registering, you agree to our terms of service.",
+    "termsLink": "Terms of Service",
+    "verification": {
+      "title": "Verify Your Email",
+      "description": "Verify your email address before you start using your account",
+      "checkInbox": "Please check your inbox",
+      "emailSentTo": "We've sent a verification email to {email}",
+      "step1": "Open your email and click on the verification link",
+      "step2": "Clicking the link will redirect you to a verification page",
+      "step3": "After verification is complete, you can log in to your account",
+      "goToLogin": "Go to login page",
+      "resendEmail": "Resend verification email",
+      "resendingEmail": "Sending email...",
+      "emailResent": "Verification email has been resent. Please check your inbox.",
+      "resendError": "An error occurred while sending the verification email. Please try again later."
+    }
   },
   "feeds": {
     "title": "My Feeds",
@@ -478,11 +496,27 @@
   },
   "settings": {
     "title": "Settings",
+    "account": "Account",
+    "appearance": "Appearance",
+    "notifications": "Notifications",
     "language": "Language",
     "languageDescription": "Change the application language",
+    "profile": {
+      "title": "Profile Information",
+      "description": "View and update your profile information",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Enter your display name",
+      "email": "Email Address",
+      "emailHelp": "Your email address cannot be changed",
+      "avatarUrl": "Avatar URL",
+      "avatarUrlPlaceholder": "Enter URL for profile image",
+      "avatarHelp": "Add a valid image URL for your profile picture",
+      "updateSuccess": "Profile information updated successfully",
+      "updateError": "An error occurred while updating profile"
+    },
     "theme": {
       "title": "Theme",
-      "description": "Customize how FeedTune looks on your device",
+      "description": "Customize the appearance of FeedTune",
       "light": "Light",
       "dark": "Dark",
       "system": "System"
@@ -495,13 +529,8 @@
     "feedRefreshDescription": "How often feeds should automatically refresh",
     "minutes": "minutes",
     "hours": "hours",
-    "account": {
-      "title": "Account",
-      "description": "Manage your account settings",
-      "freePlan": "Free Plan",
-      "deleteAccount": "Delete Account",
-      "deleteAccountConfirmation": "Are you sure you want to delete your account? This action cannot be undone."
-    },
+    "deleteAccount": "Delete Account",
+    "deleteAccountConfirmation": "Are you sure you want to delete your account? This action cannot be undone.",
     "resetToDefaults": "Reset to Defaults"
   },
   "errors": {

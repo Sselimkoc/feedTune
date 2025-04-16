@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
+import { ProfileSettings } from "@/components/features/settings/ProfileSettings";
 
 export function SettingsContent() {
   const { settings, updateSettings, setLanguage } = useSettingsStore();
@@ -171,6 +172,24 @@ export function SettingsContent() {
                 <span className="text-sm">{t("settings.theme.system")}</span>
               </motion.div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Profil Settings */}
+        <Card className="overflow-hidden border-none shadow-sm transition-all duration-300">
+          <CardHeader className="bg-primary/5 pb-3">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">
+                {t("settings.profile.title")}
+              </CardTitle>
+            </div>
+            <CardDescription className="text-xs">
+              {t("settings.profile.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <ProfileSettings />
           </CardContent>
         </Card>
 

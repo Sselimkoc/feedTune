@@ -14,6 +14,7 @@ const AUTH_MESSAGES = {
   LOGIN_SUCCESS: "auth.loginSuccess",
   LOGOUT_SUCCESS: "auth.logoutSuccess",
   AUTHENTICATION_ERROR: "auth.authenticationError",
+  PROFILE_UPDATED: "auth.profileUpdated",
 };
 
 export const useAuthStore = create(
@@ -159,6 +160,45 @@ export const useAuthStore = create(
           } catch (error) {
             handleAuthError(error);
             return null;
+          }
+        },
+
+        updateProfile: async (displayName, avatarUrl) => {
+          try {
+            set({ loading: true });
+            const { user } = get();
+
+            if (!user) throw new Error("User not authenticated");
+
+            // User tablosunda profili güncelle
+            const { error: profileError } = await supabase
+              .from("users")
+              .update({
+                display_name: displayName,
+                avatar_url: avatarUrl,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", user.id);
+
+            if (profileError) throw profileError;
+
+            // Kullanıcı verisini güncelle
+            const updatedUser = {
+              ...user,
+              user_metadata: {
+                ...user.user_metadata,
+                display_name: displayName,
+                avatar_url: avatarUrl,
+              },
+            };
+
+            set({ user: updatedUser });
+            toast.success(AUTH_MESSAGES.PROFILE_UPDATED);
+            return { success: true };
+          } catch (error) {
+            return handleAuthError(error);
+          } finally {
+            set({ loading: false });
           }
         },
       };

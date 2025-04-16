@@ -21,6 +21,11 @@ export class FeedService {
    */
   async getFeeds(userId) {
     try {
+      if (!userId) {
+        console.warn("getFeeds called without userId");
+        return [];
+      }
+
       const timestamp = Date.now();
       return await this.repository.getFeeds(userId, timestamp);
     } catch (error) {
@@ -34,14 +39,20 @@ export class FeedService {
    * Feed öğelerini getirir ve her feed için öğe sayısını sınırlar
    * @param {Array<string>} feedIds Feed ID'leri
    * @param {number} limit Her feed için maksimum öğe sayısı
+   * @param {string} userId Kullanıcı ID'si
    * @returns {Promise<Array>} Feed öğeleri
    */
-  async getFeedItems(feedIds, limit = 10) {
+  async getFeedItems(feedIds, limit = 10, userId = null) {
     try {
       if (!feedIds || feedIds.length === 0) return [];
 
       const timestamp = Date.now();
-      return await this.repository.getFeedItems(feedIds, limit, timestamp);
+      return await this.repository.getFeedItems(
+        feedIds,
+        limit,
+        timestamp,
+        userId
+      );
     } catch (error) {
       console.error("Error fetching feed items:", error);
       toast.error("An error occurred while loading feed content.");
@@ -56,6 +67,11 @@ export class FeedService {
    */
   async getFavorites(userId) {
     try {
+      if (!userId) {
+        console.warn("getFavorites called without userId");
+        return [];
+      }
+
       const timestamp = Date.now();
       return await this.repository.getFavoriteItems(userId, timestamp);
     } catch (error) {
@@ -72,6 +88,11 @@ export class FeedService {
    */
   async getReadLaterItems(userId) {
     try {
+      if (!userId) {
+        console.warn("getReadLaterItems called without userId");
+        return [];
+      }
+
       const timestamp = Date.now();
       return await this.repository.getReadLaterItems(userId, timestamp);
     } catch (error) {
@@ -90,9 +111,19 @@ export class FeedService {
    */
   async toggleItemReadStatus(userId, itemId, isRead) {
     try {
-      return await this.repository.updateItemInteraction(userId, itemId, {
+      if (!userId) throw new Error("User ID is required");
+      if (!itemId) throw new Error("Item ID is required");
+
+      const updates = {
         is_read: isRead,
-      });
+        read_at: isRead ? new Date().toISOString() : null,
+      };
+
+      return await this.repository.updateItemInteraction(
+        userId,
+        itemId,
+        updates
+      );
     } catch (error) {
       console.error("Error updating read status:", error);
       toast.error("An error occurred while updating read status.");
@@ -109,6 +140,9 @@ export class FeedService {
    */
   async toggleItemFavoriteStatus(userId, itemId, isFavorite) {
     try {
+      if (!userId) throw new Error("User ID is required");
+      if (!itemId) throw new Error("Item ID is required");
+
       return await this.repository.updateItemInteraction(userId, itemId, {
         is_favorite: isFavorite,
       });
@@ -128,6 +162,9 @@ export class FeedService {
    */
   async toggleItemReadLaterStatus(userId, itemId, isReadLater) {
     try {
+      if (!userId) throw new Error("User ID is required");
+      if (!itemId) throw new Error("Item ID is required");
+
       return await this.repository.updateItemInteraction(userId, itemId, {
         is_read_later: isReadLater,
       });
@@ -143,9 +180,10 @@ export class FeedService {
    * @param {string} url Feed URL'si veya YouTube kanal bağlantısı
    * @param {string} type Feed türü (rss, youtube)
    * @param {string} userId Kullanıcı ID'si
+   * @param {string} categoryId Kategori ID'si (opsiyonel)
    * @returns {Promise<object>} Eklenen feed
    */
-  async addFeed(url, type, userId) {
+  async addFeed(url, type, userId, categoryId = null) {
     try {
       if (!userId) throw new Error("User ID is required");
       if (!url) throw new Error("Feed URL is required");
@@ -185,7 +223,8 @@ export class FeedService {
         url: feedUrl,
         user_id: userId,
         type: type,
-        is_active: true,
+        category_id: categoryId,
+        title: url, // Use URL as initial title, will be updated by feed processor
       });
     } catch (error) {
       console.error("Error adding feed:", error);
@@ -292,7 +331,7 @@ export class FeedService {
   async getPaginatedFeedItems(userId, page = 1, pageSize = 12, filters = {}) {
     try {
       if (!userId) {
-        console.log("User ID not found");
+        console.warn("getPaginatedFeedItems called without userId");
         return { data: [], total: 0, hasMore: false };
       }
 
@@ -351,6 +390,26 @@ export class FeedService {
         pageSize,
         filters
       );
+
+      // Kullanıcı etkileşimlerini ekle
+      if (result.data && result.data.length > 0) {
+        const itemIds = result.data.map((item) => item.id);
+        const interactions = await this.repository.getUserInteractions(
+          userId,
+          itemIds
+        );
+
+        result.data = result.data.map((item) => {
+          const interaction =
+            interactions.find((i) => i.item_id === item.id) || {};
+          return {
+            ...item,
+            is_read: interaction.is_read || false,
+            is_favorite: interaction.is_favorite || false,
+            is_read_later: interaction.is_read_later || false,
+          };
+        });
+      }
 
       console.log("Result from repository:", {
         itemCount: result.data?.length || 0,
@@ -431,6 +490,79 @@ export class FeedService {
     } catch (error) {
       console.error("Error toggling read later status:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Kategori ekler
+   * @param {string} name Kategori adı
+   * @param {string} userId Kullanıcı ID'si
+   * @param {string} color Renk kodu (opsiyonel)
+   * @param {string} icon İkon (opsiyonel)
+   * @returns {Promise<object>} Eklenen kategori
+   */
+  async addCategory(name, userId, color = null, icon = null) {
+    try {
+      if (!userId) throw new Error("User ID is required");
+      if (!name) throw new Error("Category name is required");
+
+      // Check if category with same name exists
+      const { data: existingCategory, error: checkError } = await this.supabase
+        .from("categories")
+        .select("id")
+        .eq("name", name)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+      if (existingCategory)
+        throw new Error("A category with this name already exists");
+
+      // Add new category
+      const { data, error } = await this.supabase
+        .from("categories")
+        .insert({
+          name,
+          user_id: userId,
+          color,
+          icon,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Error adding category:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Kullanıcının kategorilerini getirir
+   * @param {string} userId Kullanıcı ID'si
+   * @returns {Promise<Array>} Kategoriler
+   */
+  async getCategories(userId) {
+    try {
+      if (!userId) {
+        console.warn("getCategories called without userId");
+        return [];
+      }
+
+      const { data, error } = await this.supabase
+        .from("categories")
+        .select("*")
+        .eq("user_id", userId)
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      return [];
     }
   }
 }

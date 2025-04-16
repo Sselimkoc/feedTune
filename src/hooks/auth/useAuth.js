@@ -21,9 +21,11 @@ export function useAuth() {
       if (mode === "signup") {
         const result = await signUp(email, password);
         if (result.success) {
-          toast.success(t("auth.registerSuccess"));
+          toast.success(t("auth.successSignUp"));
           onSuccess?.();
+          return result;
         }
+        return result;
       } else {
         const result = await signIn(email, password);
         if (result.success) {
@@ -31,10 +33,13 @@ export function useAuth() {
           onSuccess?.();
           // Force a refresh of the current page to update UI
           router.refresh();
+          return result;
         }
+        return result;
       }
     } catch (error) {
       toast.error(error.message || t("errors.general"));
+      return { success: false, error };
     } finally {
       setIsLoading(false);
     }

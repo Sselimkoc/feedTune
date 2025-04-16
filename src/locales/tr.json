@@ -88,7 +88,25 @@
     "successSignIn": "Giriş başarılı!",
     "errorSignIn": "Giriş yapılamadı. Lütfen tekrar deneyin.",
     "successSignUp": "Kayıt başarılı!",
-    "errorSignUp": "Kayıt yapılamadı. Lütfen tekrar deneyin."
+    "errorSignUp": "Kayıt yapılamadı. Lütfen tekrar deneyin.",
+    "welcome": "FeedTune'a Hoş Geldiniz",
+    "createAccount": "Yeni Hesap Oluştur",
+    "termsNotice": "Kayıt olarak, hizmet şartlarımızı kabul etmiş olursunuz.",
+    "termsLink": "Hizmet Şartları",
+    "verification": {
+      "title": "E-posta Adresinizi Doğrulayın",
+      "description": "Hesabınızı kullanmaya başlamadan önce e-posta adresinizi doğrulayın",
+      "checkInbox": "Lütfen gelen kutunuzu kontrol edin",
+      "emailSentTo": "{{email}} adresine bir doğrulama e-postası gönderdik",
+      "step1": "E-postanızı açın ve doğrulama bağlantısına tıklayın",
+      "step2": "Bağlantıya tıklamak sizi doğrulama sayfasına yönlendirecektir",
+      "step3": "Doğrulama tamamlandıktan sonra, hesabınıza giriş yapabilirsiniz",
+      "goToLogin": "Giriş sayfasına git",
+      "resendEmail": "Doğrulama e-postasını yeniden gönder",
+      "resendingEmail": "E-posta gönderiliyor...",
+      "emailResent": "Doğrulama e-postası yeniden gönderildi. Lütfen gelen kutunuzu kontrol edin.",
+      "resendError": "Doğrulama e-postası gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin."
+    }
   },
   "feeds": {
     "title": "Beslemelerim",
@@ -553,6 +571,19 @@
     "notifications": "Bildirimler",
     "language": "Dil",
     "languageDescription": "Uygulama dilini değiştirin",
+    "profile": {
+      "title": "Profil Bilgileri",
+      "description": "Profil bilgilerinizi görüntüleyin ve güncelleyin",
+      "displayName": "Görünen İsim",
+      "displayNamePlaceholder": "Görünmesini istediğiniz ismi girin",
+      "email": "E-posta Adresi",
+      "emailHelp": "E-posta adresiniz değiştirilemez",
+      "avatarUrl": "Profil Resmi URL",
+      "avatarUrlPlaceholder": "Profil resmi için URL girin",
+      "avatarHelp": "Profil resminiz için geçerli bir görsel URL'si ekleyin",
+      "updateSuccess": "Profil bilgileri başarıyla güncellendi",
+      "updateError": "Profil güncellenirken bir hata oluştu"
+    },
     "theme": {
       "title": "Tema",
       "description": "FeedTune'un görünümünü özelleştirin",
