@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { RefreshCw } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export function DeleteFeedDialog({ open, onOpenChange, onDelete, isDeleting }) {
   const { t } = useLanguage();
@@ -34,7 +34,7 @@ export function DeleteFeedDialog({ open, onOpenChange, onDelete, isDeleting }) {
           </Button>
           <Button
             variant="destructive"
-            onClick={onDelete}
+            onClick={() => onDelete()}
             disabled={isDeleting}
           >
             {isDeleting ? (

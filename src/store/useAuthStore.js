@@ -43,11 +43,13 @@ export const useAuthStore = create(
         setSession: async (session) => {
           try {
             if (session) {
+              // Kullanıcı bilgilerini state'e kaydet
               set({
                 user: session.user,
                 session,
                 lastChecked: new Date().toISOString(),
               });
+              // Artık kullanıcı kontrol etmeye gerek yok, Supabase'in kendi tablolarını kullanıyoruz
             } else {
               set({
                 user: null,
@@ -170,17 +172,15 @@ export const useAuthStore = create(
 
             if (!user) throw new Error("User not authenticated");
 
-            // User tablosunda profili güncelle
-            const { error: profileError } = await supabase
-              .from("users")
-              .update({
+            // Kullanıcı meta verilerini güncelle
+            const { data, error } = await supabase.auth.updateUser({
+              data: {
                 display_name: displayName,
                 avatar_url: avatarUrl,
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", user.id);
+              },
+            });
 
-            if (profileError) throw profileError;
+            if (error) throw error;
 
             // Kullanıcı verisini güncelle
             const updatedUser = {

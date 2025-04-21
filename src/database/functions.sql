@@ -23,7 +23,7 @@ BEGIN
       uii.is_read,
       uii.is_favorite,
       uii.is_read_later
-    FROM user_item_interactions uii
+    FROM user_interaction uii
     WHERE uii.user_id = user_id_param
   )
   SELECT

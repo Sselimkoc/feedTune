@@ -40,7 +40,7 @@ export function MobileNavigation() {
     },
   ];
 
-  // Protected menu items - visible to logged in users  
+  // Protected menu items - visible to logged in users
   const protectedMenuItems = [
     {
       name: t("navigation.feeds"),
@@ -65,11 +65,10 @@ export function MobileNavigation() {
       name: t("navigation.settings"),
       href: "/settings",
       icon: <Settings className="w-5 h-5" />,
-      protected: true, 
+      protected: true,
     },
   ];
 
- 
   const activeMenuItems = [...publicMenuItems];
   if (user) {
     activeMenuItems.push(...protectedMenuItems);
@@ -125,7 +124,7 @@ export function MobileNavigation() {
               <div className="px-3 space-y-1">
                 {activeMenuItems.map((item) => (
                   <Link
-                    key={item.href}
+                    key={`menu-item-${item.href}`}
                     href={item.href}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
@@ -144,7 +143,7 @@ export function MobileNavigation() {
 
             <Separator />
 
-              {/* Bottom Menu */}
+            {/* Bottom Menu */}
             <div className="p-3 space-y-1">
               {/* Bottom Menu Items - Only show relevant users */}
               {bottomMenuItems.map((item) => {
@@ -154,7 +153,7 @@ export function MobileNavigation() {
 
                 return (
                   <Link
-                    key={item.href}
+                    key={`bottom-menu-${item.href}`}
                     href={item.href}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",

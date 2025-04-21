@@ -21,15 +21,17 @@ export function useFeedItems() {
       skipInvalidation = false,
     }) => {
       const supabase = createSupabaseClient();
-      const { error } = await supabase.from("user_item_interactions").upsert(
+      const { error } = await supabase.from("user_interaction").upsert(
         {
           user_id: userId,
           item_id: itemId,
+          item_type: "rss",
           is_read: isRead,
+          is_favorite: false,
+          is_read_later: false,
+          read_at: new Date().toISOString(),
         },
-        {
-          onConflict: "user_id,item_id",
-        }
+        { onConflict: "user_id, item_id" }
       );
 
       if (error) throw error;
@@ -66,15 +68,14 @@ export function useFeedItems() {
         skipInvalidation = false,
       }) => {
         const supabase = createSupabaseClient();
-        const { error } = await supabase.from("user_item_interactions").upsert(
+        const { error } = await supabase.from("user_interaction").upsert(
           {
             user_id: userId,
             item_id: itemId,
-            is_favorite: isFavorite,
+            item_type: "rss",
+            is_favorite: !isFavorite,
           },
-          {
-            onConflict: "user_id,item_id",
-          }
+          { onConflict: "user_id, item_id" }
         );
 
         if (error) throw error;
@@ -108,15 +109,14 @@ export function useFeedItems() {
         skipInvalidation = false,
       }) => {
         const supabase = createSupabaseClient();
-        const { error } = await supabase.from("user_item_interactions").upsert(
+        const { error } = await supabase.from("user_interaction").upsert(
           {
             user_id: userId,
             item_id: itemId,
-            is_read_later: isReadLater,
+            item_type: "rss",
+            is_read_later: !isReadLater,
           },
-          {
-            onConflict: "user_id,item_id",
-          }
+          { onConflict: "user_id, item_id" }
         );
 
         if (error) throw error;

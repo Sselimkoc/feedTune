@@ -48,6 +48,11 @@ export function ThemeProvider({ children }) {
     };
   }, []);
 
+  // Sadece client-side render için boş bir içerik göster
+  if (!mounted) {
+    return <div style={{ visibility: "hidden" }}>{children}</div>;
+  }
+
   return (
     <NextThemesProvider
       attribute="class"
@@ -59,9 +64,10 @@ export function ThemeProvider({ children }) {
         // Tema değişikliği olduğunda animasyonu tetikle
         handleThemeChange(theme);
       }}
+      suppressHydrationWarning={true}
     >
       {/* Tema geçiş efekti */}
-      {mounted && themeTransition && (
+      {themeTransition && (
         <div className="fixed inset-0 z-[9999] pointer-events-none theme-transition">
           <div className="absolute inset-0 bg-background opacity-0 animate-theme-fade" />
         </div>

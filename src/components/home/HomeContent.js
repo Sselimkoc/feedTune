@@ -40,30 +40,31 @@ export function HomeContent() {
     feeds,
     isFeedsLoading,
     isFeedsError,
-    refreshFeeds,
+    refreshAll,
     recentItems,
     stats,
   } = useFeedService();
 
-  const { addFeed, removeFeed, syncFeeds } = useFeedActions({
+  const { addFeed, removeFeed, syncFeeds } = useFeedActions(
     user,
-    feedService,
-    refreshAll: refreshFeeds,
-  });
+    refreshAll,
+    refreshAll,
+    feedService
+  );
 
   const handleDeleteFeed = useCallback(
-    async (feedId, feedTitle) => {
-      if (window.confirm(t("feeds.confirmDelete", { feed: feedTitle }))) {
-        try {
-          await removeFeed(feedId);
-          refreshFeeds();
-        } catch (error) {
-          console.error("Error deleting feed:", error);
-          toast.error(`${t("feeds.deleteFeedError")}: ${error.message}`);
+    async (feedId) => {
+      try {
+        await removeFeed(feedId);
+        if (typeof refreshAll === 'function') {
+          refreshAll();
         }
+      } catch (error) {
+        console.error("Error deleting feed:", error);
+        toast.error(`${t("feeds.deleteFeedError")}: ${error.message}`);
       }
     },
-    [removeFeed, refreshFeeds, t]
+    [removeFeed, refreshAll, t]
   );
 
   // Content render function
@@ -82,7 +83,7 @@ export function HomeContent() {
     }
 
     if (isFeedsError) {
-      return <ErrorState onRetry={refreshFeeds} error={isFeedsError} />;
+      return <ErrorState onRetry={refreshAll} error={isFeedsError} />;
     }
 
     if (!feeds || feeds.length === 0) {
@@ -122,7 +123,8 @@ export function HomeContent() {
         setShowDeleteDialog={setShowDeleteDialog}
         onDeleteFeed={handleDeleteFeed}
         isDeleting={false}
-        onFeedAdded={refreshFeeds}
+        onFeedAdded={refreshAll}
+        feedToDelete={feedToDelete}
       />
     </div>
   );

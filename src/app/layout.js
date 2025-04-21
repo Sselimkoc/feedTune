@@ -3,10 +3,76 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { AppLayout } from "@/components/layouts/AppLayout";
 import { ThemeProvider } from "@/components/features/theme/themeProvider";
-import { AuthProvider } from "@/components/features/auth/AuthProvider";
+import { AuthProvider } from "@/providers/AuthProvider";
 import { QueryProvider } from "@/components/features/providers/QueryProvider";
 import { LogoMigrationProvider } from "@/components/features/providers/LogoMigrationProvider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import dynamic from "next/dynamic";
+
+// Debug araçlarını yükle - Sadece ana debug yükleyici aktif
+const DebugLoader = dynamic(
+  () =>
+    process.env.NODE_ENV === "development"
+      ? import("@/components/dev/DebugLoader").then((mod) => mod.default)
+      : Promise.resolve(() => null),
+  { ssr: false }
+);
+
+// // Ana debug paneli - sadece bu aktif
+// const DevDebugPanel = dynamic(
+//   () =>
+//     process.env.NODE_ENV === "development"
+//       ? import("@/components/dev/DebugPanel").then((mod) => mod.default)
+//       : Promise.resolve(() => null),
+//   { ssr: false }
+// );
+
+// Yeni debug runner paneli
+const DevDebugRunnerPanel = dynamic(
+  () =>
+    process.env.NODE_ENV === "development"
+      ? import("@/components/dev/DebugRunnerPanel").then((mod) => mod.default)
+      : Promise.resolve(() => null),
+  { ssr: false }
+);
+
+// // Feed onarım paneli - yeni eklenen
+// const FeedSelfFixPanel = dynamic(
+//   () =>
+//     process.env.NODE_ENV === "development"
+//       ? import("@/components/dev/FeedSelfFixPanel").then((mod) => mod.default)
+//       : Promise.resolve(() => null),
+//   { ssr: false }
+// );
+
+// Diğer debug araçları devre dışı (yorum haline getirilerek)
+// Not: Diğer debug araçlarına ihtiyaç duyarsanız, aşağıdaki satırları yorum durumundan çıkarabilirsiniz
+/*
+const DevFeedDebugger = dynamic(
+  () =>
+    process.env.NODE_ENV === "development"
+      ? import("@/components/dev/FeedDebugPanel").then((mod) => mod.default)
+      : Promise.resolve(() => null),
+  { ssr: false }
+);
+
+const DevDbTestPanel = dynamic(
+  () =>
+    process.env.NODE_ENV === "development"
+      ? import("@/components/dev/DbTestPanel")
+      : Promise.resolve(() => null),
+  { ssr: false }
+);
+
+
+*/
+const DevFeedDebugInfo = dynamic(
+  () =>
+    process.env.NODE_ENV === "development"
+      ? import("@/components/dev/FeedDebugInfo").then((mod) => mod.default)
+      : Promise.resolve(() => null),
+  { ssr: false }
+);
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -63,6 +129,18 @@ export default function RootLayout({ children }) {
                       },
                     }}
                   />
+
+                  {/* Sadece ana debug araçları aktif */}
+                  <DebugLoader />
+                  {/* <DevDebugPanel /> */}
+                  <DevDebugRunnerPanel />
+                  {/* <FeedSelfFixPanel /> */}
+
+                  {/* Diğer debug panelleri devre dışı
+                  <DevFeedDebugger />
+                  <DevDbTestPanel />
+                  */}
+                  <DevFeedDebugInfo />
                 </LanguageProvider>
               </LogoMigrationProvider>
             </QueryProvider>

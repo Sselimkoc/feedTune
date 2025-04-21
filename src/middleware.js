@@ -23,8 +23,55 @@ export async function middleware(req) {
       req.nextUrl.pathname.startsWith(`${route}/`)
   );
 
+  // Eğer kullanıcı oturumu varsa, user tablosunda kaydının olduğundan emin ol
+  if (session?.user) {
+    try {
+      // Kullanıcının users tablosunda var olup olmadığını kontrol et
+      const { data: dbUser, error: dbUserError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", session.user.id)
+        .single();
+
+      if (dbUserError && dbUserError.code !== "PGRST116") {
+        console.error("Kullanıcı kontrolü sırasında hata:", dbUserError);
+      }
+
+      // Kullanıcı veritabanında yoksa ekle
+      if (!dbUser) {
+        console.log(
+          "Kullanıcı veritabanında bulunamadı, otomatik kayıt yapılıyor:",
+          session.user.id
+        );
+
+        const { error: insertError } = await supabase.from("users").insert({
+          id: session.user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+        if (insertError) {
+          console.error("Kullanıcı veritabanına eklenirken hata:", insertError);
+        } else {
+          console.log(
+            "Kullanıcı veritabanına başarıyla eklendi:",
+            session.user.id
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Kullanıcı veritabanı işlemi sırasında hata:", error);
+    }
+  }
+
   // Auth check for API routes
   if (req.nextUrl.pathname.startsWith("/api/")) {
+    // Debug endpoint'leri için istisna
+    if (req.nextUrl.pathname.startsWith("/api/debug-")) {
+      console.log("Debug API isteği algılandı, kimlik doğrulama atlanıyor");
+      return res;
+    }
+
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

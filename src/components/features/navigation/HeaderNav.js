@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,13 @@ export function HeaderNav() {
   const { language, changeLanguage, supportedLanguages } = useLanguage();
   const pathname = usePathname();
   const [showDropdown, setShowDropdown] = useState(false);
+  // Hydration uyumsuzluğunu önlemek için client-side rendering kontrolü
+  const [mounted, setMounted] = useState(false);
+
+  // Client-side rendering kontrolü
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Desteklenen diller
   const languages = Object.entries(supportedLanguages).map(
@@ -57,7 +64,7 @@ export function HeaderNav() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          {/* Tema Değiştirme */}
+          {/* Tema Değiştirme - Client-side rendering için mounted kontrolü */}
           <Button
             variant="ghost"
             size="icon"
@@ -67,16 +74,21 @@ export function HeaderNav() {
               theme === "dark" ? "Açık temaya geç" : "Koyu temaya geç"
             }
           >
-            {theme === "dark" ? (
-              <div className="relative">
-                <Sun className="h-[18px] w-[18px] text-amber-400" />
-                <div className="absolute -inset-1 bg-amber-400/20 blur-sm rounded-full -z-10"></div>
-              </div>
+            {mounted ? (
+              theme === "dark" ? (
+                <div className="relative">
+                  <Sun className="h-[18px] w-[18px] text-amber-400" />
+                  <div className="absolute -inset-1 bg-amber-400/20 blur-sm rounded-full -z-10"></div>
+                </div>
+              ) : (
+                <div className="relative">
+                  <Moon className="h-[18px] w-[18px] text-blue-600" />
+                  <div className="absolute -inset-1 bg-blue-600/20 blur-sm rounded-full -z-10"></div>
+                </div>
+              )
             ) : (
-              <div className="relative">
-                <Moon className="h-[18px] w-[18px] text-blue-600" />
-                <div className="absolute -inset-1 bg-blue-600/20 blur-sm rounded-full -z-10"></div>
-              </div>
+              // Hydration için ilk render sırasında statik içerik
+              <div className="w-[18px] h-[18px]"></div>
             )}
           </Button>
 
@@ -90,7 +102,10 @@ export function HeaderNav() {
                 aria-label="Dil değiştir"
               >
                 <div className="relative">
-                  <Languages className="h-[18px] w-[18px] text-primary" />
+                  {mounted && (
+                    <Languages className="h-[18px] w-[18px] text-primary" />
+                  )}
+                  {!mounted && <div className="h-[18px] w-[18px]"></div>}
                   <div className="absolute -inset-1 bg-primary/10 blur-sm rounded-full -z-10"></div>
                 </div>
               </Button>

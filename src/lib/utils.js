@@ -25,6 +25,23 @@ export function stripHtml(html) {
 }
 
 /**
+ * URL'nin geçerli olup olmadığını kontrol eder
+ * @param {string} url - Kontrol edilecek URL
+ * @returns {boolean} - URL geçerli mi?
+ */
+export function isValidUrl(url) {
+  if (!url) return false;
+  
+  try {
+    const urlObj = new URL(url);
+    // http veya https protokolü kullanmalı
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
  * Tarihi formatlar ve göreceli zaman bilgisi döndürür
  * @param {string|Date} date - Formatlanacak tarih
  * @param {string} language - Dil kodu (tr, en, de, vb.)

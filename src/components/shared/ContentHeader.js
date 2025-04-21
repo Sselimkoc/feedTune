@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Card } from "@/components/ui/card";
 import { ViewToggle } from "@/components/features/feeds/buttons/ViewToggle";
 import { SyncButton } from "@/components/features/feeds/buttons/SyncButton";

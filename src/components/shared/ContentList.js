@@ -37,7 +37,7 @@ const ContentList = memo(function ContentList({
   // Paylaşım işlemi
   const handleShareItem = useCallback(
     (item) => {
-      const shareUrl =  item.url;
+      const shareUrl = item.url;
       if (navigator.share && shareUrl) {
         navigator.share({
           title: item.title,

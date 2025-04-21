@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, memo } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useReadLaterScreen } from "@/hooks/features/useReadLaterScreen";
 import { useHotkeys } from "react-hotkeys-hook";
 import { BookmarkCheck } from "lucide-react";

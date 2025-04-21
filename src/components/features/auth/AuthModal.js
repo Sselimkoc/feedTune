@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,37 +98,45 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
   };
 
   // Parçacık animasyonu için
-  const particles = Array.from({ length: 6 }).map((_, i) => (
-    <motion.div
-      key={i}
-      className={`absolute rounded-full bg-primary/30 w-${2 + (i % 3)} h-${
-        2 + (i % 3)
-      }`}
-      initial={{
-        opacity: 0,
-        x: (i % 2 === 0 ? -1 : 1) * (10 + i * 5),
-        y: -5 - i * 2,
-        scale: 0,
-      }}
-      animate={{
-        opacity: [0, 0.5, 0],
-        x: (i % 2 === 0 ? -1 : 1) * (20 + i * 10),
-        y: -15 - i * 5,
-        scale: [0, 1, 0.5],
-      }}
-      transition={{
-        duration: 2,
-        delay: i * 0.2,
-        repeat: Infinity,
-        repeatType: "loop",
-        repeatDelay: i * 0.1,
-      }}
-    />
-  ));
+  const particles = Array.from({ length: 6 }).map((_, i) => {
+    // Tailwind'de geçerli bir CSS sınıfı olduğundan emin olmak için
+    // dinamik değerleri önceden tanımlayalım
+    const sizeClasses = ["w-2 h-2", "w-3 h-3", "w-4 h-4"];
+    const sizeIndex = i % 3;
+
+    return (
+      <motion.div
+        key={i}
+        className={`absolute rounded-full bg-primary/30 ${sizeClasses[sizeIndex]}`}
+        initial={{
+          opacity: 0,
+          x: (i % 2 === 0 ? -1 : 1) * (10 + i * 5),
+          y: -5 - i * 2,
+          scale: 0,
+        }}
+        animate={{
+          opacity: [0, 0.5, 0],
+          x: (i % 2 === 0 ? -1 : 1) * (20 + i * 10),
+          y: -15 - i * 5,
+          scale: [0, 1, 0.5],
+        }}
+        transition={{
+          duration: 2,
+          delay: i * 0.2,
+          repeat: Infinity,
+          repeatType: "loop",
+          repeatDelay: i * 0.1,
+        }}
+      />
+    );
+  });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
+        <DialogTitle className="sr-only">
+          {mode === "login" ? t("auth.login") : t("auth.register")}
+        </DialogTitle>
         <div className="bg-gradient-to-br from-primary/10 via-background to-background pb-6">
           {verifyingEmail ? (
             <EmailVerification

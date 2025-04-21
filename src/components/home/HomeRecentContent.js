@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import Link from "next/link";
 import Image from "next/image";
 import { cn, stripHtml } from "@/lib/utils";
@@ -80,7 +80,7 @@ export function HomeRecentContent({ recentItems, isLoading }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {recentItems.slice(0, 6).map((item, index) => (
               <motion.div
-                key={item.id}
+                key={item.id || `recent-item-${index}`}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}

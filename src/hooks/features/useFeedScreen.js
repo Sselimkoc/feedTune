@@ -29,6 +29,7 @@ export function useFeedScreen() {
     isError,
     error,
     refreshAll,
+    refreshFeed: serviceRefreshFeed,
     toggleRead,
     toggleFavorite,
     toggleReadLater,
@@ -64,11 +65,7 @@ export function useFeedScreen() {
   });
 
   const { syncFeeds, addFeed, removeFeed, markAllRead, shareItem } =
-    useFeedActions({
-      user,
-      feedService,
-      refreshAll,
-    });
+    useFeedActions(user, refreshAll, refreshAll, feedService);
 
   // İstatistikleri hesapla
   const stats = useMemo(() => {
@@ -124,6 +121,48 @@ export function useFeedScreen() {
     [feeds, resetPagination, setSelectedFeedId, setActiveFilterState]
   );
 
+  // Belirli bir feed'i yenileme fonksiyonu
+  const refreshFeed = useCallback(
+    async (feedId, skipCache = false) => {
+      if (!userId || !feedId) {
+        console.warn("refreshFeed: userId veya feedId bulunamadı");
+        return;
+      }
+
+      try {
+        console.log(`Feed yenileniyor: ${feedId}, skipCache: ${skipCache}`);
+
+        // Eğer servisin refreshFeed fonksiyonu varsa onu kullan
+        if (serviceRefreshFeed) {
+          return await serviceRefreshFeed(feedId, userId, skipCache);
+        }
+
+        // Yoksa feedService.syncFeedItems'ı direkt çağır
+        if (feedService) {
+          // Feed tipini bulalım
+          const feed = feeds?.find((f) => f.id === feedId);
+          if (!feed) {
+            console.warn(`Feed bulunamadı: ${feedId}`);
+            return;
+          }
+
+          console.log(`Feed senkronize ediliyor: ${feed.title} (${feed.type})`);
+          return await feedService.syncFeedItems(feedId, userId, feed.type, {
+            skipCache,
+          });
+        }
+
+        // Hiçbir yöntem yoksa, komple yenile
+        console.log("Özel feed yenileme bulunmadı, tüm feedler yenileniyor");
+        return await refreshAll();
+      } catch (error) {
+        console.error(`Feed yenileme hatası (ID: ${feedId}):`, error);
+        throw error;
+      }
+    },
+    [userId, feeds, serviceRefreshFeed, feedService, refreshAll]
+  );
+
   return {
     // Durum
     feeds,
@@ -158,6 +197,8 @@ export function useFeedScreen() {
     loadMoreItems,
     cleanupOldItems: serviceCleanupOldItems,
     isCleaningUp,
+    refreshAll,
+    refreshFeed,
 
     // Görünüm işlemleri
     setViewMode,

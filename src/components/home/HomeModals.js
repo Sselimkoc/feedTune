@@ -14,6 +14,7 @@ export function HomeModals({
   onDeleteFeed,
   isDeleting,
   onFeedAdded,
+  feedToDelete,
 }) {
   return (
     <>
@@ -35,7 +36,12 @@ export function HomeModals({
       <DeleteFeedDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        onDelete={onDeleteFeed}
+        onDelete={() => {
+          if (feedToDelete) {
+            onDeleteFeed(feedToDelete);
+          }
+          setShowDeleteDialog(false);
+        }}
         isDeleting={isDeleting}
       />
     </>

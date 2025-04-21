@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, memo } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useFavoritesScreen } from "@/hooks/features/useFavoritesScreen";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Bookmark } from "lucide-react";

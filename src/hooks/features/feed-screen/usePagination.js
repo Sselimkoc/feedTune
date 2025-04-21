@@ -30,30 +30,29 @@ export function usePagination({
 
   const createFilterObject = useCallback(() => {
     const filterObj = {};
-    
+
     if (selectedFeedId) {
       filterObj.selectedFeedId = selectedFeedId;
     }
-    
-    if (filters?.feedType && filters?.feedType !== 'all') {
+
+    if (filters?.feedType && filters?.feedType !== "all") {
       filterObj.feedType = filters.feedType;
-    } 
-    else if (activeFilter === "rss" || activeFilter === "youtube") {
+    } else if (activeFilter === "rss" || activeFilter === "youtube") {
       filterObj.feedType = activeFilter;
     }
-    
+
     if (filters?.feedName) {
       filterObj.feedName = filters.feedName;
     }
-    
+
     if (filters?.readStatus) {
       filterObj.readStatus = filters.readStatus;
     }
-    
+
     if (filters?.sortBy) {
       filterObj.sortBy = filters.sortBy;
     }
-    
+
     console.log("Oluşturulan filtre objesi:", filterObj);
     return filterObj;
   }, [activeFilter, filters, selectedFeedId]);
@@ -67,6 +66,16 @@ export function usePagination({
       const filterObj = createFilterObject();
       console.log("İlk yükleme için filtreler:", filterObj);
 
+      if (typeof feedService.getPaginatedFeedItems !== "function") {
+        console.error(
+          "HATA: feedService.getPaginatedFeedItems metodu bulunamadı"
+        );
+        toast.error(t("errors.loadFailed"));
+        setIsTransitioning(false);
+        setIsInitialLoading(false);
+        return;
+      }
+
       const result = await feedService.getPaginatedFeedItems(
         userId,
         1,
@@ -74,37 +83,47 @@ export function usePagination({
         filterObj
       );
 
+      console.log("Yüklenen veri sonuçları:", {
+        dataLength: result?.data?.length || 0,
+        hasYoutubeItems: result?.data?.some(
+          (item) => item.itemType === "youtube"
+        ),
+        itemTypes: result?.data
+          ?.map((item) => item.itemType)
+          .filter((value, index, self) => self.indexOf(value) === index),
+      });
+
       if (result?.data) {
         let filteredData = result.data;
-        
-        if (filters?.feedType && filters.feedType !== 'all') {
-          filteredData = filteredData.filter(item => 
-            item.feed_type === filters.feedType
+
+        if (filters?.feedType && filters.feedType !== "all") {
+          filteredData = filteredData.filter(
+            (item) => item.feed_type === filters.feedType
           );
         }
-        
-        if (filters?.readStatus === 'read') {
-          filteredData = filteredData.filter(item => item.is_read);
-        } else if (filters?.readStatus === 'unread') {
-          filteredData = filteredData.filter(item => !item.is_read);
+
+        if (filters?.readStatus === "read") {
+          filteredData = filteredData.filter((item) => item.is_read);
+        } else if (filters?.readStatus === "unread") {
+          filteredData = filteredData.filter((item) => !item.is_read);
         }
-        
+
         if (filters?.sortBy) {
-          if (filters.sortBy === 'newest') {
-            filteredData = filteredData.sort((a, b) => 
-              new Date(b.published_at) - new Date(a.published_at)
+          if (filters.sortBy === "newest") {
+            filteredData = filteredData.sort(
+              (a, b) => new Date(b.published_at) - new Date(a.published_at)
             );
-          } else if (filters.sortBy === 'oldest') {
-            filteredData = filteredData.sort((a, b) => 
-              new Date(a.published_at) - new Date(b.published_at)
+          } else if (filters.sortBy === "oldest") {
+            filteredData = filteredData.sort(
+              (a, b) => new Date(a.published_at) - new Date(b.published_at)
             );
-          } else if (filters.sortBy === 'unread') {
+          } else if (filters.sortBy === "unread") {
             filteredData = filteredData.sort((a, b) => {
               if (!a.is_read && b.is_read) return -1;
               if (a.is_read && !b.is_read) return 1;
               return new Date(b.published_at) - new Date(a.published_at);
             });
-          } else if (filters.sortBy === 'favorites') {
+          } else if (filters.sortBy === "favorites") {
             filteredData = filteredData.sort((a, b) => {
               if (a.is_favorite && !b.is_favorite) return -1;
               if (!a.is_favorite && b.is_favorite) return 1;
@@ -112,6 +131,17 @@ export function usePagination({
             });
           }
         }
+
+        // Filter için YouTube öğelerinin durumunu kontrol et
+        console.log("Filtrelenmiş veri sonuçları:", {
+          dataLength: filteredData.length,
+          hasYoutubeItems: filteredData.some(
+            (item) => item.itemType === "youtube"
+          ),
+          itemTypes: filteredData
+            .map((item) => item.itemType)
+            .filter((value, index, self) => self.indexOf(value) === index),
+        });
 
         setIsTransitioning(false);
         setPaginatedItems(filteredData);
@@ -125,7 +155,7 @@ export function usePagination({
         setLastLoadedFilters({
           feedId: selectedFeedId,
           activeFilter: activeFilter,
-          filters: {...filters},
+          filters: { ...filters },
         });
       }
     } catch (error) {
@@ -151,12 +181,12 @@ export function usePagination({
       lastLoadedFilters.feedId !== selectedFeedId ||
       lastLoadedFilters.activeFilter !== activeFilter;
 
-    console.log("Filter check:", { 
-      selectedFeedId, 
-      lastFeedId: lastLoadedFilters.feedId, 
-      activeFilter, 
+    console.log("Filter check:", {
+      selectedFeedId,
+      lastFeedId: lastLoadedFilters.feedId,
+      activeFilter,
       lastActiveFilter: lastLoadedFilters.activeFilter,
-      changed: filtersChanged 
+      changed: filtersChanged,
     });
 
     if (filtersChanged) {
@@ -190,7 +220,8 @@ export function usePagination({
       !feedService ||
       !pagination.hasMore ||
       isLoadingMore ||
-      isTransitioning
+      isTransitioning ||
+      typeof feedService.getPaginatedFeedItems !== "function"
     ) {
       return false;
     }

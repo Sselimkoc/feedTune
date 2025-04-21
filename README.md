@@ -12,6 +12,8 @@ FeedTune, modern web teknolojileriyle geliştirilmiş kullanıcı dostu bir RSS 
 - **Tema Desteği**: Karanlık ve aydınlık temalar arasında geçiş yapabilirsiniz
 - **Dil Desteği**: Uygulama farklı dil seçenekleri sunar
 - **Responsive Tasarım**: Mobil ve masaüstü cihazlara uyumlu arayüz
+- **Performans Odaklı Mimari**: Çok katmanlı mimari ve önbellekleme ile optimize edilmiş performans
+- **Paralel Veri İşleme**: RSS ve YouTube içeriklerini paralel olarak işleme
 
 ## 🔧 Kullanılan Teknolojiler
 
@@ -26,6 +28,24 @@ FeedTune, modern web teknolojileriyle geliştirilmiş kullanıcı dostu bir RSS 
 - **Form Yönetimi**: react-hook-form
 - **Şema Doğrulama**: Zod
 - **İkonlar**: Lucide React
+
+## 🏗️ Mimari Yapı
+
+FeedTune, optimum performans, bakım kolaylığı ve ölçeklenebilirlik için çok katmanlı bir mimari kullanır:
+
+1. **Veritabanı Katmanı**: Merkezi DbClient ile veritabanı etkileşimleri
+2. **Repository Katmanı**: Veri erişim ve manipülasyon mantığı
+3. **Servis Katmanı**: İş mantığı ve kullanıcı arayüzü entegrasyonu
+4. **Hook Katmanı**: React bileşenleri için veri ve eylemler
+5. **UI Katmanı**: Kullanıcı arayüzü bileşenleri
+
+### Performans İyileştirmeleri
+
+- **Merkezi Önbellekleme**: Her sorgu için önbellek desteği
+- **Paralel Sorgular**: RSS ve YouTube içerikleri eşzamanlı getirme
+- **Timestamp Tabanlı Değişiklik Takibi**: Yalnızca yeni/değişen veriyi getirme
+- **Optimistic Updates**: Sunucu yanıtı beklenmeden arayüzü güncelleme
+- **Toplu Veri İşleme**: Büyük veri kümeleri için optimize edilmiş işleme
 
 ## 📂 Proje Yapısı
 
@@ -43,13 +63,17 @@ src/
 │   ├── ui/               # Temel UI bileşenleri
 │   ├── layout/           # Düzen bileşenleri
 │   └── features/         # Özellik bileşenleri
+├── debug/                # Hata ayıklama araçları ve yardımcılar
 ├── hooks/                # Özel React hookları
+│   └── features/         # Özelliklerle ilgili hooklar
 ├── lib/                  # Yardımcı fonksiyonlar ve kütüphaneler
+│   └── db/               # Veritabanı bağlantı ve istemcisi
 ├── locales/              # Dil dosyaları
 ├── providers/            # Context sağlayıcılar
+├── repositories/         # Veri erişim katmanı
+├── services/             # Servis katmanı ve harici servislerle iletişim
 ├── store/                # Zustand durum mağazaları
-├── database/             # Veritabanı bağlantı ve modelleri
-└── services/             # Harici servislerle iletişim
+└── docs/                 # Dokümantasyon dosyaları
 ```
 
 ## 🏁 Başlangıç
@@ -114,6 +138,19 @@ src/
 1. Herhangi bir içeriğin yanındaki "Daha Sonra Oku" simgesine tıklayın
 2. Bu içerikleri "Daha Sonra Oku" sayfasında bulabilirsiniz
 
+## 📚 Dokümantasyon
+
+Daha detaylı teknik bilgi için:
+
+- [Veritabanı Mimarisi](src/docs/DATABASE_ARCHITECTURE.md)
+- [Geliştirilmiş Mimari](src/docs/ENHANCED_ARCHITECTURE.md)
+- [Performans Optimizasyonları](src/docs/PERFORMANCE.md)
+
+### Geliştirici Belgeleri
+
+- [Hata Ayıklama Rehberi](src/docs/DEBUGGING_GUIDE.md) - Veri akışı sorunları ve çözüm önerileri
+- [Sistem Tanılama](src/debug/feedDebugger.js) - Gelişmiş tanılama ve hata ayıklama araçları
+
 ## 💡 Gelecek Özellikler
 
 - [ ] RSS içeriklerini otomatik güncelleme
@@ -123,6 +160,8 @@ src/
 - [ ] Daha gelişmiş kategorilendirme
 - [ ] İçerik önerileri
 - [ ] Offline modu
+- [x] Performans optimizasyonları
+- [x] Geliştirilmiş veritabanı mimarisi
 
 ## 🤝 Katkıda Bulunma
 
