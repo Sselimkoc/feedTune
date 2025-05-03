@@ -23,7 +23,7 @@ import {
   BookOpen,
   BarChart3,
 } from "lucide-react";
-import { youtubeService } from "@/services/youtubeService";
+import { youtubeService } from "@/lib/youtube/service";
 import Image from "next/image";
 
 export const FeedSidebar = memo(function FeedSidebar({

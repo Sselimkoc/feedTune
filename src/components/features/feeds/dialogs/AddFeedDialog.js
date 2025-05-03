@@ -41,7 +41,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Users2, Film, Calendar, AlignLeft } from "lucide-react";
 import axios from "axios";
-import { youtubeService } from "@/services/youtubeService";
+import { youtubeService } from "@/lib/youtube/service";
 
 export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
   const { t } = useLanguage();
@@ -242,7 +242,7 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
       // Önbellekten bulunamazsa veya anahtar kelime araması ise API'yi kullan
       const payload = isUrl ? { query: youtubeUrl } : { keyword: youtubeUrl };
 
-      const response = await fetch("/api/youtube-search", {
+      const response = await fetch("/api/youtube/search", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

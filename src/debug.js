@@ -416,7 +416,7 @@ export async function testYoutubeFeeds(userId) {
           try {
             // İlk feed'i API ile test et
             const testFeed = feeds[0];
-            const response = await fetch("/api/youtube-to-rss", {
+            const response = await fetch("/api/youtube/to-rss", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -546,7 +546,7 @@ export async function diagnoseYoutubeFeed(feedId, userId) {
 
         // 3. RSS beslemeyi ayrıştırmayı dene
         try {
-          const response = await fetch("/api/youtube-to-rss", {
+          const response = await fetch("/api/youtube/to-rss", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

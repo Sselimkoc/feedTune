@@ -90,7 +90,7 @@ export function useFeedActions(
         ) {
           try {
             // YouTube to RSS API'sini kullan
-            const response = await fetch("/api/youtube-to-rss", {
+            const response = await fetch("/api/youtube/to-rss", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -129,10 +129,12 @@ export function useFeedActions(
         toast.success(t("success.feedAdded.description"));
 
         // Dashboard'u güncelle
-        if (typeof refreshFeeds === 'function') {
+        if (typeof refreshFeeds === "function") {
           refreshFeeds();
         } else {
-          console.warn("refreshFeeds fonksiyonu tanımlı değil veya bir fonksiyon değil");
+          console.warn(
+            "refreshFeeds fonksiyonu tanımlı değil veya bir fonksiyon değil"
+          );
         }
 
         return { success: true, feed: result };
@@ -210,10 +212,12 @@ export function useFeedActions(
         toast.success(t("success.feedRemoved.description"));
 
         // Dashboard'u güncelle
-        if (typeof refreshFeeds === 'function') {
+        if (typeof refreshFeeds === "function") {
           refreshFeeds();
         } else {
-          console.warn("refreshFeeds fonksiyonu tanımlı değil veya bir fonksiyon değil");
+          console.warn(
+            "refreshFeeds fonksiyonu tanımlı değil veya bir fonksiyon değil"
+          );
         }
 
         return { success: true };
@@ -295,10 +299,12 @@ export function useFeedActions(
           t("feeds.allItemsMarkedRead", { count: itemsToMark.length })
         );
 
-        if (typeof refreshItems === 'function') {
+        if (typeof refreshItems === "function") {
           refreshItems();
         } else {
-          console.warn("refreshItems fonksiyonu tanımlı değil veya bir fonksiyon değil");
+          console.warn(
+            "refreshItems fonksiyonu tanımlı değil veya bir fonksiyon değil"
+          );
         }
       } catch (error) {
         console.error("Mark all read error:", error);

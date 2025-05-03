@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isValidUrl } from "@/lib/utils";
-import { youtubeService } from "@/services/youtubeService";
+import { youtubeService } from "@/lib/youtube/service";
 
 /**
  * YouTube kanalı aramak için API endpoint
@@ -35,7 +35,7 @@ export async function POST(request) {
     if (url) {
       if (!isValidUrl(url)) {
         console.error(`Geçersiz URL: ${url}`);
-      return NextResponse.json(
+        return NextResponse.json(
           {
             success: false,
             error: "Geçerli bir URL belirtmelisiniz",
@@ -124,7 +124,7 @@ async function fetchYouTubeChannelSearch(query) {
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-      }/api/youtube-channel-search`,
+      }/api/youtube/channel-search`,
       {
         method: "POST",
         headers: {

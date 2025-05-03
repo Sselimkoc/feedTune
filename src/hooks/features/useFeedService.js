@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { feedService } from "@/services/feedService";
-import { youtubeService } from "@/services/youtubeService";
+import { youtubeService } from "@/lib/youtube/service";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
 import { useLanguage } from "@/hooks/useLanguage";
