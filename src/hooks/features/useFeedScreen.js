@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useFeedService } from "./useFeedService";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -8,6 +8,49 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useFilters } from "./feed-screen/useFilters";
 import { usePagination } from "./feed-screen/usePagination";
 import { useFeedActions } from "./feed-screen/useFeedActions";
+
+// Önbellek anahtarı ve sabit TTL süreleri
+const CACHE_KEYS = {
+  FEED_SCREEN_STATE: "feed-screen-state",
+  FEED_SCREEN_ITEMS: "feed-screen-items",
+};
+
+const CACHE_TTL = {
+  SHORT: 1000 * 60 * 1, // 1 dakika
+  MEDIUM: 1000 * 60 * 5, // 5 dakika
+};
+
+// Yerel önbelleğe erişim yardımcı fonksiyonları
+const getLocalCache = (key, defaultValue = null) => {
+  try {
+    const cachedData = localStorage.getItem(key);
+    if (!cachedData) return defaultValue;
+
+    const { expiry, data } = JSON.parse(cachedData);
+    if (expiry < Date.now()) {
+      localStorage.removeItem(key);
+      return defaultValue;
+    }
+
+    return data;
+  } catch (error) {
+    console.warn(`Cache error for ${key}:`, error);
+    return defaultValue;
+  }
+};
+
+const setLocalCache = (key, data, ttl = CACHE_TTL.MEDIUM) => {
+  try {
+    const cacheData = {
+      expiry: Date.now() + ttl,
+      data,
+    };
+
+    localStorage.setItem(key, JSON.stringify(cacheData));
+  } catch (error) {
+    console.warn(`Failed to set cache for ${key}:`, error);
+  }
+};
 
 /**
  * Feed ekranı için özelleştirilmiş hook
@@ -18,6 +61,13 @@ export function useFeedScreen() {
   const searchParams = useSearchParams();
   const { user } = useAuthStore();
   const userId = user?.id;
+  const isInitialRenderRef = useRef(true);
+  const feedServiceRef = useRef(null);
+
+  // Yükleme durumları için referans değerleri
+  const prevSelectedFeedIdRef = useRef(null);
+  const prevActiveFilterRef = useRef(null);
+  const initialLoadCompletedRef = useRef(false);
 
   // Feed servisini kullan
   const {
@@ -39,11 +89,38 @@ export function useFeedScreen() {
     feedService,
   } = useFeedService() || {};
 
-  // State yönetimi
-  const [selectedFeedId, setSelectedFeedId] = useState(null);
-  const [viewMode, setViewMode] = useState("grid");
-  const [activeFilter, setActiveFilterState] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  // feedService referansını güncelle
+  useEffect(() => {
+    if (feedService && feedService !== feedServiceRef.current) {
+      feedServiceRef.current = feedService;
+    }
+  }, [feedService]);
+
+  // State yönetimi - Önbellekten başlangıç durumunu yükle
+  const [selectedFeedId, setSelectedFeedId] = useState(() => {
+    // URL'den feed ID'sini kontrol et
+    const feedIdFromUrl = searchParams?.get("feedId");
+    if (feedIdFromUrl) return feedIdFromUrl;
+
+    // Önbellekten yükle
+    const cachedState = getLocalCache(CACHE_KEYS.FEED_SCREEN_STATE);
+    return cachedState?.selectedFeedId || null;
+  });
+
+  const [viewMode, setViewMode] = useState(() => {
+    const cachedState = getLocalCache(CACHE_KEYS.FEED_SCREEN_STATE);
+    return cachedState?.viewMode || "grid";
+  });
+
+  const [activeFilter, setActiveFilterState] = useState(() => {
+    const cachedState = getLocalCache(CACHE_KEYS.FEED_SCREEN_STATE);
+    return cachedState?.activeFilter || "all";
+  });
+
+  const [searchQuery, setSearchQuery] = useState(() => {
+    const cachedState = getLocalCache(CACHE_KEYS.FEED_SCREEN_STATE);
+    return cachedState?.searchQuery || "";
+  });
 
   // Alt hook'ları kullan
   const { filters, applyFilters, resetFilters } = useFilters();
@@ -57,7 +134,7 @@ export function useFeedScreen() {
     loadMoreItems,
     resetPagination,
   } = usePagination({
-    feedService,
+    feedService: feedServiceRef.current,
     userId: user?.id,
     selectedFeedId,
     activeFilter,
@@ -67,7 +144,46 @@ export function useFeedScreen() {
   const { syncFeeds, addFeed, removeFeed, markAllRead, shareItem } =
     useFeedActions(user, refreshAll, refreshAll, feedService);
 
-  // İstatistikleri hesapla
+  // State'i önbelleğe kaydet
+  useEffect(() => {
+    if (isInitialRenderRef.current) {
+      isInitialRenderRef.current = false;
+      return;
+    }
+
+    // Temel durumu önbelleğe kaydet
+    setLocalCache(
+      CACHE_KEYS.FEED_SCREEN_STATE,
+      {
+        selectedFeedId,
+        viewMode,
+        activeFilter,
+        searchQuery,
+      },
+      CACHE_TTL.MEDIUM
+    );
+  }, [selectedFeedId, viewMode, activeFilter, searchQuery]);
+
+  // Feed öğelerini önbelleğe kaydet
+  useEffect(() => {
+    if (paginatedItems?.length > 0 && !isLoadingMore && !isTransitioning) {
+      setLocalCache(
+        `${CACHE_KEYS.FEED_SCREEN_ITEMS}_${activeFilter}_${
+          selectedFeedId || "all"
+        }`,
+        paginatedItems,
+        CACHE_TTL.SHORT
+      );
+    }
+  }, [
+    paginatedItems,
+    isLoadingMore,
+    isTransitioning,
+    activeFilter,
+    selectedFeedId,
+  ]);
+
+  // İstatistikleri hesapla - Memoize ile performans iyileştirmesi
   const stats = useMemo(() => {
     if (serviceStats) return serviceStats;
 
@@ -81,16 +197,28 @@ export function useFeedScreen() {
     };
   }, [serviceStats, items, favorites, readLaterItems]);
 
-  // URL'den feed ID'sini al
+  // URL'den feed ID'sini al - Performans için iyileştirildi
   useEffect(() => {
-    const feedId = searchParams.get("feedId");
-    if (feedId) {
-      setSelectedFeedId(feedId);
-    } else {
-      // Filtre yoksa hiçbir feed seçilmemeli
-      setSelectedFeedId(null);
+    const feedId = searchParams?.get("feedId");
+
+    if (feedId !== selectedFeedId) {
+      console.log(`URL feed ID değişti: ${feedId}`);
+      prevSelectedFeedIdRef.current = selectedFeedId;
+      setSelectedFeedId(feedId || null);
+
+      // URL'den feed ID değiştiğinde filtre tipini resetle
+      if (feedId) {
+        // Eğer bir feed seçiliyse, feed tipini bul
+        const selectedFeed = feeds?.find((feed) => feed.id === feedId);
+        if (selectedFeed) {
+          setActiveFilterState(selectedFeed.type);
+        }
+      } else {
+        // Feed seçili değilse "all" filtresi kullan
+        setActiveFilterState("all");
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, feeds]);
 
   // Seçili feed'i bul
   const selectedFeed = useMemo(() => {
@@ -98,9 +226,19 @@ export function useFeedScreen() {
     return feeds.find((feed) => feed.id === selectedFeedId);
   }, [feeds, selectedFeedId]);
 
-  // setActiveFilter fonksiyonunu tanımla (resetPagination tanımlandıktan sonra)
+  // setActiveFilter fonksiyonunu tanımla - performans iyileştirmeli
   const setActiveFilter = useCallback(
     (feedId) => {
+      // Aynı feedId seçiliyse hiçbir şey yapma
+      if (feedId === selectedFeedId) {
+        console.log("Aynı feed seçildi, işlem atlanıyor");
+        return;
+      }
+
+      console.log(`Feed filtresi değişti: ${feedId}`);
+      prevSelectedFeedIdRef.current = selectedFeedId;
+      prevActiveFilterRef.current = activeFilter;
+
       // feedId null ise tüm beslemeleri göster
       setSelectedFeedId(feedId);
 
@@ -115,13 +253,20 @@ export function useFeedScreen() {
         }
       }
 
+      // Önbellekten önceden yüklenmiş feed öğeleri varsa, kullan
+      const cachedItems = getLocalCache(
+        `${CACHE_KEYS.FEED_SCREEN_ITEMS}_${selectedFeed?.type || "all"}_${
+          feedId || "all"
+        }`
+      );
+
       // Sayfalama durumunu sıfırla
       resetPagination?.();
     },
-    [feeds, resetPagination, setSelectedFeedId, setActiveFilterState]
+    [feeds, resetPagination, selectedFeedId, activeFilter]
   );
 
-  // Belirli bir feed'i yenileme fonksiyonu
+  // Belirli bir feed'i yenileme fonksiyonu - Performans iyileştirmeleri
   const refreshFeed = useCallback(
     async (feedId, skipCache = false) => {
       if (!userId || !feedId) {
@@ -138,7 +283,7 @@ export function useFeedScreen() {
         }
 
         // Yoksa feedService.syncFeedItems'ı direkt çağır
-        if (feedService) {
+        if (feedServiceRef.current) {
           // Feed tipini bulalım
           const feed = feeds?.find((f) => f.id === feedId);
           if (!feed) {
@@ -147,20 +292,39 @@ export function useFeedScreen() {
           }
 
           console.log(`Feed senkronize ediliyor: ${feed.title} (${feed.type})`);
-          return await feedService.syncFeedItems(feedId, userId, feed.type, {
-            skipCache,
-          });
+
+          // Bu feed için önbelleği temizle
+          localStorage.removeItem(
+            `${CACHE_KEYS.FEED_SCREEN_ITEMS}_${feed.type}_${feedId}`
+          );
+
+          return await feedServiceRef.current.syncFeedItems(
+            feedId,
+            userId,
+            feed.type,
+            {
+              skipCache,
+            }
+          );
         }
 
         // Hiçbir yöntem yoksa, komple yenile
         console.log("Özel feed yenileme bulunmadı, tüm feedler yenileniyor");
+
+        // Önbelleği temizle
+        Object.values(CACHE_KEYS).forEach((key) => {
+          if (key.startsWith("feed-screen-items")) {
+            localStorage.removeItem(key);
+          }
+        });
+
         return await refreshAll();
       } catch (error) {
         console.error(`Feed yenileme hatası (ID: ${feedId}):`, error);
         throw error;
       }
     },
-    [userId, feeds, serviceRefreshFeed, feedService, refreshAll]
+    [userId, feeds, serviceRefreshFeed, refreshAll]
   );
 
   return {

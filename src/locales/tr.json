@@ -235,6 +235,7 @@
     "loadMoreManually": "Daha Fazla Göster",
     "scrollToLoadMore": "Daha fazla yüklemek için kaydırın",
     "noMoreItems": "Tüm içerikler yüklendi",
+    "endOfContent": "İçeriğin sonu",
     "emptyFeedTitle": "Feed İçeriği Bulunamadı",
     "emptyFeedDescription": "Bu feed için görüntülenecek içerik bulunamadı. Daha sonra tekrar kontrol edin veya beklemeyi deneyin.",
     "emptyFavoritesTitle": "Favorilerde İçerik Yok",
@@ -277,7 +278,17 @@
     "refreshing": "Besleme Yenileniyor",
     "refreshNoCache": "Önbelleği Atlayarak Yenile",
     "refreshingNoCache": "Önbellek Atlanarak Yenileniyor",
-    "noFeedSelected": "Hiçbir besleme seçilmedi"
+    "noFeedSelected": "Hiçbir besleme seçilmedi",
+    "content": {
+      "imageAlt": "İçerik resmi",
+      "titleNotFound": "Başlık bulunamadı",
+      "shorts": "Shorts",
+      "errors": {
+        "dateFormat": "Tarih formatlanırken hata oluştu",
+        "favoriteToggle": "Favori değiştirme hatası",
+        "readLaterToggle": "Daha sonra oku değiştirme hatası"
+      }
+    }
   },
   "home": {
     "title": "Ana Sayfa",

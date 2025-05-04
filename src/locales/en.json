@@ -362,7 +362,20 @@
     "refreshingFeedWithoutCache": "Refreshing Bypassing Cache",
     "noFeedSelected": "No feed selected",
     "refreshingHurriyetFeed": "Refreshing Hürriyet feed bypassing cache...",
-    "tryRefreshHurriyetWithoutCache": "Try refreshing Hürriyet feed bypassing cache"
+    "tryRefreshHurriyetWithoutCache": "Try refreshing Hürriyet feed bypassing cache",
+    "unreadFirst": "Unread First",
+    "endOfContent": "End of content",
+    "loadMore": "Load More",
+    "content": {
+      "imageAlt": "Content image",
+      "titleNotFound": "Title not found",
+      "shorts": "Shorts",
+      "errors": {
+        "dateFormat": "Error formatting date",
+        "favoriteToggle": "Error toggling favorite status",
+        "readLaterToggle": "Error toggling read later status"
+      }
+    }
   },
   "home": {
     "title": "Manage Your Content with FeedTune",

@@ -1,8 +1,52 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/hooks/useLanguage";
+
+// Yerel depolama ile önbellek yönetimi için sabitler
+const CACHE_KEYS = {
+  ITEMS: "feed-pagination-items",
+  PAGE_STATE: "feed-pagination-state",
+};
+
+const CACHE_TTL = 1000 * 60 * 5; // 5 dakika
+
+// Önbelleğe alma yardımcıları
+const getLocalCache = (key, defaultValue = null) => {
+  try {
+    if (typeof window === "undefined") return defaultValue;
+
+    const cachedData = localStorage.getItem(key);
+    if (!cachedData) return defaultValue;
+
+    const { expiry, data } = JSON.parse(cachedData);
+    if (expiry < Date.now()) {
+      localStorage.removeItem(key);
+      return defaultValue;
+    }
+
+    return data;
+  } catch (error) {
+    console.warn(`Pagination cache error (${key}):`, error);
+    return defaultValue;
+  }
+};
+
+const setLocalCache = (key, data) => {
+  try {
+    if (typeof window === "undefined") return;
+
+    const cacheData = {
+      expiry: Date.now() + CACHE_TTL,
+      data,
+    };
+
+    localStorage.setItem(key, JSON.stringify(cacheData));
+  } catch (error) {
+    console.warn(`Failed to cache pagination data (${key}):`, error);
+  }
+};
 
 export function usePagination({
   feedService,
@@ -12,22 +56,91 @@ export function usePagination({
   filters,
 }) {
   const { t } = useLanguage();
-  const [paginatedItems, setPaginatedItems] = useState([]);
+  const isFirstLoad = useRef(true);
+  const prevConfigRef = useRef({ selectedFeedId, activeFilter });
+  const loadingTimerRef = useRef(null);
+
+  // Filtreleme durumuna özgü önbellek anahtarı oluştur
+  const cacheKey = useMemo(() => {
+    const filterStr = JSON.stringify({
+      selectedFeedId: selectedFeedId || "all",
+      activeFilter: activeFilter || "all",
+      readStatus: filters?.readStatus || "all",
+      feedType: filters?.feedType || "all",
+      sortBy: filters?.sortBy || "newest",
+    });
+
+    return `${CACHE_KEYS.ITEMS}_${userId}_${btoa(filterStr)}`;
+  }, [userId, selectedFeedId, activeFilter, filters]);
+
+  // Sayfalama durumu
+  const [paginatedItems, setPaginatedItems] = useState(() => {
+    // İlk yüklemede önbellekten verileri almayı dene
+    return getLocalCache(cacheKey, []);
+  });
+
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [lastLoadedFilters, setLastLoadedFilters] = useState({
-    feedId: null,
-    activeFilter: null,
+
+  const [pagination, setPagination] = useState(() => {
+    // Sayfalama durumunu önbellekten getir veya varsayılan değerleri kullan
+    const cachedState = getLocalCache(CACHE_KEYS.PAGE_STATE);
+    return (
+      cachedState || {
+        page: 1,
+        pageSize: 12,
+        total: 0,
+        hasMore: true,
+      }
+    );
   });
 
-  const [pagination, setPagination] = useState({
-    page: 1,
-    pageSize: 12,
-    total: 0,
-    hasMore: true,
-  });
+  // Filtre değişikliğini algıla ve yeniden yükleme yap
+  useEffect(() => {
+    const configChanged =
+      prevConfigRef.current.selectedFeedId !== selectedFeedId ||
+      prevConfigRef.current.activeFilter !== activeFilter;
 
+    if (configChanged) {
+      console.log("Feed filtreleri değişti, içerik temizleniyor");
+
+      // Şu anki yapılandırmayı kaydet
+      prevConfigRef.current = { selectedFeedId, activeFilter };
+
+      // Yükleme durumunu ayarla
+      setIsTransitioning(true);
+
+      // Önce önbellekten verileri kontrol et
+      const cachedItems = getLocalCache(cacheKey, null);
+      if (cachedItems && cachedItems.length > 0) {
+        console.log("Önbellekten veriler yükleniyor", {
+          itemCount: cachedItems.length,
+        });
+
+        setPaginatedItems(cachedItems);
+        setIsInitialLoading(false);
+        setIsTransitioning(false);
+
+        return;
+      }
+
+      // Önbellekte veri yoksa temizle ve yeni yükleme başlat
+      setPaginatedItems([]);
+      setPagination((prev) => ({ ...prev, page: 1 }));
+
+      // Yükleme için kısa bir gecikme ile kullanıcı deneyimini iyileştir
+      if (loadingTimerRef.current) {
+        clearTimeout(loadingTimerRef.current);
+      }
+
+      loadingTimerRef.current = setTimeout(() => {
+        loadInitialItems();
+      }, 100);
+    }
+  }, [selectedFeedId, activeFilter, cacheKey]);
+
+  // Filtre objesi oluştur
   const createFilterObject = useCallback(() => {
     const filterObj = {};
 
@@ -53,12 +166,15 @@ export function usePagination({
       filterObj.sortBy = filters.sortBy;
     }
 
-    console.log("Oluşturulan filtre objesi:", filterObj);
     return filterObj;
   }, [activeFilter, filters, selectedFeedId]);
 
+  // İlk içerikleri yükle - performans için optimize edildi
   const loadInitialItems = useCallback(async () => {
-    if (!userId || !feedService) return;
+    if (!userId || !feedService) {
+      setIsInitialLoading(false);
+      return;
+    }
 
     try {
       setIsInitialLoading(true);
@@ -76,6 +192,7 @@ export function usePagination({
         return;
       }
 
+      // API'den verileri getir
       const result = await feedService.getPaginatedFeedItems(
         userId,
         1,
@@ -83,67 +200,11 @@ export function usePagination({
         filterObj
       );
 
-      console.log("Yüklenen veri sonuçları:", {
-        dataLength: result?.data?.length || 0,
-        hasYoutubeItems: result?.data?.some(
-          (item) => item.itemType === "youtube"
-        ),
-        itemTypes: result?.data
-          ?.map((item) => item.itemType)
-          .filter((value, index, self) => self.indexOf(value) === index),
-      });
-
       if (result?.data) {
-        let filteredData = result.data;
+        // Client-side filtreleme
+        let filteredData = filterItemsClientSide(result.data);
 
-        if (filters?.feedType && filters.feedType !== "all") {
-          filteredData = filteredData.filter(
-            (item) => item.feed_type === filters.feedType
-          );
-        }
-
-        if (filters?.readStatus === "read") {
-          filteredData = filteredData.filter((item) => item.is_read);
-        } else if (filters?.readStatus === "unread") {
-          filteredData = filteredData.filter((item) => !item.is_read);
-        }
-
-        if (filters?.sortBy) {
-          if (filters.sortBy === "newest") {
-            filteredData = filteredData.sort(
-              (a, b) => new Date(b.published_at) - new Date(a.published_at)
-            );
-          } else if (filters.sortBy === "oldest") {
-            filteredData = filteredData.sort(
-              (a, b) => new Date(a.published_at) - new Date(b.published_at)
-            );
-          } else if (filters.sortBy === "unread") {
-            filteredData = filteredData.sort((a, b) => {
-              if (!a.is_read && b.is_read) return -1;
-              if (a.is_read && !b.is_read) return 1;
-              return new Date(b.published_at) - new Date(a.published_at);
-            });
-          } else if (filters.sortBy === "favorites") {
-            filteredData = filteredData.sort((a, b) => {
-              if (a.is_favorite && !b.is_favorite) return -1;
-              if (!a.is_favorite && b.is_favorite) return 1;
-              return new Date(b.published_at) - new Date(a.published_at);
-            });
-          }
-        }
-
-        // Filter için YouTube öğelerinin durumunu kontrol et
-        console.log("Filtrelenmiş veri sonuçları:", {
-          dataLength: filteredData.length,
-          hasYoutubeItems: filteredData.some(
-            (item) => item.itemType === "youtube"
-          ),
-          itemTypes: filteredData
-            .map((item) => item.itemType)
-            .filter((value, index, self) => self.indexOf(value) === index),
-        });
-
-        setIsTransitioning(false);
+        // Durum güncellemelerini toplu olarak yap
         setPaginatedItems(filteredData);
         setPagination((prev) => ({
           ...prev,
@@ -152,17 +213,20 @@ export function usePagination({
           hasMore: result.hasMore || false,
         }));
 
-        setLastLoadedFilters({
-          feedId: selectedFeedId,
-          activeFilter: activeFilter,
-          filters: { ...filters },
+        // Önbelleğe al
+        setLocalCache(cacheKey, filteredData);
+        setLocalCache(CACHE_KEYS.PAGE_STATE, {
+          page: 1,
+          pageSize: pagination.pageSize,
+          total: filteredData.length || 0,
+          hasMore: result.hasMore || false,
         });
       }
     } catch (error) {
       console.error("İçerik yükleme hatası:", error);
       toast.error(t("errors.loadFailed"));
-      setIsTransitioning(false);
     } finally {
+      setIsTransitioning(false);
       setIsInitialLoading(false);
     }
   }, [
@@ -171,49 +235,80 @@ export function usePagination({
     pagination.pageSize,
     t,
     createFilterObject,
-    selectedFeedId,
-    activeFilter,
-    filters,
+    cacheKey,
   ]);
 
+  // İlk bileşen mount olduğunda içerikleri yükle
   useEffect(() => {
-    const filtersChanged =
-      lastLoadedFilters.feedId !== selectedFeedId ||
-      lastLoadedFilters.activeFilter !== activeFilter;
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
 
-    console.log("Filter check:", {
-      selectedFeedId,
-      lastFeedId: lastLoadedFilters.feedId,
-      activeFilter,
-      lastActiveFilter: lastLoadedFilters.activeFilter,
-      changed: filtersChanged,
-    });
+      // Önbellekten veriler varsa, API çağrısını atla
+      if (paginatedItems.length > 0) {
+        console.log(
+          "İlk yükleme önbellekten tamamlandı:",
+          paginatedItems.length
+        );
+        setIsInitialLoading(false);
+        return;
+      }
 
-    if (filtersChanged) {
-      console.log("Filtreler değişti, geçiş başlatılıyor...");
-      setIsTransitioning(true);
-      setPaginatedItems([]);
-      setPagination((prev) => ({ ...prev, page: 1 }));
-
-      const timer = setTimeout(() => {
-        loadInitialItems();
-      }, 100);
-
-      return () => clearTimeout(timer);
+      loadInitialItems();
     }
-  }, [
-    selectedFeedId,
-    activeFilter,
-    loadInitialItems,
-    lastLoadedFilters.feedId,
-    lastLoadedFilters.activeFilter,
-  ]);
+  }, [loadInitialItems, paginatedItems.length]);
 
-  useEffect(() => {
-    console.log("Component mounted, initial load starting");
-    loadInitialItems();
-  }, [loadInitialItems]);
+  // Client-side filtreleme - İstemci tarafında filtreleme için optimize edilmiş fonksiyon
+  const filterItemsClientSide = useCallback(
+    (items) => {
+      if (!Array.isArray(items)) return [];
 
+      let filteredData = [...items];
+
+      // Feed türü filtreleme
+      if (filters?.feedType && filters.feedType !== "all") {
+        filteredData = filteredData.filter(
+          (item) => item.feed_type === filters.feedType
+        );
+      }
+
+      // Okunma durumu filtreleme
+      if (filters?.readStatus === "read") {
+        filteredData = filteredData.filter((item) => item.is_read);
+      } else if (filters?.readStatus === "unread") {
+        filteredData = filteredData.filter((item) => !item.is_read);
+      }
+
+      // Sıralama
+      if (filters?.sortBy) {
+        if (filters.sortBy === "newest") {
+          filteredData.sort(
+            (a, b) => new Date(b.published_at) - new Date(a.published_at)
+          );
+        } else if (filters.sortBy === "oldest") {
+          filteredData.sort(
+            (a, b) => new Date(a.published_at) - new Date(b.published_at)
+          );
+        } else if (filters.sortBy === "unread") {
+          filteredData.sort((a, b) => {
+            if (!a.is_read && b.is_read) return -1;
+            if (a.is_read && !b.is_read) return 1;
+            return new Date(b.published_at) - new Date(a.published_at);
+          });
+        } else if (filters.sortBy === "favorites") {
+          filteredData.sort((a, b) => {
+            if (a.is_favorite && !b.is_favorite) return -1;
+            if (!a.is_favorite && b.is_favorite) return 1;
+            return new Date(b.published_at) - new Date(a.published_at);
+          });
+        }
+      }
+
+      return filteredData;
+    },
+    [filters]
+  );
+
+  // Daha fazla öğe yükle - performans iyileştirmeli
   const loadMoreItems = useCallback(async () => {
     if (
       !userId ||
@@ -241,20 +336,57 @@ export function usePagination({
       );
 
       if (result?.data?.length > 0) {
-        setPaginatedItems((prev) => [...prev, ...result.data]);
+        // Client-side filtreleme ile veriyi işle
+        const filteredNewItems = filterItemsClientSide(result.data);
+
+        // Aynı öğeleri filtrele (duplicate önleme)
+        const existingIds = new Set(paginatedItems.map((item) => item.id));
+        const uniqueNewItems = filteredNewItems.filter(
+          (item) => !existingIds.has(item.id)
+        );
+
+        if (uniqueNewItems.length === 0) {
+          // API yeni öğe döndürmüşse ancak hepsi zaten mevcutsa
+          setPagination((prev) => ({
+            ...prev,
+            hasMore: false,
+          }));
+          return true;
+        }
+
+        // Durum güncellemelerini yapıcaz
+        const updatedItems = [...paginatedItems, ...uniqueNewItems];
+        setPaginatedItems(updatedItems);
         setPagination((prev) => ({
           ...prev,
           page: nextPage,
           total: result.total || prev.total,
           hasMore: result.hasMore || false,
         }));
+
+        // Yeni veriyi önbelleğe al
+        setLocalCache(cacheKey, updatedItems);
+        setLocalCache(CACHE_KEYS.PAGE_STATE, {
+          page: nextPage,
+          pageSize: pagination.pageSize,
+          total: result.total || pagination.total,
+          hasMore: result.hasMore || false,
+        });
+
         return true;
       }
 
-      setPagination((prev) => ({ ...prev, hasMore: false }));
+      // Veri gelmezse, daha fazla öğe olmadığını belirt
+      setPagination((prev) => ({
+        ...prev,
+        hasMore: false,
+      }));
       return false;
     } catch (error) {
-      console.error("Daha fazla içerik yükleme hatası:", error);
+      console.error(
+        `Daha fazla içerik yükleme hatası (sayfa ${pagination.page + 1}):`,
+        error
+      );
       toast.error(t("errors.loadMoreFailed"));
       return false;
     } finally {
@@ -262,17 +394,20 @@ export function usePagination({
     }
   }, [
     userId,
-    pagination,
     feedService,
-    t,
+    pagination,
     createFilterObject,
     isLoadingMore,
     isTransitioning,
+    t,
+    paginatedItems,
+    filterItemsClientSide,
+    cacheKey,
   ]);
 
+  // Sayfalamayı sıfırla
   const resetPagination = useCallback(() => {
-    console.log("Sayfalama sıfırlanıyor...");
-    setIsTransitioning(true);
+    console.log("Sayfalama durumu sıfırlanıyor");
     setPagination({
       page: 1,
       pageSize: 12,
@@ -280,19 +415,17 @@ export function usePagination({
       hasMore: true,
     });
     setPaginatedItems([]);
+    setIsInitialLoading(true);
 
-    const timer = setTimeout(() => {
+    // Kısa bir gecikme ile yükleme başlat
+    setTimeout(() => {
       loadInitialItems();
-    }, 100);
-
-    return () => clearTimeout(timer);
+    }, 50);
   }, [loadInitialItems]);
 
   return {
     paginatedItems,
-    setPaginatedItems,
     pagination,
-    setPagination,
     isLoadingMore,
     isInitialLoading,
     isTransitioning,

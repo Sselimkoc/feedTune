@@ -7,6 +7,7 @@ import {
   forwardRef,
   useEffect,
   useRef,
+  useMemo,
 } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -31,7 +32,7 @@ import {
 } from "@/components/ui/tooltip";
 
 // YouTube ikonu için özel bileşen
-const YoutubeIcon = (props) => (
+const YoutubeIcon = memo((props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -45,10 +46,11 @@ const YoutubeIcon = (props) => (
     <path d="M12 19c-2.3 0-6.4-.2-8.1-.6-.7-.2-1.2-.7-1.4-1.4-.3-1.1-.5-3.4-.5-5s.2-3.9.5-5c.2-.7.7-1.2 1.4-1.4C5.6 5.2 9.7 5 12 5s6.4.2 8.1.6c.7.2 1.2.7 1.4 1.4.3 1.1.5 3.4.5 5s-.2 3.9-.5 5c-.2.7-.7 1.2-1.4 1.4-1.7.4-5.8.6-8.1.6z" />
     <polygon points="10 15 15 12 10 9 10 15" />
   </svg>
-);
+));
+YoutubeIcon.displayName = "YoutubeIcon";
 
 // YouTube Shorts ikonu için özel bileşen
-const YoutubeShortIcon = (props) => (
+const YoutubeShortIcon = memo((props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -63,7 +65,8 @@ const YoutubeShortIcon = (props) => (
     <line x1="12" y1="8" x2="12" y2="12" />
     <line x1="12" y1="16" x2="12.01" y2="16" />
   </svg>
-);
+));
+YoutubeShortIcon.displayName = "YoutubeShortIcon";
 
 /**
  * Beslemeler, Favoriler ve Daha Sonra Oku sayfaları için ortak içerik kartı bileşeni
@@ -109,6 +112,22 @@ export const ContentCard = memo(
       }
     }, [item, isFavorite, isReadLater]);
 
+    // Kart türüne göre border rengini belirleyen fonksiyon
+    const getCardBorderStyle = useMemo(() => {
+      if (!item) return "border-2 border-gray-300";
+
+      const feedType = item.type;
+      const isShort = item.is_short;
+
+      if (feedType === "youtube") {
+        return isShort
+          ? "border-2 border-red-400 hover:border-red-500"
+          : "border-2 border-red-600 hover:border-red-700";
+      }
+
+      return "border-2 border-blue-500 hover:border-blue-600";
+    }, [item]);
+
     // Öğenin durumlarını, nesne yapısına bağlı olarak doğru şekilde alma
     const getIsRead = useCallback(() => {
       if (isRead !== undefined) return isRead;
@@ -144,21 +163,18 @@ export const ContentCard = memo(
         const newFavoriteState = !getIsFavorite();
         setInternalIsFavorite(newFavoriteState);
 
-        // Değişiklik: onFavorite fonksiyonuna item.id ve yeni durum değerini geçir
+        // onFavorite fonksiyonuna item.id ve yeni durum değerini geçir
         if (onFavorite && item) {
           try {
             onFavorite(item.id, newFavoriteState);
-            console.debug(
-              `FavoriteToggle çağrıldı: ${item.id}, ${newFavoriteState}`
-            );
           } catch (error) {
-            console.error("Favori değiştirme hatası:", error);
+            console.error(t("feeds.content.errors.favoriteToggle"), error);
             // Hata durumunda state'i geri al
             setInternalIsFavorite(!newFavoriteState);
           }
         }
       },
-      [getIsFavorite, onFavorite, item]
+      [getIsFavorite, onFavorite, item, t]
     );
 
     // Daha sonra oku değiştirme işleyicisi - component durumunu günceller
@@ -168,25 +184,22 @@ export const ContentCard = memo(
         const newReadLaterState = !getIsReadLater();
         setInternalIsReadLater(newReadLaterState);
 
-        // Değişiklik: onReadLater fonksiyonuna item.id ve yeni durum değerini geçir
+        // onReadLater fonksiyonuna item.id ve yeni durum değerini geçir
         if (onReadLater && item) {
           try {
             onReadLater(item.id, newReadLaterState);
-            console.debug(
-              `ReadLaterToggle çağrıldı: ${item.id}, ${newReadLaterState}`
-            );
           } catch (error) {
-            console.error("Daha sonra oku değiştirme hatası:", error);
+            console.error(t("feeds.content.errors.readLaterToggle"), error);
             // Hata durumunda state'i geri al
             setInternalIsReadLater(!newReadLaterState);
           }
         }
       },
-      [getIsReadLater, onReadLater, item]
+      [getIsReadLater, onReadLater, item, t]
     );
 
     // Resim URL'sini alma
-    const getValidImageUrl = useCallback(() => {
+    const getValidImageUrl = useMemo(() => {
       if (imageError || !item?.thumbnail) {
         return "/images/placeholder.webp";
       }
@@ -212,58 +225,74 @@ export const ContentCard = memo(
     }, []);
 
     // Tarih formatı
-    const formatDate = useCallback(
-      (date) => {
-        try {
-          const publishDate = item.published_at || item.publishedAt;
-          return new Date(publishDate).toLocaleDateString(language, {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          });
-        } catch (error) {
-          console.error("Tarih formatlanırken hata oluştu:", error);
-          return date;
-        }
-      },
-      [language, item]
-    );
+    const formattedDate = useMemo(() => {
+      try {
+        if (!item) return "";
+        const publishDate = item.published_at || item.publishedAt;
+        return new Date(publishDate).toLocaleDateString(language, {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      } catch (error) {
+        console.error(t("feeds.content.errors.dateFormat"), error);
+        return "";
+      }
+    }, [language, item, t]);
 
     // Besleme türü badgesi
-    const renderFeedBadge = () => {
-      const feedType = item.feed_type || item.feedType;
-      const feedTitle = item.feed_title || item.feedTitle;
-      const isShort = item.is_short || item.isShort || item.type === "shorts";
+    const renderFeedBadge = useMemo(() => {
+      if (!item) return null;
+
+      const feedType = item.type;
+      const feedTitle = item.title;
+      const isShort = item.is_short;
+
+      // Besleme türüne göre stil sınıfları - RSS için mavi, YouTube için kırmızı
+      const badgeClasses = {
+        youtube: isShort
+          ? "bg-gradient-to-r from-red-500/90 to-red-400/90 border border-red-400/30"
+          : "bg-gradient-to-r from-red-600/90 to-red-500/90 border border-red-500/30",
+        rss: "bg-gradient-to-r from-blue-500/90 to-blue-400/90 border border-blue-400/30",
+      };
+
+      const selectedBadgeClass =
+        feedType === "youtube" ? badgeClasses.youtube : badgeClasses.rss;
 
       return (
-        <div className="absolute left-3 top-3 flex items-center gap-1 bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-md text-xs font-medium z-10">
+        <div
+          className={`absolute left-0 top-0 flex items-center gap-2 ${selectedBadgeClass} px-3 py-2 rounded-br-lg text-sm font-medium z-10 shadow-md text-white`}
+        >
           {feedType === "youtube" ? (
             <>
               {isShort ? (
-                <YoutubeShortIcon className="h-3 w-3 text-red-400" />
+                <YoutubeShortIcon className="h-5 w-5 text-white" />
               ) : (
-                <YoutubeIcon className="h-3 w-3 text-red-500" />
+                <YoutubeIcon className="h-5 w-5 text-white" />
               )}
-              <span className="line-clamp-1 max-w-[100px]">
-                {isShort
-                  ? `${feedTitle} (Shorts)`
-                  : feedTitle || t("home.recentContent.unknownSource")}
+              <span className="line-clamp-1 max-w-[150px] font-bold">
+                {feedTitle || "YouTube"}
+                {isShort && (
+                  <span className="ml-1 font-normal text-xs opacity-90">
+                    ({t("feeds.content.shorts")})
+                  </span>
+                )}
               </span>
             </>
           ) : (
             <>
-              <RssIcon className="h-3 w-3 text-orange-500" />
-              <span className="line-clamp-1 max-w-[100px]">
-                {feedTitle || t("home.recentContent.unknownSource")}
+              <RssIcon className="h-5 w-5 text-white" />
+              <span className="line-clamp-1 max-w-[150px] font-bold">
+                {feedTitle || "RSS"}
               </span>
             </>
           )}
         </div>
       );
-    };
+    }, [item, t]);
 
     // Kart tipine göre renk varyasyonları
-    const getCardTypeStyles = () => {
+    const cardStyles = useMemo(() => {
       switch (cardType) {
         case "favorite":
           return {
@@ -281,131 +310,122 @@ export const ContentCard = memo(
             highlightClass: "group-hover:border-primary/30",
           };
       }
-    };
-
-    const cardStyles = getCardTypeStyles();
+    }, [cardType]);
 
     // Buton işlemleri
-    const renderActionButtons = () => (
-      <div
-        className={cn(
-          "flex items-center gap-2",
-          viewMode === "list" && "flex-shrink-0"
-        )}
-      >
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleFavoriteToggle}
-                className={cn(
-                  "hover:text-yellow-500 transition-colors",
-                  getIsFavorite() && "text-yellow-500"
-                )}
-              >
-                <Star className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {getIsFavorite()
-                ? t("feeds.removeFromFavorites")
-                : t("feeds.addToFavorites")}
-            </TooltipContent>
-          </Tooltip>
+    const actionButtons = useMemo(
+      () => (
+        <div
+          className={cn(
+            "flex items-center gap-2",
+            viewMode === "list" && "flex-shrink-0"
+          )}
+        >
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleFavoriteToggle}
+                  className={cn(
+                    "hover:text-yellow-500 transition-colors",
+                    getIsFavorite() && "text-yellow-500"
+                  )}
+                >
+                  <Star className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {getIsFavorite()
+                  ? t("feeds.removeFromFavorites")
+                  : t("feeds.addToFavorites")}
+              </TooltipContent>
+            </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleReadLaterToggle}
-                className={cn(
-                  "hover:text-blue-500 transition-colors",
-                  getIsReadLater() && "text-blue-500"
-                )}
-              >
-                {getIsReadLater() ? (
-                  <BookmarkCheck className="h-4 w-4" />
-                ) : (
-                  <Bookmark className="h-4 w-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {getIsReadLater()
-                ? t("feeds.removeFromReadLater")
-                : t("feeds.addToReadLater")}
-            </TooltipContent>
-          </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleReadLaterToggle}
+                  className={cn(
+                    "hover:text-blue-500 transition-colors",
+                    getIsReadLater() && "text-blue-500"
+                  )}
+                >
+                  {getIsReadLater() ? (
+                    <BookmarkCheck className="h-4 w-4" />
+                  ) : (
+                    <Bookmark className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {getIsReadLater()
+                  ? t("feeds.removeFromReadLater")
+                  : t("feeds.addToReadLater")}
+              </TooltipContent>
+            </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShare?.();
-                }}
-                className="hover:text-primary transition-colors"
-              >
-                <Share className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("feeds.share")}</TooltipContent>
-          </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onShare?.();
+                  }}
+                  className="hover:text-primary transition-colors"
+                >
+                  <Share className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("feeds.share")}</TooltipContent>
+            </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClick?.(item.link || item.url);
-                }}
-                className="ml-auto hover:text-primary transition-colors"
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("feeds.openInNewTab")}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClick?.(item?.link || item?.url);
+                  }}
+                  className="ml-auto hover:text-primary transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("feeds.openInNewTab")}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      ),
+      [
+        viewMode,
+        handleFavoriteToggle,
+        getIsFavorite,
+        handleReadLaterToggle,
+        getIsReadLater,
+        t,
+        onShare,
+        onClick,
+        item,
+      ]
     );
 
-    // Debug koddaki durumları
+    // Debug kodlarını production'da kaldır
     useEffect(() => {
       if (process.env.NODE_ENV === "development") {
         console.debug("ContentCard veri yapısı:", {
           id: item?.id,
           title: item?.title?.slice(0, 30),
-          cardType,
-          is_favorite_from_item: item?.is_favorite,
-          is_read_later_from_item: item?.is_read_later,
-          is_favorite_prop: isFavorite,
-          is_read_later_prop: isReadLater,
-          internal_isFavorite: internalIsFavorite,
-          internal_isReadLater: internalIsReadLater,
-          calculated_isFavorite: getIsFavorite(),
-          calculated_isReadLater: getIsReadLater(),
         });
       }
-    }, [item, isFavorite, isReadLater, internalIsFavorite, internalIsReadLater, getIsFavorite, getIsReadLater, cardType]);
-
-    // Gereksiz render olduğunda konsola log
-    const renderCount = useRef(0);
-    useEffect(() => {
-      if (process.env.NODE_ENV === "development") {
-        renderCount.current += 1;
-        console.debug(
-          `ContentCard (${item?.id}) rendered ${renderCount.current} times`
-        );
-      }
-    });
+    }, [item]);
 
     // Liste görünümü
     if (viewMode === "list") {
@@ -421,7 +441,8 @@ export const ContentCard = memo(
         >
           <Card
             className={cn(
-              "light-card border border-border/40 hover:border-border/60 hover:shadow-md transition-all duration-200 group",
+              "light-card hover:shadow-md transition-all duration-200 group",
+              getCardBorderStyle,
               cardStyles.highlightClass,
               className
             )}
@@ -430,8 +451,8 @@ export const ContentCard = memo(
               {/* Resim */}
               <div className="relative w-48 h-32 flex-shrink-0 rounded-md overflow-hidden">
                 <Image
-                  src={getValidImageUrl()}
-                  alt={item.title}
+                  src={getValidImageUrl}
+                  alt={item?.title || t("feeds.content.imageAlt")}
                   fill
                   className={cn(
                     "object-cover rounded-md transition-all duration-300 group-hover:scale-105",
@@ -454,23 +475,23 @@ export const ContentCard = memo(
                   </Badge>
                 )}
 
-                {renderFeedBadge()}
+                {renderFeedBadge}
               </div>
 
               {/* İçerik */}
               <div className="flex flex-col flex-grow min-w-0">
                 <div className="flex-grow">
                   <h3 className="font-semibold text-lg mb-2 line-clamp-1 group-hover:text-primary transition-colors">
-                    {item.title}
+                    {item?.title || t("feeds.content.titleNotFound")}
                   </h3>
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                    {stripHtml(item.description)}
+                    {stripHtml(item?.description || "")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {formatDate()}
+                    {formattedDate}
                   </p>
                 </div>
-                {renderActionButtons()}
+                {actionButtons}
               </div>
             </div>
           </Card>
@@ -490,7 +511,8 @@ export const ContentCard = memo(
       >
         <Card
           className={cn(
-            "w-full h-full overflow-hidden light-card border border-border/40 hover:border-border/60 rounded-xl hover:shadow-lg transition-all duration-200 hover:scale-[1.02] flex flex-col group",
+            "w-full h-full overflow-hidden light-card rounded-xl hover:shadow-lg transition-all duration-200 hover:scale-[1.02] flex flex-col group",
+            getCardBorderStyle,
             cardStyles.highlightClass,
             className
           )}
@@ -502,8 +524,8 @@ export const ContentCard = memo(
             )}
           >
             <Image
-              src={getValidImageUrl()}
-              alt={item.title}
+              src={getValidImageUrl}
+              alt={item?.title || t("feeds.content.imageAlt")}
               fill
               className={cn(
                 "object-cover transition-all duration-300 group-hover:scale-105",
@@ -526,24 +548,42 @@ export const ContentCard = memo(
               </Badge>
             )}
 
-            {renderFeedBadge()}
+            {renderFeedBadge}
           </div>
 
           <CardHeader className="space-y-2 flex-grow">
             <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors text-base">
-              {item.title}
+              {item?.title || t("feeds.content.titleNotFound")}
+              {item?.feed_type === "youtube" && item?.is_short && (
+                <span className="inline-flex items-center bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400 text-xs px-1.5 py-0.5 rounded-full ml-1">
+                  <YoutubeShortIcon className="h-3 w-3 mr-0.5" />
+                  {t("feeds.content.shorts")}
+                </span>
+              )}
             </h3>
-            <p className="text-xs text-muted-foreground">{formatDate()}</p>
+            <p className="text-xs text-muted-foreground">{formattedDate}</p>
           </CardHeader>
 
           <CardContent className="pt-0">
             <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-              {truncateText(stripHtml(item.description), 120)}
+              {truncateText(stripHtml(item?.description || ""), 120)}
             </p>
-            {renderActionButtons()}
+            {actionButtons}
           </CardContent>
         </Card>
       </motion.div>
     );
-  })
+  }),
+  (prevProps, nextProps) => {
+    // Önemli değişiklikleri kontrol ederek gereksiz render'ları önle
+    return (
+      prevProps.item?.id === nextProps.item?.id &&
+      prevProps.isRead === nextProps.isRead &&
+      prevProps.isFavorite === nextProps.isFavorite &&
+      prevProps.isReadLater === nextProps.isReadLater &&
+      prevProps.viewMode === nextProps.viewMode
+    );
+  }
 );
+
+ContentCard.displayName = "ContentCard";
