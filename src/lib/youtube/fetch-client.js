@@ -1,16 +1,13 @@
 /**
- * YouTube API interaction module
+ * YouTube API interaction module (Fetch API version)
  */
-import axios from "axios";
 
 /**
  * YouTube API Configuration
  */
-// API anahtarını almak için daha güvenli bir yöntem
 const getApiKey = () => {
   const key = process.env.YOUTUBE_API_KEY;
 
-  // API anahtarı tanımlı değilse uyarı göster
   if (!key) {
     console.error(
       "YouTube API anahtarı tanımlanmamış! Lütfen .env.local dosyasını kontrol edin."
@@ -23,40 +20,43 @@ const getApiKey = () => {
 const API_BASE_URL = "https://www.googleapis.com/youtube/v3";
 
 /**
- * Make a request to the YouTube API
+ * Make a request to the YouTube API using Fetch API
  * @param {string} endpoint - API endpoint
  * @param {object} params - Request parameters
  * @returns {Promise<object>} - API response
  */
 async function makeRequest(endpoint, params = {}) {
   try {
-    // Her istekte API anahtarını yeniden al
     const apiKey = getApiKey();
 
     if (!apiKey) {
       throw new Error("YouTube API anahtarı tanımlanmamış");
     }
 
-    const url = `${API_BASE_URL}/${endpoint}`;
-    console.log("API isteği yapılıyor:", url);
-
-    const response = await axios.get(url, {
-      params: {
-        ...params,
-        key: apiKey,
-      },
+    // URL parametrelerini oluştur
+    const searchParams = new URLSearchParams({
+      ...params,
+      key: apiKey,
     });
 
-    return response.data;
+    const url = `${API_BASE_URL}/${endpoint}?${searchParams.toString()}`;
+    console.log("Fetch API isteği yapılıyor:", url);
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        `HTTP error ${response.status}: ${
+          errorData.error?.message || "Unknown error"
+        }`
+      );
+    }
+
+    return await response.json();
   } catch (error) {
     console.error(`YouTube API hatası (${endpoint}):`, error.message);
-    if (error.response) {
-      console.error("Hata detayları:", {
-        status: error.response.status,
-        data: error.response.data,
-      });
-    }
-    throw new Error(`YouTube API isteği başarısız: ${error.message}`);
+    throw error;
   }
 }
 
@@ -105,6 +105,7 @@ export async function getChannelById(channelId) {
     if (!response.items || response.items.length === 0) {
       throw new Error(`Channel not found: ${channelId}`);
     }
+
     const channel = response.items[0];
     const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
 

@@ -72,6 +72,17 @@ export async function middleware(req) {
       return res;
     }
 
+    // Public API endpoints - authentication is not required
+    if (
+      req.nextUrl.pathname.startsWith("/api/youtube/public-search") ||
+      req.nextUrl.pathname.startsWith("/api/youtube/channel-search") ||
+      req.nextUrl.pathname.startsWith("/api/image-proxy") ||
+      req.nextUrl.pathname.startsWith("/api/rss-preview")
+    ) {
+      console.log("Public API isteği algılandı, kimlik doğrulama atlanıyor");
+      return res;
+    }
+
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

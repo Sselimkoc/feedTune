@@ -505,10 +505,12 @@ class YouTubeService {
         baseUrl = vercelUrl ? `https://${vercelUrl}` : "http://localhost:3000";
       }
 
-      console.log(`YouTube search API endpoint: ${baseUrl}/api/youtube/search`);
+      console.log(
+        `YouTube kanal arama API endpoint: ${baseUrl}/api/youtube/channel-search`
+      );
 
       // Make request with Fetch API - works on both client and server
-      const response = await fetch(`${baseUrl}/api/youtube/search`, {
+      const response = await fetch(`${baseUrl}/api/youtube/channel-search`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -42,6 +42,35 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Users2, Film, Calendar, AlignLeft } from "lucide-react";
 import axios from "axios";
 import { youtubeService } from "@/lib/youtube/service";
+import { cacheChannelInfo } from "@/lib/youtube/cache";
+
+/**
+ * Sayıları kullanıcı dostu formata dönüştüren yardımcı fonksiyon
+ * @param {string|number} num - Formatlanacak sayı
+ * @returns {string} - Formatlanmış sayı (örn: 1.2M, 5.7K)
+ */
+function formatNumber(num) {
+  if (!num || isNaN(Number(num))) return "Bilinmiyor";
+
+  num = Number(num);
+
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + "M";
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + "K";
+  } else {
+    return num.toString();
+  }
+}
+
+// URL'yi görüntü proxy üzerinden yüklemek için yardımcı fonksiyon
+const getProxiedImageUrl = (url) => {
+  if (!url) return null;
+  // Eğer URL zaten yerel sunucudan geliyorsa (örneğin avatar), doğrudan kullan
+  if (url.startsWith("/")) return url;
+  // YouTube veya diğer harici URL'ler için proxy kullan
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+};
 
 export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
   const { t } = useLanguage();
@@ -222,12 +251,18 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
 
               setYoutubeChannel({
                 id: channelId,
-                title: channelInfo.title || "Bilinmeyen Kanal",
+                title: channelInfo.title || "",
                 description: channelInfo.description || "",
                 thumbnail: channelInfo.thumbnail || "",
-                subscribers: "Bilinmiyor", // API değiştiğinde burası güncellenebilir
+                subscribers: channelInfo.statistics?.subscriberCount || "0",
+                subscribersFormatted: channelInfo.statistics?.subscriberCount
+                  ? formatNumber(channelInfo.statistics.subscriberCount)
+                  : "Bilinmiyor",
+                videoCount: channelInfo.statistics?.videoCount || "0",
+                videoCountFormatted: channelInfo.statistics?.videoCount
+                  ? formatNumber(channelInfo.statistics.videoCount)
+                  : "0",
                 url: `https://www.youtube.com/channel/${channelId}`,
-                videoCount: "Bilinmiyor", // API değiştiğinde burası güncellenebilir
               });
 
               return;
@@ -235,32 +270,48 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
           }
         } catch (error) {
           console.error("YouTube servis hatası:", error);
-          // Hata durumunda eski yönteme geri dön
         }
       }
 
-      // Önbellekten bulunamazsa veya anahtar kelime araması ise API'yi kullan
       const payload = isUrl ? { query: youtubeUrl } : { keyword: youtubeUrl };
 
-      const response = await fetch("/api/youtube/search", {
+      console.log("Sending request to YouTube API with payload:", payload);
+
+      // Try using fetch with more options and detailed error handling
+      const response = await fetch("/api/youtube/channel-search", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
         body: JSON.stringify(payload),
+        cache: "no-cache",
       });
 
-      const data = await response.json();
+      console.log("API response status:", response.status, response.statusText);
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to search YouTube channel");
+        const errorText = await response.text();
+        console.error("API error response:", errorText);
+
+        throw new Error(
+          `API request failed with status ${response.status}: ${
+            response.statusText || errorText || "Unknown error"
+          }`
+        );
       }
+
+      const data = await response.json();
+      console.log("API response data:", data);
+
+      // Thumbnail URL'sini özellikle kontrol edelim
+      console.log("Thumbnail URL:", data.channel?.thumbnail);
 
       if (data.channel && data.channel.id) {
         // Bulunan kanalı önbelleğe kaydet
         if (data.channel.id) {
           try {
-            await youtubeService.cacheChannelInfo(data.channel.id, {
+            await cacheChannelInfo(data.channel.id, {
               title: data.channel.title || "Bilinmeyen Kanal",
               thumbnail: data.channel.thumbnail || "",
               description: data.channel.description || "",
@@ -269,17 +320,30 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
             });
           } catch (cacheError) {
             console.error("Önbellekleme hatası:", cacheError);
+            // Önbellekleme hatası olsa bile işleme devam et
           }
         }
+
+        // UI'da kullanılacak verileri hazırla
+        const channelThumbnail = data.channel.thumbnail || "";
+        console.log("Setting thumbnail:", channelThumbnail);
 
         setYoutubeChannel({
           id: data.channel.id,
           title: data.channel.title || "Untitled Channel",
           description: data.channel.description || "",
-          thumbnail: data.channel.thumbnail || "",
+          thumbnail: channelThumbnail,
           subscribers: data.channel.subscribers || "0",
-          url: data.channel.url || youtubeUrl,
+          subscribersFormatted:
+            data.channel.subscribersFormatted ||
+            formatNumber(data.channel.subscribers) ||
+            "Bilinmiyor",
           videoCount: data.channel.videoCount || "0",
+          videoCountFormatted:
+            data.channel.videoCountFormatted ||
+            formatNumber(data.channel.videoCount) ||
+            "0",
+          url: data.channel.url || youtubeUrl,
         });
       } else {
         setError(t("feeds.youtubeChannelNotFound"));
@@ -487,7 +551,7 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
                             {rssPreview.image && (
                               <div className="h-14 w-14 rounded-md overflow-hidden flex-shrink-0 bg-muted border border-primary/10">
                                 <img
-                                  src={rssPreview.image}
+                                  src={getProxiedImageUrl(rssPreview.image)}
                                   alt={rssPreview.title}
                                   className="w-full h-full object-contain"
                                   onError={(e) => {
@@ -650,18 +714,53 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
                         <Card className="overflow-hidden border-red-500/20">
                           <CardHeader className="px-6 py-5 bg-red-500/5 border-b border-red-500/10 flex flex-row gap-4">
                             <div className="h-16 w-16 rounded-md overflow-hidden flex-shrink-0 bg-muted ring-1 ring-red-500/20 shadow-sm relative">
-                              <img
-                                src={youtubeChannel.thumbnail}
-                                alt={youtubeChannel.title}
-                                className="h-full w-full object-cover"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src =
-                                    "https://ui-avatars.com/api/?name=" +
-                                    encodeURIComponent(youtubeChannel.title) +
-                                    "&background=random&color=fff&size=120";
-                                }}
-                              />
+                              {youtubeChannel.thumbnail ? (
+                                <>
+                                  {/* Debug: thumbnail URL'sini göster */}
+                                  {console.log(
+                                    "Rendering thumbnail:",
+                                    youtubeChannel.thumbnail
+                                  )}
+                                  <img
+                                    src={getProxiedImageUrl(
+                                      youtubeChannel.thumbnail
+                                    )}
+                                    alt={youtubeChannel.title}
+                                    className="h-full w-full object-cover"
+                                    loading="eager"
+                                    crossOrigin="anonymous"
+                                    onLoad={() =>
+                                      console.log(
+                                        "Thumbnail loaded successfully"
+                                      )
+                                    }
+                                    onError={(e) => {
+                                      console.error(
+                                        "Thumbnail load error, falling back to avatar",
+                                        e
+                                      );
+                                      e.target.onerror = null;
+                                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                        youtubeChannel.title || "Channel"
+                                      )}&background=random&color=fff&size=120`;
+                                    }}
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  {/* Thumbnail URL yoksa avatar göster */}
+                                  {console.log(
+                                    "No thumbnail URL, showing avatar"
+                                  )}
+                                  <img
+                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                      youtubeChannel.title || "Channel"
+                                    )}&background=random&color=fff&size=120`}
+                                    alt={youtubeChannel.title}
+                                    className="h-full w-full object-cover"
+                                  />
+                                </>
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <CardTitle className="text-xl truncate">
@@ -679,7 +778,10 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
                                     className="gap-1.5"
                                   >
                                     <Users2 className="h-3 w-3" />
-                                    <span>{youtubeChannel.subscribers}</span>
+                                    <span>
+                                      {youtubeChannel.subscribersFormatted ||
+                                        youtubeChannel.subscribers}
+                                    </span>
                                   </Badge>
                                 )}
                                 {youtubeChannel.videoCount && (
@@ -688,7 +790,10 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
                                     className="gap-1.5"
                                   >
                                     <Film className="h-3 w-3" />
-                                    <span>{youtubeChannel.videoCount}</span>
+                                    <span>
+                                      {youtubeChannel.videoCountFormatted ||
+                                        youtubeChannel.videoCount}
+                                    </span>
                                   </Badge>
                                 )}
                                 <Badge
