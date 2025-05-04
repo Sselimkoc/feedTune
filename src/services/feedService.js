@@ -248,16 +248,16 @@ export class FeedService {
     try {
       // URL ve kullanıcı ID kontrolü
       if (!url) {
-        throw new Error("Feed URL'si gerekli");
+        throw new Error("Feed URL is required");
       }
 
       if (!userId) {
-        throw new Error("Kullanıcı kimliği gerekli");
+        throw new Error("User ID is required");
       }
 
       // Feed türü kontrolü
       if (!type || !["rss", "atom", "youtube"].includes(type)) {
-        throw new Error("Geçerli bir feed türü gerekli (rss, atom, youtube)");
+        throw new Error("Valid feed type is required (rss, atom, youtube)");
       }
 
       // URL normalizasyonu
@@ -268,9 +268,6 @@ export class FeedService {
       if (normalizedUrl.includes("youtube.com/feeds/videos.xml")) {
         // YouTube RSS'leri için özel durum - URL'de YouTube RSS var ama type olarak "rss" geçilmiş olabilir
         feedType = "youtube";
-        console.log(
-          "YouTube RSS url tespit edildi, feed türü 'youtube' olarak ayarlandı"
-        );
       }
 
       // Feed meta verilerini al
@@ -282,7 +279,7 @@ export class FeedService {
           feedInfo = await this.feedParser.parseRssFeed(normalizedUrl);
         } catch (error) {
           console.error("RSS parsing error:", error);
-          throw new Error(`RSS beslemesi ayrıştırılamadı: ${error.message}`);
+          throw new Error(`Failed to parse RSS feed: ${error.message}`);
         }
       } else if (feedType === "youtube") {
         // YouTube besleme bilgilerini çek
@@ -294,12 +291,10 @@ export class FeedService {
           }
         } catch (error) {
           console.error("YouTube parsing error:", error);
-          throw new Error(
-            `YouTube beslemesi ayrıştırılamadı: ${error.message}`
-          );
+          throw new Error(`Failed to parse YouTube feed: ${error.message}`);
         }
       } else {
-        throw new Error(`Desteklenmeyen besleme türü: ${feedType}`);
+        throw new Error(`Unsupported feed type: ${feedType}`);
       }
 
       // Feed verisini hazırla
@@ -313,12 +308,6 @@ export class FeedService {
         category_id: extraData.category_id || null,
       };
 
-      console.log("Feed eklenecek veriler:", {
-        url: feedData.url,
-        type: feedData.type,
-        title: feedData.title,
-      });
-
       // Feed'i ekle
       const result = await this.feedRepository.addFeed(feedData);
 
@@ -328,7 +317,7 @@ export class FeedService {
           await this.syncFeedItems(result.feed.id, userId, feedType);
         } catch (syncError) {
           console.error(
-            `Feed içerikleri senkronize edilirken hata: ${syncError.message}`
+            `Error synchronizing feed contents: ${syncError.message}`
           );
           // Bu hata feed ekleme işlemini etkilememeli
         }
@@ -336,8 +325,8 @@ export class FeedService {
 
       return result;
     } catch (error) {
-      console.error("addFeed service error:", error);
-      throw new Error(`Feed eklenirken hata oluştu: ${error.message}`);
+      console.error("Error adding feed:", error);
+      throw new Error(`Error adding feed: ${error.message}`);
     }
   }
 
@@ -691,16 +680,12 @@ export class FeedService {
 
     try {
       if (!feedId) {
-        throw new Error("Feed kimliği gerekli");
+        throw new Error("Feed ID is required");
       }
 
       if (!userId) {
-        throw new Error("Kullanıcı kimliği gerekli");
+        throw new Error("User ID is required");
       }
-
-      console.log(
-        `Feed senkronizasyonu başlatılıyor - Feed ID: ${feedId}, User ID: ${userId}, Skip Cache: ${skipCache}`
-      );
 
       // Repository üzerinden feed bilgilerini al
       const repositoryResult = await this.feedRepository.syncFeedItems(
@@ -710,12 +695,13 @@ export class FeedService {
       );
 
       if (!repositoryResult.success) {
-        throw new Error(`Feed bilgileri alınamadı: ${repositoryResult.error}`);
+        throw new Error(`Failed to get feed data: ${repositoryResult.error}`);
       }
 
       // Eğer feed son 1 dakika içinde güncellendiyse, işlemi atla
       if (
-        repositoryResult.message.includes("zaten güncellendi") &&
+        repositoryResult.message &&
+        repositoryResult.message.includes("updated") &&
         !skipCache
       ) {
         return repositoryResult;
@@ -728,70 +714,51 @@ export class FeedService {
       // Feed türüne göre içerikleri çek
       let items = [];
       let feedData = null;
-
-      console.log(`${actualFeedType} tipinde besleme ayrıştırılıyor...`);
+      const MAX_ITEMS = 20; // Her durumda maksimum 20 öğe
 
       if (actualFeedType === "rss" || actualFeedType === "atom") {
         try {
+          // Basitleştirilmiş RSS çekme
           feedData = await this.feedParser.parseRssFeed(feedUrl, { skipCache });
           items = feedData.items || [];
 
-          // Maksimum öğe sayısını 50 ile sınırla
-          if (items.length > 50) {
-            console.log(`RSS öğeleri sınırlandırılıyor: ${items.length} -> 50`);
-            items = items.slice(0, 50);
+          // Her zaman maksimum 20 öğe ile sınırlandır
+          if (items.length > MAX_ITEMS) {
+            items = items.slice(0, MAX_ITEMS);
           }
-
-          console.log(`RSS besleme ayrıştırıldı: ${items.length} öğe bulundu`);
         } catch (error) {
-          console.error("RSS ayrıştırma hatası:", error);
-          throw new Error(`RSS ayrıştırma hatası: ${error.message}`);
+          console.error("RSS parsing error:", error);
+          throw new Error(`RSS parsing error: ${error.message}`);
         }
       } else if (actualFeedType === "youtube") {
         try {
-          console.log("YouTube beslemesi ayrıştırılıyor:", feedUrl);
+          // Basitleştirilmiş YouTube içerik çekme
           feedData = await this.feedParser.parseYoutubeFeed(feedUrl, {
             skipCache,
+            maxItems: MAX_ITEMS, // Maksimum 20 öğe ile sınırlandır
           });
           items = feedData.items || [];
 
-          // Maksimum öğe sayısını 50 ile sınırla
-          if (items.length > 50) {
-            console.log(
-              `YouTube öğeleri sınırlandırılıyor: ${items.length} -> 50`
-            );
-            items = items.slice(0, 50);
-          }
-
-          console.log(
-            `YouTube besleme ayrıştırıldı: ${items.length} öğe bulundu`
-          );
-
-          // İlk öğeyi debug için logla
-          if (items.length > 0) {
-            console.log(
-              "Örnek YouTube öğesi:",
-              JSON.stringify(items[0], null, 2)
-            );
+          // Ekstra kontrol - yine de 20'den fazla gelirse sınırlandır
+          if (items.length > MAX_ITEMS) {
+            items = items.slice(0, MAX_ITEMS);
           }
         } catch (error) {
-          console.error("YouTube ayrıştırma hatası:", error);
-          throw new Error(`YouTube ayrıştırma hatası: ${error.message}`);
+          console.error("YouTube parsing error:", error);
+          throw new Error(`YouTube parsing error: ${error.message}`);
         }
       } else {
-        console.error("Desteklenmeyen besleme türü:", actualFeedType);
-        throw new Error(`Desteklenmeyen besleme türü: ${actualFeedType}`);
+        console.error("Unsupported feed type:", actualFeedType);
+        throw new Error(`Unsupported feed type: ${actualFeedType}`);
       }
 
       if (items.length === 0) {
-        console.log(`Güncellenecek içerik bulunamadı: ${feedId}`);
-
         // Feed'i güncelle (son kontrol zamanını)
         await this.feedRepository.updateFeedLastUpdated(feedId);
 
         return {
           success: true,
-          message: "Güncellenecek içerik bulunamadı",
+          message: "No new content to update",
           feedId,
           updatedItems: 0,
         };
@@ -802,18 +769,16 @@ export class FeedService {
       if (actualFeedType === "rss" || actualFeedType === "atom") {
         try {
           insertedItems = await this.insertRssItems(feedId, items);
-          console.log(`${insertedItems} RSS öğesi eklendi`);
         } catch (error) {
-          console.error("RSS öğeleri eklenirken hata:", error);
-          throw new Error(`RSS öğeleri eklenirken hata: ${error.message}`);
+          console.error("Error adding RSS items:", error);
+          throw new Error(`Error adding RSS items: ${error.message}`);
         }
       } else if (actualFeedType === "youtube") {
         try {
           insertedItems = await this.insertYoutubeItems(feedId, items);
-          console.log(`${insertedItems} YouTube öğesi eklendi`);
         } catch (error) {
-          console.error("YouTube öğeleri eklenirken hata:", error);
-          throw new Error(`YouTube öğeleri eklenirken hata: ${error.message}`);
+          console.error("Error adding YouTube items:", error);
+          throw new Error(`Error adding YouTube items: ${error.message}`);
         }
       }
 
@@ -822,7 +787,7 @@ export class FeedService {
 
       return {
         success: true,
-        message: "Feed içerikleri başarıyla senkronize edildi",
+        message: "Feed content successfully synchronized",
         feedId,
         updatedItems: insertedItems,
       };
@@ -884,12 +849,9 @@ export class FeedService {
     }
 
     try {
-      console.log(`insertRssItems: ${items.length} öğe ekleniyor...`);
-
       // Maksimum öğe sayısını 100 ile sınırla
       let itemsToInsert = items;
       if (items.length > 100) {
-        console.log(`RSS öğe ekleme sınırlandırılıyor: ${items.length} -> 100`);
         itemsToInsert = items.slice(0, 100);
       }
 
@@ -897,11 +859,9 @@ export class FeedService {
       // Her öğeyi ayrı ayrı ekle
       for (const item of itemsToInsert) {
         try {
-          console.log(`RSS öğesi işleniyor: ${item.title}`);
-
           const rssItemData = {
             feed_id: feedId,
-            title: item.title || "Başlıksız",
+            title: item.title || "Untitled",
             description: item.description || null,
             content: item.content || null,
             link: item.link || null,
@@ -914,33 +874,22 @@ export class FeedService {
             author: item.author || null,
           };
 
-          // Debug için öğe verilerini logla
-          console.log("Eklenecek RSS öğesi:", {
-            feed_id: rssItemData.feed_id,
-            title: rssItemData.title,
-            guid: rssItemData.guid,
-            pub_date: rssItemData.pub_date,
-          });
-
           // Repository'nin addRssItem fonksiyonunu kullan
           const result = await this.feedRepository.addRssItem(rssItemData);
-
-          console.log("RSS öğesi ekleme sonucu:", result);
 
           // Başarıyla eklendiyse sayacı artır
           if (result && !result.error) {
             insertedCount++;
           }
         } catch (itemError) {
-          console.error(`RSS öğesi eklenirken hata:`, itemError);
+          console.error(`Error adding RSS item:`, itemError);
           // Tek bir öğe hatası diğerlerini etkilemesin, devam et
         }
       }
 
-      console.log(`insertRssItems: ${insertedCount} öğe eklendi`);
       return insertedCount;
     } catch (error) {
-      console.error("RSS öğeleri eklenirken hata:", error);
+      console.error("Error adding RSS items:", error);
       throw error;
     }
   }
@@ -957,41 +906,38 @@ export class FeedService {
     }
 
     try {
-      console.log(`insertYoutubeItems: ${items.length} öğe ekleniyor...`);
-
-      // Maksimum öğe sayısını 100 ile sınırla
-      let itemsToInsert = items;
-      if (items.length > 100) {
-        console.log(
-          `YouTube öğe ekleme sınırlandırılıyor: ${items.length} -> 100`
-        );
-        itemsToInsert = items.slice(0, 100);
-      }
+      // Her zaman en fazla 20 öğe işle
+      const MAX_ITEMS = 20;
+      let itemsToInsert = items.slice(0, MAX_ITEMS);
 
       let insertedCount = 0;
-      // Her öğeyi ayrı ayrı ekle
+
+      // Her öğeyi tek tek ekleyelim
       for (const item of itemsToInsert) {
         try {
           if (!item.videoId) {
-            console.warn(
-              "Video ID olmayan YouTube öğesi atlanıyor:",
-              item.title
-            );
+            console.warn("Skipping YouTube item without video ID:", item.title);
             continue;
           }
 
+          // Basitleştirilmiş YouTube öğesi verisi
           const youtubeItemData = {
             feed_id: feedId,
             video_id: item.videoId,
-            title: item.title || "Başlıksız Video",
-            description: item.description || null,
+            title: item.title || "Untitled Video",
+            description: item.description
+              ? item.description.substring(0, 500)
+              : null, // Açıklamayı sınırlandır
             thumbnail: item.thumbnail || null,
             published_at: item.pubDate || new Date().toISOString(),
             channel_title: item.channelTitle || null,
             url: `https://youtube.com/watch?v=${item.videoId}`,
+            is_short: item.isShort || false, // Shorts videosu mu?
+            content_type: item.type || "video", // İçerik tipi (shorts/video)
+            duration: item.duration || null, // Video süresi (varsa)
           };
 
-          // Repository'nin addYoutubeItem fonksiyonunu kullan
+          // Veritabanına ekle
           const result = await this.feedRepository.addYoutubeItem(
             youtubeItemData
           );
@@ -1001,15 +947,14 @@ export class FeedService {
             insertedCount++;
           }
         } catch (itemError) {
-          console.error(`YouTube öğesi eklenirken hata:`, itemError);
-          // Tek bir öğe hatası diğerlerini etkilemesin, devam et
+          // Hata çıksa bile diğer öğeleri eklemeye devam et
+          console.error(`Error adding YouTube item:`, itemError);
         }
       }
 
-      console.log(`insertYoutubeItems: ${insertedCount} öğe eklendi`);
       return insertedCount;
     } catch (error) {
-      console.error("YouTube öğeleri eklenirken hata:", error);
+      console.error("Error adding YouTube items:", error);
       throw error;
     }
   }

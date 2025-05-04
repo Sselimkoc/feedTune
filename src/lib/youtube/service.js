@@ -406,9 +406,16 @@ class YouTubeService {
           };
         }
 
+        // Sadece son 20 video ile çalış (en yeni videolar öncelikli)
+        let items = feed.items;
+        if (items.length > 20) {
+          console.log(`Sınırlandırma yapılıyor: ${items.length} -> 20 video`);
+          items = items.slice(0, 20);
+        }
+
         // Process and format items
-        console.log(`Found ${feed.items.length} videos, formatting...`);
-        const formattedItems = feed.items.map((item) => {
+        console.log(`Found ${items.length} videos, formatting...`);
+        const formattedItems = items.map((item) => {
           const videoId = extractVideoId(item.link);
           const publishedDate = new Date(item.pubDate);
 

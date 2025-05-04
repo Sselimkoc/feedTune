@@ -72,46 +72,101 @@ export class FeedParser {
    * @param {string} url - YouTube beslemesi URL'si
    * @param {Object} options - Seçenekler
    * @param {boolean} options.skipCache - Önbelleği atla
+   * @param {number} options.maxItems - Maksimum öğe sayısı (varsayılan: 20)
    * @returns {Promise<Object>} - Ayrıştırılmış besleme
    */
   async parseYoutubeFeed(url, options = {}) {
-    const { skipCache = false } = options;
+    const { skipCache = false, maxItems = 20 } = options;
 
     try {
-      console.log(
-        `YouTube beslemesi ayrıştırılıyor: ${url}, skipCache: ${skipCache}`
-      );
+      console.log(`Parsing YouTube feed: ${url}`);
 
       // Feed'i çek
       const feed = await this.fetchWithProxy(url, skipCache);
 
-      console.log("YouTube beslemesi alındı:", feed.title);
+      if (!feed || !feed.items) {
+        return { title: "Unknown Channel", items: [] };
+      }
 
-      // YouTube feed'e özel işlemler
-      const processedFeed = this.processFeedData(feed, "youtube");
+      // YouTube feed verilerini hazırla
+      const processedFeed = {
+        title: feed.title || "Unknown Channel",
+        description: feed.description || "",
+        link: feed.link || "",
+        icon: feed.image?.url || null,
+        language: feed.language || "en",
+        lastUpdated: feed.lastBuildDate || new Date().toISOString(),
+        items: [],
+      };
 
-      // YouTube için özel alan düzenlemeleri
-      if (processedFeed.items && processedFeed.items.length > 0) {
-        processedFeed.items = processedFeed.items.map((item) => {
+      // YouTube öğelerini işle
+      const items = feed.items || [];
+
+      // Tüm öğeleri işleyerek shorts ve normal videolara ayır
+      const processedItems = items
+        .map((item) => {
           // Video ID'sini çıkar
           const videoId = this.extractYoutubeVideoId(item);
+          // Video URL'i kontrol et
+          const itemLink =
+            typeof item.link === "string" ? item.link.trim() : "";
+          // YouTube Shorts kontrolü
+          const isShort = itemLink.includes("/shorts/");
+          // Videoda açıklama/özet kontrolü
+          const description = item.contentSnippet || item.description || "";
 
-          // Thumbnail yoksa ekle
-          if (!item.thumbnail && videoId) {
-            item.thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-          }
+          // Öğeyi hazırla
+          return {
+            title: item.title || "Untitled Video",
+            link: itemLink,
+            description: description,
+            content: item.content || item.contentSnippet || "",
+            pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
+            guid: item.guid || item.id || videoId || "",
+            thumbnail: videoId
+              ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+              : null,
+            author: item.author || "",
+            videoId: videoId,
+            isShort: isShort,
+            type: isShort ? "shorts" : "video",
+          };
+        })
+        .filter((item) => item.videoId); // Sadece video ID'si olan öğeleri al
 
-          // YouTube video ID'sini ekle
-          item.videoId = videoId;
+      // Shorts ve normal videoları ayır
+      const shortsVideos = processedItems.filter((item) => item.isShort);
+      const normalVideos = processedItems.filter((item) => !item.isShort);
 
-          return item;
-        });
+      console.log(
+        `YouTube feed: ${shortsVideos.length} Shorts, ${normalVideos.length} normal videolar bulundu`
+      );
+
+      // Shorts videoları için üst sınır (maksimum öğelerin %30'u olacak şekilde)
+      const maxShortsCount = Math.floor(maxItems * 0.3);
+      const maxNormalCount =
+        maxItems - Math.min(shortsVideos.length, maxShortsCount);
+
+      // İki diziyi sınırlı sayıda birleştir
+      const selectedShorts = shortsVideos.slice(0, maxShortsCount);
+      const selectedNormals = normalVideos.slice(0, maxNormalCount);
+
+      // Önce normal videoları, sonra Shorts videoları ekle (böylece normal videolar öncelikli olur)
+      processedFeed.items = [...selectedNormals, ...selectedShorts];
+
+      // Son kontrol - eğer toplam öğe sayısı maxItems değerinden fazlaysa, kırp
+      if (processedFeed.items.length > maxItems) {
+        processedFeed.items = processedFeed.items.slice(0, maxItems);
       }
+
+      console.log(
+        `YouTube feed: ${processedFeed.items.length} video işlendi (${selectedShorts.length} Shorts, ${selectedNormals.length} normal)`
+      );
 
       return processedFeed;
     } catch (error) {
       console.error("YouTube parsing error:", error);
-      throw new Error(`YouTube beslemesi ayrıştırılamadı: ${error.message}`);
+      throw new Error(`YouTube feed could not be parsed: ${error.message}`);
     }
   }
 
@@ -138,22 +193,22 @@ export class FeedParser {
    */
   async fetchWithProxy(feedUrl, skipCache = false) {
     try {
-      console.log(`Feed çekiliyor: ${feedUrl}, skipCache: ${skipCache}`);
+      console.log(`Fetching feed: ${feedUrl}`);
 
-      // localStorage kontrolü (client-side çalıştığından emin ol)
+      // Önbellekten veri kontrolü - client-side ve localStorage mevcutsa
       let hasLocalStorage = false;
       try {
         hasLocalStorage =
           typeof window !== "undefined" && window.localStorage !== undefined;
       } catch (e) {
-        console.warn("localStorage erişilemez olabilir:", e);
+        console.warn("localStorage may not be accessible:", e);
       }
 
       // Önbellek anahtarı
       const cacheKey = `feed_cache_${feedUrl}`;
       const cacheTime = 5 * 60 * 1000; // 5 dakika
 
-      // Önbellekten veri kontrolü - sadece client-side ve localStorage mevcutsa
+      // Önbellekten veri kontrolü
       if (!skipCache && hasLocalStorage) {
         try {
           const cachedData = localStorage.getItem(cacheKey);
@@ -163,56 +218,34 @@ export class FeedParser {
 
             // Önbellekteki veri süresi geçerli mi?
             if (cache.timestamp && now - cache.timestamp < cacheTime) {
-              console.log("✅ Önbellekten feed verileri alındı");
+              console.log("Feed data retrieved from cache");
+
+              // Öğe sayısını 20 ile sınırla
+              if (
+                cache.data &&
+                cache.data.items &&
+                cache.data.items.length > 20
+              ) {
+                cache.data.items = cache.data.items.slice(0, 20);
+              }
+
               return cache.data;
-            } else {
-              console.log("Önbellek süresi dolmuş, yeni veri çekiliyor");
             }
           }
         } catch (cacheError) {
-          console.warn("Önbellek erişimi hatası:", cacheError);
+          console.warn("Cache access error:", cacheError);
         }
-      } else {
-        console.log(
-          hasLocalStorage
-            ? "Önbellek atlanıyor, yeni veri çekiliyor"
-            : "localStorage kullanılamaz, direkt veri çekiliyor"
-        );
       }
 
-      // Doğrudan bağlantıyı dene
+      // Doğrudan veya proxy ile feed verilerini çek
+      let feed;
       try {
-        console.log("Doğrudan bağlantı deneniyor:", feedUrl);
-        const feed = await this.parser.parseURL(feedUrl);
-
-        // Başarılıysa önbelleğe kaydet - sadece client-side ve localStorage mevcutsa
-        if (!skipCache && hasLocalStorage && feed) {
-          try {
-            // Öğe sayısını kontrol et ve sınırla
-            if (feed.items && Array.isArray(feed.items) && feed.items.length > 50) {
-              console.log(`Öğe sayısı sınırlandırılıyor: ${feed.items.length} -> 50`);
-              feed.items = feed.items.slice(0, 50); // Sadece ilk 50 öğeyi al
-            }
-            
-            localStorage.setItem(
-              cacheKey,
-              JSON.stringify({
-                timestamp: new Date().getTime(),
-                data: feed,
-              })
-            );
-            console.log(`✅ Feed verileri önbelleğe kaydedildi (${feed.items?.length || 0} öğe)`);
-          } catch (storageError) {
-            console.warn("Önbelleğe kaydetme hatası:", storageError);
-          }
-        }
-
-        return feed;
+        // Önce doğrudan bağlantıyı dene
+        feed = await this.parser.parseURL(feedUrl);
       } catch (directError) {
-        console.warn("Doğrudan bağlantı hatası:", directError);
+        console.warn("Direct connection error, trying proxy");
 
-        // Doğrudan bağlantı başarısız, proxy dene
-        console.log("Proxy üzerinden bağlantı deneniyor");
+        // Proxy üzerinden dene
         const response = await fetch("/api/feed-proxy", {
           method: "POST",
           headers: {
@@ -222,9 +255,7 @@ export class FeedParser {
         });
 
         if (!response.ok) {
-          throw new Error(
-            `Proxy hatası: ${response.status} ${response.statusText}`
-          );
+          throw new Error(`Proxy error: ${response.status}`);
         }
 
         const result = await response.json();
@@ -233,37 +264,34 @@ export class FeedParser {
           throw new Error(`Proxy error: ${result.error}`);
         }
 
-        if (!result.feed) {
-          throw new Error("Proxy yanıtında feed verisi eksik");
-        }
-
-        // Proxy üzerinden başarılı, önbelleğe kaydet - sadece client-side ve localStorage mevcutsa
-        if (!skipCache && hasLocalStorage) {
-          try {
-            // Öğe sayısını kontrol et ve sınırla
-            if (result.feed.items && Array.isArray(result.feed.items) && result.feed.items.length > 50) {
-              console.log(`Proxy öğe sayısı sınırlandırılıyor: ${result.feed.items.length} -> 50`);
-              result.feed.items = result.feed.items.slice(0, 50); // Sadece ilk 50 öğeyi al
-            }
-            
-            localStorage.setItem(
-              cacheKey,
-              JSON.stringify({
-                timestamp: new Date().getTime(),
-                data: result.feed,
-              })
-            );
-            console.log(`✅ Proxy feed verileri önbelleğe kaydedildi (${result.feed.items?.length || 0} öğe)`);
-          } catch (storageError) {
-            console.warn("Önbelleğe kaydetme hatası:", storageError);
-          }
-        }
-
-        return result.feed;
+        feed = result.feed;
       }
+
+      // Öğe sayısını 20 ile sınırla
+      if (feed && feed.items && feed.items.length > 20) {
+        feed.items = feed.items.slice(0, 20);
+      }
+
+      // Önbelleğe kaydet
+      if (!skipCache && hasLocalStorage && feed) {
+        try {
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              timestamp: new Date().getTime(),
+              data: feed,
+            })
+          );
+          console.log("Feed data saved to cache");
+        } catch (storageError) {
+          console.warn("Error saving to cache:", storageError);
+        }
+      }
+
+      return feed;
     } catch (error) {
-      console.error("Feed çekme hatası:", error);
-      throw new Error(`Feed çekilemedi: ${error.message}`);
+      console.error("Error fetching feed:", error);
+      throw new Error(`Failed to fetch feed: ${error.message}`);
     }
   }
 
@@ -554,210 +582,77 @@ export class FeedParser {
    * @returns {string|null} - Video ID
    */
   extractYoutubeVideoId(item) {
-    // Temel bilgileri loglama
-    console.log(
-      `YouTube ID ayrıştırılıyor: "${
-        item.title?.substring(0, 30) || "Başlıksız"
-      }..."`
-    );
+    if (!item) return null;
 
-    try {
-      // ID, link ve guid için temizlenmiş değerler oluştur
-      const itemId = typeof item.id === "string" ? item.id.trim() : "";
-      const itemLink = typeof item.link === "string" ? item.link.trim() : "";
-      const itemGuid = typeof item.guid === "string" ? item.guid.trim() : "";
+    // ID, link ve guid için değerleri al
+    const itemId = typeof item.id === "string" ? item.id.trim() : "";
+    const itemLink = typeof item.link === "string" ? item.link.trim() : "";
+    const itemGuid = typeof item.guid === "string" ? item.guid.trim() : "";
 
-      // Format 1: yt:video:VIDEO_ID veya video:VIDEO_ID formatı (standart YouTube RSS)
-      if (itemId) {
-        // yt:video: formatı
-        if (itemId.includes("yt:video:")) {
-          const videoId = itemId
-            .split("yt:video:")
-            .pop()
-            .split(/[/?#&]/)[0];
-          if (this.isValidYouTubeId(videoId)) {
-            console.log(`✓ "yt:video:" formatından ID bulundu: ${videoId}`);
-            return videoId;
-          }
-        }
+    // 1. yt:video:ID formatından ID çıkarma
+    if (itemId && itemId.includes("yt:video:")) {
+      const videoId = itemId
+        .split("yt:video:")
+        .pop()
+        .split(/[/?#&]/)[0];
+      if (this.isValidYouTubeId(videoId)) {
+        return videoId;
+      }
+    }
 
-        // video: formatı
-        if (itemId.includes("video:")) {
-          const videoId = itemId
-            .split("video:")
-            .pop()
-            .split(/[/?#&]/)[0];
-          if (this.isValidYouTubeId(videoId)) {
-            console.log(`✓ "video:" formatından ID bulundu: ${videoId}`);
-            return videoId;
-          }
-        }
-
-        // ID doğrudan video ID ise
-        if (this.isValidYouTubeId(itemId)) {
-          console.log(`✓ ID doğrudan YouTube video ID: ${itemId}`);
-          return itemId;
-        }
+    // 2. YouTube URL'lerinden ID çıkarma
+    if (itemLink) {
+      // URL parametrelerinden v değerini al
+      const vMatch = itemLink.match(/[?&]v=([a-zA-Z0-9_-]{11})(?:&|$)/);
+      if (vMatch && vMatch[1] && this.isValidYouTubeId(vMatch[1])) {
+        return vMatch[1];
       }
 
-      // Format 2: YouTube URL'lerinden ID çıkarma
-      if (itemLink) {
-        try {
-          const url = new URL(itemLink);
-
-          // youtube.com/watch?v=VIDEO_ID formatı
-          if (
-            url.hostname.includes("youtube.com") &&
-            url.pathname.includes("/watch")
-          ) {
-            const videoId = url.searchParams.get("v");
-            if (this.isValidYouTubeId(videoId)) {
-              console.log(
-                `✓ youtube.com/watch?v= formatından ID bulundu: ${videoId}`
-              );
-              return videoId;
-            }
-          }
-
-          // youtu.be/VIDEO_ID formatı (kısa URL)
-          if (url.hostname.includes("youtu.be")) {
-            const videoId = url.pathname.substring(1).split(/[/?#&]/)[0];
-            if (this.isValidYouTubeId(videoId)) {
-              console.log(`✓ youtu.be/ formatından ID bulundu: ${videoId}`);
-              return videoId;
-            }
-          }
-
-          // youtube.com/embed/VIDEO_ID formatı (gömülü video)
-          if (
-            url.hostname.includes("youtube.com") &&
-            url.pathname.includes("/embed/")
-          ) {
-            const videoId = url.pathname
-              .split("/embed/")[1]
-              ?.split(/[/?#&]/)[0];
-            if (this.isValidYouTubeId(videoId)) {
-              console.log(
-                `✓ youtube.com/embed/ formatından ID bulundu: ${videoId}`
-              );
-              return videoId;
-            }
-          }
-
-          // youtube.com/shorts/VIDEO_ID formatı (YouTube Shorts)
-          if (
-            url.hostname.includes("youtube.com") &&
-            url.pathname.includes("/shorts/")
-          ) {
-            const videoId = url.pathname
-              .split("/shorts/")[1]
-              ?.split(/[/?#&]/)[0];
-            if (this.isValidYouTubeId(videoId)) {
-              console.log(
-                `✓ youtube.com/shorts/ formatından ID bulundu: ${videoId}`
-              );
-              return videoId;
-            }
-          }
-        } catch (urlError) {
-          console.warn(
-            `⚠️ URL ayrıştırma hatası (${itemLink.substring(0, 30)}...): ${
-              urlError.message
-            }`
-          );
-
-          // URL ayrıştırılamasa bile regex ile ID çıkarmayı dene
-          const patterns = [
-            /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(?:&|$)/,
-            /youtu\.be\/([a-zA-Z0-9_-]{11})(?:\?|\/|$)/,
-            /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})(?:\?|\/|$)/,
-            /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})(?:\?|\/|$)/,
-          ];
-
-          for (const pattern of patterns) {
-            const match = itemLink.match(pattern);
-            if (match && match[1] && this.isValidYouTubeId(match[1])) {
-              console.log(`✓ Regex ile URL'den ID bulundu: ${match[1]}`);
-              return match[1];
-            }
-          }
-        }
+      // youtu.be/ID formatından ID al
+      const shortMatch = itemLink.match(
+        /youtu\.be\/([a-zA-Z0-9_-]{11})(?:\?|\/|$)/
+      );
+      if (shortMatch && shortMatch[1] && this.isValidYouTubeId(shortMatch[1])) {
+        return shortMatch[1];
       }
 
-      // Format 3: GUID'den ID çıkarma
-      if (itemGuid) {
-        // GUID içinde v= parametresi var mı?
-        const vMatch = itemGuid.match(/[?&]v=([a-zA-Z0-9_-]{11})(?:&|$)/);
-        if (vMatch && vMatch[1] && this.isValidYouTubeId(vMatch[1])) {
-          console.log(`✓ GUID'den v= parametresi ile ID bulundu: ${vMatch[1]}`);
-          return vMatch[1];
-        }
+      // Embed formatından ID al
+      const embedMatch = itemLink.match(
+        /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})(?:\?|\/|$)/
+      );
+      if (embedMatch && embedMatch[1] && this.isValidYouTubeId(embedMatch[1])) {
+        return embedMatch[1];
+      }
+    }
 
-        // GUID içinde video ID var mı?
-        if (this.isValidYouTubeId(itemGuid)) {
-          console.log(`✓ GUID direkt ID formatında: ${itemGuid}`);
-          return itemGuid;
-        }
-
-        // GUID'de youtube.com veya youtu.be URL'si var mı?
-        const guidUrlMatch = itemGuid.match(
-          /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})(?:&|$|\/|\?)/
-        );
-        if (
-          guidUrlMatch &&
-          guidUrlMatch[1] &&
-          this.isValidYouTubeId(guidUrlMatch[1])
-        ) {
-          console.log(
-            `✓ GUID'de YouTube URL'den ID bulundu: ${guidUrlMatch[1]}`
-          );
-          return guidUrlMatch[1];
-        }
+    // 3. GUID'den ID çıkarma
+    if (itemGuid) {
+      // v parametresi içeren GUID
+      const vMatch = itemGuid.match(/[?&]v=([a-zA-Z0-9_-]{11})(?:&|$)/);
+      if (vMatch && vMatch[1] && this.isValidYouTubeId(vMatch[1])) {
+        return vMatch[1];
       }
 
-      // Boşlukları temizleyip içeriğinde 11 karakterlik ID formatına uygun bir dizi olup olmadığını kontrol et
-      const content = item.description || item.content || item.title || "";
-      if (typeof content === "string" && content.length > 0) {
-        const idMatch = content.match(/([a-zA-Z0-9_-]{11})/g);
-        if (idMatch && idMatch.length > 0) {
-          // Bulunan ID'leri doğrula
-          for (const potentialId of idMatch) {
-            if (this.isValidYouTubeId(potentialId)) {
-              console.log(
-                `⚠️ İçerikten potansiyel ID bulundu (güvenilirliği düşük): ${potentialId}`
-              );
-              return potentialId; // İlk bulunan geçerli ID'yi döndür
-            }
-          }
-        }
+      // Doğrudan ID olan GUID
+      if (this.isValidYouTubeId(itemGuid)) {
+        return itemGuid;
       }
+    }
 
-      // Son çare: Thumbnail URL'sinden ID çıkarmayı dene
-      if (item.thumbnail && typeof item.thumbnail === "string") {
-        const thumbnailMatch = item.thumbnail.match(
-          /\/vi\/([a-zA-Z0-9_-]{11})\/|\/([a-zA-Z0-9_-]{11})\/hqdefault/
-        );
-        if (
-          thumbnailMatch &&
-          (thumbnailMatch[1] || thumbnailMatch[2]) &&
-          this.isValidYouTubeId(thumbnailMatch[1] || thumbnailMatch[2])
-        ) {
-          const thumbnailId = thumbnailMatch[1] || thumbnailMatch[2];
-          console.log(`✓ Thumbnail URL'den ID bulundu: ${thumbnailId}`);
+    // 4. Thumbnail URL'den ID çıkarma
+    if (item.thumbnail && typeof item.thumbnail === "string") {
+      const thumbnailMatch = item.thumbnail.match(
+        /\/vi\/([a-zA-Z0-9_-]{11})\/|\/([a-zA-Z0-9_-]{11})\/hqdefault/
+      );
+      if (thumbnailMatch && (thumbnailMatch[1] || thumbnailMatch[2])) {
+        const thumbnailId = thumbnailMatch[1] || thumbnailMatch[2];
+        if (this.isValidYouTubeId(thumbnailId)) {
           return thumbnailId;
         }
       }
-
-      console.warn(
-        `❌ Hiçbir yöntemle YouTube ID bulunamadı: "${
-          item.title?.substring(0, 30) || "Başlıksız"
-        }..."`
-      );
-      return null;
-    } catch (error) {
-      console.error(`❌ Video ID çıkarma hatası: ${error.message}`, error);
-      return null;
     }
+
+    return null;
   }
 
   /**

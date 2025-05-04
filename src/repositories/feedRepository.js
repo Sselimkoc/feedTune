@@ -1457,4 +1457,142 @@ export class FeedRepository {
       throw new Error(`YouTube öğesi eklerken hata: ${error.message}`);
     }
   }
+
+  /**
+   * Feed'in son güncelleme zamanını kontrol eder ve feed URL bilgisini döndürür
+   * @param {string} feedId - Feed kimliği
+   * @param {string} userId - Kullanıcı kimliği
+   * @param {Object} options - İşlem opsiyonları
+   * @param {boolean} options.skipCache - Önbelleği atlayıp doğrudan güncelleme yapılsın mı
+   * @returns {Promise<Object>} - Feed bilgileri ve durumu
+   */
+  async syncFeedItems(feedId, userId, options = {}) {
+    const { skipCache = false } = options;
+
+    try {
+      if (!feedId) {
+        throw new Error("Feed ID is required");
+      }
+
+      if (!userId) {
+        throw new Error("User ID is required");
+      }
+
+      // Feed'in kimlik bilgilerini çek
+      const { data: feedData, error: feedError } = await this.supabase
+        .from("feeds")
+        .select("*")
+        .eq("id", feedId)
+        .eq("user_id", userId)
+        .single();
+
+      if (feedError) {
+        console.error("Failed to get feed data:", feedError);
+        return {
+          success: false,
+          error: `Failed to get feed data: ${feedError.message}`,
+        };
+      }
+
+      if (!feedData) {
+        return {
+          success: false,
+          error: "Feed not found",
+        };
+      }
+
+      // Eğer son güncelleme kontrolü yapılacaksa ve skipCache false ise
+      if (!skipCache && feedData.last_fetched) {
+        const lastFetched = new Date(feedData.last_fetched);
+        const now = new Date();
+        const diffInMinutes = (now - lastFetched) / (1000 * 60);
+
+        // Son 1 dakika içinde güncellenmiş ise tekrar güncelleme yapma
+        if (diffInMinutes < 1) {
+          return {
+            success: true,
+            message: `Feed was already updated ${diffInMinutes.toFixed(
+              2
+            )} minutes ago`,
+            feedData,
+            feedUrl: feedData.url,
+            feedType: feedData.type,
+          };
+        }
+      }
+
+      return {
+        success: true,
+        feedData,
+        feedUrl: feedData.url,
+        feedType: feedData.type,
+      };
+    } catch (error) {
+      console.error("Error in syncFeedItems:", error);
+      return {
+        success: false,
+        error: error.message || "Failed to get feed data",
+      };
+    }
+  }
+
+  /**
+   * Feed'in son güncelleme zamanını günceller
+   * @param {string} feedId - Feed kimliği
+   * @returns {Promise<boolean>} - İşlem başarısı
+   */
+  async updateFeedLastUpdated(feedId) {
+    try {
+      if (!feedId) {
+        throw new Error("Feed ID is required");
+      }
+
+      const { error } = await this.supabase
+        .from("feeds")
+        .update({
+          last_fetched: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", feedId);
+
+      if (error) {
+        console.error("Error updating feed:", error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error updating feed last updated timestamp:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Feed türünü döndürür
+   * @param {string} feedId - Feed kimliği
+   * @returns {Promise<Object|null>} - Feed türü bilgisi
+   */
+  async getFeedType(feedId) {
+    try {
+      if (!feedId) {
+        throw new Error("Feed ID is required");
+      }
+
+      const { data, error } = await this.supabase
+        .from("feeds")
+        .select("type")
+        .eq("id", feedId)
+        .single();
+
+      if (error) {
+        console.error("Error getting feed type:", error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Error retrieving feed type:", error);
+      return null;
+    }
+  }
 }

@@ -47,6 +47,24 @@ const YoutubeIcon = (props) => (
   </svg>
 );
 
+// YouTube Shorts ikonu için özel bileşen
+const YoutubeShortIcon = (props) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <rect x="6" y="4" width="12" height="16" rx="2" />
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" />
+  </svg>
+);
+
 /**
  * Beslemeler, Favoriler ve Daha Sonra Oku sayfaları için ortak içerik kartı bileşeni
  */
@@ -215,17 +233,31 @@ export const ContentCard = memo(
     const renderFeedBadge = () => {
       const feedType = item.feed_type || item.feedType;
       const feedTitle = item.feed_title || item.feedTitle;
+      const isShort = item.is_short || item.isShort || item.type === "shorts";
 
       return (
         <div className="absolute left-3 top-3 flex items-center gap-1 bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-md text-xs font-medium z-10">
           {feedType === "youtube" ? (
-            <YoutubeIcon className="h-3 w-3 text-red-500" />
+            <>
+              {isShort ? (
+                <YoutubeShortIcon className="h-3 w-3 text-red-400" />
+              ) : (
+                <YoutubeIcon className="h-3 w-3 text-red-500" />
+              )}
+              <span className="line-clamp-1 max-w-[100px]">
+                {isShort
+                  ? `${feedTitle} (Shorts)`
+                  : feedTitle || t("home.recentContent.unknownSource")}
+              </span>
+            </>
           ) : (
-            <RssIcon className="h-3 w-3 text-orange-500" />
+            <>
+              <RssIcon className="h-3 w-3 text-orange-500" />
+              <span className="line-clamp-1 max-w-[100px]">
+                {feedTitle || t("home.recentContent.unknownSource")}
+              </span>
+            </>
           )}
-          <span className="line-clamp-1 max-w-[100px]">
-            {feedTitle || t("home.recentContent.unknownSource")}
-          </span>
         </div>
       );
     };
