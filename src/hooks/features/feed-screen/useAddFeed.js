@@ -2,8 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
-import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { youtubeService } from "@/lib/youtube/service";
 import { feedService } from "@/services/feedService";
@@ -16,10 +16,11 @@ import { useLanguage } from "@/hooks/useLanguage";
  */
 export function useAddFeed(onSuccess = () => {}) {
   const { t } = useTranslation();
-  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
-  const { refreshAll } = useFeedService();
+  const { user, isLoading: isLoadingUser } = useAuth();
+  const userId = user?.id;
+  const { refreshAllFeeds } = useFeedService();
   const [isLoading, setIsLoading] = useState(false);
-  const { feedService } = useFeedService();
+  const { toast } = useToast();
   const { t: langT } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -58,12 +59,20 @@ export function useAddFeed(onSuccess = () => {}) {
   const addFeed = useCallback(
     async (url, type = "rss", extraData = {}) => {
       if (!url?.trim()) {
-        toast.error(t("error.invalidUrl"));
+        toast({
+          title: t("common.error"),
+          description: t("errors.invalidUrl"),
+          variant: "destructive",
+        });
         return false;
       }
 
       if (!userId) {
-        toast.error(t("error.authRequired"));
+        toast({
+          title: t("errors.authRequired"),
+          description: t("errors.pleaseLoginToAddFeeds"),
+          variant: "destructive",
+        });
         return false;
       }
 
@@ -72,7 +81,11 @@ export function useAddFeed(onSuccess = () => {}) {
       try {
         // Call the feed service to add the feed
         await feedService.addFeed(url, type, userId, extraData);
-        toast.success(t("success.feedAdded"));
+        toast({
+          title: t("common.success"),
+          description: t("feeds.addSuccess"),
+          variant: "default",
+        });
 
         // Call the success callback
         if (typeof onSuccess === "function") {
@@ -87,14 +100,26 @@ export function useAddFeed(onSuccess = () => {}) {
         let errorMessage = error.message;
 
         if (errorMessage.includes("already")) {
-          toast.error(t("error.duplicateFeed"));
+          toast({
+            title: t("common.error"),
+            description: t("feeds.alreadyExists"),
+            variant: "destructive",
+          });
         } else if (
           errorMessage.includes("invalid") ||
           errorMessage.includes("parse")
         ) {
-          toast.error(t("error.invalidFeed"));
+          toast({
+            title: t("common.error"),
+            description: t("feeds.invalidFeed"),
+            variant: "destructive",
+          });
         } else {
-          toast.error(t("error.addFeedFailed"));
+          toast({
+            title: t("common.error"),
+            description: t("feeds.addError"),
+            variant: "destructive",
+          });
         }
 
         return false;
@@ -102,7 +127,7 @@ export function useAddFeed(onSuccess = () => {}) {
         setIsLoading(false);
       }
     },
-    [userId, feedService, onSuccess, t]
+    [userId, feedService, onSuccess, t, toast]
   );
 
   /**

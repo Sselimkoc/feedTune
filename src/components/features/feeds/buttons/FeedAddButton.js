@@ -6,6 +6,7 @@ import { PlusCircle } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAddFeed } from "@/hooks/features/feed-screen/useAddFeed";
 import { FeedDialogManager } from "@/components/features/feeds/dialogs/FeedDialogManager";
+import { cn } from "@/lib/utils";
 
 /**
  * Button component to add new feeds
@@ -33,7 +34,7 @@ export function FeedAddButton({
 
   // Handle feed added success
   const handleSuccess = useCallback(() => {
-    if (typeof onFeedAdded === 'function') {
+    if (typeof onFeedAdded === "function") {
       onFeedAdded();
     }
   }, [onFeedAdded]);
@@ -44,7 +45,10 @@ export function FeedAddButton({
         variant={variant}
         size={size}
         onClick={() => setIsOpen(true)}
-        className={className}
+        className={cn(
+          "bg-primary hover:bg-primary/90 text-primary-foreground",
+          className
+        )}
       >
         <PlusCircle className="h-4 w-4 mr-2" />
         {showText && t("feeds.addFeed")}
@@ -57,4 +61,4 @@ export function FeedAddButton({
       />
     </>
   );
-} 
+}

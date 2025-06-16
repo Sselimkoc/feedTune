@@ -11,13 +11,13 @@
     --card-foreground: 222 47% 12%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 12%;
-    --primary: 221 83% 53%;
+    --primary: 221 83% 53%; /* Blue */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.5%; /* Biraz daha açık ikincil ton */
     --secondary-foreground: 222 47% 12%;
     --muted: 210 40% 96.5%; /* Muted arka planı biraz daha belirgin */
     --muted-foreground: 215 16% 50%; /* Biraz daha koyu muted metin kontrastı artırmak için */
-    --accent: 221 83% 53%;
+    --accent: 145 63% 43%; /* Emerald Green */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -47,13 +47,13 @@
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
+    --primary: 217 91% 60%; /* Blue */
     --primary-foreground: 222 47% 11%;
     --secondary: 217 19% 27%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217 19% 27%;
     --muted-foreground: 215 20% 65%;
-    --accent: 217 91% 60%;
+    --accent: 145 63% 43%; /* Emerald Green */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;

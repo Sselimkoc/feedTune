@@ -64,7 +64,6 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useTranslation } from "react-i18next";
-import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 
@@ -114,7 +113,8 @@ export function AddFeedDialog({
   onSubmit = async () => {},
 }) {
   const { t } = useTranslation();
-  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const { user, isLoading: isLoadingUser } = useAuthStore();
+  const userId = user?.id;
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("youtube");
   const { toast } = useToast();

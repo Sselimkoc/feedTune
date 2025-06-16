@@ -1,8 +1,10 @@
+"use client";
+
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
-import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { usePagination } from "@/hooks/features/feed-screen/usePagination";
 import { supabase } from "@/lib/supabase";
@@ -56,8 +58,10 @@ const setLocalCache = (key, value, ttl = 1000 * 60 * 60) => {
 
 export function useFeedScreen({ initialFeedId } = {}) {
   const { t } = useTranslation();
-  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const { user, isLoading: isLoadingUser } = useAuth();
+  const userId = user?.id;
   const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   // URL'den feed ID'sini al
   const urlFeedId = searchParams.get("feed");
@@ -99,9 +103,9 @@ export function useFeedScreen({ initialFeedId } = {}) {
     isLoadingItems,
     isErrorFeeds,
     isErrorItems,
-    refreshAll,
+    refreshAllFeeds,
     refreshFeed,
-    toggleRead: markAsRead,
+    markItemRead,
     toggleFavorite,
     toggleReadLater,
     refetchFavorites,
@@ -160,28 +164,32 @@ export function useFeedScreen({ initialFeedId } = {}) {
   // Bulk actions
   const handleBulkMarkAsRead = useCallback(async () => {
     if (!selectedItems.length) return;
-    await markAsRead(selectedItems);
+    await markItemRead(selectedItems, true);
     setSelectedItems([]);
     setIsBulkMode(false);
-  }, [selectedItems, markAsRead]);
+  }, [selectedItems, markItemRead]);
 
   const handleBulkMarkAsUnread = useCallback(async () => {
     if (!selectedItems.length) return;
-    await markAsRead(selectedItems);
+    await markItemRead(selectedItems, false);
     setSelectedItems([]);
     setIsBulkMode(false);
-  }, [selectedItems, markAsRead]);
+  }, [selectedItems, markItemRead]);
 
   const handleBulkAddToFavorites = useCallback(async () => {
     if (!selectedItems.length) return;
-    await toggleFavorite(selectedItems);
+    for (const itemId of selectedItems) {
+      await toggleFavorite(itemId, true);
+    }
     setSelectedItems([]);
     setIsBulkMode(false);
   }, [selectedItems, toggleFavorite]);
 
   const handleBulkAddToReadLater = useCallback(async () => {
     if (!selectedItems.length) return;
-    await toggleReadLater(selectedItems);
+    for (const itemId of selectedItems) {
+      await toggleReadLater(itemId, true);
+    }
     setSelectedItems([]);
     setIsBulkMode(false);
   }, [selectedItems, toggleReadLater]);
@@ -195,11 +203,15 @@ export function useFeedScreen({ initialFeedId } = {}) {
       await pagination.nextPage();
     } catch (error) {
       console.error("Error loading more content:", error);
-      toast.error(t("errors.loadMoreFailed"));
+      toast({
+        title: t("common.error"),
+        description: t("errors.loadMoreFailed"),
+        variant: "destructive",
+      });
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, pagination, t]);
+  }, [isLoadingMore, pagination, toast, t]);
 
   return {
     // State
@@ -218,7 +230,7 @@ export function useFeedScreen({ initialFeedId } = {}) {
     readLaterItems,
 
     // Loading states
-    isLoading: isLoadingFeeds || isLoadingItems,
+    isLoading: isLoadingFeeds || isLoadingItems || isLoadingUser,
     isError: isErrorFeeds || isErrorItems,
 
     // Pagination
@@ -232,10 +244,11 @@ export function useFeedScreen({ initialFeedId } = {}) {
     setViewMode,
     setActiveFilter,
     setSearchQuery,
-    refreshAll,
+    refreshAll: refreshAllFeeds,
     refreshFeed,
     toggleFavorite,
     toggleReadLater,
+    markItemRead,
     loadMoreItems: handleLoadMore,
 
     // Bulk actions

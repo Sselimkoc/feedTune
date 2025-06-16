@@ -4,8 +4,7 @@ import { useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
-import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -16,6 +15,8 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWindowSize } from "@/hooks/useWindowSize";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Image from "next/image";
 
 import {
   HomeIcon,
@@ -24,24 +25,50 @@ import {
   SettingsIcon,
   LogOutIcon,
   Rss,
+  LogInIcon,
+  UserPlusIcon,
 } from "lucide-react";
 
 export function SidebarNavigation() {
   const { t } = useTranslation();
-  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const { user, signOut } = useAuthStore();
+  const userId = user?.id;
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleSignOut = useCallback(async () => {
+  console.log("SidebarNavigation - user:", user);
+
+  const handleSignOutClick = useCallback(async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      const { success, error } = await signOut({
+        toastSuccess: (message) =>
+          toast({
+            title: t("common.success"),
+            description: t(message),
+          }),
+        toastError: (message) =>
+          toast({
+            title: t("common.error"),
+            description: t(message),
+            variant: "destructive",
+          }),
+      });
+
+      if (success) {
+        router.push("/");
+      } else {
+        throw error;
+      }
     } catch (error) {
       console.error("Error signing out:", error);
-      toast.error(t("errors.signOutFailed"));
+      toast({
+        title: t("common.error"),
+        description: t("auth.logoutError"),
+        variant: "destructive",
+      });
     }
-  }, [toast, t]);
+  }, [signOut, router, toast, t]);
 
   const items = [
     {
@@ -66,15 +93,18 @@ export function SidebarNavigation() {
     },
   ];
 
-  if (isLoadingUser) {
-    return null;
-  }
-
   return (
     <ScrollArea className="h-full py-6">
       <div className="space-y-4 py-4">
+        {/* Logo */}
         <div className="flex items-center gap-2 px-6 pb-4">
-          <Rss className="w-6 h-6 text-primary" />
+          <Image
+            src="/images/feedtunelogo.png"
+            alt="FeedTune Logo"
+            width={24}
+            height={24}
+            className="w-6 h-6 text-primary"
+          />
           <span className="font-bold text-xl">FeedTune</span>
         </div>
         <div className="px-3 py-2">
@@ -85,8 +115,11 @@ export function SidebarNavigation() {
                   key={index}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-                    pathname === item.href ? "bg-accent" : "transparent"
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium",
+                    "hover:border-accent hover:text-accent-foreground hover:bg-transparent border border-transparent",
+                    pathname === item.href
+                      ? "bg-accent border-accent"
+                      : "transparent"
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -96,17 +129,58 @@ export function SidebarNavigation() {
             </nav>
           </div>
         </div>
+        <div className="flex-1">
+          {/* This div will push content to the bottom */}
+        </div>
         <Separator className="my-4" />
-        <div className="grid gap-4 px-5">
-          {userId && (
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3"
-              onClick={handleSignOut}
-            >
-              <LogOutIcon className="h-4 w-4" />
-              {t("auth.signOut")}
-            </Button>
+        {/* User Info Section and Sign Out Button */}
+        <div className="grid gap-4 px-5 pb-4">
+          {userId ? (
+            <>
+              <div className="flex items-center space-x-3 rounded-lg bg-muted/50 p-2">
+                <Avatar className="h-9 w-9 border-2 border-primary/10">
+                  <AvatarImage src={user.avatar_url} />
+                  <AvatarFallback className="bg-primary/5 text-primary">
+                    {user.email?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate text-sm font-medium">{user.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("settings.account.freePlan")}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3"
+                onClick={handleSignOutClick}
+              >
+                <LogOutIcon className="h-4 w-4" />
+                {t("nav.logout")}
+              </Button>
+            </>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <Link href="/auth/login" passHref>
+                <Button
+                  variant="default"
+                  className="w-full justify-start gap-3"
+                >
+                  <LogInIcon className="h-4 w-4" />
+                  {t("nav.login")}
+                </Button>
+              </Link>
+              <Link href="/auth/register" passHref>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                >
+                  <UserPlusIcon className="h-4 w-4" />
+                  {t("nav.register")}
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
       </div>

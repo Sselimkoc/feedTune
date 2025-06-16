@@ -40,21 +40,13 @@ export function HeaderNav() {
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-lg shadow-sm dark:border-b dark:shadow-none">
       <div className="container mx-auto px-4 h-16 flex justify-between items-center">
-        {/* Logo */}
+        {/* Logo - Removed from HeaderNav as it's now in SidebarNavigation */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Rss className="w-5 h-5 text-primary" />
-              <div className="absolute -inset-0.5 bg-primary/10 blur-sm rounded-lg -z-10"></div>
-            </div>
-            <span className="font-bold text-xl hidden sm:inline bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              FeedTune
-            </span>
-          </Link>
+          {/* Removed the entire Link component that contained the Rss icon */}
         </motion.div>
 
         {/* Sağ taraf - Tema ve Dil Değiştirme */}
@@ -64,53 +56,50 @@ export function HeaderNav() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          {/* Tema Değiştirme - Client-side rendering için mounted kontrolü */}
+          {/* Theme Switcher - Client-side rendering check */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="rounded-full w-10 h-10 flex items-center justify-center hover:bg-accent/50 transition-all duration-300"
+            className="rounded-full w-10 h-10 flex items-center justify-center border border-transparent hover:border-accent hover:bg-transparent transition-all duration-300"
             aria-label={
               mounted
                 ? theme === "dark"
-                  ? "Açık temaya geç"
-                  : "Koyu temaya geç"
-                : "Tema değiştir"
+                  ? "Switch to light theme"
+                  : "Switch to dark theme"
+                : "Toggle theme"
             }
           >
             {mounted ? (
               theme === "dark" ? (
                 <div className="relative">
-                  <Sun className="h-[18px] w-[18px] text-amber-400" />
-                  <div className="absolute -inset-1 bg-amber-400/20 blur-sm rounded-full -z-10"></div>
+                  <Sun className="h-[18px] w-[18px] text-primary" />
                 </div>
               ) : (
                 <div className="relative">
-                  <Moon className="h-[18px] w-[18px] text-blue-600" />
-                  <div className="absolute -inset-1 bg-blue-600/20 blur-sm rounded-full -z-10"></div>
+                  <Moon className="h-[18px] w-[18px] text-primary" />
                 </div>
               )
             ) : (
-              // Hydration için ilk render sırasında statik içerik
+              // Static content for initial render during hydration
               <div className="w-[18px] h-[18px]"></div>
             )}
           </Button>
 
-          {/* Dil Değiştirme */}
+          {/* Language Switcher */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full w-10 h-10 flex items-center justify-center hover:bg-accent/50 transition-all duration-300"
-                aria-label="Dil değiştir"
+                className="rounded-full w-10 h-10 flex items-center justify-center border border-transparent hover:border-accent hover:bg-transparent transition-all duration-300"
+                aria-label="Change language"
               >
                 <div className="relative">
                   {mounted && (
                     <Languages className="h-[18px] w-[18px] text-primary" />
                   )}
                   {!mounted && <div className="h-[18px] w-[18px]"></div>}
-                  <div className="absolute -inset-1 bg-primary/10 blur-sm rounded-full -z-10"></div>
                 </div>
               </Button>
             </DropdownMenuTrigger>

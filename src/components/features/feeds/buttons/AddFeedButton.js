@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export function AddFeedButton({ onAddFeed }) {
   const { t } = useLanguage();
@@ -13,7 +14,10 @@ export function AddFeedButton({ onAddFeed }) {
       <Button
         variant="default"
         size="sm"
-        className="h-9 px-3 gap-1.5 bg-primary"
+        className={cn(
+          "h-9 px-3 gap-1.5 bg-primary hover:bg-primary/90",
+          "text-primary-foreground"
+        )}
         onClick={onAddFeed}
       >
         <Plus className="h-4 w-4" />

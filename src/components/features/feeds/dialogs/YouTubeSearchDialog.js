@@ -24,7 +24,6 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -42,7 +41,7 @@ import {
 import { youtubeService } from "@/lib/youtube/service";
 import { cacheChannelInfo } from "@/lib/youtube/cache";
 import { useTranslation } from "react-i18next";
-import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
@@ -86,7 +85,8 @@ export function YouTubeSearchDialog({
   onSuccess = () => {},
 }) {
   const { t } = useTranslation();
-  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const { user, isLoading: isLoadingAuth } = useAuth();
+  const userId = user?.id;
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -116,7 +116,11 @@ export function YouTubeSearchDialog({
   // Handle search submission
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) {
-      toast.error(t("errors.emptySearchQuery"));
+      toast({
+        title: t("common.error"),
+        description: t("errors.emptySearchQuery"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -127,7 +131,11 @@ export function YouTubeSearchDialog({
       setSearchResults(results);
     } catch (error) {
       console.error("Error searching YouTube channels:", error);
-      toast.error(t("errors.youtubeSearchFailed"));
+      toast({
+        title: t("common.error"),
+        description: t("errors.youtubeSearchFailed"),
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -137,7 +145,11 @@ export function YouTubeSearchDialog({
   const handleAddChannel = useCallback(
     async (channelId) => {
       if (!userId) {
-        toast.error(t("errors.loginRequired"));
+        toast({
+          title: t("common.error"),
+          description: t("errors.authRequired"),
+          variant: "destructive",
+        });
         return;
       }
 
@@ -145,12 +157,20 @@ export function YouTubeSearchDialog({
 
       try {
         await feedService.addFeed(channelId, "youtube", userId);
-        toast.success(t("success.channelAdded"));
+        toast({
+          title: t("common.success"),
+          description: t("feeds.addSuccess"),
+          variant: "default",
+        });
         onSuccess?.();
         onOpenChange(false);
       } catch (error) {
         console.error("Error adding YouTube channel:", error);
-        toast.error(t("errors.addChannelFailed"));
+        toast({
+          title: t("common.error"),
+          description: error.message || t("feeds.addError"),
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -158,7 +178,7 @@ export function YouTubeSearchDialog({
     [userId, onSuccess, onOpenChange, toast, t]
   );
 
-  if (isLoadingUser) {
+  if (isLoadingAuth) {
     return null;
   }
 
@@ -248,25 +268,33 @@ export function YouTubeSearchDialog({
                           onError={(e) => {
                             e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                               channel.title
-                            )}&background=random&color=fff&size=60`;
+                            )}&background=random&color=fff`;
                           }}
                         />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
+                      <div className="flex-1 overflow-hidden">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {channel.title}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="inline-flex items-center gap-1">
-                            <Users2 className="h-3 w-3" />
-                            {channel.subscribersFormatted}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Film className="h-3 w-3" />
-                            {channel.videoCountFormatted}
-                          </span>
-                        </div>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Users2 className="h-3 w-3" />
+                          <span>{formatNumber(channel.subscriberCount)}</span>
+                          <Film className="h-3 w-3 ml-2" />
+                          <span>{formatNumber(channel.videoCount)}</span>
+                        </p>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0 w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddChannel(channel.id);
+                        }}
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span className="sr-only">{t("feeds.addChannel")}</span>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -274,12 +302,12 @@ export function YouTubeSearchDialog({
             )}
           </div>
 
-          {/* Channel details */}
-          <div className="flex-1 flex flex-col overflow-y-auto">
+          {/* Channel Detail */}
+          <div className="hidden md:flex flex-1 items-center justify-center p-6">
             {searchResults.length > 0 ? (
-              <div className="p-6">
-                <div className="flex flex-col md:flex-row gap-6">
-                  <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl">
+              <Card className="w-full max-w-sm">
+                <CardHeader className="flex flex-col items-center text-center p-6">
+                  <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full mb-4">
                     <img
                       src={getProxiedImageUrl(searchResults[0].thumbnail)}
                       alt={searchResults[0].title}
@@ -287,89 +315,76 @@ export function YouTubeSearchDialog({
                       onError={(e) => {
                         e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                           searchResults[0].title
-                        )}&background=random&color=fff&size=128`;
+                        )}&background=random&color=fff`;
                       }}
                     />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-1">
-                      {searchResults[0].title}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-3 mb-3">
-                      <Badge
-                        variant="secondary"
-                        className="flex items-center gap-1"
-                      >
-                        <Users2 className="h-3 w-3" />
-                        {searchResults[0].subscribersFormatted}{" "}
-                        {t("feeds.subscribers")}
-                      </Badge>
-                      <Badge
-                        variant="secondary"
-                        className="flex items-center gap-1"
-                      >
-                        <Film className="h-3 w-3" />
-                        {selectedChannel.videoCountFormatted}{" "}
-                        {t("feeds.videos")}
-                      </Badge>
-                      <a
-                        href={selectedChannel.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        {t("common.viewOnYouTube")}
-                      </a>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {selectedChannel.description}
-                    </p>
+                  <CardTitle className="text-lg font-bold">
+                    {searchResults[0].title}
+                  </CardTitle>
+                  <CardDescription className="text-sm text-muted-foreground line-clamp-2">
+                    {searchResults[0].description}
+                  </CardDescription>
+                </CardHeader>
+                <Separator />
+                <CardContent className="p-6 grid gap-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <Label>{t("feeds.subscribers")}</Label>
+                    <Badge variant="outline">
+                      {formatNumber(searchResults[0].subscriberCount)}
+                    </Badge>
                   </div>
-                </div>
-
-                <div className="mt-6">
-                  <DialogFooter className="flex justify-between">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleOpenChange(false)}
+                  <div className="flex items-center justify-between text-sm">
+                    <Label>{t("feeds.videos")}</Label>
+                    <Badge variant="outline">
+                      {formatNumber(searchResults[0].videoCount)}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <Label>{t("feeds.views")}</Label>
+                    <Badge variant="outline">
+                      {formatNumber(searchResults[0].viewCount)}
+                    </Badge>
+                  </div>
+                </CardContent>
+                <CardFooter className="p-4 flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    asChild
+                    disabled={!searchResults[0].url}
+                  >
+                    <a
+                      href={searchResults[0].url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2"
                     >
-                      {t("common.cancel")}
-                    </Button>
-                    <Button
-                      onClick={() => handleAddChannel(selectedChannel)}
-                      disabled={isAdding || selectedChannel.isAdded}
-                      variant={selectedChannel.isAdded ? "outline" : "default"}
-                      className={
-                        selectedChannel.isAdded
-                          ? "bg-green-500/10 border-green-500 text-green-500 hover:bg-green-500/20"
-                          : ""
-                      }
-                    >
-                      {isAdding ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : selectedChannel.isAdded ? (
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                      ) : (
-                        <Plus className="mr-2 h-4 w-4" />
-                      )}
-                      {selectedChannel.isAdded
-                        ? t("feeds.channelAdded")
-                        : t("feeds.addThisChannel")}
-                    </Button>
-                  </DialogFooter>
-                </div>
-              </div>
+                      <ExternalLink className="h-4 w-4" />
+                      {t("common.viewChannel")}
+                    </a>
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={() => handleAddChannel(searchResults[0].id)}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
+                    )}
+                    {t("feeds.addChannel")}
+                  </Button>
+                </CardFooter>
+              </Card>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                <Youtube className="h-16 w-16 text-muted-foreground opacity-20 mb-4" />
-                <h3 className="text-lg font-medium mb-2">
+              <div className="text-center text-muted-foreground">
+                <Youtube className="w-16 h-16 mx-auto mb-4" />
+                <p className="text-lg font-medium">
                   {t("feeds.selectChannelToViewDetails")}
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  {t("feeds.searchAndSelectChannel")}
                 </p>
+                <p className="text-sm">{t("feeds.detailsWillAppearHere")}</p>
               </div>
             )}
           </div>

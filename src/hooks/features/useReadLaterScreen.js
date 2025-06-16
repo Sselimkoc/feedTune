@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useFeedItems } from "@/hooks/features/deprecated/useFeedItems";
 import { useTranslation } from "react-i18next";
-import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
 import { useToast } from "@/components/ui/use-toast";
-import { feedService } from "@/services/feedService";
+import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
 
 /**
  * Daha Sonra Oku ekranı için özelleştirilmiş hook
@@ -13,53 +14,81 @@ import { feedService } from "@/services/feedService";
  */
 export function useReadLaterScreen() {
   const { t } = useTranslation();
-  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
-  const [isLoading, setIsLoading] = useState(false);
-  const [items, setItems] = useState([]);
+  const { user, isLoading } = useAuth();
   const { toast } = useToast();
+  const { handleFeedAction } = useFeedActions();
 
-  const fetchItems = useCallback(async () => {
-    if (!userId) {
-      toast.error(t("errors.loginRequired"));
+  const {
+    feedItems,
+    isLoading: isLoadingItems,
+    error,
+    fetchFeedItems,
+  } = useFeedItems({
+    feedId: "read-later",
+    userId: user?.id,
+  });
+
+  const markAsRead = async (itemId) => {
+    if (!user?.id) {
+      toast({
+        title: t("errors.authRequired"),
+        description: t("errors.pleaseLoginToAddFeeds"),
+        variant: "destructive",
+      });
       return;
     }
+    await handleFeedAction("markRead", itemId, user.id);
+  };
 
-    setIsLoading(true);
-
-    try {
-      const data = await feedService.getReadLaterItems(userId);
-      setItems(data);
-    } catch (error) {
-      console.error("Error fetching read later items:", error);
-      toast.error(t("errors.fetchReadLaterFailed"));
-    } finally {
-      setIsLoading(false);
+  const markAsUnread = async (itemId) => {
+    if (!user?.id) {
+      toast({
+        title: t("errors.authRequired"),
+        description: t("errors.pleaseLoginToAddFeeds"),
+        variant: "destructive",
+      });
+      return;
     }
-  }, [userId, toast, t]);
+    await handleFeedAction("markUnread", itemId, user.id);
+  };
 
-  const removeItem = useCallback(
-    async (itemId) => {
-      if (!userId) {
-        toast.error(t("errors.loginRequired"));
-        return;
-      }
+  const removeFromReadLater = async (itemId) => {
+    if (!user?.id) {
+      toast({
+        title: t("errors.authRequired"),
+        description: t("errors.pleaseLoginToAddFeeds"),
+        variant: "destructive",
+      });
+      return;
+    }
+    await handleFeedAction("removeFromReadLater", itemId, user.id);
+  };
 
-      try {
-        await feedService.removeFromReadLater(itemId, userId);
-        setItems((prev) => prev.filter((item) => item.id !== itemId));
-        toast.success(t("success.itemRemoved"));
-      } catch (error) {
-        console.error("Error removing item:", error);
-        toast.error(t("errors.removeItemFailed"));
-      }
-    },
-    [userId, toast, t]
-  );
+  const markAllAsRead = async () => {
+    if (!user?.id) {
+      toast({
+        title: t("errors.authRequired"),
+        description: t("errors.pleaseLoginToAddFeeds"),
+        variant: "destructive",
+      });
+      return;
+    }
+    await handleFeedAction("markAllAsRead", null, user.id);
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchFeedItems();
+    }
+  }, [user?.id, fetchFeedItems]);
 
   return {
-    items,
-    isLoading: isLoading || isLoadingUser,
-    fetchItems,
-    removeItem,
+    feedItems,
+    isLoading: isLoadingItems || isLoading,
+    error,
+    markAsRead,
+    markAsUnread,
+    removeFromReadLater,
+    markAllAsRead,
   };
 }

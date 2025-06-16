@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useFeedService } from "@/hooks/features/useFeedService";
+import { useToast } from "@/components/ui/use-toast";
 
 export function SyncButton({
   feedId,
@@ -21,6 +22,7 @@ export function SyncButton({
   variant = "default",
 }) {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const { syncYoutubeFeed } = useFeedService();
 
@@ -34,8 +36,12 @@ export function SyncButton({
     try {
       if (isYoutube) {
         await syncYoutubeFeed(feedId);
+        toast({
+          title: t("common.success"),
+          description: t("feeds.syncYoutubeSuccess"),
+        });
       } else {
-        // RSS veya diğer feed tipleri için varsayılan senkronizasyon
+        // Default synchronization for RSS or other feed types
         const response = await fetch("/api/feed-sync", {
           method: "POST",
           headers: {
@@ -51,9 +57,18 @@ export function SyncButton({
         if (!response.ok) {
           throw new Error(data.error);
         }
+        toast({
+          title: t("common.success"),
+          description: t("feeds.syncSuccess"),
+        });
       }
     } catch (error) {
-      console.error("Senkronizasyon hatası:", error);
+      console.error("Sync error:", error);
+      toast({
+        title: t("common.error"),
+        description: error.message || t("feeds.syncError"),
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -71,7 +86,9 @@ export function SyncButton({
               size="sm"
               className={cn(
                 "h-9 px-3 gap-1.5",
-                isYoutube && "bg-red-600 hover:bg-red-700 text-white"
+                isYoutube
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "hover:bg-accent hover:text-accent-foreground"
               )}
               onClick={handleSync}
               disabled={isLoading || !feedId}

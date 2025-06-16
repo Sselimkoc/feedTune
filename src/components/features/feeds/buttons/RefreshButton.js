@@ -15,6 +15,7 @@ import {
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { formatRelativeDate } from "@/lib/utils";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useToast } from "@/components/ui/use-toast";
 
 export function RefreshButton({
   onRefresh,
@@ -24,11 +25,11 @@ export function RefreshButton({
 }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const { lastRefreshTime: hookLastRefreshTime } = useFeedService();
   const [lastRefreshDisplay, setLastRefreshDisplay] = useState("");
   const { settings } = useSettingsStore();
 
- 
   const lastRefreshTime = propLastRefreshTime || hookLastRefreshTime;
 
   //format last refresh time
@@ -56,8 +57,17 @@ export function RefreshButton({
     setIsRefreshing(true);
     try {
       await onRefresh();
+      toast({
+        title: t("common.success"),
+        description: t("feeds.refreshSuccess"),
+      });
     } catch (error) {
       console.error("Refresh error:", error);
+      toast({
+        title: t("common.error"),
+        description: error.message || t("feeds.refreshError"),
+        variant: "destructive",
+      });
     } finally {
       setIsRefreshing(false);
     }
@@ -74,7 +84,10 @@ export function RefreshButton({
             <Button
               variant="outline"
               size="sm"
-              className="h-9 px-3 gap-1.5"
+              className={cn(
+                "h-9 px-3 gap-1.5",
+                "hover:bg-accent hover:text-accent-foreground"
+              )}
               onClick={handleRefresh}
               disabled={isProcessing}
             >

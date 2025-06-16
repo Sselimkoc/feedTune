@@ -1,14 +1,15 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { SidebarNavigation } from "@/components/features/navigation/SidebarNavigation";
 import { MobileNavigation } from "@/components/features/navigation/MobileNavigation";
 import { HeaderNav } from "@/components/features/navigation/HeaderNav";
 
 export function AppLayout({ children }) {
   const pathname = usePathname();
-  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const { user, isLoading: isLoadingUser } = useAuth();
+  const userId = user?.id;
 
   // Public routes that don't require authentication
   const publicRoutes = ["/auth/register", "/auth/forgot-password"];
@@ -41,7 +42,7 @@ export function AppLayout({ children }) {
 
       {/* Sidebar (desktop) */}
       {!!userId && (
-        <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:flex lg:w-64 lg:flex-col lg:border-r lg:bg-background/80 lg:backdrop-blur-xl">
+        <aside className="hidden lg:fixed lg:top-16 lg:bottom-0 lg:left-0 lg:z-20 lg:flex lg:w-64 lg:flex-col lg:border-r lg:bg-background/80 lg:backdrop-blur-xl">
           <SidebarNavigation />
         </aside>
       )}

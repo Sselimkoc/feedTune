@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
 import { feedService } from "@/services/feedService";
 import {
@@ -27,7 +27,6 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -46,7 +45,7 @@ import {
 } from "lucide-react";
 import { timeAgo } from "@/utils/dateUtils";
 import { useTranslation } from "react-i18next";
-import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 
@@ -70,8 +69,8 @@ export function RssPreviewDialog({
   onSuccess = () => {},
 }) {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
-  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const { user, isLoading: isLoadingAuth } = useAuth();
+  const userId = user?.id;
   const [feedUrl, setFeedUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -209,7 +208,11 @@ export function RssPreviewDialog({
       // Add the feed
       await addFeed(feedUrl, "rss", feedData);
 
-      toast.success(t("feeds.addFeedSuccess"));
+      toast({
+        title: t("common.success"),
+        description: t("feeds.addSuccess"),
+        variant: "default",
+      });
 
       // Call the success callback
       if (onSuccess) {
@@ -220,7 +223,11 @@ export function RssPreviewDialog({
       handleOpenChange(false);
     } catch (error) {
       console.error("Error adding feed:", error);
-      toast.error(error.message || t("feeds.addFeedError"));
+      toast({
+        title: t("common.error"),
+        description: error.message || t("feeds.addError"),
+        variant: "destructive",
+      });
     } finally {
       setIsAdding(false);
     }
@@ -233,7 +240,7 @@ export function RssPreviewDialog({
     }
   }, [feedPreview]);
 
-  if (isLoadingUser) {
+  if (isLoadingAuth) {
     return null;
   }
 
@@ -249,7 +256,7 @@ export function RssPreviewDialog({
             {t("feeds.previewRssFeed")}
           </DialogTitle>
           <DialogDescription className="mt-1.5 text-muted-foreground">
-            {t("feeds.previewRssDescription")}
+            {t("feeds.previewRssFeedDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -259,12 +266,12 @@ export function RssPreviewDialog({
               <Input
                 value={feedUrl}
                 onChange={handleUrlChange}
-                placeholder="https://example.com/feed.xml"
+                placeholder={t("feeds.enterFeedUrl")}
                 className="pr-10"
                 onKeyDown={(e) => e.key === "Enter" && handlePreviewFeed()}
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <Rss className="h-4 w-4 text-muted-foreground" />
+                <Search className="h-4 w-4 text-muted-foreground" />
               </div>
             </div>
             <Button
@@ -277,238 +284,178 @@ export function RssPreviewDialog({
               ) : (
                 <Search className="h-4 w-4 mr-2" />
               )}
-              {t("feeds.preview")}
+              {t("common.preview")}
             </Button>
           </div>
         </div>
 
         <Separator />
 
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Loader2 className="h-12 w-12 text-muted-foreground animate-spin mb-4" />
-              <h3 className="text-lg font-medium mb-2">
-                {t("feeds.loadingPreview")}
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-md">
-                {t("feeds.loadingPreviewDescription")}
-              </p>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-              <h3 className="text-lg font-medium mb-2">
-                {t("feeds.previewError")}
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-md">{error}</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => setError(null)}
-              >
-                {t("common.tryAgain")}
-              </Button>
-            </div>
-          ) : feedPreview ? (
-            <div className="space-y-6">
-              {/* Feed Information */}
-              <div className="flex flex-col md:flex-row gap-6">
+        {feedPreview ? (
+          <div className="flex-1 overflow-auto flex flex-col md:flex-row">
+            {/* Left Column: Preview Content */}
+            <div className="w-full md:w-2/3 border-r border-border/50 overflow-y-auto">
+              <div className="p-6 space-y-4">
                 {feedPreview.image && (
-                  <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl">
+                  <div className="relative h-40 w-full overflow-hidden rounded-md">
                     <img
                       src={getProxiedImageUrl(feedPreview.image)}
                       alt={feedPreview.title}
                       className="h-full w-full object-cover"
-                      onError={(e) => {
-                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          feedPreview.title
-                        )}&background=random&color=fff&size=128`;
-                      }}
+                      onError={(e) => (e.target.style.display = "none")}
                     />
                   </div>
                 )}
-
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-1">
-                    {feedPreview.title}
-                  </h3>
-
-                  <div className="flex flex-wrap items-center gap-3 mb-3">
-                    <Badge
-                      variant="secondary"
-                      className="flex items-center gap-1"
-                    >
-                      <Hash className="h-3 w-3" />
-                      {feedPreview.itemCount} {t("feeds.entries")}
+                <h3 className="text-xl font-bold text-foreground">
+                  {feedPreview.title}
+                </h3>
+                <p className="text-sm text-muted-foreground line-clamp-3">
+                  {feedPreview.description || t("feeds.noDescription")}
+                </p>
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  {feedPreview.language && (
+                    <Badge variant="outline">
+                      <Hash className="h-3 w-3 mr-1" />
+                      {feedPreview.language.toUpperCase()}
                     </Badge>
+                  )}
+                  {feedPreview.lastUpdated && (
+                    <Badge variant="outline">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {timeAgo(feedPreview.lastUpdated, t)}
+                    </Badge>
+                  )}
+                  {feedPreview.itemCount > 0 && (
+                    <Badge variant="outline">
+                      <FileText className="h-3 w-3 mr-1" />
+                      {t("feeds.itemCount", { count: feedPreview.itemCount })}
+                    </Badge>
+                  )}
+                </div>
 
-                    {feedPreview.language && (
-                      <Badge
-                        variant="secondary"
-                        className="flex items-center gap-1"
+                <Separator className="my-4" />
+
+                <h4 className="text-lg font-semibold text-foreground mb-3">
+                  {t("feeds.latestArticles")}
+                </h4>
+                <div className="space-y-4">
+                  {feedPreview.preview.length > 0 ? (
+                    feedPreview.preview.map((item, index) => (
+                      <motion.div
+                        key={item.link || index}
+                        className="p-4 border rounded-lg bg-card text-card-foreground shadow-sm"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
                       >
-                        <AlignLeft className="h-3 w-3" />
-                        {feedPreview.language.toUpperCase()}
-                      </Badge>
-                    )}
-
-                    {feedPreview.lastUpdated && (
-                      <Badge
-                        variant="secondary"
-                        className="flex items-center gap-1"
-                      >
-                        <Calendar className="h-3 w-3" />
-                        {timeAgo(new Date(feedPreview.lastUpdated))}
-                      </Badge>
-                    )}
-
-                    {feedPreview.link && (
-                      <a
-                        href={feedPreview.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        {t("common.visitWebsite")}
-                      </a>
-                    )}
-                  </div>
-
-                  {feedPreview.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {feedPreview.description}
-                    </p>
+                        <h5 className="font-medium text-base line-clamp-2">
+                          {item.title}
+                        </h5>
+                        <p className="text-xs text-muted-foreground line-clamp-3 mt-1">
+                          {item.description || t("feeds.noDescription")}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                          {item.image && <Image className="h-3 w-3" />}
+                          {item.published_at && (
+                            <Calendar className="h-3 w-3" />
+                          )}
+                          {item.published_at && timeAgo(item.published_at, t)}
+                          {item.link && (
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 hover:text-primary"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              {t("common.readMore")}
+                            </a>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="text-center text-muted-foreground py-8">
+                      <AlertCircle className="h-8 w-8 mx-auto mb-3" />
+                      <p>{t("feeds.noArticlesAvailable")}</p>
+                    </div>
                   )}
                 </div>
               </div>
+            </div>
 
-              <Separator />
-
-              {/* Preview items */}
-              {feedPreview.preview && feedPreview.preview.length > 0 ? (
-                <div className="space-y-4">
-                  <h4 className="text-sm font-medium">
-                    {t("feeds.recentEntries")}
-                  </h4>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {feedPreview.preview.slice(0, 4).map((item, index) => (
-                      <Card key={index} className="overflow-hidden">
-                        {item.thumbnail && (
-                          <div className="aspect-video w-full overflow-hidden bg-muted">
-                            <img
-                              src={getProxiedImageUrl(item.thumbnail)}
-                              alt={item.title}
-                              className="h-full w-full object-cover transition-all hover:scale-105"
-                              onError={(e) => {
-                                e.target.src = null;
-                                e.target.style.display = "none";
-                              }}
-                            />
-                          </div>
-                        )}
-
-                        <CardHeader className={item.thumbnail ? "pt-3" : ""}>
-                          <CardTitle className="text-base line-clamp-2">
-                            {item.title}
-                          </CardTitle>
-                          {item.pubDate && (
-                            <CardDescription className="text-xs flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {timeAgo(new Date(item.pubDate))}
-                            </CardDescription>
-                          )}
-                        </CardHeader>
-
-                        {item.description && (
-                          <CardContent className="pt-0">
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {item.description.replace(/<[^>]*>/g, "")}
-                            </p>
-                          </CardContent>
-                        )}
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-6 text-center">
-                  <FileText className="h-8 w-8 text-muted-foreground opacity-50 mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {t("feeds.noPreviewItemsAvailable")}
-                  </p>
-                </div>
-              )}
-
-              <Separator />
-
-              {/* Feed settings */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium">
-                  {t("feeds.feedSettings")}
-                </h4>
-
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="custom-title">
+            {/* Right Column: Settings */}
+            <div className="w-full md:w-1/3 p-6 space-y-6">
+              <Card className="bg-card/50 border-border/70 shadow-none">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">
+                    {t("feeds.feedSettings")}
+                  </CardTitle>
+                  <CardDescription>
+                    {t("feeds.feedSettingsDescription")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customTitle">
                       {t("feeds.customTitle")}
                     </Label>
                     <Input
-                      id="custom-title"
+                      id="customTitle"
                       value={customTitle}
                       onChange={(e) => setCustomTitle(e.target.value)}
                       placeholder={feedPreview.title}
-                      className="mt-1"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t("feeds.customTitleDescription")}
-                    </p>
                   </div>
-
-                  <div className="flex items-start space-x-2">
+                  <div className="flex items-center space-x-2">
                     <Checkbox
-                      id="fetch-full-content"
+                      id="fetchFullContent"
                       checked={fetchFullContent}
                       onCheckedChange={setFetchFullContent}
                     />
-                    <div className="grid gap-1.5 leading-none">
-                      <Label
-                        htmlFor="fetch-full-content"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {t("feeds.fetchFullContent")}
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        {t("feeds.fetchFullContentDescription")}
-                      </p>
-                    </div>
+                    <Label
+                      htmlFor="fetchFullContent"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {t("feeds.fetchFullContent")}
+                    </Label>
                   </div>
-                </div>
-              </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t("feeds.fetchFullContentDescription")}
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Rss className="h-16 w-16 text-muted-foreground opacity-20 mb-4" />
-              <h3 className="text-lg font-medium mb-2">
-                {t("feeds.enterRssUrl")}
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-md">
-                {t("feeds.enterRssUrlDescription")}
-              </p>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : error ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+            <p className="text-lg font-medium mb-2">{t("common.error")}</p>
+            <p className="text-sm text-muted-foreground max-w-md">{error}</p>
+            <Button
+              variant="outline"
+              className="mt-6"
+              onClick={() => handleOpenChange(false)}
+            >
+              {t("common.close")}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <Rss className="h-16 w-16 text-muted-foreground opacity-20 mb-4" />
+            <h3 className="text-lg font-medium mb-2">
+              {t("feeds.enterFeedUrl")}
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              {t("feeds.enterFeedUrlDescription")}
+            </p>
+          </div>
+        )}
 
-        {feedPreview && (
-          <div className="border-t border-border/50 p-4">
-            <DialogFooter className="flex sm:justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleOpenChange(false)}
-              >
+        <DialogFooter className="flex justify-end p-4 border-t border-border/50">
+          {feedPreview && (
+            <>
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>
                 {t("common.cancel")}
               </Button>
               <Button onClick={handleAddFeed} disabled={isAdding}>
@@ -519,9 +466,9 @@ export function RssPreviewDialog({
                 )}
                 {t("feeds.addFeed")}
               </Button>
-            </DialogFooter>
-          </div>
-        )}
+            </>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

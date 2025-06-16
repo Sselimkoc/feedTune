@@ -98,14 +98,14 @@ export function SettingsContent() {
       <div className="grid gap-6">
         {/* Appearance & Language */}
         <Card className="overflow-hidden border-none shadow-sm transition-all duration-300">
-          <CardHeader className="bg-primary/5 pb-3">
+          <CardHeader className="bg-accent/5 pb-3">
             <div className="flex items-center gap-2">
               {theme === "dark" ? (
-                <Moon className="h-4 w-4 text-primary" />
+                <Moon className="h-4 w-4 text-accent" />
               ) : theme === "light" ? (
-                <Sun className="h-4 w-4 text-primary" />
+                <Sun className="h-4 w-4 text-accent" />
               ) : (
-                <Monitor className="h-4 w-4 text-primary" />
+                <Monitor className="h-4 w-4 text-accent" />
               )}
               <CardTitle className="text-base">
                 {t("settings.appearance.title")}
@@ -126,8 +126,8 @@ export function SettingsContent() {
                   className={`flex flex-col items-center justify-center p-3 rounded-sm border cursor-pointer transition-all duration-300 shadow-sm
                     ${
                       theme === "light"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                        ? "border-accent bg-accent/10 text-foreground"
+                        : "border-border hover:border-accent/30 text-muted-foreground hover:text-foreground"
                     }`}
                   onClick={() => handleThemeChange("light")}
                   whileHover={{
@@ -139,7 +139,7 @@ export function SettingsContent() {
                   <Sun
                     className={`h-5 w-5 mb-1 transition-all duration-300 ${
                       theme === "light"
-                        ? "text-primary"
+                        ? "text-foreground"
                         : "text-muted-foreground"
                     }`}
                   />
@@ -151,8 +151,8 @@ export function SettingsContent() {
                   className={`flex flex-col items-center justify-center p-3 rounded-sm border cursor-pointer transition-all duration-300 shadow-sm
                     ${
                       theme === "dark"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                        ? "border-accent bg-accent/10 text-foreground"
+                        : "border-border hover:border-accent/30 text-muted-foreground hover:text-foreground"
                     }`}
                   onClick={() => handleThemeChange("dark")}
                   whileHover={{
@@ -164,7 +164,7 @@ export function SettingsContent() {
                   <Moon
                     className={`h-5 w-5 mb-1 transition-all duration-300 ${
                       theme === "dark"
-                        ? "text-primary"
+                        ? "text-foreground"
                         : "text-muted-foreground"
                     }`}
                   />
@@ -176,8 +176,8 @@ export function SettingsContent() {
                   className={`flex flex-col items-center justify-center p-3 rounded-sm border cursor-pointer transition-all duration-300 shadow-sm
                     ${
                       theme === "system"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                        ? "border-accent bg-accent/10 text-foreground"
+                        : "border-border hover:border-accent/30 text-muted-foreground hover:text-foreground"
                     }`}
                   onClick={() => handleThemeChange("system")}
                   whileHover={{
@@ -189,7 +189,7 @@ export function SettingsContent() {
                   <Monitor
                     className={`h-5 w-5 mb-1 transition-all duration-300 ${
                       theme === "system"
-                        ? "text-primary"
+                        ? "text-foreground"
                         : "text-muted-foreground"
                     }`}
                   />
@@ -212,8 +212,8 @@ export function SettingsContent() {
                   className={`flex flex-col items-center justify-center p-3 rounded-sm border cursor-pointer transition-all duration-300 shadow-sm
                     ${
                       language === "tr"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                        ? "border-accent bg-accent/10 text-foreground"
+                        : "border-border hover:border-accent/30 text-muted-foreground hover:text-foreground"
                     }`}
                   onClick={() => handleLanguageChange("tr")}
                   whileHover={{
@@ -225,7 +225,7 @@ export function SettingsContent() {
                   <Globe
                     className={`h-5 w-5 mb-1 transition-all duration-300 ${
                       language === "tr"
-                        ? "text-primary"
+                        ? "text-foreground"
                         : "text-muted-foreground"
                     }`}
                   />
@@ -235,8 +235,8 @@ export function SettingsContent() {
                   className={`flex flex-col items-center justify-center p-3 rounded-sm border cursor-pointer transition-all duration-300 shadow-sm
                     ${
                       language === "en"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                        ? "border-accent bg-accent/10 text-foreground"
+                        : "border-border hover:border-accent/30 text-muted-foreground hover:text-foreground"
                     }`}
                   onClick={() => handleLanguageChange("en")}
                   whileHover={{
@@ -248,7 +248,7 @@ export function SettingsContent() {
                   <Globe
                     className={`h-5 w-5 mb-1 transition-all duration-300 ${
                       language === "en"
-                        ? "text-primary"
+                        ? "text-foreground"
                         : "text-muted-foreground"
                     }`}
                   />
@@ -261,9 +261,9 @@ export function SettingsContent() {
 
         {/* Profile Settings */}
         <Card className="overflow-hidden border-none shadow-sm transition-all duration-300">
-          <CardHeader className="bg-primary/5 pb-3">
+          <CardHeader className="bg-accent/5 pb-3">
             <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" />
+              <User className="h-4 w-4 text-accent" />
               <CardTitle className="text-base">
                 {t("settings.profile.title")}
               </CardTitle>
@@ -279,9 +279,9 @@ export function SettingsContent() {
 
         {/* Feed Preferences */}
         <Card className="overflow-hidden border-none shadow-sm transition-all duration-300">
-          <CardHeader className="bg-primary/5 pb-3">
+          <CardHeader className="bg-accent/5 pb-3">
             <div className="flex items-center gap-2">
-              <LayoutGrid className="h-4 w-4 text-primary" />
+              <LayoutGrid className="h-4 w-4 text-accent" />
               <CardTitle className="text-base">
                 {t("settings.feedPreferences.title")}
               </CardTitle>

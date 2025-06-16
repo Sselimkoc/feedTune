@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useFeedService } from "./useFeedService";
-import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
-import { toast } from "sonner";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useToast } from "@/components/ui/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "@/hooks/features/feed-screen/usePagination";
@@ -15,12 +15,14 @@ import { usePagination } from "@/hooks/features/feed-screen/usePagination";
  */
 export function useFavoritesScreen() {
   const { t } = useTranslation();
-  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const { user, isLoading: isLoadingAuth } = useAuth();
+  const userId = user?.id;
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const { toast } = useToast();
 
   // Feed servisi hook'unu kullan
   const {
@@ -29,7 +31,7 @@ export function useFavoritesScreen() {
     isError,
     error,
     refreshFavorites: refresh,
-    toggleRead,
+    markItemRead,
     toggleFavorite,
     toggleReadLater,
   } = useFeedService();
@@ -48,32 +50,45 @@ export function useFavoritesScreen() {
   const removeFavorite = useCallback(
     async (itemId) => {
       if (!userId) {
-        toast.error(t("errors.loginRequired"));
+        toast({
+          title: t("errors.authRequired"),
+          description: t("errors.pleaseLoginToAddFeeds"),
+          variant: "destructive",
+        });
         return false;
       }
 
       try {
         await toggleFavorite(itemId, false);
+        toast({
+          title: t("common.success"),
+          description: t("feeds.removeFromFavoritesSuccess"),
+          variant: "default",
+        });
         return true;
       } catch (error) {
         console.error("Favori kaldırma hatası:", error);
-        toast.error(t("errors.general"));
+        toast({
+          title: t("common.error"),
+          description: error.message || t("errors.general"),
+          variant: "destructive",
+        });
         return false;
       }
     },
-    [userId, toggleFavorite, t]
+    [userId, toggleFavorite, toast, t]
   );
 
   return {
     // Veri durumu
     items: sortedFavorites,
-    isLoading,
+    isLoading: isLoading || isLoadingAuth,
     isError,
     error,
 
     // Eylemler
     refresh,
-    toggleRead,
+    markItemRead,
     toggleFavorite: removeFavorite,
     toggleReadLater,
 

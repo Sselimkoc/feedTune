@@ -248,63 +248,31 @@ export const ContentCard = memo(
           : theme;
       const colorMode = currentTheme === "dark" ? "dark" : "light";
 
-      // Get colors from settings
-      const youtubeColor =
-        settings.categoryColors?.youtube?.[colorMode] ||
-        (colorMode === "dark" ? "#ef4444" : "#f87171");
-      const rssColor =
-        settings.categoryColors?.rss?.[colorMode] ||
-        (colorMode === "dark" ? "#3b82f6" : "#60a5fa");
-
-      // Besleme türüne göre stil sınıfları
-      const badgeStyles = {
-        youtube: {
-          background: isShort
-            ? `linear-gradient(to right, ${youtubeColor}, ${youtubeColor}ee)`
-            : `linear-gradient(to right, ${youtubeColor}, ${youtubeColor}ee)`,
-          border: `1px solid ${youtubeColor}50`,
-        },
-        rss: {
-          background: `linear-gradient(to right, ${rssColor}, ${rssColor}ee)`,
-          border: `1px solid ${rssColor}50`,
-        },
-      };
-
-      const selectedBadgeStyle =
-        feedType === "youtube" ? badgeStyles.youtube : badgeStyles.rss;
-
-      return (
-        <div
-          className="absolute left-0 top-0 flex items-center gap-2 px-3 py-2 rounded-br-lg text-sm font-medium z-10 shadow-md text-white"
-          style={selectedBadgeStyle}
-        >
-          {feedType === "youtube" ? (
-            <>
-              {isShort ? (
-                <YoutubeShortIcon className="h-5 w-5 text-white" />
-              ) : (
-                <YoutubeIcon className="h-5 w-5 text-white" />
-              )}
-              <span className="line-clamp-1 max-w-[150px] font-bold">
-                {feedTitle || "YouTube"}
-                {isShort && (
-                  <span className="ml-1 font-normal text-xs opacity-90">
-                    ({t("feeds.content.shorts")})
-                  </span>
-                )}
-              </span>
-            </>
-          ) : (
-            <>
-              <RssIcon className="h-5 w-5 text-white" />
-              <span className="line-clamp-1 max-w-[150px] font-bold">
-                {feedTitle || "RSS"}
-              </span>
-            </>
-          )}
-        </div>
-      );
-    }, [item, t, settings.categoryColors, theme]);
+      switch (feedType) {
+        case "youtube":
+          return (
+            <Badge
+              variant="default"
+              className="flex items-center gap-1 px-2 py-1 text-xs font-semibold"
+            >
+              <YoutubeIcon className="h-3 w-3 text-primary" />
+              {isShort ? t("common.youtubeShort") : t("common.youtube")}
+            </Badge>
+          );
+        case "rss":
+          return (
+            <Badge
+              variant="secondary"
+              className="flex items-center gap-1 px-2 py-1 text-xs font-semibold"
+            >
+              <RssIcon className="h-3 w-3 text-accent" />
+              {t("common.rssFeed")}
+            </Badge>
+          );
+        default:
+          return null;
+      }
+    }, [item, t, theme]);
 
     // Kart tipine göre renk varyasyonları
     const cardStyles = useMemo(() => {
@@ -376,13 +344,18 @@ export const ContentCard = memo(
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={handleFavoriteToggle}
                   className={cn(
-                    "hover:text-yellow-500 transition-colors",
-                    getIsFavorite() && "text-yellow-500"
+                    "text-muted-foreground hover:text-primary",
+                    getIsFavorite() && "text-primary"
                   )}
+                  onClick={handleFavoriteToggle}
                 >
-                  <Star className="h-4 w-4" />
+                  {getIsFavorite() ? (
+                    <Star className="h-4 w-4 fill-primary" />
+                  ) : (
+                    <Star className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">{t("common.favorite")}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -397,17 +370,18 @@ export const ContentCard = memo(
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={handleReadLaterToggle}
                   className={cn(
-                    "hover:text-blue-500 transition-colors",
-                    getIsReadLater() && "text-blue-500"
+                    "text-muted-foreground hover:text-primary",
+                    getIsReadLater() && "text-primary"
                   )}
+                  onClick={handleReadLaterToggle}
                 >
                   {getIsReadLater() ? (
-                    <BookmarkCheck className="h-4 w-4" />
+                    <BookmarkCheck className="h-4 w-4 fill-primary" />
                   ) : (
                     <Bookmark className="h-4 w-4" />
                   )}
+                  <span className="sr-only">{t("common.readLater")}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -422,13 +396,14 @@ export const ContentCard = memo(
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="text-muted-foreground hover:text-primary"
                   onClick={(e) => {
                     e.stopPropagation();
                     onShare?.();
                   }}
-                  className="hover:text-primary transition-colors"
                 >
                   <Share className="h-4 w-4" />
+                  <span className="sr-only">{t("common.share")}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t("feeds.share")}</TooltipContent>
@@ -439,13 +414,14 @@ export const ContentCard = memo(
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="text-muted-foreground hover:text-primary"
                   onClick={(e) => {
                     e.stopPropagation();
                     onClick?.(item?.link || item?.url);
                   }}
-                  className="ml-auto hover:text-primary transition-colors"
                 >
                   <ExternalLink className="h-4 w-4" />
+                  <span className="sr-only">{t("common.openLink")}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t("feeds.openInNewTab")}</TooltipContent>

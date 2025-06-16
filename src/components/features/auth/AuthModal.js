@@ -25,6 +25,7 @@ import {
   Rss,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
   const [mode, setMode] = useState(defaultTab);
@@ -104,14 +105,15 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
   };
 
   // Particle animation
-  const particles = Array.from({ length: 6 }).map((_, i) => {
+  const particles = Array.from({ length: 12 }).map((_, i) => {
     const sizeClasses = ["w-2 h-2", "w-3 h-3", "w-4 h-4"];
     const sizeIndex = i % 3;
+    const colorClass = i % 2 === 0 ? "bg-blue-500/30" : "bg-emerald-500/30";
 
     return (
       <motion.div
         key={i}
-        className={`absolute rounded-full bg-primary/30 ${sizeClasses[sizeIndex]}`}
+        className={`absolute rounded-full ${colorClass} ${sizeClasses[sizeIndex]}`}
         initial={{
           opacity: 0,
           x: (i % 2 === 0 ? -1 : 1) * (10 + i * 5),
@@ -153,7 +155,6 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
               {/* Logo and title area */}
               <div className="relative flex flex-col items-center mb-8 mt-2">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
                   <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -163,9 +164,15 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
                       stiffness: 260,
                       damping: 20,
                     }}
-                    className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/80 to-primary/30 flex items-center justify-center relative z-10 border border-primary/20 shadow-lg shadow-primary/10"
+                    className="w-20 h-20 rounded-full flex items-center justify-center relative z-10 p-2"
                   >
-                    <Rss className="h-10 w-10 text-primary-foreground" />
+                    <Image
+                      src="/images/feedtunelogo.png"
+                      alt="FeedTune Logo"
+                      layout="fill"
+                      objectFit="contain"
+                      className="text-primary-foreground"
+                    />
                     <div className="absolute inset-0">{particles}</div>
                   </motion.div>
                 </div>

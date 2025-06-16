@@ -4,6 +4,7 @@ import { Keyboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -22,7 +23,10 @@ export function KeyboardButton({ onShowKeyboardShortcuts }) {
             <Button
               variant="outline"
               size="sm"
-              className="h-9 w-9 p-0"
+              className={cn(
+                "h-9 w-9 p-0",
+                "hover:bg-accent hover:text-accent-foreground"
+              )}
               onClick={onShowKeyboardShortcuts}
             >
               <Keyboard className="h-4 w-4" />

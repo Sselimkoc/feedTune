@@ -3,7 +3,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { toast } from "sonner";
 
 // Auth messages
 const AUTH_MESSAGES = {
@@ -36,12 +35,12 @@ export const useAuthStore = create(
     (set, get) => {
       const supabase = createClientComponentClient();
 
-      const handleAuthError = (error) => {
+      const handleAuthError = (error, toastError) => {
         console.error("Auth error:", error);
 
         // Rate limit
         if (error.status === 429) {
-          toast.error(AUTH_MESSAGES.RATE_LIMIT_ERROR);
+          toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
           return { success: false, error };
         }
 
@@ -51,18 +50,18 @@ export const useAuthStore = create(
           if (window.location.pathname !== "/") {
             window.location.href = "/";
           }
-          toast.error(AUTH_MESSAGES.SESSION_EXPIRED);
+          toastError?.(AUTH_MESSAGES.SESSION_EXPIRED);
           return { success: false, error };
         }
 
         // Network errors
         if (error.message?.includes("network")) {
-          toast.error(AUTH_MESSAGES.NETWORK_ERROR);
+          toastError?.(AUTH_MESSAGES.NETWORK_ERROR);
           return { success: false, error };
         }
 
         // Other errors
-        toast.error(error.message || AUTH_MESSAGES.AUTHENTICATION_ERROR);
+        toastError?.(error.message || AUTH_MESSAGES.AUTHENTICATION_ERROR);
         return { success: false, error };
       };
 
@@ -72,7 +71,7 @@ export const useAuthStore = create(
         isLoading: true,
         error: null,
 
-        // Initialize auth state
+        // Initialize auth state (no toast here)
         initialize: async () => {
           try {
             set({ isLoading: true, error: null });
@@ -99,8 +98,8 @@ export const useAuthStore = create(
           }
         },
 
-        // Sign in
-        signIn: async ({ email, password }) => {
+        // Sign in - accepts toast functions as arguments
+        signIn: async ({ email, password, toastSuccess, toastError }) => {
           try {
             set({ isLoading: true, error: null });
 
@@ -118,17 +117,17 @@ export const useAuthStore = create(
             if (userError) throw userError;
 
             set({ user, session: data.session, isLoading: false });
-            toast.success(AUTH_MESSAGES.LOGIN_SUCCESS);
+            toastSuccess?.(AUTH_MESSAGES.LOGIN_SUCCESS);
             return { success: true };
           } catch (error) {
-            return handleAuthError(error);
+            return handleAuthError(error, toastError);
           } finally {
             set({ isLoading: false });
           }
         },
 
-        // Sign up
-        signUp: async ({ email, password }) => {
+        // Sign up - accepts toast functions as arguments
+        signUp: async ({ email, password, toastSuccess, toastError }) => {
           try {
             set({ isLoading: true, error: null });
 
@@ -140,38 +139,55 @@ export const useAuthStore = create(
             if (error) throw error;
 
             set({ user: data.user, session: data.session, isLoading: false });
-            toast.success(AUTH_MESSAGES.VERIFICATION_EMAIL_SENT);
+            toastSuccess?.(AUTH_MESSAGES.VERIFICATION_EMAIL_SENT);
             return { success: true };
           } catch (error) {
-            return handleAuthError(error);
+            return handleAuthError(error, toastError);
           } finally {
             set({ isLoading: false });
           }
         },
 
-        // Sign out
-        signOut: async () => {
+        // Sign out - accepts toast functions as arguments
+        signOut: async ({ toastSuccess, toastError }) => {
           try {
             set({ isLoading: true, error: null });
+            console.log("Attempting to sign out...");
 
+            // First clear the local state
+            set({ user: null, session: null });
+
+            // Then sign out from Supabase
             const { error } = await supabase.auth.signOut();
-            if (error) throw error;
+            if (error) {
+              console.error("Supabase signOut error:", error);
+              throw error;
+            }
 
-            set({ user: null, session: null, isLoading: false });
-            toast.success(AUTH_MESSAGES.LOGOUT_SUCCESS);
+            console.log("Supabase signOut successful.");
+            set({ isLoading: false });
+            toastSuccess?.(AUTH_MESSAGES.LOGOUT_SUCCESS);
+
+            // Force a page reload to clear any remaining state
+            if (typeof window !== "undefined") {
+              window.location.href = "/";
+            }
+
             return { success: true };
           } catch (error) {
-            return handleAuthError(error);
+            console.error("Sign out failed:", error);
+            return handleAuthError(error, toastError);
           } finally {
             set({ isLoading: false });
           }
         },
 
-        // Update session
-        setSession: async (session) => {
+        // Update session - accepts toastError as argument for errors
+        setSession: async (session, toastError) => {
           try {
             if (!session) {
               set({ user: null, session: null });
+              console.log("Session cleared in store.");
               return { success: true };
             }
 
@@ -184,12 +200,13 @@ export const useAuthStore = create(
             set({ user, session });
             return { success: true };
           } catch (error) {
-            return handleAuthError(error);
+            console.error("Error setting session:", error);
+            return handleAuthError(error, toastError);
           }
         },
 
-        // Update profile
-        updateProfile: async (updates) => {
+        // Update profile - accepts toast functions as arguments
+        updateProfile: async (updates, { toastSuccess, toastError }) => {
           try {
             set({ isLoading: true });
             const { user } = get();
@@ -208,10 +225,10 @@ export const useAuthStore = create(
                 user_metadata: { ...user.user_metadata, ...updates },
               },
             });
-            toast.success(AUTH_MESSAGES.PROFILE_UPDATED);
+            toastSuccess?.(AUTH_MESSAGES.PROFILE_UPDATED);
             return { success: true };
           } catch (error) {
-            return handleAuthError(error);
+            return handleAuthError(error, toastError);
           } finally {
             set({ isLoading: false });
           }

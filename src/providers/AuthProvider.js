@@ -63,11 +63,19 @@ export function AuthProvider({ children }) {
 
       try {
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          console.log("Auth state: SIGNED_IN or TOKEN_REFRESHED");
           await setSession(session);
           router.refresh();
         } else if (event === "SIGNED_OUT") {
+          console.log("Auth state: SIGNED_OUT, clearing session...");
           await setSession(null);
+          // Clear any remaining state
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("auth-storage");
+          }
           router.refresh();
+          // Force redirect to home page
+          router.push("/");
         }
       } catch (error) {
         console.error("Auth state change error:", error);

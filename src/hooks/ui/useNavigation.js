@@ -1,36 +1,63 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { useRouter, usePathname } from "next/navigation";
 
 /**
- * Navigasyon için gerekli state ve fonksiyonları sağlayan hook
+ * Navigation hook that provides necessary state and functions
  * @returns {{
- *   items: Array,
+ *   user: Object,
  *   signOut: Function,
- *   isLoading: boolean
+ *   isLoading: boolean,
+ *   isOpen: boolean,
+ *   setIsOpen: Function,
+ *   pathname: string,
+ *   setPathname: Function
  * }}
  */
 export function useNavigation() {
   const { t } = useTranslation();
-  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const { user, signOut } = useAuthStore();
   const { toast } = useToast();
   const router = useRouter();
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+
+  console.log("Navigation hook - User:", user); // Debug log
 
   const handleSignOut = useCallback(async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      router.push("/auth/login");
+      const { success, error } = await signOut({
+        toastSuccess: (message) =>
+          toast({
+            title: t("common.success"),
+            description: t(message),
+          }),
+        toastError: (message) =>
+          toast({
+            title: t("common.error"),
+            description: t(message),
+            variant: "destructive",
+          }),
+      });
+
+      if (success) {
+        router.push("/");
+      } else {
+        throw error;
+      }
     } catch (error) {
       console.error("Error signing out:", error);
-      toast.error(t("errors.signOutFailed"));
+      toast({
+        title: t("common.error"),
+        description: t("auth.logoutError"),
+        variant: "destructive",
+      });
     }
-  }, [router, toast, t]);
+  }, [router, signOut, toast, t]);
 
   const items = [
     {
@@ -66,12 +93,16 @@ export function useNavigation() {
   ];
 
   const filteredItems = items.filter(
-    (item) => !item.protected || (item.protected && userId)
+    (item) => !item.protected || (item.protected && user)
   );
 
   return {
+    user,
     items: filteredItems,
-    signOut: handleSignOut,
-    isLoading: isLoadingUser,
+    handleSignOut,
+    isLoading: false,
+    isOpen,
+    setIsOpen,
+    pathname,
   };
 }

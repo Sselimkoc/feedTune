@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
+import { useAuth, useAuthActions } from "@/hooks/auth/useAuth";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -14,84 +14,134 @@ import { useRouter } from "next/navigation";
 
 export function ProfileSettings() {
   const { t } = useTranslation();
-  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const { user, isLoading: isLoadingAuth } = useAuth();
+  const { handleUpdateProfile: updateProfile, handleSignOut: signOutAction } =
+    useAuthActions();
+  const userId = user?.id;
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
+    email: user?.email || "",
     password: "",
     confirmPassword: "",
   });
   const { toast } = useToast();
   const router = useRouter();
 
+  useEffect(() => {
+    if (user?.email) {
+      setFormData((prev) => ({ ...prev, email: user.email }));
+    }
+  }, [user?.email]);
+
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
-  const handleUpdateProfile = useCallback(async () => {
+  const handleUpdateProfileClick = useCallback(async () => {
     if (!userId) {
-      toast.error(t("errors.loginRequired"));
+      toast({
+        title: t("common.error"),
+        description: t("errors.authRequired"),
+        variant: "destructive",
+      });
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error(t("errors.passwordsDoNotMatch"));
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      toast({
+        title: t("common.error"),
+        description: t("auth.passwordsDontMatch"),
+        variant: "destructive",
+      });
       return;
     }
 
     setIsLoading(true);
 
+    const updates = {};
+    if (formData.password) {
+      updates.password = formData.password;
+    }
+
     try {
-      const { error } = await supabase.auth.updateUser({
-        email: formData.email || undefined,
-        password: formData.password || undefined,
-      });
+      const { success } = await updateProfile(updates);
 
-      if (error) throw error;
-
-      toast.success(t("success.profileUpdated"));
-      setFormData({ email: "", password: "", confirmPassword: "" });
+      if (success) {
+        toast({
+          title: t("common.success"),
+          description: t("auth.profileUpdated"),
+          variant: "default",
+        });
+        setFormData((prev) => ({ ...prev, password: "", confirmPassword: "" }));
+      } else {
+        // Hata useAuthActions içinde toast ediliyor
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error(t("errors.profileUpdateFailed"));
+      toast({
+        title: t("common.error"),
+        description: error.message || t("errors.general"),
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [userId, formData, toast, t]);
+  }, [userId, formData, updateProfile, toast, t]);
 
   const handleDeleteAccount = useCallback(async () => {
     if (!userId) {
-      toast.error(t("errors.loginRequired"));
+      toast({
+        title: t("common.error"),
+        description: t("errors.authRequired"),
+        variant: "destructive",
+      });
       return;
     }
 
-    if (!window.confirm(t("settings.profile.confirmDelete"))) {
+    if (!window.confirm(t("settings.profile.deleteWarningConfirm"))) {
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.rpc("delete_user_account", {
+      const { error: rpcError } = await supabase.rpc("delete_user_account", {
         user_id: userId,
       });
 
-      if (error) throw error;
+      if (rpcError) throw rpcError;
 
-      await supabase.auth.signOut();
-      router.push("/auth/login");
-      toast.success(t("success.accountDeleted"));
+      const { success: signOutSuccess, error: signOutError } =
+        await signOutAction();
+
+      if (!signOutSuccess) throw signOutError;
+
+      toast({
+        title: t("common.success"),
+        description: t("settings.profile.accountDeletedSuccess"),
+        variant: "default",
+      });
+      router.push("/");
     } catch (error) {
       console.error("Error deleting account:", error);
-      toast.error(t("errors.accountDeletionFailed"));
+      toast({
+        title: t("common.error"),
+        description:
+          error.message || t("settings.profile.accountDeletionFailed"),
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [userId, router, toast, t]);
+  }, [userId, router, signOutAction, toast, t]);
 
-  if (isLoadingUser) {
-    return null;
+  if (isLoadingAuth || isLoading) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
@@ -100,7 +150,7 @@ export function ProfileSettings() {
         <CardTitle>{t("settings.profile.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Email Update */}
+        {/* Email Input - read-only */}
         <div className="space-y-2">
           <Label htmlFor="email">{t("settings.profile.email")}</Label>
           <Input
@@ -108,9 +158,12 @@ export function ProfileSettings() {
             name="email"
             type="email"
             value={formData.email}
-            onChange={handleInputChange}
-            placeholder={t("settings.profile.emailPlaceholder")}
+            readOnly
+            className="cursor-not-allowed bg-muted/50"
           />
+          <p className="text-xs text-muted-foreground">
+            {t("settings.profile.emailHelp")}
+          </p>
         </div>
 
         {/* Password Update */}
@@ -144,7 +197,7 @@ export function ProfileSettings() {
         {/* Update Button */}
         <Button
           className="w-full"
-          onClick={handleUpdateProfile}
+          onClick={handleUpdateProfileClick}
           disabled={isLoading}
         >
           {isLoading

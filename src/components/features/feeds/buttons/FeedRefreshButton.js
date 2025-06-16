@@ -4,7 +4,8 @@ import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
 
 /**
  * Button component to refresh feeds
@@ -27,6 +28,7 @@ export function FeedRefreshButton({
   disabled = false,
 }) {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   // Handle refresh click
@@ -41,14 +43,21 @@ export function FeedRefreshButton({
       }
 
       // If onRefresh doesn't throw an error, show success
-      toast.success(t("feeds.refreshSuccess"));
+      toast({
+        title: t("common.success"),
+        description: t("feeds.refreshSuccess"),
+      });
     } catch (error) {
       console.error("Feed refresh error:", error);
-      toast.error(error.message || t("feeds.refreshError"));
+      toast({
+        title: t("common.error"),
+        description: error.message || t("feeds.refreshError"),
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [onRefresh, isLoading, isRefreshing, t]);
+  }, [onRefresh, isLoading, isRefreshing, t, toast]);
 
   const loading = isLoading || isRefreshing;
 
@@ -57,11 +66,11 @@ export function FeedRefreshButton({
       variant={variant}
       size={size}
       onClick={handleRefresh}
-      className={className}
+      className={cn("hover:bg-accent hover:text-accent-foreground", className)}
       disabled={loading || disabled}
     >
       {loading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
       ) : (
         <RefreshCw className="h-4 w-4" />
       )}

@@ -31,6 +31,7 @@ export function ViewToggle({ viewMode, onViewModeChange }) {
               onClick={() => onViewModeChange("grid")}
               className={cn(
                 "h-9 px-3 rounded-none border-r border-input",
+                "hover:bg-accent/50 hover:text-accent-foreground",
                 viewMode === "grid" && "bg-accent text-accent-foreground"
               )}
             >
@@ -50,6 +51,7 @@ export function ViewToggle({ viewMode, onViewModeChange }) {
               onClick={() => onViewModeChange("list")}
               className={cn(
                 "h-9 px-3 rounded-none",
+                "hover:bg-accent/50 hover:text-accent-foreground",
                 viewMode === "list" && "bg-accent text-accent-foreground"
               )}
             >
