@@ -1,73 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import { useAuth as useAuthContext } from "@/providers/AuthProvider";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
 
-export function useAuth() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+// Export the context hook
+export const useAuth = useAuthContext;
+
+// Export the actions hook
+export function useAuthActions() {
   const router = useRouter();
-  const { t } = useLanguage();
-  const { signIn, signUp } = useAuthStore();
+  const { signIn, signUp, signOut, updateProfile } = useAuthContext();
 
-  const handleSubmit = async (mode, onSuccess) => {
-    setIsLoading(true);
-
-    // Client-side validation
-    if (!email || !password) {
-      toast.error(t("auth.loginRequired"));
-      setIsLoading(false);
-      return { success: false, error: t("auth.loginRequired") };
-    }
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      toast.error(t("auth.invalidCredentials"));
-      setIsLoading(false);
-      return { success: false, error: t("auth.invalidCredentials") };
-    }
-    if (password.length < 6) {
-      toast.error(t("auth.weakPassword"));
-      setIsLoading(false);
-      return { success: false, error: t("auth.weakPassword") };
-    }
-
+  const handleSignIn = async (credentials) => {
     try {
-      if (mode === "signup") {
-        const result = await signUp({ email, password });
-        if (result.success) {
-          toast.success(t("auth.successSignUp"));
-          onSuccess?.();
-          return result;
-        }
-        return result;
-      } else {
-        const result = await signIn({ email, password });
-        if (result.success) {
-          toast.success(t("auth.loginSuccess"));
-          onSuccess?.();
-          // Force a refresh of the current page to update UI
-          router.refresh();
-          return result;
-        }
-        return result;
+      const { success, error } = await signIn(credentials);
+      if (success) {
+        router.push("/home");
       }
+      return { success, error };
     } catch (error) {
-      toast.error(error.message || t("errors.general"));
+      console.error("Sign in error:", error);
       return { success: false, error };
-    } finally {
-      setIsLoading(false);
+    }
+  };
+
+  const handleSignUp = async (credentials) => {
+    try {
+      const { success, error } = await signUp(credentials);
+      if (success) {
+        router.push("/auth/verify-email");
+      }
+      return { success, error };
+    } catch (error) {
+      console.error("Sign up error:", error);
+      return { success: false, error };
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const { success, error } = await signOut();
+      if (success) {
+        router.push("/");
+      }
+      return { success, error };
+    } catch (error) {
+      console.error("Sign out error:", error);
+      return { success: false, error };
+    }
+  };
+
+  const handleUpdateProfile = async (updates) => {
+    try {
+      const { success, error } = await updateProfile(updates);
+      return { success, error };
+    } catch (error) {
+      console.error("Update profile error:", error);
+      return { success: false, error };
     }
   };
 
   return {
-    isLoading,
-    email,
-    setEmail,
-    password,
-    setPassword,
-    handleSubmit,
+    handleSignIn,
+    handleSignUp,
+    handleSignOut,
+    handleUpdateProfile,
   };
 }

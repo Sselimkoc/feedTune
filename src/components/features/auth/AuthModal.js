@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useAuth, useAuthActions } from "@/hooks/auth/useAuth";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import { EmailVerification } from "./EmailVerification";
@@ -31,9 +31,11 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
   const [showPassword, setShowPassword] = useState(false);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const { t } = useTranslation();
-  const { isLoading, email, setEmail, password, setPassword, handleSubmit } =
-    useAuth();
+  const { isLoading } = useAuth();
+  const { handleSignIn, handleSignUp } = useAuthActions();
 
   useEffect(() => {
     if (open && !verifyingEmail) {
@@ -45,13 +47,16 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
     e.preventDefault();
 
     if (mode === "signup") {
-      const result = await handleSubmit(mode);
+      const result = await handleSignUp({ email, password });
       if (result?.success) {
         setRegisteredEmail(email);
         setVerifyingEmail(true);
       }
     } else {
-      await handleSubmit(mode, () => onOpenChange?.(false));
+      const result = await handleSignIn({ email, password });
+      if (result?.success) {
+        onOpenChange?.(false);
+      }
     }
   };
 
