@@ -23,6 +23,7 @@ import {
   StarIcon,
   SettingsIcon,
   LogOutIcon,
+  Rss,
 } from "lucide-react";
 
 export function SidebarNavigation() {
@@ -36,12 +37,11 @@ export function SidebarNavigation() {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      router.push("/auth/login");
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error(t("errors.signOutFailed"));
     }
-  }, [router, toast, t]);
+  }, [toast, t]);
 
   const items = [
     {
@@ -73,6 +73,10 @@ export function SidebarNavigation() {
   return (
     <ScrollArea className="h-full py-6">
       <div className="space-y-4 py-4">
+        <div className="flex items-center gap-2 px-6 pb-4">
+          <Rss className="w-6 h-6 text-primary" />
+          <span className="font-bold text-xl">FeedTune</span>
+        </div>
         <div className="px-3 py-2">
           <div className="space-y-1">
             <nav className="grid gap-2 px-2">

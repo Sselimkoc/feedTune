@@ -108,7 +108,6 @@ export function MobileNavigation() {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      router.push("/auth/login");
       setOpen(false);
     } catch (error) {
       console.error("Error signing out:", error);
