@@ -43,7 +43,29 @@
     "reset": "Sıfırla",
     "clear": "Temizle",
     "retry": "Tekrar Dene",
-    "errorOccurred": "Bir hata oluştu"
+    "errorOccurred": "Bir hata oluştu",
+    "viewOnYouTube": "YouTube'da Görüntüle",
+    "visitWebsite": "Web Sitesini Ziyaret Et",
+    "searching": "Aranıyor...",
+    "noContent": "İçerik yok",
+    "noContentDescription": "Görüntülenecek içerik bulunamadı",
+    "tryAgain": "Tekrar dene",
+    "loadMore": "Daha fazla",
+    "name": "İsim",
+    "description": "Açıklama",
+    "url": "URL",
+    "type": "Tür",
+    "status": "Durum",
+    "actions": "İşlemler",
+    "createdAt": "Oluşturulma tarihi",
+    "updatedAt": "Güncellenme tarihi",
+    "all": "Tümü",
+    "none": "Hiçbiri",
+    "and": "ve",
+    "email": "E-posta",
+    "password": "Şifre",
+    "confirmPassword": "Şifre tekrar",
+    "category": "Kategori"
   },
   "nav": {
     "menu": "Menü",
@@ -67,7 +89,7 @@
     "passwordPlaceholder": "Şifrenizi girin",
     "forgotPassword": "Şifremi Unuttum",
     "resetPassword": "Şifremi Sıfırla",
-    "loginSuccess": "Başarıyla giriş yapıldı",
+    "loginSuccess": "Giriş başarılı",
     "loginError": "Giriş başarısız",
     "registerSuccess": "Hesabınız başarıyla oluşturuldu",
     "registerError": "Kayıt başarısız",
@@ -109,186 +131,52 @@
       "resendingEmail": "E-posta gönderiliyor...",
       "emailResent": "Doğrulama e-postası yeniden gönderildi. Lütfen gelen kutunuzu kontrol edin.",
       "resendError": "Doğrulama e-postası gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin."
-    }
+    },
+    "verificationEmailSent": "Doğrulama e-postası gönderildi",
+    "authenticationError": "Kimlik doğrulama hatası",
+    "profileUpdated": "Profil güncellendi",
+    "rateLimitError": "Çok fazla deneme, lütfen daha sonra tekrar deneyin",
+    "loginRequired": "Devam etmek için giriş yapın",
+    "invalidCredentials": "Geçersiz e-posta veya şifre",
+    "emailAlreadyInUse": "Bu e-posta zaten kullanımda",
+    "weakPassword": "Şifre çok zayıf",
+    "passwordsDontMatch": "Şifreler eşleşmiyor"
   },
   "feeds": {
     "title": "Beslemeler",
-    "description": "RSS ve YouTube beslemelerinizi yönetin",
-    "yourFeeds": "Beslemeleriniz",
-    "searchFeeds": "Besleme ara...",
-    "categories": "Kategoriler",
-    "smartFilters": "Akıllı Filtreler",
-    "addFeed": {
-      "title": "Besleme Ekle",
-      "description": "Takip etmek istediğiniz besleme türünü seçin",
-      "selectPlatform": "Platform Seçin",
-      "rss": "RSS Beslemesi",
-      "youtube": "YouTube Kanalı",
-      "success": "Besleme başarıyla eklendi",
-      "error": "Besleme eklenirken bir hata oluştu",
-      "keepAdding": "Eklemeye devam et",
-      "submit": "Besleme Ekle",
-      "addButton": "Ekle",
-      "rssUrl": "RSS Besleme URL'si",
-      "rssUrlPlaceholder": "https://example.com/feed",
-      "rssDescription": "Web siteleri, bloglar ve haber kaynaklarından beslemeler",
-      "youtubeUrl": "YouTube URL'si",
-      "youtubeUrlPlaceholder": "YouTube kanal URL'si girin",
-      "youtubeDescription": "YouTube kanalları ve video içeriklerini takip edin",
-      "suggestedChannels": "Benzer Kanallar",
-      "latestItems": "Son İçerikler",
-      "previewError": "RSS önizleme sırasında hata oluştu",
-      "youtubeSearchError": "YouTube kanal araması sırasında hata oluştu",
-      "youtubeConversionFailed": "YouTube URL'si RSS'e dönüştürülemedi",
-      "rssUrlHelp": "Web sitesi veya blog RSS besleme URL'si girin"
-    },
-    "subscribers": "abone",
-    "videos": "video",
-    "items": "içerik",
-    "rssFeeds": "RSS Besleme",
-    "youtubeFeeds": "YouTube Kanalları",
-    "allItems": "Tüm Öğeler",
-    "unreadItems": "Okunmamışlar",
-    "total": "Toplam",
-    "unread": "Okunmamış",
-    "today": "Bugün",
-    "yesterday": "Dün",
-    "thisWeek": "Bu Hafta",
-    "older": "Daha Eski",
-    "noItems": "Öğe bulunamadı",
-    "noItemsDescription": "Henüz hiç besleme öğesi yok",
-    "noFeeds": "Henüz hiç besleme eklemediniz.",
-    "noRssFeeds": "RSS beslemesi eklenmemiş",
-    "noYoutubeFeeds": "YouTube kanalı eklenmemiş",
-    "noSearchResults": "Arama sonucu bulunamadı",
-    "addYourFirst": "İlk beslemenizi ekleyin",
-    "refreshing": "Besleme yenileniyor...",
-    "markAllAsRead": "Tümünü okundu olarak işaretle",
-    "markAsRead": "Okundu olarak işaretle",
-    "markAsUnread": "Okunmadı olarak işaretle",
-    "addToFavorites": "Favorilere ekle",
-    "removeFromFavorites": "Favorilerden çıkar",
-    "addToReadLater": "Daha sonra oku",
-    "removeFromReadLater": "Daha sonra oku listesinden çıkar",
-    "removeFeed": "Beslemeyi Sil",
-    "expandSidebar": "Filtreleme Menüsünü Aç",
-    "collapseSidebar": "Filtreleme Menüsünü Kapat",
-    "new": "Yeni",
-    "noDescription": "Açıklama yok",
-    "markRead": "Okundu işaretle",
-    "markUnread": "Okunmadı işaretle",
-    "readMore": "Devamını Oku",
-    "favorite": "Favori",
-    "readLater": "Sonra Oku",
-    "refreshed": "Beslemeler yenilendi",
-    "syncSuccess": "Feed'ler başarıyla güncellendi",
-    "syncError": "Feed'ler senkronize edilirken bir hata oluştu",
-    "addFeedTitle": "Besleme Ekle",
-    "feedUrl": "Besleme URL'si",
-    "youtubeUrl": "YouTube URL'si",
-    "youtubeUrlPlaceholder": "YouTube kanal URL'si veya video ID'si girin",
+    "description": "Beslemelerinizi yönetin",
+    "add": "Besleme ekle",
+    "edit": "Besleme düzenle",
+    "delete": "Besleme sil",
+    "refresh": "Beslemeleri yenile",
+    "search": "Beslemelerde ara",
+    "filter": "Beslemeleri filtrele",
+    "sort": "Beslemeleri sırala",
+    "view": "Görünüm",
+    "grid": "Izgara",
+    "list": "Liste",
+    "loading": "Beslemeler yükleniyor...",
+    "loadingDescription": "Beslemeleriniz yüklenirken lütfen bekleyin",
+    "refreshing": "Beslemeler yenileniyor...",
+    "refreshingDescription": "Beslemeleriniz yenilenirken lütfen bekleyin",
+    "loadingButShowingContent": "Arka planda daha fazla içerik yükleniyor...",
+    "emptyTitle": "Besleme bulunamadı",
+    "emptyDescription": "Başlamak için besleme ekleyin",
+    "deleteConfirm": "Bu beslemeyi silmek istediğinizden emin misiniz?",
+    "deleteSuccess": "Besleme başarıyla silindi",
+    "deleteError": "Besleme silinirken hata oluştu",
     "addSuccess": "Besleme başarıyla eklendi",
     "addError": "Besleme eklenirken hata oluştu",
-    "allFeeds": "Tüm Beslemeler",
-    "allFeedsDescription": "Tüm beslemelerinizden gelen içerikler",
-    "selectFeed": "Besleme Seçin",
-    "unreadFeeds": "Okunmamış Beslemeler",
-    "favorites": "Favoriler",
-    "gridView": "Izgara Görünümü",
-    "listView": "Liste Görünümü",
-    "filterFeeds": "Beslemeleri Filtrele",
-    "keyboardShortcuts": "Klavye Kısayolları",
-    "refresh": "Yenile",
-    "refreshFeeds": "Beslemeleri Yenile",
-    "openInNewTab": "Yeni sekmede aç",
-    "filterTitle": "Filtreler",
-    "sortBy": "Sıralama",
-    "newest": "En Yeni",
-    "oldest": "En Eski",
-    "readStatus": "Okuma Durumu",
-    "showRead": "Okunmuşları Göster",
-    "showUnread": "Okunmamışları Göster",
-    "feedTypes": "Besleme Türleri",
-    "multiSelect": "Çoklu Seçim",
-    "resetFilters": "Filtreleri Sıfırla",
-    "applyFilters": "Filtreleri Uygula",
-    "emptyFilterState": {
-      "title": "İçerik Bulunamadı",
-      "description": "Filtreleme kriterlerinize uygun içerik bulunamadı. Filtrelerinizi değiştirmeyi veya tüm içerikleri görüntülemeyi deneyebilirsiniz.",
-      "resetFilters": "Filtreleri Sıfırla",
-      "refresh": "Sayfayı Yenile"
-    },
-    "sync": "Senkronize Et",
-    "syncFeeds": "Feed'leri Sunucuda Güncelle",
-    "syncDescription": "Kaynak sitelerden en güncel verileri alır",
-    "markingAllAsRead": "Tüm öğeler okundu olarak işaretleniyor...",
-    "allItemsAlreadyRead": "Tüm öğeler zaten okundu",
-    "allItemsMarkedAsRead": "Tüm içerikler okundu olarak işaretlendi.",
-    "markAsReadError": "İşlem Hatası",
-    "markAsReadErrorDescription": "İçerikler okundu olarak işaretlenirken bir sorun oluştu.",
-    "noContentFound": "İçerik Bulunamadı",
-    "emptyContentDescription": "Görüntülemek için içerik bulunamadı. Filtreleri sıfırlayabilir, yeni bir feed ekleyebilir veya mevcut içeriği yenileyebilirsiniz.",
-    "refreshContent": "İçeriği Yenile",
-    "addNewFeed": "Yeni Feed Ekle",
-    "loadingMore": "Daha fazla yükleniyor...",
-    "autoLoading": "Otomatik yükleniyor...",
-    "loadMoreManually": "Daha Fazla Göster",
-    "scrollToLoadMore": "Daha fazla yüklemek için kaydırın",
-    "noMoreItems": "Tüm içerikler yüklendi",
-    "endOfContent": "İçeriğin sonu",
-    "emptyFeedTitle": "Feed İçeriği Bulunamadı",
-    "emptyFeedDescription": "Bu feed için görüntülenecek içerik bulunamadı. Daha sonra tekrar kontrol edin veya beklemeyi deneyin.",
-    "emptyFavoritesTitle": "Favorilerde İçerik Yok",
-    "emptyFavoritesDescription": "Henüz favori içeriğiniz bulunmuyor. İçerikleri favorilere eklemek için kalp simgesine tıklayın.",
-    "emptyReadLaterTitle": "Okuma Listesi Boş",
-    "emptyReadLaterDescription": "Okuma listenizde henüz içerik yok. İçerikleri okuma listenize eklemek için yer imi simgesine tıklayın.",
-    "emptySearchTitle": "Arama Sonucu Bulunamadı",
-    "emptySearchDescription": "Arama sorgunuzla eşleşen içerik bulunamadı. Başka anahtar kelimeler deneyebilir veya tüm içerikleri görüntüleyebilirsiniz.",
-    "emptyFilterTitle": "Filtrelenmiş İçerik Bulunamadı",
-    "emptyFilterDescription": "Seçtiğiniz filtrelerle eşleşen içerik bulunamadı. Filtrelerinizi değiştirmeyi veya daha az kısıtlayıcı filtreler kullanmayı deneyebilirsiniz.",
-    "emptyDefaultTitle": "İçerik Bulunamadı",
-    "emptyDefaultDescription": "Bu bölümde görüntülenecek içerik bulunamadı. Daha sonra tekrar kontrol edin veya yeni kaynaklar eklemeyi deneyin.",
-    "minutesAgo": "dk önce",
-    "hoursAgo": "saat önce",
-    "daysAgo": "gün önce",
-    "expand": "Genişlet",
-    "collapse": "Daralt",
-    "share": "Paylaş",
-    "sidebar": {
-      "search": "Feed ara...",
-      "allFeeds": "Tüm Feedler",
-      "unread": "Okunmamışlar",
-      "favorites": "Favoriler",
-      "readLater": "Sonra Oku",
-      "rssFeeds": "RSS Beslemeleri",
-      "youtubeFeeds": "YouTube Kanalları",
-      "remove": "Beslemeyi Sil"
-    },
-    "filters": "Filtreler",
-    "addFeedError": "Besleme eklenirken hata oluştu",
-    "addFeedErrorConstraint": "Besleme eklenirken zorunlu bir alan eksik. Lütfen yeniden deneyin.",
-    "feedAlreadyExists": "Bu besleme zaten eklenmiş",
-    "urlRequired": "Besleme URL'si gerekli",
-    "typeRequired": "Besleme türü gerekli",
-    "invalidUrl": "Geçersiz URL",
-    "refreshingSelected": "Seçili besleme yenileniyor...",
-    "refreshSuccess": "Besleme başarıyla yenilendi",
-    "refreshError": "Besleme yenilenirken bir hata oluştu",
-    "refresh": "Beslemeyi Yenile",
-    "refreshing": "Besleme Yenileniyor",
-    "refreshNoCache": "Önbelleği Atlayarak Yenile",
-    "refreshingNoCache": "Önbellek Atlanarak Yenileniyor",
-    "noFeedSelected": "Hiçbir besleme seçilmedi",
-    "content": {
-      "imageAlt": "İçerik resmi",
-      "titleNotFound": "Başlık bulunamadı",
-      "shorts": "Shorts",
-      "errors": {
-        "dateFormat": "Tarih formatlanırken hata oluştu",
-        "favoriteToggle": "Favori değiştirme hatası",
-        "readLaterToggle": "Daha sonra oku değiştirme hatası"
-      }
-    }
+    "editSuccess": "Besleme başarıyla güncellendi",
+    "editError": "Besleme güncellenirken hata oluştu",
+    "refreshSuccess": "Beslemeler başarıyla yenilendi",
+    "refreshError": "Beslemeler yenilenirken hata oluştu",
+    "invalidUrl": "Geçersiz besleme URL'i",
+    "alreadyExists": "Bu besleme zaten mevcut",
+    "notFound": "Besleme bulunamadı",
+    "networkError": "Ağ hatası",
+    "serverError": "Sunucu hatası",
+    "unknownError": "Bilinmeyen hata"
   },
   "home": {
     "title": "Ana Sayfa",
@@ -345,24 +233,23 @@
       "readLaterItems": "Okuma Listesi"
     },
     "features": {
-      "onboarding": {
-        "title": "Kolay Kullanım",
-        "description": "Basit arayüz ile hızlıca başlayın ve kaynaklarınızı takip edin"
-      },
-      "analytics": {
-        "title": "İçerik Analizi",
-        "description": "Okuma alışkanlıklarınızı takip edin ve en sevdiğiniz kaynakları keşfedin"
-      },
-      "customization": {
-        "title": "Özelleştirme",
-        "description": "Görünümü ve özellikleri kendi ihtiyaçlarınıza göre ayarlayın"
-      },
       "title": "Özellikler",
       "subtitle": "FeedTune'un Sunduğu Avantajlar",
-      "description": "FeedTune ile içeriklerinizi daha verimli yönetin",
-      "rssFeeds": {
-        "title": "RSS Beslemeleri",
-        "desc": "Favori web sitelerinizden en son içerikleri takip edin"
+      "rss": {
+        "title": "RSS Besleme Yönetimi",
+        "description": "RSS beslemelerinizi tek bir yerden ekleyin, düzenleyin ve yönetin"
+      },
+      "realtime": {
+        "title": "Gerçek Zamanlı Güncellemeler",
+        "description": "Favori kaynaklarınızdan anlık güncellemeler alın"
+      },
+      "interface": {
+        "title": "Temiz Arayüz",
+        "description": "Daha iyi bir okuma deneyimi için modern ve sezgisel kullanıcı arayüzü"
+      },
+      "platform": {
+        "title": "Çoklu Platform",
+        "description": "Beslemelerinize herhangi bir cihazdan, her yerden erişin"
       },
       "youtube": {
         "title": "YouTube Kanalları",
@@ -444,6 +331,83 @@
       "noFeeds": "Takip etmek istediğiniz RSS veya YouTube kaynaklarını ekleyin",
       "addFirstFeed": "İlk Feed'i Ekle",
       "viewAllFeeds": "Tüm Feed'leri Görüntüle"
+    },
+    "about": {
+      "title": "Neden FeedTune?",
+      "subtitle": "FeedTune'u içerik beslemelerinizi yönetmek için mükemmel bir seçim yapan özellikleri keşfedin",
+      "reading": {
+        "title": "Optimize Okuma",
+        "description": "Özelleştirilebilir düzen seçenekleriyle temiz ve dikkat dağıtmayan okuma deneyimi"
+      },
+      "sync": {
+        "title": "Gerçek Zamanlı Senkronizasyon",
+        "description": "Otomatik besleme senkronizasyonu ve anlık güncellemelerle güncel kalın"
+      },
+      "share": {
+        "title": "Kolay Paylaşım",
+        "description": "İlginç makaleleri ve içerikleri ağınızla zahmetsizce paylaşın"
+      },
+      "responsive": {
+        "title": "Tam Responsive",
+        "description": "Mobil öncelikli tasarımımızla herhangi bir cihazdan beslemelerinize erişin"
+      },
+      "theme": {
+        "title": "Karanlık Mod",
+        "description": "Otomatik karanlık mod desteğiyle her ışık koşulunda rahat okuma"
+      },
+      "ui": {
+        "title": "Modern Arayüz",
+        "description": "En iyi kullanıcı deneyimi için tasarlanmış güzel ve sezgisel arayüz"
+      },
+      "language": {
+        "title": "Çoklu Dil",
+        "description": "Yerelleştirme desteğimizle FeedTune'u tercih ettiğiniz dilde kullanın"
+      },
+      "security": {
+        "title": "Güvenli & Gizli",
+        "description": "Verileriniz endüstri standardı güvenlik önlemleriyle korunur"
+      }
+    },
+    "technology": {
+      "title": "Modern Teknolojiler",
+      "subtitle": "FeedTune'u güçlendiren en son web teknolojileri",
+      "nextjs": {
+        "title": "Hızlı Sayfa Yüklemeleri",
+        "description": "Next.js 14 ile sunucu tarafında render edilen sayfalar ve anında yönlendirmeler"
+      },
+      "react": {
+        "title": "Reaktif Arayüz",
+        "description": "React 18 ile anlık güncellemeler ve kesintisiz kullanıcı deneyimi"
+      },
+      "tailwind": {
+        "title": "Modern Tasarım",
+        "description": "Tailwind CSS ile özelleştirilebilir ve responsive tasarım"
+      },
+      "auth": {
+        "title": "Güvenli Kimlik Doğrulama",
+        "description": "Supabase Auth ile güvenli ve hızlı kullanıcı yönetimi"
+      },
+      "database": {
+        "title": "Güçlü Veritabanı",
+        "description": "PostgreSQL ile güvenilir ve ölçeklenebilir veri depolama"
+      },
+      "typescript": {
+        "title": "Tip Güvenliği",
+        "description": "TypeScript ile daha güvenli ve bakımı kolay kod"
+      },
+      "radix": {
+        "title": "Erişilebilir Bileşenler",
+        "description": "Radix UI ile erişilebilir ve özelleştirilebilir arayüz bileşenleri"
+      },
+      "performance": {
+        "title": "Yüksek Performans",
+        "description": "React Server Components ile optimize edilmiş performans"
+      },
+      "metrics": {
+        "loadTime": "Sayfa Yükleme Süresi",
+        "performance": "Lighthouse Performans Skoru",
+        "accessibility": "Erişilebilirlik Skoru"
+      }
     }
   },
   "explore": {
@@ -459,8 +423,16 @@
   "favorites": {
     "title": "Favoriler",
     "description": "Favori içerikleriniz",
-    "empty": "Henüz favori içeriğiniz yok.",
-    "addSome": "İçerikleri favorilere eklemek için kalpçik simgesine tıklayın."
+    "emptyTitle": "Henüz favori içeriğiniz yok",
+    "emptyDescription": "Favori olarak işaretlediğiniz içerikler burada görünecek",
+    "loading": "Favoriler yükleniyor...",
+    "error": "Favoriler yüklenirken hata oluştu",
+    "remove": "Favorilerden kaldır",
+    "add": "Favorilere ekle",
+    "addSuccess": "Favorilere eklendi",
+    "removeSuccess": "Favorilerden kaldırıldı",
+    "addError": "Favorilere eklenirken hata oluştu",
+    "removeError": "Favorilerden kaldırılırken hata oluştu"
   },
   "readLater": {
     "title": "Daha Sonra Oku",
@@ -531,8 +503,28 @@
     "invalidUrl": "Geçersiz URL",
     "feedNotFound": "Besleme bulunamadı",
     "actionFailed": "İşlem başarısız",
-    "tryAgain": "Lütfen tekrar deneyin",
-    "toggleFavoriteFailed": "Favori durumu değiştirilemedi"
+    "toggleFavoriteFailed": "Favori durumu değiştirilemedi",
+    "pleaseEnterValidUrl": "Lütfen geçerli bir URL girin",
+    "authRequired": "Kimlik Doğrulama Gerekli",
+    "pleaseLoginToAddFeeds": "Feed eklemek için lütfen giriş yapın",
+    "duplicateFeed": "Yinelenen Feed",
+    "feedAlreadyExists": "Bu feed zaten koleksiyonunuzda var",
+    "invalidFeed": "Geçersiz Feed",
+    "couldNotParseFeed": "Feed içeriği ayrıştırılamadı",
+    "addFeedFailed": "Feed Ekleme Başarısız",
+    "unknownError": "Bilinmeyen bir hata oluştu",
+    "removeFeedFailed": "Feed kaldırılamadı",
+    "syncFailed": "Feed senkronize edilemedi",
+    "syncFeedFailed": "Feed senkronize edilemedi",
+    "markAsReadFailed": "Öğeler okundu olarak işaretlenemedi",
+    "somethingWentWrong": "Bir şeyler yanlış gitti",
+    "loadingFailed": "Yükleme başarısız",
+    "refreshFailed": "Yenileme başarısız",
+    "saveFailed": "Kaydetme başarısız",
+    "deleteFailed": "Silme başarısız",
+    "createFailed": "Oluşturma başarısız",
+    "updateFailed": "Güncelleme başarısız",
+    "validationError": "Doğrulama hatası"
   },
   "notifications": {
     "welcome": "FeedTune'a hoş geldiniz!",
@@ -638,5 +630,16 @@
     "clearSearch": "Aramayı Temizle",
     "resultsFor": "Arama sonuçları",
     "results": "sonuç"
+  },
+  "success": {
+    "feedAdded": "Feed Eklendi",
+    "feedAddedDescription": "Feed koleksiyonunuza eklendi",
+    "feedRemoved": "Feed Kaldırıldı",
+    "feedSynced": "Feed Senkronize Edildi",
+    "itemMarkedAsRead": "Öğe okundu olarak işaretlendi",
+    "itemsMarkedAsRead": "{{count}} öğe okundu olarak işaretlendi"
+  },
+  "meta": {
+    "feedsPageDescription": "YouTube kanalları ve web sitelerinden en sevdiğiniz beslemeleri tek bir yerden yönetin ve okuyun"
   }
 }

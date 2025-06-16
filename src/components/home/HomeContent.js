@@ -1,12 +1,7 @@
 "use client";
 
-import { useState, useCallback, memo } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
 import { useSession } from "@/hooks/auth/useSession";
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
@@ -16,6 +11,8 @@ import { HomeFeedManagement } from "@/components/home/HomeFeedManagement";
 import { HomeRecentContent } from "@/components/home/HomeRecentContent";
 import HomeHero from "@/components/home/HomeHero";
 import { HomeFeatures } from "@/components/home/HomeFeatures";
+import { HomeAbout } from "@/components/home/HomeAbout";
+import { HomeTechnology } from "@/components/home/HomeTechnology";
 import { HomeModals } from "@/components/home/HomeModals";
 import { EmptyState } from "@/components/ui-states/EmptyState";
 import { LoadingState } from "@/components/ui-states/LoadingState";
@@ -23,19 +20,16 @@ import { ErrorState } from "@/components/ui-states/ErrorState";
 import { useLanguage } from "@/hooks/useLanguage";
 
 export function HomeContent() {
-  const { session, user } = useSession();
-  const router = useRouter();
+  const { user } = useSession();
   const { t } = useLanguage();
+
+  // Modal states
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAddFeedDialog, setShowAddFeedDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [feedToDelete, setFeedToDelete] = useState(null);
-  const [newFeedUrl, setNewFeedUrl] = useState("");
-  const [viewMode, setViewMode] = useState("grid");
-  const [showKbdHelp, setShowKbdHelp] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Hooks
+  // Feed service hooks
   const {
     feeds,
     isFeedsLoading,
@@ -45,35 +39,39 @@ export function HomeContent() {
     stats,
   } = useFeedService();
 
-  const { addFeed, removeFeed, syncFeeds } = useFeedActions(
+  const { removeFeed } = useFeedActions(
     user,
     refreshAll,
     refreshAll,
     feedService
   );
 
+  // Feed management handlers
   const handleDeleteFeed = useCallback(
     async (feedId) => {
       try {
         await removeFeed(feedId);
-        if (typeof refreshAll === 'function') {
-          refreshAll();
-        }
+        refreshAll?.();
       } catch (error) {
         console.error("Error deleting feed:", error);
-        toast.error(`${t("feeds.deleteFeedError")}: ${error.message}`);
+        toast.error(t("feeds.deleteFeedError", { error: error.message }));
       }
     },
     [removeFeed, refreshAll, t]
   );
+
+  const handleAddFeed = () => setShowAddFeedDialog(true);
+  const handleAuthClick = () => setShowAuthModal(true);
 
   // Content render function
   const renderContent = () => {
     if (!user) {
       return (
         <>
-          <HomeHero onAuthClick={() => setShowAuthModal(true)} />
+          <HomeHero onAuthClick={handleAuthClick} />
           <HomeFeatures />
+          <HomeAbout />
+          <HomeTechnology />
         </>
       );
     }
@@ -86,8 +84,8 @@ export function HomeContent() {
       return <ErrorState onRetry={refreshAll} error={isFeedsError} />;
     }
 
-    if (!feeds || feeds.length === 0) {
-      return <EmptyState onAddFeed={() => setShowAddFeedDialog(true)} />;
+    if (!feeds?.length) {
+      return <EmptyState onAddFeed={handleAddFeed} />;
     }
 
     return (
@@ -95,7 +93,7 @@ export function HomeContent() {
         <HomeStats stats={stats} />
         <HomeFeedManagement
           feeds={feeds}
-          onAddFeed={() => setShowAddFeedDialog(true)}
+          onAddFeed={handleAddFeed}
           onDeleteFeed={(feedId) => {
             setFeedToDelete(feedId);
             setShowDeleteDialog(true);
@@ -113,7 +111,6 @@ export function HomeContent() {
     <div className="min-h-screen">
       {renderContent()}
 
-      {/* Modals */}
       <HomeModals
         showAuthModal={showAuthModal}
         setShowAuthModal={setShowAuthModal}

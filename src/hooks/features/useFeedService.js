@@ -9,201 +9,301 @@ import { toast } from "sonner";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/lib/supabase";
 import { FeedRepository } from "@/repositories/feedRepository";
+import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
+import { useTranslation } from "react-i18next";
+import { useToast } from "@/components/ui/use-toast";
 
 /**
- * Feed servisi ile etkileşim için merkezi hook.
- * Tüm feed işlemleri için tek bir giriş noktası sağlar.
+ * Central hook for interacting with the feed service.
+ * Provides a single entry point for all feed operations.
  */
 export function useFeedService() {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
-  const { t } = useLanguage();
-  const userId = user?.id;
+  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const { t } = useTranslation();
+  const { toast } = useToast();
 
-  console.log("useFeedService Hook başlatıldı");
-  console.log(
-    "Kullanıcı bilgisi:",
-    user ? `ID: ${user.id}` : "Kullanıcı bulunamadı"
-  );
+  // Cache settings
+  const STALE_TIME = 1000 * 60 * 10; // 10 minutes
+  const CACHE_TIME = 1000 * 60 * 60; // 1 hour
+  const RETRY_DELAY = 1000 * 5; // 5 seconds
+  const MAX_RETRIES = 3;
+  const REFRESH_INTERVAL = 1000 * 60 * 5; // 5 minutes
 
-  // Cache ayarları
-  const STALE_TIME = 5 * 60 * 1000; // 5 dakika (arttırıldı)
-  const CACHE_TIME = 60 * 60 * 1000; // 60 dakika
-  const REFRESH_INTERVAL = 1000 * 60 * 10; // 10 dakika (arttırıldı)
-
-  // Son yenileme zamanını takip etmek için state
+  // State to track last refresh time
   const [lastRefreshTime, setLastRefreshTime] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Feed listesini getir - öncelikli veri
+  // Fetch feed list - priority data
+  const feedsQuery = useQuery({
+    queryKey: ["feeds", userId],
+    queryFn: async () => {
+      if (!userId) return [];
+
+      const { data, error } = await supabase
+        .from("feeds")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    retry: MAX_RETRIES,
+    retryDelay: RETRY_DELAY,
+    initialData: [],
+  });
+
   const {
-    data: feeds,
+    data: feeds = [],
     isLoading: isLoadingFeeds,
     isError: isErrorFeeds,
     error: feedsError,
-    refetch: refetchFeeds,
-  } = useQuery({
-    queryKey: ["feeds", userId],
-    queryFn: () => {
-      console.log("feedService.getFeeds çağrılıyor, userId:", userId);
-      return feedService.getFeeds(userId);
-    },
-    onSuccess: (data) => {
-      console.log("Feed sorgusu başarılı, feed sayısı:", data?.length || 0);
-      console.log("Feed verileri:", data);
-      setLastRefreshTime(new Date());
-    },
-    onError: (error) => {
-      console.error("Feed sorgusu hatası:", error);
+  } = feedsQuery;
+
+  const refetchFeeds = useCallback(async () => {
+    if (!userId) return [];
+    try {
+      const result = await feedsQuery.refetch();
+      return result;
+    } catch (error) {
+      console.error("Error refetching feeds:", error);
+      return [];
+    }
+  }, [userId, feedsQuery]);
+
+  // Fetch feed items - optimized query
+  const itemsQuery = useQuery({
+    queryKey: ["feed_items", userId],
+    queryFn: async () => {
+      if (!userId) return [];
+
+      const { data, error } = await supabase
+        .from("feed_items")
+        .select("*")
+        .eq("user_id", userId)
+        .order("published_at", { ascending: false })
+        .limit(100); // Performance consideration limit
+
+      if (error) throw error;
+      return data;
     },
     enabled: !!userId,
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
-    // Değişiklik: Hata yönetimini geliştirme
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: MAX_RETRIES,
+    retryDelay: RETRY_DELAY,
+    initialData: [],
   });
 
-  // Feed öğelerini getir - optimize edilmiş sorgu
   const {
-    data: items,
+    data: items = [],
     isLoading: isLoadingItems,
     isError: isErrorItems,
     error: itemsError,
-    refetch: refetchItems,
-  } = useQuery({
-    queryKey: ["feedItems", userId, feeds?.length],
-    queryFn: () => {
-      if (!feeds || feeds.length === 0) return [];
+  } = itemsQuery;
 
-      console.log("Feed öğeleri getiriliyor...");
-      console.log("Feed sayısı:", feeds.length);
-
-      const feedIds = feeds.map((feed) => feed.id);
-      console.log("Feed ID'leri:", feedIds);
-
-      // Timestamp oluştur - şu anki zamanı ISO string olarak kullan
-      const timestamp = new Date().toISOString();
-      console.log("Feed öğeleri için timestamp:", timestamp);
-
-      // Parametreleri düzgün sırayla geçir: feedIds, limit, userId (timestamp'i kaldırdım)
-      return feedService.getFeedItems(feedIds, 100, userId);
-    },
-    enabled: !!userId && !!feeds && feeds.length > 0,
-    staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
-    onSuccess: (data) => {
-      console.log("Feed öğeleri başarıyla alındı:", data);
-      setLastRefreshTime(new Date());
-    },
-    onError: (error) => {
-      console.error("Feed öğeleri alınırken hata:", error);
-    },
-    // Değişiklik: Sayfa yüklenirken daha hızlı hale getirmek için
-    keepPreviousData: true,
-    // Değişiklik: feed değiştiğinde bile eski verileri göster
-    placeholderData: (previousData) => previousData,
-  });
-
-  // Favori öğeleri getir
-  const {
-    data: favorites,
-    isLoading: isLoadingFavorites,
-    refetch: refetchFavorites,
-  } = useQuery({
-    queryKey: ["favorites", userId],
-    queryFn: () => feedService.getFavorites(userId),
-    enabled: !!userId,
-    staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
-    // Değişiklik: Eski verileri göster
-    keepPreviousData: true,
-  });
-
-  // Daha sonra oku listesini getir
-  const {
-    data: readLaterItems,
-    isLoading: isLoadingReadLater,
-    refetch: refetchReadLater,
-  } = useQuery({
-    queryKey: ["readLater", userId],
-    queryFn: () => feedService.getReadLaterItems(userId),
-    enabled: !!userId,
-    staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
-    // Değişiklik: Eski verileri göster
-    keepPreviousData: true,
-  });
-
-  // Otomatik yenileme gerçekleştiğinde son yenileme zamanını güncelle
-  useEffect(() => {
-    if (items) {
-      setLastRefreshTime(new Date());
+  const refetchItems = useCallback(async () => {
+    if (!userId) return [];
+    try {
+      const result = await itemsQuery.refetch();
+      return result;
+    } catch (error) {
+      console.error("Error refetching items:", error);
+      return [];
     }
-  }, [items]);
+  }, [userId, itemsQuery]);
 
-  // Otomatik yenileme için zamanlayıcı
+  // Fetch favorites
+  const favoritesQuery = useQuery({
+    queryKey: ["favorites", userId],
+    queryFn: async () => {
+      if (!userId) return [];
+
+      const { data, error } = await supabase
+        .from("favorites")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    retry: MAX_RETRIES,
+    retryDelay: RETRY_DELAY,
+    initialData: [],
+  });
+
+  const {
+    data: favorites = [],
+    isLoading: isLoadingFavorites,
+    error: favoritesError,
+  } = favoritesQuery;
+
+  const refetchFavorites = useCallback(async () => {
+    if (!userId) return [];
+    try {
+      const result = await favoritesQuery.refetch();
+      return result;
+    } catch (error) {
+      console.error("Error refetching favorites:", error);
+      return [];
+    }
+  }, [userId, favoritesQuery]);
+
+  // Fetch read later list
+  const readLaterQuery = useQuery({
+    queryKey: ["read_later", userId],
+    queryFn: async () => {
+      if (!userId) return [];
+
+      const { data, error } = await supabase
+        .from("read_later")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    retry: MAX_RETRIES,
+    retryDelay: RETRY_DELAY,
+    initialData: [],
+  });
+
+  const {
+    data: readLaterItems = [],
+    isLoading: isLoadingReadLater,
+    error: readLaterError,
+  } = readLaterQuery;
+
+  const refetchReadLater = useCallback(async () => {
+    if (!userId) return [];
+    try {
+      const result = await readLaterQuery.refetch();
+      return result;
+    } catch (error) {
+      console.error("Error refetching read later:", error);
+      return [];
+    }
+  }, [userId, readLaterQuery]);
+
+  // Automatic refresh for timer
   useEffect(() => {
-    // Feed otomatik yenileme için periyodik zamanlayıcı (ek güvence olarak)
+    if (!userId) return;
+
     const autoRefreshTimer = setInterval(() => {
-      // Son yenilemeden beri belirlenen süre geçtiyse yenile
       const timeSinceLastRefresh = new Date() - (lastRefreshTime || 0);
       if (lastRefreshTime && timeSinceLastRefresh > REFRESH_INTERVAL) {
-        // Değişiklik: Otomatik yenilemede sessiz çalışma
         silentRefresh();
       }
     }, REFRESH_INTERVAL);
 
     return () => clearInterval(autoRefreshTimer);
-  }, [lastRefreshTime]);
+  }, [lastRefreshTime, userId]);
 
-  // Değişiklik: Sessiz yenileme - kullanıcıya bildirim göstermeden yeniler
+  // Silent refresh - refresh without notifying the user
   const silentRefresh = useCallback(async () => {
     if (!userId) return;
 
     try {
-      await Promise.all([
-        queryClient.refetchQueries({
-          queryKey: ["feeds", userId],
-          exact: true,
-        }),
-        queryClient.refetchQueries({
-          queryKey: ["feedItems", userId],
-          exact: false,
-        }),
-        queryClient.refetchQueries({
-          queryKey: ["favorites", userId],
-          exact: true,
-        }),
-        queryClient.refetchQueries({
-          queryKey: ["readLater", userId],
-          exact: true,
-        }),
-      ]);
+      const promises = [
+        queryClient
+          .refetchQueries({
+            queryKey: ["feeds", userId],
+            exact: true,
+          })
+          .catch((error) => {
+            console.warn("Silent refresh error (feeds):", error);
+            return null;
+          }),
+        queryClient
+          .refetchQueries({
+            queryKey: ["feed_items", userId],
+            exact: false,
+          })
+          .catch((error) => {
+            console.warn("Silent refresh error (items):", error);
+            return null;
+          }),
+        queryClient
+          .refetchQueries({
+            queryKey: ["favorites", userId],
+            exact: true,
+          })
+          .catch((error) => {
+            console.warn("Silent refresh error (favorites):", error);
+            return null;
+          }),
+        queryClient
+          .refetchQueries({
+            queryKey: ["read_later", userId],
+            exact: true,
+          })
+          .catch((error) => {
+            console.warn("Silent refresh error (read later):", error);
+            return null;
+          }),
+      ];
 
-      setLastRefreshTime(new Date());
+      const results = await Promise.all(promises);
+      const successfulResults = results.filter((result) => result !== null);
+
+      if (successfulResults.length > 0) {
+        setLastRefreshTime(new Date());
+      }
     } catch (error) {
-      console.error("Sessiz yenileme hatası:", error);
+      console.warn("Silent refresh error:", error);
     }
   }, [userId, queryClient]);
 
-  // Tüm verileri yenile - kullanıcı tarafından tetiklenen
+  // Refresh all data - triggered by user
   const refreshAll = useCallback(async () => {
     if (!userId) return;
 
     try {
-      const results = await Promise.all([
-        refetchFeeds(),
-        refetchItems(),
-        refetchFavorites(),
-        refetchReadLater(),
-      ]);
+      const promises = [
+        refetchFeeds().catch((error) => {
+          console.error("Error refreshing feeds:", error);
+          return null;
+        }),
+        refetchItems().catch((error) => {
+          console.error("Error refreshing items:", error);
+          return null;
+        }),
+        refetchFavorites().catch((error) => {
+          console.error("Error refreshing favorites:", error);
+          return null;
+        }),
+        refetchReadLater().catch((error) => {
+          console.error("Error refreshing read later:", error);
+          return null;
+        }),
+      ];
+
+      const results = await Promise.all(promises);
+      const successfulResults = results.filter((result) => result !== null);
 
       setLastRefreshTime(new Date());
 
-      // Sonuçları döndür
-      return results;
+      if (successfulResults.length === 0) {
+        toast.error(t("errors.refreshFailed"));
+      } else if (successfulResults.length < promises.length) {
+        toast.warning(t("errors.partialRefreshFailed"));
+      }
+
+      return successfulResults;
     } catch (error) {
-      console.error("Yenileme hatası:", error);
+      console.error("Refresh error:", error);
       toast.error(t("errors.refreshFailed"));
       return [];
     }
@@ -216,25 +316,27 @@ export function useFeedService() {
     t,
   ]);
 
-  // Belirli bir feed'i yenile
+  // Refresh a specific feed
   const refreshFeed = useCallback(
     async (feedId, userId, skipCache = false) => {
       if (!feedId || !userId) {
-        console.error("refreshFeed: feedId ve userId gerekli");
+        console.error("refreshFeed: feedId and userId are required");
         return;
       }
 
       try {
-        console.log(`Tek feed yenileniyor: ${feedId}, skipCache: ${skipCache}`);
+        console.log(
+          `Refreshing single feed: ${feedId}, skipCache: ${skipCache}`
+        );
 
-        // FeedService üzerinden feed bilgilerini al
+        // Fetch feed information from FeedService
         const feed = feeds?.find((f) => f.id === feedId);
         if (!feed) {
-          console.warn(`Feed bulunamadı: ${feedId}`);
-          throw new Error("Feed bulunamadı");
+          console.warn(`Feed not found: ${feedId}`);
+          throw new Error("Feed not found");
         }
 
-        // Feed öğelerini senkronize et (skipCache parametresini geçirerek)
+        // Sync feed items (pass skipCache parameter)
         const result = await feedService.syncFeedItems(
           feedId,
           userId,
@@ -242,19 +344,19 @@ export function useFeedService() {
           { skipCache }
         );
 
-        console.log("Feed yenileme sonucu:", result);
+        console.log("Feed refresh result:", result);
 
-        // Önbelleği güncelle
+        // Update cache
         queryClient.invalidateQueries({
-          queryKey: ["feedItems", userId, feedId],
+          queryKey: ["feed_items", userId, feedId],
         });
 
-        // Feed öğelerini yeniden getir
+        // Fetch items again
         await refetchItems();
 
         return result;
       } catch (error) {
-        console.error(`Feed yenileme hatası (ID: ${feedId}):`, error);
+        console.error(`Feed refresh error (ID: ${feedId}):`, error);
         toast.error(t("feeds.refreshError"));
         throw error;
       }
@@ -262,38 +364,38 @@ export function useFeedService() {
     [feeds, userId, queryClient, refetchItems, t]
   );
 
-  // YouTube önbelleğini temizleme
+  // Clean YouTube cache
   const cleanYoutubeCache = useCallback(async () => {
     try {
       await youtubeService.cleanCache();
       toast.success(t("youtube.cacheCleanSuccess"));
       return true;
     } catch (error) {
-      console.error("YouTube önbellek temizleme hatası:", error);
+      console.error("YouTube cache cleaning error:", error);
       toast.error(t("youtube.cacheCleanError"));
       return false;
     }
   }, [t]);
 
-  // Değişiklik: Cache güncelleme yardımcı fonksiyonu - daha verimli
+  // Cache update helper function - more efficient
   const updateItemInCache = useCallback(
     (itemId, updates) => {
-      // Tüm feed öğeleri cache'inde güncelleme yap
-      queryClient.setQueriesData({ queryKey: ["feedItems"] }, (oldData) => {
+      // Update all feed items in cache
+      queryClient.setQueriesData({ queryKey: ["feed_items"] }, (oldData) => {
         if (!oldData || !Array.isArray(oldData)) return oldData;
         return oldData.map((item) =>
           item.id === itemId ? { ...item, ...updates } : item
         );
       });
 
-      // Favoriler cache'inde güncelleme yap
+      // Update favorites cache
       if ("is_favorite" in updates) {
         if (updates.is_favorite) {
-          // Favorilere ekle
+          // Add to favorites
           queryClient.setQueriesData({ queryKey: ["favorites"] }, (oldData) => {
             if (!oldData || !Array.isArray(oldData)) return oldData;
 
-            // items değişkeni dizi değilse veya boşsa, işlemi yapma
+            // items is not an array or empty, do nothing
             if (!Array.isArray(items)) return oldData;
 
             const item = items.find((i) => i.id === itemId);
@@ -305,7 +407,7 @@ export function useFeedService() {
             return [...oldData, { ...item, ...updates }];
           });
         } else {
-          // Favorilerden çıkar
+          // Remove from favorites
           queryClient.setQueriesData({ queryKey: ["favorites"] }, (oldData) => {
             if (!oldData || !Array.isArray(oldData)) return oldData;
             return oldData.filter((item) => item.id !== itemId);
@@ -313,44 +415,50 @@ export function useFeedService() {
         }
       }
 
-      // Sonra oku cache'inde güncelleme yap
+      // Update read later cache
       if ("is_read_later" in updates) {
         if (updates.is_read_later) {
-          // Sonra oku'ya ekle
-          queryClient.setQueriesData({ queryKey: ["readLater"] }, (oldData) => {
-            if (!oldData || !Array.isArray(oldData)) return oldData;
+          // Add to read later
+          queryClient.setQueriesData(
+            { queryKey: ["read_later"] },
+            (oldData) => {
+              if (!oldData || !Array.isArray(oldData)) return oldData;
 
-            // items değişkeni dizi değilse veya boşsa, işlemi yapma
-            if (!Array.isArray(items)) return oldData;
+              // items is not an array or empty, do nothing
+              if (!Array.isArray(items)) return oldData;
 
-            const item = items.find((i) => i.id === itemId);
-            if (!item) return oldData;
+              const item = items.find((i) => i.id === itemId);
+              if (!item) return oldData;
 
-            const existingItem = oldData.find((i) => i.id === itemId);
-            if (existingItem) return oldData;
+              const existingItem = oldData.find((i) => i.id === itemId);
+              if (existingItem) return oldData;
 
-            return [...oldData, { ...item, ...updates }];
-          });
+              return [...oldData, { ...item, ...updates }];
+            }
+          );
         } else {
-          // Sonra oku'dan çıkar
-          queryClient.setQueriesData({ queryKey: ["readLater"] }, (oldData) => {
-            if (!oldData || !Array.isArray(oldData)) return oldData;
-            return oldData.filter((item) => item.id !== itemId);
-          });
+          // Remove from read later
+          queryClient.setQueriesData(
+            { queryKey: ["read_later"] },
+            (oldData) => {
+              if (!oldData || !Array.isArray(oldData)) return oldData;
+              return oldData.filter((item) => item.id !== itemId);
+            }
+          );
         }
       }
     },
     [queryClient, items]
   );
 
-  // Okuma durumunu değiştir - Optimistic updates ile geliştirildi
+  // Toggle read status - Optimistic updates
   const toggleReadMutation = useMutation({
     mutationFn: ({ itemId, isRead, itemType = "rss" }) =>
       feedService.toggleItemReadStatus(userId, itemId, itemType, isRead),
     onMutate: async ({ itemId, isRead }) => {
-      // Önceki sorgulardan gelen verileri yedekle
+      // Backup previous queries
       const previousData = queryClient.getQueryData([
-        "feedItems",
+        "feed_items",
         userId,
         feeds?.length,
       ]);
@@ -364,20 +472,20 @@ export function useFeedService() {
       // Hata durumunda önceki verileri geri yükle
       if (context?.previousData) {
         queryClient.setQueryData(
-          ["feedItems", userId, feeds?.length],
+          ["feed_items", userId, feeds?.length],
           context.previousData
         );
       }
-      console.error("Okuma durumu güncelleme hatası:", error);
+      console.error("Read status update error:", error);
       toast.error(t("errors.updateFailed"));
     },
     onSettled: () => {
       // İşlem tamamlandığında verileri bir kere daha yenile (opsiyonel)
-      // queryClient.invalidateQueries(["feedItems"]);
+      // queryClient.invalidateQueries(["feed_items"]);
     },
   });
 
-  // Favori durumunu değiştir - Optimistic updates ile geliştirildi
+  // Toggle favorite status - Optimistic updates
   const toggleFavoriteMutation = useMutation({
     mutationFn: ({ itemId, isFavorite, itemType = "rss" }) =>
       feedService.toggleItemFavoriteStatus(
@@ -387,9 +495,9 @@ export function useFeedService() {
         isFavorite
       ),
     onMutate: async ({ itemId, isFavorite }) => {
-      // Önceki verileri yedekle
+      // Backup previous queries
       const previousItems = queryClient.getQueryData([
-        "feedItems",
+        "feed_items",
         userId,
         feeds?.length,
       ]);
@@ -404,7 +512,7 @@ export function useFeedService() {
       // Hata durumunda önceki verileri geri yükle
       if (context?.previousItems) {
         queryClient.setQueryData(
-          ["feedItems", userId, feeds?.length],
+          ["feed_items", userId, feeds?.length],
           context.previousItems
         );
       }
@@ -414,17 +522,17 @@ export function useFeedService() {
           context.previousFavorites
         );
       }
-      console.error("Favori durumu güncelleme hatası:", error);
+      console.error("Favorite status update error:", error);
       toast.error(t("errors.updateFailed"));
     },
     onSettled: () => {
       // İşlem tamamlandığında (isteğe bağlı olarak) gerçek verileri alabilirsiniz
-      // queryClient.invalidateQueries(["feedItems"]);
+      // queryClient.invalidateQueries(["feed_items"]);
       // queryClient.invalidateQueries(["favorites"]);
     },
   });
 
-  // Daha sonra oku durumunu değiştir - Optimistic updates ile geliştirildi
+  // Toggle read later status - Optimistic updates
   const toggleReadLaterMutation = useMutation({
     mutationFn: ({ itemId, isReadLater, itemType = "rss" }) =>
       feedService.toggleItemReadLaterStatus(
@@ -434,13 +542,16 @@ export function useFeedService() {
         isReadLater
       ),
     onMutate: async ({ itemId, isReadLater }) => {
-      // Önceki verileri yedekle
+      // Backup previous queries
       const previousItems = queryClient.getQueryData([
-        "feedItems",
+        "feed_items",
         userId,
         feeds?.length,
       ]);
-      const previousReadLater = queryClient.getQueryData(["readLater", userId]);
+      const previousReadLater = queryClient.getQueryData([
+        "read_later",
+        userId,
+      ]);
 
       // Optimistic update - Cache'i hemen güncelle
       updateItemInCache(itemId, { is_read_later: isReadLater });
@@ -451,27 +562,27 @@ export function useFeedService() {
       // Hata durumunda önceki verileri geri yükle
       if (context?.previousItems) {
         queryClient.setQueryData(
-          ["feedItems", userId, feeds?.length],
+          ["feed_items", userId, feeds?.length],
           context.previousItems
         );
       }
       if (context?.previousReadLater) {
         queryClient.setQueryData(
-          ["readLater", userId],
+          ["read_later", userId],
           context.previousReadLater
         );
       }
-      console.error("Daha sonra oku durumu güncelleme hatası:", error);
+      console.error("Read later status update error:", error);
       toast.error(t("errors.updateFailed"));
     },
     onSettled: () => {
       // İşlem tamamlandığında (isteğe bağlı olarak) gerçek verileri alabilirsiniz
-      // queryClient.invalidateQueries(["feedItems"]);
-      // queryClient.invalidateQueries(["readLater"]);
+      // queryClient.invalidateQueries(["feed_items"]);
+      // queryClient.invalidateQueries(["read_later"]);
     },
   });
 
-  // Eski içerikleri temizle
+  // Clean old items
   const cleanupMutation = useMutation({
     mutationFn: ({
       olderThanDays = 30,
@@ -485,15 +596,15 @@ export function useFeedService() {
         keepReadLater
       ),
     onSuccess: (result) => {
-      // Temizlik sonrası verileri bir kere yenile
-      queryClient.invalidateQueries(["feedItems", userId]);
+      // Clean up old items and refresh data once
+      queryClient.invalidateQueries(["feed_items", userId]);
 
-      // Sonuçları döndür
+      // Return results
       return result;
     },
   });
 
-  // Helper fonksiyonlar
+  // Helper functions
   const toggleRead = useCallback(
     (itemId, isRead, itemType = "rss") => {
       if (!userId) return;
@@ -518,41 +629,53 @@ export function useFeedService() {
     [userId, toggleReadLaterMutation]
   );
 
-  // Feed ekleme
+  // Feed add
   const addFeedMutation = useMutation({
-    mutationFn: ({ url, type }) => {
-      if (!userId) throw new Error("User ID is required");
-      return feedService.addFeed(url, type, userId);
+    mutationFn: async (feedData) => {
+      const { data, error } = await supabase
+        .from("feeds")
+        .insert([{ ...feedData, user_id: userId }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      // Feed eklendiğinde feed listesini güncelle
       queryClient.invalidateQueries(["feeds", userId]);
     },
   });
 
-  // Feed silme
+  // Feed delete
   const deleteFeedMutation = useMutation({
-    mutationFn: (feedId) => feedService.deleteFeed(feedId, userId),
+    mutationFn: async (feedId) => {
+      const { error } = await supabase
+        .from("feeds")
+        .delete()
+        .eq("id", feedId)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+    },
     onSuccess: () => {
-      // Feed silindiğinde feed listesini ve item'ları güncelle
       queryClient.invalidateQueries(["feeds", userId]);
-      queryClient.invalidateQueries(["feedItems", userId]);
+      queryClient.invalidateQueries(["feed_items", userId]);
     },
   });
 
-  // Feed ekle
+  // Feed add
   const addFeed = useCallback(
     (url, type) => addFeedMutation.mutateAsync({ url, type }),
     [addFeedMutation]
   );
 
-  // Feed sil
+  // Feed delete
   const deleteFeed = useCallback(
     (feedId) => deleteFeedMutation.mutateAsync(feedId),
     [deleteFeedMutation]
   );
 
-  // Eski içerikleri temizle
+  // Clean old items
   const cleanupOldItems = useCallback(
     (options = {}) => {
       const {
@@ -569,12 +692,12 @@ export function useFeedService() {
     [cleanupMutation]
   );
 
-  // İstatistikleri hesapla
+  // Calculate statistics
   const stats = useMemo(() => {
-    // Güvenlik kontrolü ve hata loglama: items tipi
+    // Security check and error logging: items type
     if (items && !Array.isArray(items)) {
       console.warn(
-        "useFeedService: items bir dizi değil:",
+        "useFeedService: items is not an array:",
         typeof items,
         items
       );
@@ -590,48 +713,48 @@ export function useFeedService() {
     };
   }, [items, favorites, readLaterItems]);
 
-  // YouTube besleme senkronizasyonu
+  // YouTube feed synchronization
   const syncYoutubeFeed = async (feedId) => {
-    if (!user?.id) {
-      toast.error("Önce giriş yapmalısınız");
+    if (!userId) {
+      toast.error(t("errors.loginRequired"));
       return;
     }
 
     if (!feedId) {
-      toast.error("Geçerli bir feed ID belirtilmelidir");
+      toast.error(t("errors.invalidFeedId"));
       return;
     }
 
-    // Yükleniyor bildirimini göster
-    const toastId = toast.loading("YouTube beslemesi senkronize ediliyor...");
-    console.log(`📡 YouTube beslemesi senkronize ediliyor: ${feedId}`);
+    // Show loading notification
+    const toastId = toast.loading(t("feeds.syncing"));
+    console.log(`📡 Syncing YouTube feed: ${feedId}`);
 
     try {
-      // Önce feed bilgisini al
+      // First get feed information
       const { data: feed, error: feedError } = await supabase
         .from("feeds")
         .select("id, title, url, type")
         .eq("id", feedId)
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .single();
 
-      // Feed bulunamadı mı?
+      // Feed not found?
       if (feedError || !feed) {
-        console.error("Feed bilgisi alınamadı:", feedError);
-        toast.error(feedError?.message || "Feed bilgisi alınamadı", {
+        console.error("Could not get feed info:", feedError);
+        toast.error(feedError?.message || t("errors.feedNotFound"), {
           id: toastId,
         });
         return;
       }
 
-      // YouTube beslemesi değilse hata ver
+      // Error if not a YouTube feed
       if (feed.type !== "youtube") {
-        toast.error("Bu besleme YouTube türünde değil", { id: toastId });
+        toast.error(t("errors.notYoutubeFeed"), { id: toastId });
         return;
       }
 
-      // Ara bildirim göster
-      toast.loading(`"${feed.title}" kanalı senkronize ediliyor...`, {
+      // Show intermediate notification
+      toast.loading(t("feeds.syncingChannel", { title: feed.title }), {
         id: toastId,
       });
 
@@ -642,56 +765,54 @@ export function useFeedService() {
         },
         body: JSON.stringify({
           feedId,
-          userId: user.id,
+          userId: userId,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Senkronizasyon API hatası:", errorData);
-        toast.error(
-          `Senkronizasyon hatası: ${errorData.error || "Bilinmeyen hata"}`,
-          {
-            id: toastId,
-          }
-        );
+        console.error("Sync API error:", errorData);
+        toast.error(`Sync error: ${errorData.error || "Unknown error"}`, {
+          id: toastId,
+        });
         return;
       }
 
       const data = await response.json();
-      console.log("Senkronizasyon sonucu:", data);
+      console.log("Sync result:", data);
 
-      // Bildirimi güncelle
+      // Update notification
       if (data.added > 0) {
-        toast.success(`${data.added} yeni video eklendi`, { id: toastId });
+        toast.success(`${data.added} new videos added`, { id: toastId });
       } else if (data.error) {
-        toast.error(`Hata: ${data.error}`, { id: toastId });
+        toast.error(`Error: ${data.error}`, { id: toastId });
       } else {
-        toast.success("Senkronizasyon tamamlandı, yeni video yok", {
+        toast.success("Sync completed, no new videos", {
           id: toastId,
         });
       }
 
-      // Sorguları yenile
+      // Refresh queries
       await Promise.all([
         queryClient.invalidateQueries(["feeds"]),
-        queryClient.invalidateQueries(["feedItems"]),
+        queryClient.invalidateQueries(["feed_items"]),
       ]);
     } catch (error) {
-      console.error("Senkronizasyon hatası:", error);
+      console.error("Sync error:", error);
 
-      // Hata türüne göre özel mesajlar
-      let errorMessage = "Senkronizasyon sırasında bir hata oluştu";
+      // Error type-specific messages
+      let errorMessage = "Sync encountered an error";
 
       if (
         error.message?.includes("network") ||
         error.message?.includes("fetch")
       ) {
-        errorMessage = "Bağlantı hatası: Sunucuya ulaşılamıyor";
+        errorMessage = "Connection error: Unable to reach server";
       } else if (error.message?.includes("timeout")) {
-        errorMessage = "Zaman aşımı: İşlem çok uzun sürdü";
+        errorMessage = "Timeout: Operation took too long";
       } else if (error.message?.includes("permission")) {
-        errorMessage = "Yetki hatası: Bu işlemi gerçekleştirme izniniz yok";
+        errorMessage =
+          "Permission error: You don't have permission to perform this operation";
       }
 
       toast.error(errorMessage, { id: toastId });
@@ -699,13 +820,13 @@ export function useFeedService() {
   };
 
   return {
-    // Veriler
+    // Data
     feeds,
     items,
     favorites,
     readLaterItems,
 
-    // Yükleme durumları
+    // Loading states
     isLoading:
       isLoadingFeeds ||
       isLoadingItems ||
@@ -716,11 +837,11 @@ export function useFeedService() {
     isLoadingFavorites,
     isLoadingReadLater,
 
-    // Hata durumları
-    isError: isErrorFeeds || isErrorItems,
-    error: feedsError || itemsError,
+    // Error states
+    isError: isErrorFeeds || isErrorItems || favoritesError || readLaterError,
+    error: feedsError || itemsError || favoritesError || readLaterError,
 
-    // Yenileme fonksiyonları
+    // Refresh functions
     refreshAll,
     refreshFeed,
     silentRefresh,
@@ -730,34 +851,34 @@ export function useFeedService() {
     refetchReadLater,
     lastRefreshTime,
 
-    // Etkileşim fonksiyonları
+    // Interaction functions
     toggleRead,
     toggleFavorite,
     toggleReadLater,
 
-    // Mutation durumları
+    // Mutation states
     isTogglingRead: toggleReadMutation.isPending,
     isTogglingFavorite: toggleFavoriteMutation.isPending,
     isTogglingReadLater: toggleReadLaterMutation.isPending,
 
-    // Temizleme fonksiyonları
+    // Cleanup functions
     cleanupOldItems,
     isCleaningUp: cleanupMutation.isLoading,
 
-    // Feed ekleme ve silme fonksiyonları
+    // Feed add and delete functions
     addFeed,
     deleteFeed,
 
-    // İstatistikler
+    // Statistics
     stats,
 
-    // Feed servisi - artık feedService'i kullanıyoruz
+    // Feed service - now using feedService
     feedService: feedService,
 
-    // YouTube önbelleğini temizleme
+    // Clean YouTube cache
     cleanYoutubeCache,
 
-    // YouTube besleme senkronizasyonu
+    // YouTube feed synchronization
     syncYoutubeFeed,
   };
 }

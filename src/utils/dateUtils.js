@@ -2,8 +2,13 @@
  * Tarih işlemleri için yardımcı fonksiyonlar
  */
 
-import { formatDistanceToNowStrict, fromUnixTime, format } from "date-fns";
-import { tr } from "date-fns/locale";
+import {
+  formatDistanceToNowStrict,
+  fromUnixTime,
+  format,
+  formatDistance,
+} from "date-fns";
+import { tr, enUS } from "date-fns/locale";
 
 /**
  * Bir Date nesnesinin geçerli olup olmadığını kontrol eder
@@ -102,6 +107,32 @@ export function formatRelativeTime(timestamp) {
     addSuffix: true,
     locale: tr,
   });
+}
+
+/**
+ * Tarihten bugüne kadar geçen süreyi kullanıcı dostu formatta döndürür
+ * @param {string|Date} date - Tarih
+ * @param {string} language - Dil kodu (örn: 'tr', 'en')
+ * @returns {string} - Geçen süre (örn: "2 hours ago")
+ */
+export function timeAgo(date, language = "tr") {
+  if (!date) return "";
+
+  try {
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+
+    if (!isValidDate(dateObj)) {
+      return "";
+    }
+
+    return formatDistance(dateObj, new Date(), {
+      addSuffix: true,
+      locale: language === "tr" ? tr : enUS,
+    });
+  } catch (error) {
+    console.error("timeAgo formatting error:", error);
+    return "";
+  }
 }
 
 /**

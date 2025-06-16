@@ -1,133 +1,241 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { useLanguage } from "@/hooks/useLanguage";
+import React, { useMemo } from "react";
 import { motion } from "framer-motion";
+import { useTheme } from "@/hooks/useTheme";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-export function LoadingState({ viewMode = "grid" }) {
-  const { t } = useLanguage();
+/**
+ * Loading state component with different views
+ */
+export function LoadingState({
+  viewMode = "grid",
+  title,
+  description,
+  itemCount = 6,
+  contentType = "default", // "default", "youtube", "rss"
+  className = "",
+  showSpinner = true,
+  showSkeletons = true,
+  minimal = false,
+}) {
+  const { theme } = useTheme();
+  const { t } = useTranslation();
 
-  // Animasyon varyantları
+  // Theme-based color variables
+  const colors = useMemo(() => {
+    if (theme === "dark") {
+      return {
+        iconBg:
+          contentType === "youtube"
+            ? "bg-red-950/20"
+            : contentType === "rss"
+            ? "bg-blue-950/20"
+            : "bg-zinc-800/30",
+        iconColor:
+          contentType === "youtube"
+            ? "text-red-500"
+            : contentType === "rss"
+            ? "text-blue-500"
+            : "text-zinc-300",
+        borderColor:
+          contentType === "youtube"
+            ? "border-red-900/20"
+            : contentType === "rss"
+            ? "border-blue-900/20"
+            : "border-zinc-800/20",
+        titleGradient:
+          contentType === "youtube"
+            ? "from-red-400 to-red-600"
+            : contentType === "rss"
+            ? "from-blue-400 to-blue-600"
+            : "from-zinc-300 to-zinc-500",
+        skeletonBase: "bg-zinc-800/30",
+        skeletonHighlight: "bg-zinc-700/30",
+        textColor: "text-zinc-400",
+        bgColor: "bg-zinc-900/20",
+      };
+    } else {
+      return {
+        iconBg:
+          contentType === "youtube"
+            ? "bg-red-100"
+            : contentType === "rss"
+            ? "bg-blue-100"
+            : "bg-zinc-100",
+        iconColor:
+          contentType === "youtube"
+            ? "text-red-600"
+            : contentType === "rss"
+            ? "text-blue-600"
+            : "text-zinc-600",
+        borderColor:
+          contentType === "youtube"
+            ? "border-red-200"
+            : contentType === "rss"
+            ? "border-blue-200"
+            : "border-zinc-200",
+        titleGradient:
+          contentType === "youtube"
+            ? "from-red-500 to-red-700"
+            : contentType === "rss"
+            ? "from-blue-500 to-blue-700"
+            : "from-zinc-500 to-zinc-700",
+        skeletonBase: "bg-zinc-200/60",
+        skeletonHighlight: "bg-zinc-300/60",
+        textColor: "text-zinc-500",
+        bgColor: "bg-zinc-50/50",
+      };
+    }
+  }, [theme, contentType]);
+
+  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
+        duration: 0.5,
+        ease: "easeInOut",
         when: "beforeChildren",
-        staggerChildren: 0.06,
-        duration: 0.2,
-      },
-    },
-    exit: {
-      opacity: 0,
-      transition: {
-        when: "afterChildren",
-        staggerChildren: 0.03,
-        staggerDirection: -1,
-        duration: 0.1,
+        staggerChildren: 0.1,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { y: 10, opacity: 0 },
+    hidden: { opacity: 0, y: 20 },
     visible: {
-      y: 0,
       opacity: 1,
-      transition: { duration: 0.2, ease: "easeOut" },
-    },
-    exit: {
-      y: -10,
-      opacity: 0,
-      transition: { duration: 0.1, ease: "easeIn" },
+      y: 0,
+      transition: { duration: 0.3 },
     },
   };
 
   const pulseVariants = {
-    initial: { scale: 0.95, opacity: 0.7 },
-    animate: { 
-      scale: 1, 
+    initial: { opacity: 0.6 },
+    pulse: {
       opacity: 1,
-      transition: { 
-        repeat: Infinity, 
-        repeatType: "reverse", 
+      transition: {
+        repeat: Infinity,
+        repeatType: "reverse",
         duration: 1.2,
-        ease: "easeInOut" 
-      }
-    }
+      },
+    },
   };
 
-  // Sahte içerik öğeleri (viewMode'a göre sayı ayarla)
-  const skeletonItems = Array(viewMode === "grid" ? 6 : 4).fill(null);
+  // Generate skeleton items
+  const generateSkeletonItems = () => {
+    if (!showSkeletons) return null;
+
+    const items = [];
+    for (let i = 0; i < itemCount; i++) {
+      items.push(
+        <motion.div
+          key={`skeleton-${i}`}
+          variants={itemVariants}
+          className={`rounded-xl border ${colors.borderColor} overflow-hidden ${
+            viewMode === "grid" ? "w-full" : "w-full flex h-32"
+          }`}
+        >
+          <div
+            className={`relative ${
+              viewMode === "grid" ? "pt-[60%]" : "w-32 h-full"
+            }`}
+          >
+            <div
+              className={`absolute inset-0 ${colors.skeletonBase} animate-pulse`}
+            ></div>
+          </div>
+
+          <div
+            className={`p-4 flex flex-col gap-2 ${
+              viewMode === "grid" ? "" : "flex-1"
+            }`}
+          >
+            <div
+              className={`${colors.skeletonBase} h-5 rounded-md animate-pulse w-3/4`}
+            ></div>
+            <div
+              className={`${colors.skeletonBase} h-4 rounded-md animate-pulse w-2/3`}
+            ></div>
+
+            {viewMode === "list" && (
+              <div
+                className={`${colors.skeletonBase} h-4 rounded-md animate-pulse w-1/2 mt-1`}
+              ></div>
+            )}
+
+            <div className="flex items-center justify-between mt-auto pt-2">
+              <div
+                className={`${colors.skeletonBase} h-4 w-20 rounded-md animate-pulse`}
+              ></div>
+              <div
+                className={`${colors.skeletonBase} h-8 w-8 rounded-full animate-pulse`}
+              ></div>
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+    return items;
+  };
+
+  // Minimal view - show only spinner
+  if (minimal) {
+    return (
+      <div className="flex justify-center items-center py-6">
+        <Loader2 className={`h-8 w-8 animate-spin ${colors.iconColor}`} />
+      </div>
+    );
+  }
 
   return (
     <motion.div
+      className={`w-full ${className}`}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      exit="exit"
-      className="flex flex-col gap-6 w-full pt-4"
     >
-      {/* Ana yükleme göstergesi */}
-      <motion.div
-        variants={itemVariants}
-        className="flex items-center justify-center mb-8"
-      >
-        <Card className="w-full max-w-md bg-gradient-to-br from-background to-muted/30 backdrop-blur-sm border-muted/30">
-          <CardContent className="py-8 flex flex-col items-center text-center">
-            <motion.div 
-              className="relative mb-6 flex items-center justify-center"
-              animate={{
-                rotate: [0, 360],
-              }}
-              transition={{
-                repeat: Infinity,
-                duration: 4,
-                ease: "linear",
-              }}
-            >
-              <motion.div
-                className="absolute rounded-full h-16 w-16 border-b-2 border-r-2 border-primary/30"
-                animate={{
-                  rotate: [0, 360],
-                }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 3,
-                  ease: "linear",
-                }}
-              />
-              <motion.div
-                className="absolute rounded-full h-12 w-12 border-t-2 border-l-2 border-primary/60"
-                animate={{
-                  rotate: [360, 0],
-                }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 2.5,
-                  ease: "linear",
-                }}
-              />
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            </motion.div>
-            
-            <motion.p 
-              className="text-lg font-medium text-primary/80"
+      {/* Loading header */}
+      {showSpinner && (
+        <motion.div
+          variants={itemVariants}
+          className="flex flex-col items-center justify-center py-8 text-center"
+        >
+          <motion.div
+            variants={pulseVariants}
+            initial="initial"
+            animate="pulse"
+            className={`p-4 rounded-full ${colors.iconBg} mb-4`}
+          >
+            <Loader2 className={`h-8 w-8 animate-spin ${colors.iconColor}`} />
+          </motion.div>
+
+          <motion.h2
+            variants={pulseVariants}
+            initial="initial"
+            animate="pulse"
+            className={`text-xl font-semibold bg-gradient-to-r ${colors.titleGradient} bg-clip-text text-transparent`}
+          >
+            {title || t("common.loading")}
+          </motion.h2>
+
+          {description && (
+            <motion.p
               variants={pulseVariants}
               initial="initial"
-              animate="animate"
+              animate="pulse"
+              className={`mt-2 ${colors.textColor}`}
             >
-              {t("feeds.loadingState.description")}
+              {description}
             </motion.p>
-            <p className="text-sm text-muted-foreground mt-2">
-              {t("feeds.loadingState.subdescritpion") || "Lütfen bekleyin..."}
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
+          )}
+        </motion.div>
+      )}
 
-      {/* Yükleme iskelet (skeleton) UI */}
+      {/* Skeleton grid/list */}
       <div
         className={`grid gap-4 ${
           viewMode === "grid"
@@ -135,55 +243,7 @@ export function LoadingState({ viewMode = "grid" }) {
             : "grid-cols-1"
         }`}
       >
-        {skeletonItems.map((_, index) => (
-          <motion.div
-            key={`skeleton-${index}`}
-            variants={itemVariants}
-            className="bg-card rounded-lg border border-muted/50 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
-          >
-            {/* Görsel alanı */}
-            <div className="relative w-full h-48 bg-gradient-to-r from-muted/80 via-muted/30 to-muted/80 overflow-hidden">
-              <motion.div 
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-muted/50 to-transparent"
-                animate={{
-                  x: ['-100%', '100%'],
-                }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 1.5,
-                  ease: "linear",
-                }}
-              />
-            </div>
-            
-            {/* İçerik alanı */}
-            <div className="p-5 space-y-4">
-              {/* Başlık */}
-              <div className="space-y-2">
-                <div className="h-6 bg-gradient-to-r from-muted/90 via-muted/70 to-muted/90 rounded-md w-4/5" />
-                <div className="h-6 bg-gradient-to-r from-muted/90 via-muted/70 to-muted/90 rounded-md w-3/5" />
-              </div>
-              
-              {/* Badge */}
-              <div className="flex">
-                <div className="h-5 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-full w-16" />
-              </div>
-              
-              {/* İçerik */}
-              <div className="space-y-2 pt-2">
-                <div className="h-4 bg-gradient-to-r from-muted/80 via-muted/60 to-muted/80 rounded-md w-full" />
-                <div className="h-4 bg-gradient-to-r from-muted/80 via-muted/60 to-muted/80 rounded-md w-full" />
-                <div className="h-4 bg-gradient-to-r from-muted/80 via-muted/60 to-muted/80 rounded-md w-2/3" />
-              </div>
-              
-              {/* Alt bilgi */}
-              <div className="flex justify-between pt-3">
-                <div className="h-4 bg-gradient-to-r from-muted/60 via-muted/40 to-muted/60 rounded-md w-1/4" />
-                <div className="h-4 bg-gradient-to-r from-muted/60 via-muted/40 to-muted/60 rounded-md w-1/4" />
-              </div>
-            </div>
-          </motion.div>
-        ))}
+        {generateSkeletonItems()}
       </div>
     </motion.div>
   );

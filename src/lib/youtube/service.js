@@ -21,8 +21,16 @@ import {
   getChannelFromCache,
   cacheChannelInfo,
   cacheSearchResults,
+  getVideoFromCache,
+  cacheVideoInfo,
+  getCachedSearchResults,
 } from "@/lib/youtube/cache";
-import { getChannelById, searchChannels } from "@/lib/youtube/api-client";
+import {
+  getChannelById,
+  searchChannels,
+  getChannelVideos,
+  getVideoById,
+} from "@/lib/youtube/api-client";
 
 /**
  * YouTube Service sınıfı için hata tipleri
@@ -478,6 +486,104 @@ class YouTubeService {
   }
 
   /**
+   * Get YouTube video information by ID
+   * @param {string} videoId - YouTube video ID
+   * @returns {Promise<object>} - Video information
+   * @throws {YouTubeError} - If video information cannot be retrieved
+   */
+  async getVideoInfo(videoId) {
+    if (!videoId) {
+      throw new YouTubeError(
+        "YouTube video ID is required",
+        "MISSING_PARAMETER"
+      );
+    }
+
+    try {
+      // Try to get from cache first
+      const cachedData = await getVideoFromCache(videoId);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      // If not in cache or expired, fetch from API
+      try {
+        const videoInfo = await getVideoById(videoId);
+
+        // Store in cache
+        await cacheVideoInfo(videoId, videoInfo);
+
+        return videoInfo;
+      } catch (apiError) {
+        // Log specific API error for better debugging
+        console.warn(
+          `YouTube API error for video ${videoId}: ${apiError.message}`,
+          { error: apiError }
+        );
+
+        // Fallback to simpler video object
+        return {
+          video_id: videoId,
+          title: "Unknown Video",
+          url: `https://youtube.com/watch?v=${videoId}`,
+          thumbnail: createThumbnailUrl(videoId),
+        };
+      }
+    } catch (error) {
+      console.error("Error getting YouTube video info:", error);
+
+      // Provide a descriptive error with original error attached
+      throw new YouTubeError(
+        `Failed to get YouTube video information: ${error.message}`,
+        "VIDEO_INFO_ERROR",
+        error
+      );
+    }
+  }
+
+  /**
+   * Get videos from a specific channel
+   * @param {string} channelId - YouTube channel ID
+   * @param {number} maxResults - Maximum number of results to return (default: 20)
+   * @returns {Promise<Array>} - List of videos
+   * @throws {YouTubeError} - If videos cannot be retrieved
+   */
+  async getChannelVideos(channelId, maxResults = 20) {
+    if (!channelId) {
+      throw new YouTubeError(
+        "YouTube channel ID is required",
+        "MISSING_PARAMETER"
+      );
+    }
+
+    try {
+      // Get videos from API
+      const videos = await getChannelVideos(channelId, maxResults);
+
+      if (!videos || videos.length === 0) {
+        console.log(`No videos found for channel: ${channelId}`);
+        return [];
+      }
+
+      // Cache each video
+      for (const video of videos) {
+        if (video.id) {
+          await cacheVideoInfo(video.id, video);
+        }
+      }
+
+      return videos;
+    } catch (error) {
+      console.error(`Error getting videos for channel ${channelId}:`, error);
+      throw new YouTubeError(
+        `Failed to get channel videos: ${error.message}`,
+        "CHANNEL_VIDEOS_ERROR",
+        error
+      );
+    }
+  }
+
+  /**
    * Search for YouTube channels
    * @param {string} query - Search query
    * @returns {Promise<Array>} - List of found channels
@@ -491,11 +597,18 @@ class YouTubeService {
     try {
       console.log(`Starting YouTube channel search: ${query}`);
 
+      // Check cache first
+      const cachedResults = await getCachedSearchResults(query);
+      if (cachedResults && cachedResults.length > 0) {
+        console.log("Using cached search results for:", query);
+        return cachedResults;
+      }
+
       // Use the utility function for search
       const results = await searchChannels(query);
       if (results && results.length > 0) {
         // Cache the results
-        cacheSearchResults(query, results);
+        await cacheSearchResults(query, results);
         return results;
       }
 
@@ -543,7 +656,7 @@ class YouTubeService {
       console.log(`YouTube channel found: ${channel.title}`);
 
       // Cache the results
-      cacheSearchResults(query, [channel]);
+      await cacheSearchResults(query, [channel]);
 
       return [channel];
     } catch (error) {
@@ -556,6 +669,121 @@ class YouTubeService {
         "SEARCH_ERROR",
         error
       );
+    }
+  }
+
+  /**
+   * Search for YouTube videos
+   * @param {string} query - Search query
+   * @param {number} maxResults - Maximum number of results to return
+   * @returns {Promise<Array>} - List of videos
+   */
+  async searchVideos(query, maxResults = 10) {
+    if (!query || typeof query !== "string") {
+      console.warn("Invalid search query for videos:", query);
+      return [];
+    }
+
+    try {
+      console.log(`Starting YouTube video search: ${query}`);
+
+      // API'den arama yap
+      const response = await fetch(`/api/youtube/video-search`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query, maxResults }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Video search API failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.videos || !Array.isArray(data.videos)) {
+        console.log("No videos found for:", query);
+        return [];
+      }
+
+      console.log(`Found ${data.videos.length} videos for: ${query}`);
+      return data.videos;
+    } catch (error) {
+      console.error("YouTube video search error:", error);
+      throw new YouTubeError(
+        `YouTube video search failed: ${error.message}`,
+        "VIDEO_SEARCH_ERROR",
+        error
+      );
+    }
+  }
+
+  /**
+   * Extract YouTube video ID from URL or string
+   * @param {string} url - URL or string containing video ID
+   * @returns {string|null} - YouTube video ID or null if not found
+   */
+  extractVideoId(url) {
+    return extractVideoId(url);
+  }
+
+  /**
+   * Create thumbnail URL for a YouTube video
+   * @param {string} videoId - YouTube video ID
+   * @param {string} quality - Thumbnail quality (default, mqdefault, hqdefault, sddefault, maxresdefault)
+   * @returns {string} - Thumbnail URL
+   */
+  createThumbnailUrl(videoId, quality = "hqdefault") {
+    return createThumbnailUrl(videoId, quality);
+  }
+
+  /**
+   * Format YouTube video duration from ISO 8601 format to human readable format
+   * @param {string} isoDuration - ISO 8601 duration (e.g. PT1H30M15S)
+   * @returns {string} - Formatted duration (e.g. 1:30:15)
+   */
+  formatVideoDuration(isoDuration) {
+    if (!isoDuration) return "";
+
+    // ISO 8601 süreden saat, dakika ve saniye değerlerini çıkart
+    const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+
+    if (!match) return "";
+
+    const hours = match[1] ? parseInt(match[1]) : 0;
+    const minutes = match[2] ? parseInt(match[2]) : 0;
+    const seconds = match[3] ? parseInt(match[3]) : 0;
+
+    // Farklı formatlar oluştur
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
+        .toString()
+        .padStart(2, "0")}`;
+    } else {
+      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    }
+  }
+
+  /**
+   * Format YouTube view count to human readable format
+   * @param {string|number} viewCount - View count as string or number
+   * @returns {string} - Formatted view count (e.g. 1.2M, 3.4K)
+   */
+  formatViewCount(viewCount) {
+    if (!viewCount) return "0";
+
+    const count =
+      typeof viewCount === "string" ? parseInt(viewCount) : viewCount;
+
+    if (isNaN(count)) return "0";
+
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1)}M`;
+    } else if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K`;
+    } else {
+      return count.toString();
     }
   }
 

@@ -1,44 +1,49 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
 import { SidebarNavigation } from "@/components/features/navigation/SidebarNavigation";
 import { MobileNavigation } from "@/components/features/navigation/MobileNavigation";
-import { useAuthStore } from "@/store/useAuthStore";
 import { HeaderNav } from "@/components/features/navigation/HeaderNav";
-import { usePathname } from "next/navigation";
 
 export function AppLayout({ children }) {
-  const { user } = useAuthStore();
   const pathname = usePathname();
+  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
 
-  // Ana sayfa kontrolü
-  const isHomePage = pathname === "/";
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    "/auth/login",
+    "/auth/register",
+    "/auth/forgot-password",
+  ];
 
-  // Navigasyon barını gösterme koşulları:
-  // 1. Kullanıcı giriş yapmışsa her sayfada göster
-  // 2. Kullanıcı giriş yapmamışsa ve ana sayfada değilse gösterme
-  const showNavigation = !!user;
+  // Check if current route is public
+  const isPublicRoute = publicRoutes.includes(pathname);
+
+  // If route is public, don't show navigation
+  if (isPublicRoute) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Sadece navigasyon barı gösterildiğinde göster */}
-      {showNavigation && (
+      {/* Show navigation only when user is authenticated */}
+      {!!userId && (
         <>
-          {/* Mobil Navigasyon */}
+          {/* Mobile Navigation */}
           <MobileNavigation />
 
-          {/* Masaüstü Yan Menü */}
+          {/* Desktop Sidebar */}
           <SidebarNavigation />
         </>
       )}
 
-      {/* Kullanıcı giriş yapmamışsa üst bilgi (header) göster */}
-      {!user && <HeaderNav />}
+      {/* Show header when user is not authenticated */}
+      {!userId && <HeaderNav />}
 
-      {/* Ana İçerik */}
+      {/* Main Content */}
       <main
-        className={`flex-1 ${
-          showNavigation ? "lg:pl-64 pt-14 lg:pt-0" : "pt-16"
-        }`}
+        className={`flex-1 ${!!userId ? "lg:pl-64 pt-14 lg:pt-0" : "pt-16"}`}
       >
         {children}
       </main>

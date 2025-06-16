@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
 import { Mail, ArrowRight, Check, RefreshCw } from "lucide-react";
 
 // Safe translation helper
@@ -19,7 +19,7 @@ const safeTranslate = (t, key, defaultText) => {
  * Email verification screen component
  */
 export function EmailVerification({ email, onLoginClick, onResendEmail }) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [isResending, setIsResending] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -49,17 +49,13 @@ export function EmailVerification({ email, onLoginClick, onResendEmail }) {
 
         {/* Title and description */}
         <h2 className="text-2xl font-bold mb-2">
-          {safeTranslate(
-            t,
-            "auth.verification.title",
-            "E-posta Adresinizi Doğrulayın"
-          )}
+          {safeTranslate(t, "auth.verification.title", "Verify Your Email")}
         </h2>
         <p className="text-muted-foreground mb-4">
           {safeTranslate(
             t,
             "auth.verification.description",
-            "Hesabınızı kullanmaya başlamadan önce e-posta adresinizi doğrulayın"
+            "Please verify your email address before you can start using your account"
           )}
         </p>
 
@@ -69,14 +65,14 @@ export function EmailVerification({ email, onLoginClick, onResendEmail }) {
             {safeTranslate(
               t,
               "auth.verification.checkInbox",
-              "Lütfen gelen kutunuzu kontrol edin"
+              "Please check your inbox"
             )}
           </p>
           <p className="text-sm text-muted-foreground">
             {safeTranslate(
               t,
               "auth.verification.emailSentTo",
-              "Doğrulama e-postası gönderildi: "
+              "Verification email sent to: "
             )}
             <span className="font-medium text-primary ml-1">{email}</span>
           </p>
@@ -93,7 +89,7 @@ export function EmailVerification({ email, onLoginClick, onResendEmail }) {
                 {safeTranslate(
                   t,
                   "auth.verification.step1",
-                  "E-postanızı açın ve doğrulama bağlantısına tıklayın"
+                  "Open your email and click the verification link"
                 )}
               </div>
             </div>
@@ -105,7 +101,7 @@ export function EmailVerification({ email, onLoginClick, onResendEmail }) {
                 {safeTranslate(
                   t,
                   "auth.verification.step2",
-                  "Bağlantıya tıklamak sizi doğrulama sayfasına yönlendirecektir"
+                  "Clicking the link will redirect you to the verification page"
                 )}
               </div>
             </div>
@@ -117,7 +113,7 @@ export function EmailVerification({ email, onLoginClick, onResendEmail }) {
                 {safeTranslate(
                   t,
                   "auth.verification.step3",
-                  "Doğrulama tamamlandıktan sonra, hesabınıza giriş yapabilirsiniz"
+                  "After verification is complete, you can log in to your account"
                 )}
               </div>
             </div>
@@ -130,7 +126,7 @@ export function EmailVerification({ email, onLoginClick, onResendEmail }) {
             {safeTranslate(
               t,
               "auth.verification.goToLogin",
-              "Giriş sayfasına git"
+              "Go to login page"
             )}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
@@ -147,14 +143,14 @@ export function EmailVerification({ email, onLoginClick, onResendEmail }) {
                 {safeTranslate(
                   t,
                   "auth.verification.resendingEmail",
-                  "E-posta gönderiliyor..."
+                  "Sending email..."
                 )}
               </>
             ) : (
               safeTranslate(
                 t,
                 "auth.verification.resendEmail",
-                "Doğrulama e-postasını yeniden gönder"
+                "Resend verification email"
               )
             )}
           </Button>
@@ -169,7 +165,7 @@ export function EmailVerification({ email, onLoginClick, onResendEmail }) {
                 {safeTranslate(
                   t,
                   "auth.verification.emailResent",
-                  "Doğrulama e-postası yeniden gönderildi"
+                  "Verification email has been resent"
                 )}
               </span>
             </div>

@@ -4,14 +4,14 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Trash2, PlusCircle, Rss, Youtube } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <section className="py-6 lg:py-8">
@@ -199,8 +199,11 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.6 }}
           >
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/feeds">{t("home.feedManagement.viewAllFeeds")}</Link>
+            <Button variant="outline" size="sm" asChild className="group">
+              <Link href="/feeds">
+                {t("home.feedManagement.viewAllFeeds")}
+                <ExternalLink className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+              </Link>
             </Button>
           </motion.div>
         )}

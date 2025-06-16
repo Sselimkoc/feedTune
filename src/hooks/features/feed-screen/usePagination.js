@@ -54,6 +54,9 @@ export function usePagination({
   selectedFeedId,
   activeFilter,
   filters,
+  initialPage = 1,
+  initialPageSize = 20,
+  totalItems = 0,
 }) {
   const { t } = useLanguage();
   const isFirstLoad = useRef(true);
@@ -79,9 +82,18 @@ export function usePagination({
     return getLocalCache(cacheKey, []);
   });
 
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // İlk yükleme durumu
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const [page, setPage] = useState(initialPage);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const hasNextPage = page < totalPages;
+  const hasPreviousPage = page > 1;
 
   const [pagination, setPagination] = useState(() => {
     // Sayfalama durumunu önbellekten getir veya varsayılan değerleri kullan
@@ -423,6 +435,76 @@ export function usePagination({
     }, 50);
   }, [loadInitialItems]);
 
+  // Cache'den feed öğelerini alırken yükleme durumunu takip et
+  useEffect(() => {
+    // İlk yükleme durumunu sıfırla
+    if (
+      selectedFeedId !== prevConfigRef.current.selectedFeedId ||
+      activeFilter !== prevConfigRef.current.activeFilter
+    ) {
+      setIsInitialLoading(true);
+      setIsTransitioning(true);
+    }
+
+    // Öğeler yüklendikten sonra loading durumunu kapat
+    if (paginatedItems && paginatedItems.length > 0) {
+      setIsInitialLoading(false);
+
+      // Kısa bir süre sonra geçiş durumunu kapat
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+
+    // Geçiş durumunu 500ms sonra kapat
+    if (isTransitioning) {
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [selectedFeedId, activeFilter, paginatedItems, isTransitioning]);
+
+  const nextPage = useCallback(async () => {
+    if (hasNextPage) {
+      setPage((prev) => prev + 1);
+      return true;
+    }
+    return false;
+  }, [hasNextPage]);
+
+  const previousPage = useCallback(() => {
+    if (hasPreviousPage) {
+      setPage((prev) => prev - 1);
+      return true;
+    }
+    return false;
+  }, [hasPreviousPage]);
+
+  const goToPage = useCallback(
+    (pageNumber) => {
+      if (pageNumber >= 1 && pageNumber <= totalPages) {
+        setPage(pageNumber);
+        return true;
+      }
+      return false;
+    },
+    [totalPages]
+  );
+
+  const changePageSize = useCallback((newPageSize) => {
+    setPageSize(newPageSize);
+    setPage(1);
+  }, []);
+
+  const reset = useCallback(() => {
+    setPage(initialPage);
+    setPageSize(initialPageSize);
+  }, [initialPage, initialPageSize]);
+
   return {
     paginatedItems,
     pagination,
@@ -431,5 +513,15 @@ export function usePagination({
     isTransitioning,
     loadMoreItems,
     resetPagination,
+    page,
+    pageSize,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    nextPage,
+    previousPage,
+    goToPage,
+    changePageSize,
+    reset,
   };
 }

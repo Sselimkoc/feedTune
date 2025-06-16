@@ -1,12 +1,12 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Rss, FileText, Eye, Star, BookmarkCheck } from "lucide-react";
 
 export function HomeStats({ stats }) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const statItems = [
     {

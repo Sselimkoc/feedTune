@@ -1,132 +1,178 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useLanguage } from "@/hooks/useLanguage";
-import { useAuthStore } from "@/store/useAuthStore";
-import { toast } from "sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useRouter } from "next/navigation";
 
 export function ProfileSettings() {
-  const { t } = useLanguage();
-  const { user, updateProfile, loading } = useAuthStore();
+  const { t } = useTranslation();
+  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const { toast } = useToast();
+  const router = useRouter();
 
-  const [displayName, setDisplayName] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
+  const handleInputChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }, []);
 
-  // Kullanıcı bilgilerini yükle
-  useEffect(() => {
-    if (user) {
-      // Kullanıcı bilgilerini yükle (önce users tablosundan, sonra user_metadata'dan)
-      const displayName = user.user_metadata?.display_name || "";
-      const avatarUrl = user.user_metadata?.avatar_url || "";
-
-      setDisplayName(displayName);
-      setAvatarUrl(avatarUrl);
+  const handleUpdateProfile = useCallback(async () => {
+    if (!userId) {
+      toast.error(t("errors.loginRequired"));
+      return;
     }
-  }, [user]);
 
-  // Profil güncelleme işlemi
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      toast.error(t("errors.passwordsDoNotMatch"));
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      const result = await updateProfile(displayName, avatarUrl);
-      if (result.success) {
-        toast.success(t("settings.profile.updateSuccess"));
-      }
-    } catch (error) {
-      console.error("Profile update error:", error);
-      toast.error(t("settings.profile.updateError"));
-    }
-  };
+      const { error } = await supabase.auth.updateUser({
+        email: formData.email || undefined,
+        password: formData.password || undefined,
+      });
 
-  // İnitials (avatar fallback için)
-  const getInitials = (name) => {
-    if (!name) return user?.email?.charAt(0).toUpperCase() || "U";
-    return name
-      .split(" ")
-      .map((part) => part.charAt(0))
-      .join("")
-      .toUpperCase();
-  };
+      if (error) throw error;
+
+      toast.success(t("success.profileUpdated"));
+      setFormData({ email: "", password: "", confirmPassword: "" });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error(t("errors.profileUpdateFailed"));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, formData, toast, t]);
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (!userId) {
+      toast.error(t("errors.loginRequired"));
+      return;
+    }
+
+    if (!window.confirm(t("settings.profile.confirmDelete"))) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.rpc("delete_user_account", {
+        user_id: userId,
+      });
+
+      if (error) throw error;
+
+      await supabase.auth.signOut();
+      router.push("/auth/login");
+      toast.success(t("success.accountDeleted"));
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error(t("errors.accountDeletionFailed"));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, router, toast, t]);
+
+  if (isLoadingUser) {
+    return null;
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>{t("settings.profile.title")}</CardTitle>
-        <CardDescription>{t("settings.profile.description")}</CardDescription>
       </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Email Update */}
+        <div className="space-y-2">
+          <Label htmlFor="email">{t("settings.profile.email")}</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleInputChange}
+            placeholder={t("settings.profile.emailPlaceholder")}
+          />
+        </div>
 
-      <CardContent>
-        <form onSubmit={handleUpdateProfile} className="space-y-4">
-          <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 mb-4">
-            <Avatar className="w-24 h-24">
-              <AvatarImage src={avatarUrl} alt={displayName || user?.email} />
-              <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-            </Avatar>
+        {/* Password Update */}
+        <div className="space-y-2">
+          <Label htmlFor="password">{t("settings.profile.newPassword")}</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleInputChange}
+            placeholder={t("settings.profile.passwordPlaceholder")}
+          />
+        </div>
 
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="avatarUrl">
-                {t("settings.profile.avatarUrl")}
-              </Label>
-              <Input
-                id="avatarUrl"
-                placeholder={t("settings.profile.avatarUrlPlaceholder")}
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                className="w-full"
-              />
-              <p className="text-sm text-muted-foreground">
-                {t("settings.profile.avatarHelp")}
-              </p>
-            </div>
-          </div>
+        {/* Confirm Password */}
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">
+            {t("settings.profile.confirmPassword")}
+          </Label>
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            value={formData.confirmPassword}
+            onChange={handleInputChange}
+            placeholder={t("settings.profile.confirmPasswordPlaceholder")}
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="displayName">
-              {t("settings.profile.displayName")}
-            </Label>
-            <Input
-              id="displayName"
-              placeholder={t("settings.profile.displayNamePlaceholder")}
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-            />
-          </div>
+        {/* Update Button */}
+        <Button
+          className="w-full"
+          onClick={handleUpdateProfile}
+          disabled={isLoading}
+        >
+          {isLoading
+            ? t("settings.profile.updating")
+            : t("settings.profile.update")}
+        </Button>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">{t("settings.profile.email")}</Label>
-            <Input
-              id="email"
-              type="email"
-              value={user?.email || ""}
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-sm text-muted-foreground">
-              {t("settings.profile.emailHelp")}
-            </p>
-          </div>
+        <Separator className="my-6" />
 
+        {/* Delete Account */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-destructive">
+            {t("settings.profile.dangerZone")}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {t("settings.profile.deleteWarning")}
+          </p>
           <Button
-            type="submit"
-            className="w-full sm:w-auto mt-4"
-            disabled={loading}
+            variant="destructive"
+            className="w-full"
+            onClick={handleDeleteAccount}
+            disabled={isLoading}
           >
-            {loading ? t("common.saving") : t("common.save")}
+            {isLoading
+              ? t("settings.profile.deleting")
+              : t("settings.profile.delete")}
           </Button>
-        </form>
+        </div>
       </CardContent>
     </Card>
   );

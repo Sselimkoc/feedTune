@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { FaRss, FaTimes, FaYoutube } from "react-icons/fa";
 import { useInView } from "framer-motion";
@@ -10,12 +10,26 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap } from "lucide-react";
 
+// Supported languages
+const supportedLanguages = {
+  tr: {
+    name: "Türkçe",
+    nativeName: "Türkçe",
+    flag: "🇹🇷",
+  },
+  en: {
+    name: "English",
+    nativeName: "English",
+    flag: "🇬🇧",
+  },
+};
+
 export default function HomeHero({ onAuthClick }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, threshold: 0.1 });
-  const { t, language, supportedLanguages } = useLanguage();
+  const { t, i18n } = useTranslation();
 
-  // Statik içerik - dil bağımsız olan içerikler
+  // Static content - language independent content
   const staticContent = {
     appName: "FeedTune",
     services: [
@@ -24,7 +38,7 @@ export default function HomeHero({ onAuthClick }) {
     ],
   };
 
-  // Desteklenen dilleri bayraklarıyla birlikte listele
+  // List supported languages with flags
   const renderSupportedLanguages = () => {
     return Object.entries(supportedLanguages)
       .map(
@@ -38,7 +52,7 @@ export default function HomeHero({ onAuthClick }) {
       ref={ref}
       className="py-8 md:py-16 lg:py-24 overflow-hidden relative"
     >
-      {/* Arkaplan animasyonlu desenler - İyileştirilmiş */}
+      {/* Background animated patterns - Improved */}
       <div className="absolute inset-0 overflow-hidden -z-10">
         <div
           className="absolute top-1/4 right-1/3 w-72 h-72 bg-primary/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
@@ -174,7 +188,7 @@ export default function HomeHero({ onAuthClick }) {
                 asChild
                 className="rounded-full border-border/60 bg-white/80 dark:bg-transparent hover:bg-accent/30 hover:border-primary/30 transition-all duration-300"
               >
-                <Link href="#features">{t("home.hero.learnMore")}</Link>
+                <Link href="#about">{t("home.hero.learnMore")}</Link>
               </Button>
             </motion.div>
           </motion.div>
@@ -198,160 +212,12 @@ export default function HomeHero({ onAuthClick }) {
                 alt={t("home.hero.dashboardImageAlt")}
                 width="600"
                 height="400"
-                className="mx-auto object-cover rounded-xl border border-border/50 shadow-xl relative z-10"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.style.display = "none";
-                  console.warn("Dashboard preview image could not be loaded");
-                }}
+                className="relative z-10 rounded-xl border border-border/50 bg-background/80 backdrop-blur-sm shadow-2xl"
+                priority
               />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
-              animate={isInView ? { opacity: 1, scale: 1, rotate: 0 } : {}}
-              transition={{
-                type: "spring",
-                stiffness: 200,
-                damping: 20,
-                duration: 0.5,
-                delay: 0.4,
-              }}
-              className="absolute right-[10%] top-[5%] hidden lg:block"
-            >
-              <div className="bg-white dark:bg-background/90 backdrop-blur-sm rounded-lg shadow-lg p-2 border border-border/50">
-                <FaRss className="text-orange-500 h-4 w-4" />
-              </div>
-              <span className="absolute top-full right-5 h-20 w-px bg-gradient-to-b from-border to-transparent" />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
-              animate={isInView ? { opacity: 1, scale: 1, rotate: 0 } : {}}
-              transition={{
-                type: "spring",
-                stiffness: 200,
-                damping: 20,
-                duration: 0.5,
-                delay: 0.6,
-              }}
-              className="absolute right-[5%] top-[25%] hidden lg:block"
-            >
-              <div className="bg-white dark:bg-background/90 backdrop-blur-sm rounded-lg shadow-lg p-2 border border-border/50">
-                <FaTimes className="text-red-500 h-4 w-4" />
-              </div>
-              <span className="absolute top-full right-5 h-20 w-px bg-gradient-to-b from-border to-transparent" />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
-              animate={isInView ? { opacity: 1, scale: 1, rotate: 0 } : {}}
-              transition={{
-                type: "spring",
-                stiffness: 200,
-                damping: 20,
-                duration: 0.5,
-                delay: 0.8,
-              }}
-              className="absolute left-[10%] bottom-[15%] hidden lg:block"
-            >
-              <div className="bg-white dark:bg-background/90 backdrop-blur-sm rounded-lg shadow-lg p-2 border border-border/50">
-                <FaYoutube className="text-red-500 h-4 w-4" />
-              </div>
-              <span className="absolute bottom-full right-5 h-20 w-px bg-gradient-to-b from-transparent to-border" />
             </motion.div>
           </div>
         </div>
-
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16"
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{
-            type: "spring",
-            stiffness: 70,
-            damping: 15,
-            duration: 0.7,
-            delay: 0.7,
-          }}
-        >
-          <div className="flex flex-col items-center space-y-3 border border-border/40 p-6 rounded-xl bg-white/80 dark:bg-card/30 backdrop-blur-sm hover:border-primary/20 hover:bg-white dark:hover:bg-card/50 hover:shadow-md transition-all duration-300">
-            <div className="p-3 bg-primary/10 rounded-full">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6 text-primary"
-              >
-                <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
-                <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold">
-              {t("home.features.onboarding.title")}
-            </h3>
-            <p className="text-muted-foreground text-center">
-              {t("home.features.onboarding.description")}
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center space-y-3 border border-border/40 p-6 rounded-xl bg-white/80 dark:bg-card/30 backdrop-blur-sm hover:border-primary/20 hover:bg-white dark:hover:bg-card/50 hover:shadow-md transition-all duration-300">
-            <div className="p-3 bg-primary/10 rounded-full">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6 text-primary"
-              >
-                <path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold">
-              {t("home.features.analytics.title")}
-            </h3>
-            <p className="text-muted-foreground text-center">
-              {t("home.features.analytics.description")}
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center space-y-3 border border-border/40 p-6 rounded-xl bg-white/80 dark:bg-card/30 backdrop-blur-sm hover:border-primary/20 hover:bg-white dark:hover:bg-card/50 hover:shadow-md transition-all duration-300">
-            <div className="p-3 bg-primary/10 rounded-full">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6 text-primary"
-              >
-                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold">
-              {t("home.features.customization.title")}
-            </h3>
-            <p className="text-muted-foreground text-center">
-              {t("home.features.customization.description")}
-            </p>
-          </div>
-        </motion.div>
       </div>
     </section>
   );

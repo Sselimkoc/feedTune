@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,29 @@ import { Users2, Film, Calendar, AlignLeft } from "lucide-react";
 import axios from "axios";
 import { youtubeService } from "@/lib/youtube/service";
 import { cacheChannelInfo } from "@/lib/youtube/cache";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useTranslation } from "react-i18next";
+import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
+import { useToast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
 
 /**
  * Sayıları kullanıcı dostu formata dönüştüren yardımcı fonksiyon
@@ -72,30 +96,81 @@ const getProxiedImageUrl = (url) => {
   return `/api/image-proxy?url=${encodeURIComponent(url)}`;
 };
 
-export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
-  const { t } = useLanguage();
-  const { user } = useAuthStore();
+// Form şeması
+const formSchema = z.object({
+  title: z.string().optional(),
+  url: z.string().url({ message: "Geçerli bir URL giriniz" }),
+  type: z.enum(["rss", "youtube"]),
+  category: z.string().optional(),
+  fetch_full_content: z.boolean().optional(),
+});
+
+/**
+ * Yeni feed eklemek için dialog bileşeni
+ */
+export function AddFeedDialog({
+  isOpen = false,
+  onOpenChange = () => {},
+  onSubmit = async () => {},
+}) {
+  const { t } = useTranslation();
+  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("youtube");
+  const { toast } = useToast();
+
+  // Form tanımlama
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      url: "",
+      type: "youtube",
+      category: "general",
+      fetch_full_content: false,
+    },
+  });
+
+  // Tab değiştiğinde form tipini güncelle
+  const handleTabChange = useCallback(
+    (tab) => {
+      setActiveTab(tab);
+      form.setValue("type", tab);
+    },
+    [form]
+  );
+
+  // Form gönderildiğinde
+  const handleSubmit = async (values) => {
+    setIsLoading(true);
+    try {
+      const success = await onSubmit(values);
+      if (success) {
+        form.reset();
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Düzgün bir refreshFeeds fonksiyonu tanımla
   const refreshFeeds = useCallback(() => {
-    if (typeof onFeedAdded === "function") {
-      onFeedAdded();
+    if (typeof onSubmit === "function") {
+      onSubmit();
     }
-    if (typeof onSuccess === "function") {
-      onSuccess();
-    }
-  }, [onFeedAdded, onSuccess]);
+  }, [onSubmit]);
 
   const { addFeed } = useFeedActions(
-    user,
+    userId,
     refreshFeeds,
     refreshFeeds,
     feedService
   );
 
   // States
-  const [activeTab, setActiveTab] = useState("rss");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [rssUrl, setRssUrl] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [searching, setSearching] = useState(false);
@@ -107,15 +182,15 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
 
   // Reset states when dialog closes
   useEffect(() => {
-    if (!open) {
-      setActiveTab("rss");
+    if (!isOpen) {
+      setActiveTab("youtube");
       setRssUrl("");
       setYoutubeUrl("");
       setRssPreview(null);
       setYoutubeChannel(null);
       setError(null);
     }
-  }, [open]);
+  }, [isOpen]);
 
   // Handle URL input change
   const handleRssInputChange = (e) => {
@@ -358,7 +433,7 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
 
   // Handle feed add
   const handleAddFeed = async (url, type) => {
-    setIsSubmitting(true);
+    setIsLoading(true);
     try {
       if (type === "youtube") {
         // YouTube URL'ini RSS'e dönüştür ve tür olarak rss belirle
@@ -377,14 +452,14 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
 
       toast.success(t("feeds.addFeedSuccess"));
       onOpenChange(false);
-      if (onFeedAdded) {
-        onFeedAdded();
+      if (refreshFeeds) {
+        refreshFeeds();
       }
     } catch (error) {
       console.error("Error adding feed:", error);
       toast.error(error.message || t("feeds.addFeedError"));
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
@@ -444,8 +519,12 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
     }
   };
 
+  if (isLoadingUser) {
+    return null;
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col p-0 border-border/50 bg-gradient-to-b from-background to-background/95 backdrop-blur-sm shadow-xl">
         <DialogHeader className="px-6 pt-6 pb-0 border-b-0">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -466,381 +545,179 @@ export function AddFeedDialog({ open, onOpenChange, onFeedAdded, onSuccess }) {
 
         <div className="px-6 py-5 flex-1 overflow-y-auto">
           <Tabs
-            defaultValue="rss"
+            defaultValue="youtube"
             value={activeTab}
-            onValueChange={setActiveTab}
+            onValueChange={handleTabChange}
             className="w-full"
           >
             <TabsList className="grid grid-cols-2 w-full mb-6">
-              <TabsTrigger value="rss" className="flex items-center gap-2">
-                <Rss className="h-4 w-4" />
-                <span>RSS Feed</span>
-              </TabsTrigger>
               <TabsTrigger value="youtube" className="flex items-center gap-2">
-                <Youtube className="h-4 w-4" />
+                <Youtube className="h-4 w-4 text-red-500" />
                 <span>YouTube</span>
+              </TabsTrigger>
+              <TabsTrigger value="rss" className="flex items-center gap-2">
+                <Rss className="h-4 w-4 text-blue-500" />
+                <span>RSS Feed</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="rss" className="mt-0">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key="rss-content"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-6"
-                >
-                  <Card className="overflow-hidden border-border/60">
-                    <CardHeader className="px-6 py-5 bg-muted/30">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Rss className="h-5 w-5 text-primary" />
-                        {t("feeds.addFeed.rssUrl")}
-                      </CardTitle>
-                      <CardDescription>
-                        {t("feeds.addFeed.rssUrlHelp")}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6 pt-5">
-                      <div className="flex gap-3">
-                        <Input
-                          id="rssUrl"
-                          value={rssUrl}
-                          onChange={handleRssInputChange}
-                          placeholder={t("feeds.addFeed.rssUrlPlaceholder")}
-                          className="flex-1"
-                          onKeyDown={(e) =>
-                            e.key === "Enter" && handleRssSearch()
-                          }
-                        />
-                        <Button
-                          onClick={handleRssSearch}
-                          disabled={!rssUrl || searching}
-                          className="gap-2"
-                        >
-                          {searching ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Search className="h-4 w-4" />
-                          )}
-                          <span>{t("common.search")}</span>
-                        </Button>
-                      </div>
-
-                      {error && (
-                        <Alert variant="destructive" className="mt-4">
-                          <Info className="h-4 w-4" />
-                          <AlertTitle>{t("feeds.addDialog.error")}</AlertTitle>
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <AnimatePresence>
-                    {rssPreview && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <Card className="overflow-hidden border-primary/20">
-                          <CardHeader className="px-6 py-5 bg-primary/5 border-b border-primary/10 flex flex-row items-center gap-4">
-                            {rssPreview.image && (
-                              <div className="h-14 w-14 rounded-md overflow-hidden flex-shrink-0 bg-muted border border-primary/10">
-                                <img
-                                  src={getProxiedImageUrl(rssPreview.image)}
-                                  alt={rssPreview.title}
-                                  className="w-full h-full object-contain"
-                                  onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.style.display = "none";
-                                  }}
-                                />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <CardTitle className="text-xl truncate">
-                                {rssPreview.title}
-                              </CardTitle>
-                              <CardDescription className="line-clamp-2 mt-1">
-                                {rssPreview.description ||
-                                  t("feeds.noDescription")}
-                              </CardDescription>
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge variant="secondary">
-                                  {rssPreview.items} {t("feeds.items")}
-                                </Badge>
-                                <Badge
-                                  variant="outline"
-                                  className="bg-primary/10 border-primary/20 text-primary"
-                                >
-                                  <Rss className="h-3 w-3 mr-1.5" />
-                                  RSS
-                                </Badge>
-                              </div>
-                            </div>
-                          </CardHeader>
-
-                          {rssPreview.preview &&
-                            rssPreview.preview.length > 0 && (
-                              <CardContent className="p-6">
-                                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                                  <AlignLeft className="h-4 w-4 text-primary" />
-                                  {t("feeds.addFeed.latestItems")}
-                                </h4>
-                                <div className="grid grid-cols-1 gap-3">
-                                  {rssPreview.preview.map((item, index) => (
-                                    <div
-                                      key={index}
-                                      className="p-3 rounded-md bg-accent/30 border border-border/40 hover:border-primary/30 hover:bg-accent/50 transition-all duration-200"
-                                    >
-                                      <h5 className="font-medium text-sm line-clamp-1">
-                                        {item.title}
-                                      </h5>
-                                      {item.date && (
-                                        <div className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
-                                          <Calendar className="h-3 w-3" />
-                                          <time
-                                            dateTime={new Date(
-                                              item.date
-                                            ).toISOString()}
-                                          >
-                                            {new Date(
-                                              item.date
-                                            ).toLocaleDateString()}
-                                          </time>
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </CardContent>
-                            )}
-
-                          <CardFooter className="px-6 py-4 bg-muted/30 flex justify-end border-t border-border/30">
-                            <Button
-                              onClick={() =>
-                                handleAddFeed(rssPreview.url, "rss")
-                              }
-                              disabled={isSubmitting}
-                              className="gap-2"
-                            >
-                              {isSubmitting ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Plus className="h-4 w-4" />
-                              )}
-                              <span>{t("feeds.addFeed.addButton")}</span>
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      </motion.div>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(handleSubmit)}
+                className="space-y-4 mt-4"
+              >
+                {/* YouTube tab içeriği */}
+                <TabsContent value="youtube">
+                  <FormField
+                    control={form.control}
+                    name="url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("feeds.youtubeChannelUrl")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://www.youtube.com/c/channelname"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </AnimatePresence>
-                </motion.div>
-              </AnimatePresence>
-            </TabsContent>
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {t("feeds.youtubeUrlHelp")}
+                  </p>
+                </TabsContent>
 
-            <TabsContent value="youtube" className="mt-0">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key="youtube-content"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-6"
-                >
-                  <Card className="overflow-hidden border-border/60">
-                    <CardHeader className="px-6 py-5 bg-red-500/5">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Youtube className="h-5 w-5 text-red-500" />
-                        {t("feeds.addFeed.youtubeSearch")}
-                      </CardTitle>
-                      <CardDescription>
-                        {t("feeds.addDialog.youtubeUrlHint")}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6 pt-5">
-                      <div className="flex gap-3">
-                        <Input
-                          id="youtubeUrl"
-                          value={youtubeUrl}
-                          onChange={handleYoutubeInputChange}
-                          placeholder={t(
-                            "feeds.addDialog.youtubeUrlPlaceholder"
-                          )}
-                          className="flex-1"
-                          onKeyDown={(e) =>
-                            e.key === "Enter" && handleYoutubeSearch()
-                          }
-                        />
-                        <Button
-                          onClick={handleYoutubeSearch}
-                          disabled={!youtubeUrl || searching}
-                          className="gap-2"
-                          variant="destructive"
-                        >
-                          {searching ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Search className="h-4 w-4" />
-                          )}
-                          <span>{t("common.search")}</span>
-                        </Button>
-                      </div>
-
-                      {error && (
-                        <Alert variant="destructive" className="mt-4">
-                          <Info className="h-4 w-4" />
-                          <AlertTitle>{t("feeds.addDialog.error")}</AlertTitle>
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <AnimatePresence>
-                    {youtubeChannel && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <Card className="overflow-hidden border-red-500/20">
-                          <CardHeader className="px-6 py-5 bg-red-500/5 border-b border-red-500/10 flex flex-row gap-4">
-                            <div className="h-16 w-16 rounded-md overflow-hidden flex-shrink-0 bg-muted ring-1 ring-red-500/20 shadow-sm relative">
-                              {youtubeChannel.thumbnail ? (
-                                <>
-                                  {/* Debug: thumbnail URL'sini göster */}
-                                  {console.log(
-                                    "Rendering thumbnail:",
-                                    youtubeChannel.thumbnail
-                                  )}
-                                  <img
-                                    src={getProxiedImageUrl(
-                                      youtubeChannel.thumbnail
-                                    )}
-                                    alt={youtubeChannel.title}
-                                    className="h-full w-full object-cover"
-                                    loading="eager"
-                                    crossOrigin="anonymous"
-                                    onLoad={() =>
-                                      console.log(
-                                        "Thumbnail loaded successfully"
-                                      )
-                                    }
-                                    onError={(e) => {
-                                      console.error(
-                                        "Thumbnail load error, falling back to avatar",
-                                        e
-                                      );
-                                      e.target.onerror = null;
-                                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                        youtubeChannel.title || "Channel"
-                                      )}&background=random&color=fff&size=120`;
-                                    }}
-                                  />
-                                </>
-                              ) : (
-                                <>
-                                  {/* Thumbnail URL yoksa avatar göster */}
-                                  {console.log(
-                                    "No thumbnail URL, showing avatar"
-                                  )}
-                                  <img
-                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                      youtubeChannel.title || "Channel"
-                                    )}&background=random&color=fff&size=120`}
-                                    alt={youtubeChannel.title}
-                                    className="h-full w-full object-cover"
-                                  />
-                                </>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <CardTitle className="text-xl truncate">
-                                {youtubeChannel.title}
-                              </CardTitle>
-                              <CardDescription className="line-clamp-2 mt-1">
-                                {youtubeChannel.description ||
-                                  t("feeds.noDescription")}
-                              </CardDescription>
-
-                              <div className="flex flex-wrap gap-3 mt-3">
-                                {youtubeChannel.subscribers && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="gap-1.5"
-                                  >
-                                    <Users2 className="h-3 w-3" />
-                                    <span>
-                                      {youtubeChannel.subscribersFormatted ||
-                                        youtubeChannel.subscribers}
-                                    </span>
-                                  </Badge>
-                                )}
-                                {youtubeChannel.videoCount && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="gap-1.5"
-                                  >
-                                    <Film className="h-3 w-3" />
-                                    <span>
-                                      {youtubeChannel.videoCountFormatted ||
-                                        youtubeChannel.videoCount}
-                                    </span>
-                                  </Badge>
-                                )}
-                                <Badge
-                                  variant="outline"
-                                  className="bg-red-500/10 border-red-500/20 text-red-500 gap-1.5"
-                                >
-                                  <Youtube className="h-3 w-3" />
-                                  YouTube
-                                </Badge>
-                              </div>
-                            </div>
-                          </CardHeader>
-
-                          <CardFooter className="px-6 py-4 bg-muted/30 flex justify-between border-t border-border/30">
-                            <a
-                              href={youtubeChannel.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                              {t("feeds.openChannel")}
-                            </a>
-
-                            <Button
-                              onClick={() =>
-                                handleAddFeed(youtubeChannel.url, "youtube")
-                              }
-                              disabled={isSubmitting}
-                              className="gap-2"
-                              variant="destructive"
-                            >
-                              {isSubmitting ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Plus className="h-4 w-4" />
-                              )}
-                              <span>{t("feeds.addDialog.addChannel")}</span>
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      </motion.div>
+                {/* RSS tab içeriği */}
+                <TabsContent value="rss">
+                  <FormField
+                    control={form.control}
+                    name="url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("feeds.rssUrl")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://example.com/feed.xml"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </AnimatePresence>
-                </motion.div>
-              </AnimatePresence>
-            </TabsContent>
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="fetch_full_content"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <div className="mb-1">
+                          <FormLabel>{t("feeds.contentOptions")}</FormLabel>
+                        </div>
+                        <RadioGroup
+                          defaultValue={field.value.toString()}
+                          onValueChange={(value) =>
+                            field.onChange(value === "true")
+                          }
+                          className="flex flex-col space-y-1"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="false" id="summary" />
+                            <Label htmlFor="summary">
+                              {t("feeds.useSummary")}
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="true" id="full" />
+                            <Label htmlFor="full">
+                              {t("feeds.useFullContent")}
+                            </Label>
+                          </div>
+                        </RadioGroup>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
+
+                {/* Ortak alanlar */}
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("feeds.customTitle")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("feeds.leaveBlankForAutoTitle")}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("feeds.category")}</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t("feeds.selectCategory")}
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="general">
+                            {t("feeds.categories.general")}
+                          </SelectItem>
+                          <SelectItem value="tech">
+                            {t("feeds.categories.tech")}
+                          </SelectItem>
+                          <SelectItem value="news">
+                            {t("feeds.categories.news")}
+                          </SelectItem>
+                          <SelectItem value="entertainment">
+                            {t("feeds.categories.entertainment")}
+                          </SelectItem>
+                          <SelectItem value="other">
+                            {t("feeds.categories.other")}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <DialogFooter className="mt-4 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={isLoading}
+                  >
+                    {t("common.cancel")}
+                  </Button>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {t("feeds.addFeed")}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           </Tabs>
         </div>
       </DialogContent>

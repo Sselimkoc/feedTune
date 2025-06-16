@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 // Not: Store içinde useLanguage hook'unu doğrudan kullanamayız çünkü hook'lar sadece React bileşenlerinde kullanılabilir.
 // Bu nedenle toast mesajlarını doğrudan kullanıcı arayüzü bileşenlerinde çevireceğiz.
@@ -15,6 +16,21 @@ const AUTH_MESSAGES = {
   LOGOUT_SUCCESS: "auth.logoutSuccess",
   AUTHENTICATION_ERROR: "auth.authenticationError",
   PROFILE_UPDATED: "auth.profileUpdated",
+  RATE_LIMIT_ERROR: "auth.rateLimitError",
+};
+
+// Rate limit için basit bir throttle mekanizması
+const throttle = {
+  lastAttempt: 0,
+  minInterval: 2000, // 2 saniye
+  isThrottled() {
+    const now = Date.now();
+    if (now - this.lastAttempt < this.minInterval) {
+      return true;
+    }
+    this.lastAttempt = now;
+    return false;
+  },
 };
 
 export const useAuthStore = create(
@@ -25,9 +41,20 @@ export const useAuthStore = create(
       const handleAuthError = (error) => {
         console.error("Auth error:", error);
 
+        // Rate limit hatası için özel mesaj
+        if (error.status === 429) {
+          toast.error(AUTH_MESSAGES.RATE_LIMIT_ERROR);
+          return { success: false, error };
+        }
+
+        // Token/session hataları için sessiz yönlendirme
         if (error.status === 401 || error.message?.includes("token")) {
           set({ user: null, session: null });
-          window.location.href = "/";
+          // Sadece korumalı bir sayfadaysa yönlendir
+          if (window.location.pathname !== "/") {
+            window.location.href = "/";
+          }
+          return { success: false, error };
         }
 
         toast.error(error.message || AUTH_MESSAGES.AUTHENTICATION_ERROR);
@@ -37,53 +64,57 @@ export const useAuthStore = create(
       return {
         user: null,
         session: null,
-        loading: false,
-        lastChecked: null,
+        isLoading: true,
+        error: null,
 
-        setSession: async (session) => {
+        initialize: async () => {
           try {
-            if (session) {
-              // Kullanıcı bilgilerini state'e kaydet
-              set({
-                user: session.user,
-                session,
-                lastChecked: new Date().toISOString(),
-              });
-              // Artık kullanıcı kontrol etmeye gerek yok, Supabase'in kendi tablolarını kullanıyoruz
-            } else {
-              set({
-                user: null,
-                session: null,
-                lastChecked: new Date().toISOString(),
-              });
-            }
-          } catch (error) {
-            handleAuthError(error);
-          }
-        },
+            set({ isLoading: true, error: null });
 
-        signUp: async (email, password) => {
-          try {
-            set({ loading: true });
-            const { data, error } = await supabase.auth.signUp({
-              email,
-              password,
+            // Güvenli user bilgisini al
+            const {
+              data: { user },
+              error: userError,
+            } = await supabase.auth.getUser();
+            if (userError) throw userError;
+
+            // Session bilgisini al
+            const {
+              data: { session },
+              error: sessionError,
+            } = await supabase.auth.getSession();
+            if (sessionError) throw sessionError;
+
+            set({ user, session, isLoading: false });
+
+            // Auth state değişikliklerini dinle
+            const {
+              data: { subscription },
+            } = supabase.auth.onAuthStateChange(async (event, session) => {
+              if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+                const {
+                  data: { user },
+                  error,
+                } = await supabase.auth.getUser();
+                if (!error) {
+                  set({ user, session });
+                }
+              } else if (event === "SIGNED_OUT") {
+                set({ user: null, session: null });
+              }
             });
 
-            if (error) throw error;
-
-            toast.success(AUTH_MESSAGES.VERIFICATION_EMAIL_SENT);
-            return { success: true };
+            return subscription;
           } catch (error) {
-            return handleAuthError(error);
-          } finally {
-            set({ loading: false });
+            set({ error, isLoading: false });
+            console.error("Auth initialization error:", error);
           }
         },
 
-        signIn: async (email, password) => {
+        signIn: async ({ email, password }) => {
           try {
-            set({ loading: true });
+            set({ isLoading: true, error: null });
+
             const { data, error } = await supabase.auth.signInWithPassword({
               email,
               password,
@@ -91,83 +122,84 @@ export const useAuthStore = create(
 
             if (error) throw error;
 
-            set({
-              user: data.user,
-              session: data.session,
-              lastChecked: new Date().toISOString(),
-            });
-            toast.success(AUTH_MESSAGES.LOGIN_SUCCESS);
-            return { success: true };
+            const {
+              data: { user },
+              error: userError,
+            } = await supabase.auth.getUser();
+            if (userError) throw userError;
+
+            set({ user, session: data.session, isLoading: false });
           } catch (error) {
-            return handleAuthError(error);
-          } finally {
-            set({ loading: false });
+            set({ error, isLoading: false });
+            throw error;
+          }
+        },
+
+        signUp: async ({ email, password }) => {
+          try {
+            set({ isLoading: true, error: null });
+
+            const { data, error } = await supabase.auth.signUp({
+              email,
+              password,
+            });
+
+            if (error) throw error;
+
+            set({ user: data.user, session: data.session, isLoading: false });
+          } catch (error) {
+            set({ error, isLoading: false });
+            throw error;
           }
         },
 
         signOut: async () => {
           try {
-            set({ loading: true });
+            set({ isLoading: true, error: null });
+
             const { error } = await supabase.auth.signOut();
             if (error) throw error;
 
-            set({
-              user: null,
-              session: null,
-              lastChecked: new Date().toISOString(),
-            });
-            toast.success(AUTH_MESSAGES.LOGOUT_SUCCESS);
-            window.location.href = "/";
+            set({ user: null, session: null, isLoading: false });
           } catch (error) {
-            handleAuthError(error);
-          } finally {
-            set({ loading: false });
+            set({ error, isLoading: false });
+            throw error;
           }
         },
 
-        checkSession: async () => {
+        resetPassword: async (email) => {
           try {
-            // Son kontrolden 1 dakika geçmediyse tekrar kontrol etme
-            const lastChecked = get().lastChecked;
-            if (lastChecked) {
-              const timeSinceLastCheck = new Date() - new Date(lastChecked);
-              if (timeSinceLastCheck < 60000) {
-                // 1 dakika
-                return get().session;
-              }
-            }
+            set({ isLoading: true, error: null });
 
-            const {
-              data: { session },
-              error,
-            } = await supabase.auth.getSession();
-
+            const { error } = await supabase.auth.resetPasswordForEmail(email);
             if (error) throw error;
 
-            if (session) {
-              set({
-                user: session.user,
-                session,
-                lastChecked: new Date().toISOString(),
-              });
-            } else {
-              set({
-                user: null,
-                session: null,
-                lastChecked: new Date().toISOString(),
-              });
-            }
-
-            return session;
+            set({ isLoading: false });
           } catch (error) {
-            handleAuthError(error);
-            return null;
+            set({ error, isLoading: false });
+            throw error;
+          }
+        },
+
+        updatePassword: async (newPassword) => {
+          try {
+            set({ isLoading: true, error: null });
+
+            const { error } = await supabase.auth.updateUser({
+              password: newPassword,
+            });
+
+            if (error) throw error;
+            set({ isLoading: false });
+          } catch (error) {
+            set({ error, isLoading: false });
+            throw error;
           }
         },
 
         updateProfile: async (displayName, avatarUrl) => {
           try {
-            set({ loading: true });
+            set({ isLoading: true });
             const { user } = get();
 
             if (!user) throw new Error("User not authenticated");
@@ -198,7 +230,28 @@ export const useAuthStore = create(
           } catch (error) {
             return handleAuthError(error);
           } finally {
-            set({ loading: false });
+            set({ isLoading: false });
+          }
+        },
+
+        setSession: async (session) => {
+          try {
+            if (!session) {
+              set({ user: null, session: null });
+              return;
+            }
+
+            const {
+              data: { user },
+              error: userError,
+            } = await supabase.auth.getUser();
+            if (userError) throw userError;
+
+            set({ user, session });
+          } catch (error) {
+            console.error("Error setting session:", error);
+            set({ error });
+            throw error;
           }
         },
       };
@@ -208,7 +261,8 @@ export const useAuthStore = create(
       partialize: (state) => ({
         user: state.user,
         session: state.session,
-        lastChecked: state.lastChecked,
+        isLoading: state.isLoading,
+        error: state.error,
       }),
     }
   )

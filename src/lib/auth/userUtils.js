@@ -1,48 +1,48 @@
 /**
- * Kullanıcı yönetimi için yardımcı fonksiyonlar
- * Bu modül, Supabase auth ile ilgili işlemleri soyutlar.
+ * Helper functions for user management
+ * This module abstracts operations related to Supabase auth.
  */
 
 import { supabase } from "@/lib/supabase";
 
 /**
- * Mevcut oturumu kontrol eder
- * @returns {Promise<Object|null>} Oturum bilgisi veya null
+ * Checks the current session
+ * @returns {Promise<Object|null>} Session information or null
  */
 export async function checkSession() {
   try {
     const { data, error } = await supabase.auth.getSession();
 
     if (error) {
-      console.error("Oturum kontrolü sırasında hata:", error);
+      console.error("Error during session check:", error);
       return null;
     }
 
     return data.session;
   } catch (error) {
-    console.error("Oturum kontrolü sırasında hata:", error);
+    console.error("Error during session check:", error);
     return null;
   }
 }
 
 /**
- * Oturum açmış kullanıcının ID'sini döndürür
- * @returns {Promise<string|null>} Kullanıcı ID'si veya null
+ * Returns the ID of the logged-in user
+ * @returns {Promise<string|null>} User ID or null
  */
 export async function getCurrentUserId() {
   try {
     const session = await checkSession();
     return session?.user?.id || null;
   } catch (error) {
-    console.error("Kullanıcı ID'si alınamadı:", error);
+    console.error("Could not get user ID:", error);
     return null;
   }
 }
 
 /**
- * Oturum durumundaki değişiklikleri dinler
- * @param {Function} callback Auth durumu değiştiğinde çağrılacak fonksiyon
- * @returns {Function} Aboneliği kaldırmak için kullanılacak fonksiyon
+ * Listens for changes in session state
+ * @param {Function} callback Function to be called when auth state changes
+ * @returns {Function} Function to unsubscribe
  */
 export function subscribeToAuthChanges(callback) {
   return supabase.auth.onAuthStateChange((event, session) => {
@@ -51,10 +51,10 @@ export function subscribeToAuthChanges(callback) {
 }
 
 /**
- * Oturum açma işlemi
- * @param {string} email Kullanıcı e-posta adresi
- * @param {string} password Kullanıcı şifresi
- * @returns {Promise<Object>} Oturum bilgisi veya hata
+ * Sign in operation
+ * @param {string} email User email address
+ * @param {string} password User password
+ * @returns {Promise<Object>} Session information or error
  */
 export async function signIn(email, password) {
   try {
@@ -69,14 +69,14 @@ export async function signIn(email, password) {
 
     return { success: true, data };
   } catch (error) {
-    console.error("Giriş sırasında hata:", error);
-    return { success: false, error: error.message || "Giriş başarısız oldu" };
+    console.error("Error during sign in:", error);
+    return { success: false, error: error.message || "Sign in failed" };
   }
 }
 
 /**
- * Oturum kapatma işlemi
- * @returns {Promise<Object>} İşlem sonucu
+ * Sign out operation
+ * @returns {Promise<Object>} Operation result
  */
 export async function signOut() {
   try {
@@ -88,16 +88,16 @@ export async function signOut() {
 
     return { success: true };
   } catch (error) {
-    console.error("Çıkış sırasında hata:", error);
-    return { success: false, error: error.message || "Çıkış başarısız oldu" };
+    console.error("Error during sign out:", error);
+    return { success: false, error: error.message || "Sign out failed" };
   }
 }
 
 /**
- * Yeni kullanıcı kaydı oluşturma
- * @param {string} email Kullanıcı e-posta adresi
- * @param {string} password Kullanıcı şifresi
- * @returns {Promise<Object>} Kayıt sonucu
+ * Create new user registration
+ * @param {string} email User email address
+ * @param {string} password User password
+ * @returns {Promise<Object>} Registration result
  */
 export async function signUp(email, password) {
   try {
@@ -112,7 +112,7 @@ export async function signUp(email, password) {
 
     return { success: true, data };
   } catch (error) {
-    console.error("Kayıt sırasında hata:", error);
-    return { success: false, error: error.message || "Kayıt başarısız oldu" };
+    console.error("Error during registration:", error);
+    return { success: false, error: error.message || "Registration failed" };
   }
 }

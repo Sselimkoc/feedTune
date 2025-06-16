@@ -12,27 +12,74 @@
   },
   "common": {
     "loading": "Loading...",
-    "error": "Error occurred",
-    "success": "Operation successful",
+    "error": "Error",
+    "success": "Success",
     "cancel": "Cancel",
     "save": "Save",
     "delete": "Delete",
     "edit": "Edit",
-    "add": "Add",
+    "create": "Create",
     "search": "Search",
-    "filter": "Filter",
+    "noContent": "No content",
+    "noContentDescription": "There is no content to display",
+    "tryAgain": "Try again",
     "refresh": "Refresh",
-    "close": "Close",
-    "back": "Back",
-    "next": "Next",
+    "loadMore": "Load more",
+    "settings": "Settings",
+    "logout": "Logout",
+    "login": "Login",
+    "signup": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "name": "Name",
+    "description": "Description",
+    "url": "URL",
+    "type": "Type",
+    "category": "Category",
+    "status": "Status",
+    "actions": "Actions",
+    "createdAt": "Created at",
+    "updatedAt": "Updated at",
+    "all": "All",
+    "none": "None",
+    "or": "or",
+    "and": "and",
     "yes": "Yes",
     "no": "No",
     "ok": "OK",
-    "continue": "Continue",
+    "filter": "Filter",
+    "back": "Back",
+    "next": "Next",
+    "apply": "Apply",
+    "reset": "Reset",
+    "retry": "Retry",
+    "viewOnYouTube": "View on YouTube",
+    "visitWebsite": "Visit Website",
     "deleting": "Deleting...",
     "language": "Language",
-    "apply": "Apply",
-    "reset": "Reset"
+    "searchDescription": "No content matches your search query. Try different keywords or view all content.",
+    "searching": "Searching...",
+    "loadingDescription": "Please wait while we load your feeds",
+    "refreshingDescription": "Please wait while we refresh your feeds",
+    "loadingButShowingContent": "Loading more content in the background...",
+    "emptyTitle": "No feeds found",
+    "emptyDescription": "Add some feeds to get started",
+    "deleteConfirm": "Are you sure you want to delete this feed?",
+    "deleteSuccess": "Feed deleted successfully",
+    "deleteError": "Error deleting feed",
+    "addSuccess": "Feed added successfully",
+    "addError": "Error adding feed",
+    "editSuccess": "Feed updated successfully",
+    "editError": "Error updating feed",
+    "refreshSuccess": "Feeds refreshed successfully",
+    "refreshError": "Error refreshing feeds",
+    "invalidUrl": "Invalid feed URL",
+    "alreadyExists": "Feed already exists",
+    "notFound": "Feed not found",
+    "networkError": "Network error",
+    "serverError": "Server error",
+    "unknownError": "Unknown error"
   },
   "nav": {
     "menu": "Menu",
@@ -85,13 +132,53 @@
       "resendingEmail": "Sending email...",
       "emailResent": "Verification email has been resent. Please check your inbox.",
       "resendError": "An error occurred while sending the verification email. Please try again later."
-    }
+    },
+    "verificationEmailSent": "Verification email sent",
+    "authenticationError": "Authentication error",
+    "profileUpdated": "Profile updated",
+    "rateLimitError": "Too many attempts, please try again later",
+    "loginRequired": "Please login to continue",
+    "invalidCredentials": "Invalid email or password",
+    "emailAlreadyInUse": "Email is already in use",
+    "weakPassword": "Password is too weak",
+    "passwordsDontMatch": "Passwords don't match"
   },
   "feeds": {
-    "title": "My Feeds",
-    "description": "Browse content from your subscribed sources",
+    "title": "Feeds",
+    "description": "Manage your feeds",
+    "add": "Add feed",
+    "edit": "Edit feed",
+    "delete": "Delete feed",
+    "refresh": "Refresh feeds",
+    "search": "Search feeds",
+    "filter": "Filter feeds",
+    "sort": "Sort feeds",
+    "view": "View",
+    "grid": "Grid",
+    "list": "List",
+    "loading": "Loading feeds...",
+    "loadingDescription": "Please wait while we load your feeds",
+    "refreshing": "Refreshing feeds...",
+    "refreshingDescription": "Please wait while we refresh your feeds",
+    "loadingButShowingContent": "Loading more content in the background...",
+    "emptyTitle": "No feeds found",
+    "emptyDescription": "Add some feeds to get started",
+    "deleteConfirm": "Are you sure you want to delete this feed?",
+    "deleteSuccess": "Feed deleted successfully",
+    "deleteError": "Error deleting feed",
+    "addSuccess": "Feed added successfully",
+    "addError": "Error adding feed",
+    "editSuccess": "Feed updated successfully",
+    "editError": "Error updating feed",
+    "refreshSuccess": "Feeds refreshed successfully",
+    "refreshError": "Error refreshing feeds",
+    "invalidUrl": "Invalid feed URL",
+    "alreadyExists": "Feed already exists",
+    "notFound": "Feed not found",
+    "networkError": "Network error",
+    "serverError": "Server error",
+    "unknownError": "Unknown error",
     "yourFeeds": "Your Feeds",
-    "searchFeeds": "Search feeds...",
     "categories": "Categories",
     "smartFilters": "Smart Filters",
     "addFeed": {
@@ -161,8 +248,6 @@
     "addFeedTitle": "Add Feed",
     "feedUrl": "Feed URL",
     "youtubeUrl": "YouTube URL",
-    "addSuccess": "Feed added successfully",
-    "addError": "Error adding feed",
     "allFeeds": "All Feeds",
     "allFeedsDescription": "View all your feed content",
     "selectFeed": "Select Feed",
@@ -172,7 +257,6 @@
     "listView": "List View",
     "filterFeeds": "Filter Feeds",
     "keyboardShortcuts": "Keyboard Shortcuts",
-    "refresh": "Refresh",
     "refreshFeeds": "Refresh Feeds",
     "openInNewTab": "Open in new tab",
     "sync": "Sync",
@@ -181,7 +265,6 @@
     "markingAllAsRead": "Marking all items as read...",
     "allItemsAlreadyRead": "All items have already been read",
     "allItemsMarkedAsRead": "{{count}} items marked as read",
-    "all": "All",
     "read": "Read",
     "filterTitle": "Filters",
     "sortBy": "Sort By",
@@ -327,7 +410,6 @@
     "emptyReadLaterTitle": "Reading List Empty",
     "emptyReadLaterDescription": "Your reading list is empty. Click the bookmark icon to add content to your reading list.",
     "emptySearchTitle": "No Search Results",
-    "emptySearchDescription": "No content matches your search query. Try different keywords or view all content.",
     "emptyFilterTitle": "No Filtered Content Found",
     "emptyFilterDescription": "No content matches your selected filters. Try changing your filters or using less restrictive ones.",
     "emptyDefaultTitle": "No Content Found",
@@ -354,8 +436,6 @@
     "filters": "Filters",
     "stats": "Statistics",
     "refreshingSelectedFeed": "Refreshing selected feed...",
-    "refreshSuccess": "Feed refreshed successfully",
-    "refreshError": "An error occurred while refreshing the feed",
     "refreshFeed": "Refresh Feed",
     "refreshingFeed": "Refreshing Feed",
     "refreshFeedWithoutCache": "Refresh Bypassing Cache",
@@ -375,12 +455,97 @@
         "favoriteToggle": "Error toggling favorite status",
         "readLaterToggle": "Error toggling read later status"
       }
-    }
+    },
+    "selected": "selected",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "bulkActions": "Select Multiple Items",
+    "markAsRead": "Mark as Read",
+    "addToFavorites": "Add to Favorites",
+    "addToReadLater": "Read Later",
+    "cancel": "Cancel",
+    "select": "Select Item",
+    "markedAsReadSuccess": "{{count}} items marked as read",
+    "addedToFavoritesSuccess": "{{count}} items added to favorites",
+    "removedFromFavoritesSuccess": "{{count}} items removed from favorites",
+    "addedToReadLaterSuccess": "{{count}} items added to read later",
+    "removedFromReadLaterSuccess": "{{count}} items removed from read later",
+    "bulkActionError": "Failed to perform bulk action",
+    "loadingMore": "Loading more items...",
+    "filterRss": "Filter RSS Feeds",
+    "filterYoutube": "Filter YouTube Feeds",
+    "filterUnread": "Show Unread Only",
+    "selectAddMethod": "How would you like to add content?",
+    "searchYouTubeChannels": "Search YouTube Channels",
+    "searchYouTubeDescription": "Find and add YouTube channels to your feed collection",
+    "enterYouTubeChannelNameOrUrl": "Enter channel name, ID or URL",
+    "noChannelsFound": "No channels found for your search",
+    "searchForChannels": "Search for YouTube channels to add",
+    "selectChannelToViewDetails": "Select a channel to view details",
+    "searchAndSelectChannel": "Search for YouTube channels and select one to view details and add to your feeds",
+    "channelAdded": "Channel Added",
+    "addThisChannel": "Add This Channel",
+    "previewRssFeed": "Preview RSS Feed",
+    "previewRssDescription": "View and confirm feed details before adding",
+    "enterRssUrl": "Enter RSS Feed URL",
+    "enterRssUrlDescription": "Enter the URL of an RSS feed to preview and add to your collection",
+    "preview": "Preview",
+    "loadingPreview": "Loading Preview",
+    "loadingPreviewDescription": "Fetching feed information and content samples...",
+    "previewError": "Preview Error",
+    "recentEntries": "Recent Entries",
+    "entries": "entries",
+    "noPreviewItemsAvailable": "No preview items available for this feed",
+    "feedSettings": "Feed Settings",
+    "customTitle": "Custom Title",
+    "customTitleDescription": "You can provide a custom name for this feed (optional)",
+    "fetchFullContent": "Fetch Full Content",
+    "fetchFullContentDescription": "When possible, fetch the full article content instead of just the summary",
+    "youtubeChannelUrl": "YouTube Channel URL",
+    "youtubeUrlHelp": "You can enter a channel URL, channel ID, or @username",
+    "rssUrl": "RSS Feed URL",
+    "contentOptions": "Content Options",
+    "useSummary": "Use summary (faster)",
+    "useFullContent": "Fetch full content (where possible)",
+    "leaveBlankForAutoTitle": "Leave blank to use the feed's original title",
+    "selectCategory": "Select a category",
+    "categories": {
+      "general": "General",
+      "tech": "Technology",
+      "news": "News",
+      "entertainment": "Entertainment",
+      "other": "Other"
+    },
+    "addYouTubeChannel": "Add YouTube Channel",
+    "addYouTubeChannelDescription": "Search for and add YouTube channels",
+    "addRssFeed": "Add RSS Feed",
+    "addRssFeedDescription": "Add feeds from websites, blogs, and news sources",
+    "manuallyAddFeed": "Manually Add Feed",
+    "manuallyAddFeedDescription": "Enter feed details manually using a URL",
+    "searchingForYouTubeChannel": "Searching for YouTube channel...",
+    "visitWebsite": "Visit Website",
+    "viewOnYouTube": "View on YouTube",
+    "cannotAccessFeed": "Cannot access this feed. The URL might be invalid or the site may have CORS restrictions.",
+    "invalidRssFeed": "Invalid RSS feed format. Please check the URL and try again.",
+    "timeoutError": "Request timed out. Please try again.",
+    "loadingFailed": "Loading failed",
+    "refreshFailed": "Refresh failed",
+    "saveFailed": "Save failed",
+    "deleteFailed": "Delete failed",
+    "createFailed": "Create failed",
+    "updateFailed": "Update failed",
+    "validationError": "Validation error",
+    "somethingWentWrong": "Something went wrong"
   },
   "home": {
-    "title": "Manage Your Content with FeedTune",
-    "subtitle": "Collect, organize, and follow your RSS feeds and YouTube channels in one place.",
+    "title": "Home",
+    "welcome": "Welcome to FeedTune",
     "getStarted": "Get Started",
+    "recentlyRead": "Recently Read",
+    "recommendedFeeds": "Recommended Feeds",
+    "trendingContent": "Trending Content",
+    "emptyState": "You haven't added any feeds yet.",
+    "emptyStateAction": "Add some feeds to get started",
     "hero": {
       "tagline": "Manage your RSS and YouTube content in one place",
       "getStarted": "Get Started",
@@ -389,111 +554,18 @@
       "dashboardImageAlt": "FeedTune dashboard preview",
       "newFeature": "New Feature"
     },
-    "features": {
-      "onboarding": {
-        "title": "Easy Onboarding",
-        "description": "Start quickly with a simple interface and track your sources"
-      },
-      "analytics": {
-        "title": "Content Analytics",
-        "description": "Track your reading habits and discover your favorite sources"
-      },
-      "customization": {
-        "title": "Customization",
-        "description": "Adjust the appearance and features to your own needs"
-      },
-      "title": "Features",
-      "subtitle": "Benefits of FeedTune",
-      "description": "Manage your content more efficiently with FeedTune",
-      "rssFeeds": {
-        "title": "RSS Feeds",
-        "desc": "Follow the latest content from your favorite websites"
-      },
-      "youtube": {
-        "title": "YouTube Channels",
-        "desc": "Follow your favorite YouTube channels like RSS feeds"
-      },
-      "autoUpdates": {
-        "title": "Auto Updates",
-        "desc": "Your content is automatically updated"
-      },
-      "organization": {
-        "title": "Content Organization",
-        "desc": "Add content to favorites or save for later reading"
-      },
-      "keyboard": {
-        "title": "Keyboard Shortcuts",
-        "desc": "Navigate faster with keyboard shortcuts"
-      },
-      "darkMode": {
-        "title": "Dark Mode",
-        "desc": "Dark mode support that doesn't strain your eyes"
-      },
-      "cards": {
-        "layout": {
-          "title": "Modern Interface",
-          "description": "Access your content instantly with a user-friendly and customizable interface."
-        },
-        "filter": {
-          "title": "Advanced Filtering",
-          "description": "Easily filter content by type, status, or source type."
-        },
-        "rss": {
-          "title": "RSS Support",
-          "description": "Supports all RSS and Atom feeds, regularly updates content."
-        },
-        "youtube": {
-          "title": "YouTube Integration",
-          "description": "Follow YouTube channels and never miss new videos."
-        },
-        "favorites": {
-          "title": "Favorite Content",
-          "description": "Add important content to your favorites for easy access later."
-        },
-        "readLater": {
-          "title": "Read Later",
-          "description": "Add content to your reading list to read later."
-        },
-        "languages": {
-          "title": "Multi-Language Support",
-          "description": "Use the app in your own language with different language options."
-        },
-        "darkMode": {
-          "title": "Dark Mode",
-          "description": "Use it comfortably at night with dark mode that reduces eye strain."
-        },
-        "search": {
-          "title": "Quick Search",
-          "description": "Find what you want instantly by searching among your content."
-        }
-      }
-    },
-    "performanceTitle": "Fast & Performant",
-    "performanceSubtitle": "Performance developed with modern technologies",
-    "performanceDescription": "FeedTune is developed using the most modern web technologies. It offers fast loading times, instant updates, and a seamless experience.",
-    "performanceFeature1": "Server Side Rendering",
-    "performanceFeature1Description": "Next.js SSR is used for fast page loads.",
-    "performanceFeature2": "Efficient Animations",
-    "performanceFeature2Description": "Smooth and performant animations with Framer Motion.",
-    "performanceFeature3": "Responsive Design",
-    "performanceFeature3Description": "Perfect viewing experience on all devices.",
     "feedManagement": {
       "title": "Your Feeds",
       "description": "Sources you follow",
-      "addFeed": "Add Feed",
-      "viewAllContent": "View All Content",
-      "viewContent": "View Content",
-      "viewAllFeeds": "View All Feeds",
-      "websiteurl": "Visit website",
-      "openInNewTab": "Open in new tab",
-      "copyurl": "Copy url",
-      "copyurlSuccess": "url copied",
-      "visitWebsite": "Visit website",
       "lastUpdated": "Last updated",
+      "viewContent": "View Content",
+      "websiteurl": "Visit website",
+      "addFeed": "Add Feed",
+      "addFeedDescription": "Add a new RSS or YouTube source",
+      "noFeedsTitle": "No feeds yet",
       "noFeeds": "Add RSS or YouTube sources you want to follow",
-      "noFeedsTitle": "No feeds added yet",
       "addFirstFeed": "Add First Feed",
-      "addFeedDescription": "Add a new RSS or YouTube source"
+      "viewAllFeeds": "View All Feeds"
     },
     "recentContent": {
       "title": "Recent Content",
@@ -514,10 +586,107 @@
       "title": "Statistics",
       "description": "Overview of your feeds",
       "totalFeeds": "Total Feeds",
-      "totalItems": "Total Content",
+      "totalItems": "Total Items",
       "unreadItems": "Unread",
       "favoriteItems": "Favorites",
       "readLaterItems": "Read Later"
+    },
+    "features": {
+      "title": "Features",
+      "subtitle": "Discover what makes FeedTune special",
+      "rss": {
+        "title": "RSS Feed Management",
+        "description": "Add, edit, and manage your RSS feeds in one place"
+      },
+      "realtime": {
+        "title": "Real-time Updates",
+        "description": "Get instant updates from your favorite sources"
+      },
+      "interface": {
+        "title": "Clean Interface",
+        "description": "Modern and intuitive user interface for better reading"
+      },
+      "platform": {
+        "title": "Cross-platform",
+        "description": "Access your feeds from any device, anywhere"
+      }
+    },
+    "about": {
+      "title": "Why Choose FeedTune?",
+      "subtitle": "Discover the features that make FeedTune the perfect choice for managing your content feeds",
+      "reading": {
+        "title": "Optimized Reading",
+        "description": "Clean and distraction-free reading experience with customizable layout options"
+      },
+      "sync": {
+        "title": "Real-time Sync",
+        "description": "Stay up-to-date with automatic feed synchronization and instant updates"
+      },
+      "share": {
+        "title": "Easy Sharing",
+        "description": "Share interesting articles and content with your network effortlessly"
+      },
+      "responsive": {
+        "title": "Fully Responsive",
+        "description": "Access your feeds from any device with our mobile-first design"
+      },
+      "theme": {
+        "title": "Dark Mode",
+        "description": "Comfortable reading in any lighting with automatic dark mode support"
+      },
+      "ui": {
+        "title": "Modern Interface",
+        "description": "Beautiful and intuitive interface designed for the best user experience"
+      },
+      "language": {
+        "title": "Multi-language",
+        "description": "Use FeedTune in your preferred language with our localization support"
+      },
+      "security": {
+        "title": "Secure & Private",
+        "description": "Your data is protected with industry-standard security measures"
+      }
+    },
+    "technology": {
+      "title": "Modern Technologies",
+      "subtitle": "Latest web technologies powering FeedTune",
+      "nextjs": {
+        "title": "Fast Page Loads",
+        "description": "Server-side rendered pages and instant navigation with Next.js 14"
+      },
+      "react": {
+        "title": "Reactive Interface",
+        "description": "Real-time updates and seamless user experience with React 18"
+      },
+      "tailwind": {
+        "title": "Modern Design",
+        "description": "Customizable and responsive design with Tailwind CSS"
+      },
+      "auth": {
+        "title": "Secure Authentication",
+        "description": "Secure and fast user management with Supabase Auth"
+      },
+      "database": {
+        "title": "Powerful Database",
+        "description": "Reliable and scalable data storage with PostgreSQL"
+      },
+      "typescript": {
+        "title": "Type Safety",
+        "description": "Safer and maintainable code with TypeScript"
+      },
+      "radix": {
+        "title": "Accessible Components",
+        "description": "Accessible and customizable UI components with Radix UI"
+      },
+      "performance": {
+        "title": "High Performance",
+        "description": "Optimized performance with React Server Components"
+      },
+      "metrics": {
+        "loadTime": "Page Load Time",
+        "performance": "Lighthouse Performance Score",
+        "accessibility": "Accessibility Score"
+      }
     }
   },
   "favorites": {
@@ -595,7 +764,28 @@
     "addFeedErrorConstraint": "Missing required field when adding feed. Please try again.",
     "feedAlreadyExists": "This feed is already added",
     "urlRequired": "Feed URL is required",
-    "typeRequired": "Feed type is required"
+    "typeRequired": "Feed type is required",
+    "tryAgainLater": "Please try again later",
+    "pleaseEnterValidUrl": "Please enter a valid URL",
+    "authRequired": "Authentication Required",
+    "pleaseLoginToAddFeeds": "Please login to add feeds",
+    "duplicateFeed": "Duplicate Feed",
+    "invalidFeed": "Invalid Feed",
+    "couldNotParseFeed": "Could not parse feed content",
+    "addFeedFailed": "Add Feed Failed",
+    "removeFeedFailed": "Failed to remove feed",
+    "syncFailed": "Failed to sync feed",
+    "syncFeedFailed": "Failed to synchronize feed",
+    "markAsReadFailed": "Failed to mark items as read",
+    "somethingWentWrong": "Something went wrong",
+    "loadingFailed": "Loading failed",
+    "refreshFailed": "Refresh failed",
+    "saveFailed": "Save failed",
+    "deleteFailed": "Delete failed",
+    "createFailed": "Create failed",
+    "updateFailed": "Update failed",
+    "validationError": "Validation error",
+    "unknownError": "Unknown error"
   },
   "notifications": {
     "welcome": "Welcome to FeedTune!",
@@ -651,5 +841,16 @@
     "month_other": "{{count}} months ago",
     "year_one": "1 year ago",
     "year_other": "{{count}} years ago"
+  },
+  "success": {
+    "feedAdded": "Feed Added",
+    "feedAddedDescription": "The feed has been added to your collection",
+    "feedRemoved": "Feed Removed",
+    "feedSynced": "Feed Synchronized",
+    "itemMarkedAsRead": "Item marked as read",
+    "itemsMarkedAsRead": "{{count}} items marked as read"
+  },
+  "meta": {
+    "feedsPageDescription": "Manage and read your favorite feeds from YouTube channels and websites in one place"
   }
 }

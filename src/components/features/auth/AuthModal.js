@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
@@ -24,13 +24,14 @@ import {
   Sparkles,
   Rss,
 } from "lucide-react";
+import Link from "next/link";
 
 export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
   const [mode, setMode] = useState(defaultTab);
   const [showPassword, setShowPassword] = useState(false);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { isLoading, email, setEmail, password, setPassword, handleSubmit } =
     useAuth();
 
@@ -97,10 +98,8 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
     setShowPassword(!showPassword);
   };
 
-  // Parçacık animasyonu için
+  // Particle animation
   const particles = Array.from({ length: 6 }).map((_, i) => {
-    // Tailwind'de geçerli bir CSS sınıfı olduğundan emin olmak için
-    // dinamik değerleri önceden tanımlayalım
     const sizeClasses = ["w-2 h-2", "w-3 h-3", "w-4 h-4"];
     const sizeIndex = i % 3;
 
@@ -146,7 +145,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
             />
           ) : (
             <div className="p-6">
-              {/* Logo ve başlık alanı */}
+              {/* Logo and title area */}
               <div className="relative flex flex-col items-center mb-8 mt-2">
                 <div className="relative">
                   <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
@@ -187,7 +186,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
                 </motion.div>
               </div>
 
-              {/* Tab alanı */}
+              {/* Tab area */}
               <Tabs
                 defaultValue={mode}
                 value={mode}
@@ -211,242 +210,98 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
                   </TabsTrigger>
                 </TabsList>
 
-                <AnimatePresence mode="wait">
-                  {mode === "login" ? (
-                    <TabsContent value="login" asChild forceMount>
-                      <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                        transition={{ duration: 0.3 }}
-                        className="space-y-6"
+                <form onSubmit={handleFormSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">{t("auth.email")}</Label>
+                    <div className="relative">
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder={t("auth.emailPlaceholder")}
+                        required
+                        className="pl-10"
+                      />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password">{t("auth.password")}</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={t("auth.passwordPlaceholder")}
+                        required
+                        className="pl-10 pr-10"
+                      />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={togglePasswordVisibility}
                       >
-                        <div className="text-center mb-4">
-                          <h2 className="text-xl font-semibold text-foreground">
-                            {t("auth.welcome")}
-                          </h2>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {t("auth.loginDescription")}
-                          </p>
-                        </div>
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
 
-                        <form onSubmit={handleFormSubmit} className="space-y-5">
-                          <div className="space-y-2.5">
-                            <Label
-                              htmlFor="email-login"
-                              className="text-sm font-medium"
-                            >
-                              {t("auth.email")}
-                            </Label>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                id="email-login"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder={t("auth.emailPlaceholder")}
-                                className="pl-10 rounded-lg border-input/50 bg-background/50 focus:bg-background focus:border-primary/50 transition-all"
-                                required
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-2.5">
-                            <div className="flex justify-between items-center">
-                              <Label
-                                htmlFor="password-login"
-                                className="text-sm font-medium"
-                              >
-                                {t("auth.password")}
-                              </Label>
-                              <a
-                                href="#"
-                                className="text-xs text-primary hover:underline"
-                              >
-                                {t("auth.forgotPassword")}
-                              </a>
-                            </div>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                id="password-login"
-                                type={showPassword ? "text" : "password"}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder={t("auth.passwordPlaceholder")}
-                                className="pl-10 pr-10 rounded-lg border-input/50 bg-background/50 focus:bg-background focus:border-primary/50 transition-all"
-                                required
-                              />
-                              <button
-                                type="button"
-                                onClick={togglePasswordVisibility}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
-                                tabIndex={-1}
-                              >
-                                {showPassword ? (
-                                  <EyeOff className="h-4 w-4" />
-                                ) : (
-                                  <Eye className="h-4 w-4" />
-                                )}
-                              </button>
-                            </div>
-                          </div>
-
-                          <Button
-                            type="submit"
-                            className="w-full mt-6 rounded-lg bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary transition-all duration-300 group shadow-md shadow-primary/10"
-                            disabled={isLoading}
-                          >
-                            {isLoading ? (
-                              <div className="flex items-center justify-center">
-                                <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                                {t("common.loading")}
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center">
-                                {t("auth.loginButton")}
-                                <motion.div
-                                  className="ml-2"
-                                  animate={{ x: [0, 4, 0] }}
-                                  transition={{
-                                    duration: 1.5,
-                                    repeat: Infinity,
-                                    repeatType: "loop",
-                                    ease: "easeInOut",
-                                    repeatDelay: 1,
-                                  }}
-                                >
-                                  <ArrowRight className="h-4 w-4" />
-                                </motion.div>
-                              </div>
-                            )}
-                          </Button>
-                        </form>
-                      </motion.div>
-                    </TabsContent>
-                  ) : (
-                    <TabsContent value="signup" asChild forceMount>
+                  <Button
+                    type="submit"
+                    className="w-full rounded-full"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
                       <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                        transition={{ duration: 0.3 }}
-                        className="space-y-6"
+                        className="h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      />
+                    ) : (
+                      <>
+                        {mode === "login" ? (
+                          <>
+                            {t("auth.login")}
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </>
+                        ) : (
+                          <>
+                            {t("auth.register")}
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </>
+                        )}
+                      </>
+                    )}
+                  </Button>
+
+                  <div className="text-center text-sm text-muted-foreground">
+                    <span>{t("auth.termsText")}</span>{" "}
+                    <Button
+                      variant="link"
+                      className="h-auto p-0 text-primary"
+                      asChild
+                    >
+                      <Link
+                        href="/terms"
+                        target="_blank"
+                        className="inline-flex items-center hover:underline"
                       >
-                        <div className="text-center mb-4">
-                          <h2 className="text-xl font-semibold text-foreground">
-                            {t("auth.createAccount")}
-                          </h2>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {t("auth.registerDescription")}
-                          </p>
-                        </div>
-
-                        <form onSubmit={handleFormSubmit} className="space-y-5">
-                          <div className="space-y-2.5">
-                            <Label
-                              htmlFor="email-signup"
-                              className="text-sm font-medium"
-                            >
-                              {t("auth.email")}
-                            </Label>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                id="email-signup"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder={t("auth.emailPlaceholder")}
-                                className="pl-10 rounded-lg border-input/50 bg-background/50 focus:bg-background focus:border-primary/50 transition-all"
-                                required
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-2.5">
-                            <Label
-                              htmlFor="password-signup"
-                              className="text-sm font-medium"
-                            >
-                              {t("auth.password")}
-                            </Label>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                id="password-signup"
-                                type={showPassword ? "text" : "password"}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder={t("auth.passwordPlaceholder")}
-                                className="pl-10 pr-10 rounded-lg border-input/50 bg-background/50 focus:bg-background focus:border-primary/50 transition-all"
-                                required
-                              />
-                              <button
-                                type="button"
-                                onClick={togglePasswordVisibility}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
-                                tabIndex={-1}
-                              >
-                                {showPassword ? (
-                                  <EyeOff className="h-4 w-4" />
-                                ) : (
-                                  <Eye className="h-4 w-4" />
-                                )}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="p-3 bg-muted/40 rounded-lg border border-border/50">
-                            <p className="text-xs text-muted-foreground">
-                              {t("auth.termsNotice")}{" "}
-                              <a
-                                href="#"
-                                className="text-primary hover:underline inline-flex items-center font-medium"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {t("auth.termsLink")}
-                                <ExternalLink className="ml-1 h-3 w-3" />
-                              </a>
-                            </p>
-                          </div>
-
-                          <Button
-                            type="submit"
-                            className="w-full mt-6 rounded-lg bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary transition-all duration-300 shadow-md shadow-primary/10"
-                            disabled={isLoading}
-                          >
-                            {isLoading ? (
-                              <div className="flex items-center justify-center">
-                                <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                                {t("common.loading")}
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center">
-                                {t("auth.registerButton")}
-                                <motion.div
-                                  className="ml-2"
-                                  animate={{ x: [0, 4, 0] }}
-                                  transition={{
-                                    duration: 1.5,
-                                    repeat: Infinity,
-                                    repeatType: "loop",
-                                    ease: "easeInOut",
-                                    repeatDelay: 1,
-                                  }}
-                                >
-                                  <ArrowRight className="h-4 w-4" />
-                                </motion.div>
-                              </div>
-                            )}
-                          </Button>
-                        </form>
-                      </motion.div>
-                    </TabsContent>
-                  )}
-                </AnimatePresence>
+                        {t("auth.termsLink")}
+                        <ExternalLink className="ml-1 h-3 w-3" />
+                      </Link>
+                    </Button>
+                  </div>
+                </form>
               </Tabs>
             </div>
           )}

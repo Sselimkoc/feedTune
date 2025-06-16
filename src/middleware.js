@@ -1,112 +1,94 @@
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
 
-export async function middleware(req) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
+// Public routes that don't require authentication
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/signup",
+  "/reset-password",
+  "/api/health",
+];
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+// Public API routes that don't require authentication
+const PUBLIC_API_ROUTES = ["/api/youtube/public-search"];
 
-  // check if url starts with http and redirect to https
-  const url = req.nextUrl.clone();
-  if (url.pathname.startsWith("/http")) {
-    return NextResponse.redirect(url.pathname.slice(1));
-  }
-
-  // Protected routes
-  const protectedRoutes = ["/settings", "/feeds", "/favorites", "/read-later"];
-  const isProtectedRoute = protectedRoutes.some(
-    (route) =>
-      req.nextUrl.pathname === route ||
-      req.nextUrl.pathname.startsWith(`${route}/`)
+// Check if a route is public
+const isPublicRoute = (pathname) => {
+  return (
+    PUBLIC_ROUTES.some((route) => pathname.startsWith(route)) ||
+    PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))
   );
+};
 
-  // Eğer kullanıcı oturumu varsa, user tablosunda kaydının olduğundan emin ol
-  if (session?.user) {
-    try {
-      // Kullanıcının users tablosunda var olup olmadığını kontrol et
-      const { data: dbUser, error: dbUserError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("id", session.user.id)
-        .single();
+// Check if a route is an API route
+const isApiRoute = (pathname) => {
+  return pathname.startsWith("/api/");
+};
 
-      if (dbUserError && dbUserError.code !== "PGRST116") {
-        console.error("Kullanıcı kontrolü sırasında hata:", dbUserError);
-      }
+export async function middleware(req) {
+  try {
+    const res = NextResponse.next();
+    const supabase = createMiddlewareClient({ req, res });
+    const { pathname } = req.nextUrl;
 
-      // Kullanıcı veritabanında yoksa ekle
-      if (!dbUser) {
-        console.log(
-          "Kullanıcı veritabanında bulunamadı, otomatik kayıt yapılıyor:",
-          session.user.id
-        );
-
-        const { error: insertError } = await supabase.from("users").insert({
-          id: session.user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-
-        if (insertError) {
-          console.error("Kullanıcı veritabanına eklenirken hata:", insertError);
-        } else {
-          console.log(
-            "Kullanıcı veritabanına başarıyla eklendi:",
-            session.user.id
-          );
-        }
-      }
-    } catch (error) {
-      console.error("Kullanıcı veritabanı işlemi sırasında hata:", error);
-    }
-  }
-
-  // Auth check for API routes
-  if (req.nextUrl.pathname.startsWith("/api/")) {
-    // Debug endpoint'leri için istisna
-    if (req.nextUrl.pathname.startsWith("/api/debug-")) {
-      console.log("Debug API isteği algılandı, kimlik doğrulama atlanıyor");
+    // Skip auth check for public routes
+    if (isPublicRoute(pathname)) {
       return res;
     }
 
-    // Public API endpoints - authentication is not required
-    if (
-      req.nextUrl.pathname.startsWith("/api/youtube/public-search") ||
-      req.nextUrl.pathname.startsWith("/api/youtube/channel-search") ||
-      req.nextUrl.pathname.startsWith("/api/image-proxy") ||
-      req.nextUrl.pathname.startsWith("/api/rss-preview")
-    ) {
-      console.log("Public API isteği algılandı, kimlik doğrulama atlanıyor");
-      return res;
-    }
+    // Get session with short timeout for API routes
+    const sessionPromise = supabase.auth.getSession();
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Auth timeout")),
+        isApiRoute(pathname) ? 1000 : 3000
+      )
+    );
 
+    const {
+      data: { session },
+    } = await Promise.race([sessionPromise, timeoutPromise]);
+
+    // Handle unauthenticated requests
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return res;
-  }
+      if (isApiRoute(pathname)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
 
-  // Redirect to home page if no session and on protected route
-  if (isProtectedRoute && !session) {
-    const redirectUrl = new URL("/", req.url);
-    redirectUrl.searchParams.set("message", "login_required");
+      const redirectUrl = new URL("/login", req.url);
+      redirectUrl.searchParams.set("redirectTo", pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    return res;
+  } catch (error) {
+    console.error("Middleware error:", error);
+
+    // Handle timeout and other errors
+    if (isApiRoute(req.nextUrl.pathname)) {
+      return NextResponse.json(
+        { error: "Auth service unavailable" },
+        { status: 503 }
+      );
+    }
+
+    // Redirect to login with error for non-API routes
+    const redirectUrl = new URL("/login", req.url);
+    redirectUrl.searchParams.set("error", "auth_error");
     return NextResponse.redirect(redirectUrl);
   }
-
-  return res;
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match all request paths except:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - public folder
      */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|public/).*)",
   ],
 };

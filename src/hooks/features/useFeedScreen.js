@@ -1,372 +1,249 @@
-"use client";
-
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useFeedService } from "./useFeedService";
-import { useLanguage } from "@/hooks/useLanguage";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useFilters } from "./feed-screen/useFilters";
-import { usePagination } from "./feed-screen/usePagination";
-import { useFeedActions } from "./feed-screen/useFeedActions";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
+import { useFeedService } from "@/hooks/features/useFeedService";
+import { usePagination } from "@/hooks/features/feed-screen/usePagination";
+import { supabase } from "@/lib/supabase";
 
-// Önbellek anahtarı ve sabit TTL süreleri
-const CACHE_KEYS = {
-  FEED_SCREEN_STATE: "feed-screen-state",
-  FEED_SCREEN_ITEMS: "feed-screen-items",
+// Cache için güvenli storage erişimi
+const getLocalStorage = () => {
+  if (typeof window !== "undefined") {
+    return window.localStorage;
+  }
+  return null;
 };
 
-const CACHE_TTL = {
-  SHORT: 1000 * 60 * 1, // 1 dakika
-  MEDIUM: 1000 * 60 * 5, // 5 dakika
-};
-
-// Yerel önbelleğe erişim yardımcı fonksiyonları
-const getLocalCache = (key, defaultValue = null) => {
+// Cache fonksiyonları
+const getLocalCache = (key) => {
   try {
-    const cachedData = localStorage.getItem(key);
-    if (!cachedData) return defaultValue;
+    const storage = getLocalStorage();
+    if (!storage) return null;
 
-    const { expiry, data } = JSON.parse(cachedData);
-    if (expiry < Date.now()) {
-      localStorage.removeItem(key);
-      return defaultValue;
+    const item = storage.getItem(key);
+    if (!item) return null;
+
+    const { value, timestamp, ttl } = JSON.parse(item);
+    if (Date.now() - timestamp > ttl) {
+      storage.removeItem(key);
+      return null;
     }
 
-    return data;
+    return value;
   } catch (error) {
-    console.warn(`Cache error for ${key}:`, error);
-    return defaultValue;
+    console.warn("Cache read error:", error);
+    return null;
   }
 };
 
-const setLocalCache = (key, data, ttl = CACHE_TTL.MEDIUM) => {
+const setLocalCache = (key, value, ttl = 1000 * 60 * 60) => {
   try {
-    const cacheData = {
-      expiry: Date.now() + ttl,
-      data,
+    const storage = getLocalStorage();
+    if (!storage) return;
+
+    const item = {
+      value,
+      timestamp: Date.now(),
+      ttl,
     };
 
-    localStorage.setItem(key, JSON.stringify(cacheData));
+    storage.setItem(key, JSON.stringify(item));
   } catch (error) {
-    console.warn(`Failed to set cache for ${key}:`, error);
+    console.warn("Cache write error:", error);
   }
 };
 
-/**
- * Feed ekranı için özelleştirilmiş hook
- * @returns {Object} Feed ekranı verileri ve fonksiyonları
- */
-export function useFeedScreen() {
-  const { t } = useLanguage();
+export function useFeedScreen({ initialFeedId } = {}) {
+  const { t } = useTranslation();
+  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
   const searchParams = useSearchParams();
-  const { user } = useAuthStore();
-  const userId = user?.id;
-  const isInitialRenderRef = useRef(true);
-  const feedServiceRef = useRef(null);
 
-  // Yükleme durumları için referans değerleri
-  const prevSelectedFeedIdRef = useRef(null);
-  const prevActiveFilterRef = useRef(null);
-  const initialLoadCompletedRef = useRef(false);
+  // URL'den feed ID'sini al
+  const urlFeedId = searchParams.get("feed");
 
-  // Feed servisini kullan
-  const {
-    feeds,
-    items,
-    favorites,
-    readLaterItems,
-    isLoading,
-    isError,
-    error,
-    refreshAll,
-    refreshFeed: serviceRefreshFeed,
-    toggleRead,
-    toggleFavorite,
-    toggleReadLater,
-    cleanupOldItems: serviceCleanupOldItems,
-    isCleaningUp,
-    stats: serviceStats,
-    feedService,
-  } = useFeedService() || {};
-
-  // feedService referansını güncelle
-  useEffect(() => {
-    if (feedService && feedService !== feedServiceRef.current) {
-      feedServiceRef.current = feedService;
-    }
-  }, [feedService]);
-
-  // State yönetimi - Önbellekten başlangıç durumunu yükle
+  // State'ler
   const [selectedFeedId, setSelectedFeedId] = useState(() => {
-    // URL'den feed ID'sini kontrol et
-    const feedIdFromUrl = searchParams?.get("feedId");
-    if (feedIdFromUrl) return feedIdFromUrl;
-
-    // Önbellekten yükle
-    const cachedState = getLocalCache(CACHE_KEYS.FEED_SCREEN_STATE);
-    return cachedState?.selectedFeedId || null;
+    if (typeof window === "undefined")
+      return initialFeedId || urlFeedId || null;
+    return (
+      getLocalCache("feed-screen-state")?.selectedFeedId ||
+      initialFeedId ||
+      urlFeedId ||
+      null
+    );
   });
 
   const [viewMode, setViewMode] = useState(() => {
-    const cachedState = getLocalCache(CACHE_KEYS.FEED_SCREEN_STATE);
-    return cachedState?.viewMode || "grid";
+    if (typeof window === "undefined") return "grid";
+    return getLocalCache("feed-screen-state")?.viewMode || "grid";
   });
 
-  const [activeFilter, setActiveFilterState] = useState(() => {
-    const cachedState = getLocalCache(CACHE_KEYS.FEED_SCREEN_STATE);
-    return cachedState?.activeFilter || "all";
+  const [activeFilter, setActiveFilter] = useState(() => {
+    if (typeof window === "undefined") return "all";
+    return getLocalCache("feed-screen-state")?.activeFilter || "all";
   });
 
-  const [searchQuery, setSearchQuery] = useState(() => {
-    const cachedState = getLocalCache(CACHE_KEYS.FEED_SCREEN_STATE);
-    return cachedState?.searchQuery || "";
-  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // Alt hook'ları kullan
-  const { filters, applyFilters, resetFilters } = useFilters();
-
+  // Feed service
   const {
-    paginatedItems,
-    pagination,
-    isLoadingMore,
-    isInitialLoading,
-    isTransitioning,
-    loadMoreItems,
-    resetPagination,
-  } = usePagination({
-    feedService: feedServiceRef.current,
-    userId: user?.id,
-    selectedFeedId,
-    activeFilter,
-    filters,
+    feeds,
+    items: feedItems,
+    favorites,
+    readLaterItems,
+    isLoadingFeeds,
+    isLoadingItems,
+    isErrorFeeds,
+    isErrorItems,
+    refreshAll,
+    refreshFeed,
+    toggleRead: markAsRead,
+    toggleFavorite,
+    toggleReadLater,
+    refetchFavorites,
+    refetchReadLater,
+  } = useFeedService();
+
+  // Pagination
+  const pagination = usePagination({
+    initialPage: 1,
+    initialPageSize: 20,
+    totalItems: feedItems.length,
   });
 
-  const { syncFeeds, addFeed, removeFeed, markAllRead, shareItem } =
-    useFeedActions(user, refreshAll, refreshAll, feedService);
-
-  // State'i önbelleğe kaydet
+  // Cache state değişikliklerini
   useEffect(() => {
-    if (isInitialRenderRef.current) {
-      isInitialRenderRef.current = false;
-      return;
-    }
+    if (!userId) return;
 
-    // Temel durumu önbelleğe kaydet
     setLocalCache(
-      CACHE_KEYS.FEED_SCREEN_STATE,
+      "feed-screen-state",
       {
         selectedFeedId,
         viewMode,
         activeFilter,
-        searchQuery,
       },
-      CACHE_TTL.MEDIUM
+      1000 * 60 * 60 * 24 // 24 saat
     );
-  }, [selectedFeedId, viewMode, activeFilter, searchQuery]);
+  }, [selectedFeedId, viewMode, activeFilter, userId]);
 
-  // Feed öğelerini önbelleğe kaydet
+  // Feed seçimi değiştiğinde URL'i güncelle
   useEffect(() => {
-    if (paginatedItems?.length > 0 && !isLoadingMore && !isTransitioning) {
-      setLocalCache(
-        `${CACHE_KEYS.FEED_SCREEN_ITEMS}_${activeFilter}_${
-          selectedFeedId || "all"
-        }`,
-        paginatedItems,
-        CACHE_TTL.SHORT
-      );
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    if (selectedFeedId) {
+      url.searchParams.set("feed", selectedFeedId);
+    } else {
+      url.searchParams.delete("feed");
     }
-  }, [
-    paginatedItems,
-    isLoadingMore,
-    isTransitioning,
-    activeFilter,
-    selectedFeedId,
-  ]);
+    window.history.replaceState({}, "", url.toString());
+  }, [selectedFeedId]);
 
-  // İstatistikleri hesapla - Memoize ile performans iyileştirmesi
-  const stats = useMemo(() => {
-    if (serviceStats) return serviceStats;
+  // Bulk mode handlers
+  const toggleBulkMode = useCallback(() => {
+    setIsBulkMode((prev) => !prev);
+    setSelectedItems([]);
+  }, []);
 
-    return {
-      totalItems: Array.isArray(items) ? items.length : 0,
-      unreadItems: Array.isArray(items)
-        ? items.filter((item) => !item.is_read).length
-        : 0,
-      favoriteItems: Array.isArray(favorites) ? favorites.length : 0,
-      readLaterItems: Array.isArray(readLaterItems) ? readLaterItems.length : 0,
-    };
-  }, [serviceStats, items, favorites, readLaterItems]);
+  const toggleItemSelection = useCallback((itemId) => {
+    setSelectedItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
+  }, []);
 
-  // URL'den feed ID'sini al - Performans için iyileştirildi
-  useEffect(() => {
-    const feedId = searchParams?.get("feedId");
+  // Bulk actions
+  const handleBulkMarkAsRead = useCallback(async () => {
+    if (!selectedItems.length) return;
+    await markAsRead(selectedItems);
+    setSelectedItems([]);
+    setIsBulkMode(false);
+  }, [selectedItems, markAsRead]);
 
-    if (feedId !== selectedFeedId) {
-      console.log(`URL feed ID değişti: ${feedId}`);
-      prevSelectedFeedIdRef.current = selectedFeedId;
-      setSelectedFeedId(feedId || null);
+  const handleBulkMarkAsUnread = useCallback(async () => {
+    if (!selectedItems.length) return;
+    await markAsRead(selectedItems);
+    setSelectedItems([]);
+    setIsBulkMode(false);
+  }, [selectedItems, markAsRead]);
 
-      // URL'den feed ID değiştiğinde filtre tipini resetle
-      if (feedId) {
-        // Eğer bir feed seçiliyse, feed tipini bul
-        const selectedFeed = feeds?.find((feed) => feed.id === feedId);
-        if (selectedFeed) {
-          setActiveFilterState(selectedFeed.type);
-        }
-      } else {
-        // Feed seçili değilse "all" filtresi kullan
-        setActiveFilterState("all");
-      }
+  const handleBulkAddToFavorites = useCallback(async () => {
+    if (!selectedItems.length) return;
+    await toggleFavorite(selectedItems);
+    setSelectedItems([]);
+    setIsBulkMode(false);
+  }, [selectedItems, toggleFavorite]);
+
+  const handleBulkAddToReadLater = useCallback(async () => {
+    if (!selectedItems.length) return;
+    await toggleReadLater(selectedItems);
+    setSelectedItems([]);
+    setIsBulkMode(false);
+  }, [selectedItems, toggleReadLater]);
+
+  // Load more handler
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore || !pagination.hasNextPage) return;
+
+    setIsLoadingMore(true);
+    try {
+      await pagination.nextPage();
+    } catch (error) {
+      console.error("Error loading more content:", error);
+      toast.error(t("errors.loadMoreFailed"));
+    } finally {
+      setIsLoadingMore(false);
     }
-  }, [searchParams, feeds]);
-
-  // Seçili feed'i bul
-  const selectedFeed = useMemo(() => {
-    if (!feeds || !selectedFeedId) return null;
-    return feeds.find((feed) => feed.id === selectedFeedId);
-  }, [feeds, selectedFeedId]);
-
-  // setActiveFilter fonksiyonunu tanımla - performans iyileştirmeli
-  const setActiveFilter = useCallback(
-    (feedId) => {
-      // Aynı feedId seçiliyse hiçbir şey yapma
-      if (feedId === selectedFeedId) {
-        console.log("Aynı feed seçildi, işlem atlanıyor");
-        return;
-      }
-
-      console.log(`Feed filtresi değişti: ${feedId}`);
-      prevSelectedFeedIdRef.current = selectedFeedId;
-      prevActiveFilterRef.current = activeFilter;
-
-      // feedId null ise tüm beslemeleri göster
-      setSelectedFeedId(feedId);
-
-      // Eğer feedId null ise, activeFilter'i "all" olarak ayarla
-      if (!feedId) {
-        setActiveFilterState("all");
-      } else {
-        // Feed tipine göre filtreleme için feed'i bul
-        const selectedFeed = feeds?.find((feed) => feed.id === feedId);
-        if (selectedFeed) {
-          setActiveFilterState(selectedFeed.type);
-        }
-      }
-
-      // Önbellekten önceden yüklenmiş feed öğeleri varsa, kullan
-      const cachedItems = getLocalCache(
-        `${CACHE_KEYS.FEED_SCREEN_ITEMS}_${selectedFeed?.type || "all"}_${
-          feedId || "all"
-        }`
-      );
-
-      // Sayfalama durumunu sıfırla
-      resetPagination?.();
-    },
-    [feeds, resetPagination, selectedFeedId, activeFilter]
-  );
-
-  // Belirli bir feed'i yenileme fonksiyonu - Performans iyileştirmeleri
-  const refreshFeed = useCallback(
-    async (feedId, skipCache = false) => {
-      if (!userId || !feedId) {
-        console.warn("refreshFeed: userId veya feedId bulunamadı");
-        return;
-      }
-
-      try {
-        console.log(`Feed yenileniyor: ${feedId}, skipCache: ${skipCache}`);
-
-        // Eğer servisin refreshFeed fonksiyonu varsa onu kullan
-        if (serviceRefreshFeed) {
-          return await serviceRefreshFeed(feedId, userId, skipCache);
-        }
-
-        // Yoksa feedService.syncFeedItems'ı direkt çağır
-        if (feedServiceRef.current) {
-          // Feed tipini bulalım
-          const feed = feeds?.find((f) => f.id === feedId);
-          if (!feed) {
-            console.warn(`Feed bulunamadı: ${feedId}`);
-            return;
-          }
-
-          console.log(`Feed senkronize ediliyor: ${feed.title} (${feed.type})`);
-
-          // Bu feed için önbelleği temizle
-          localStorage.removeItem(
-            `${CACHE_KEYS.FEED_SCREEN_ITEMS}_${feed.type}_${feedId}`
-          );
-
-          return await feedServiceRef.current.syncFeedItems(
-            feedId,
-            userId,
-            feed.type,
-            {
-              skipCache,
-            }
-          );
-        }
-
-        // Hiçbir yöntem yoksa, komple yenile
-        console.log("Özel feed yenileme bulunmadı, tüm feedler yenileniyor");
-
-        // Önbelleği temizle
-        Object.values(CACHE_KEYS).forEach((key) => {
-          if (key.startsWith("feed-screen-items")) {
-            localStorage.removeItem(key);
-          }
-        });
-
-        return await refreshAll();
-      } catch (error) {
-        console.error(`Feed yenileme hatası (ID: ${feedId}):`, error);
-        throw error;
-      }
-    },
-    [userId, feeds, serviceRefreshFeed, refreshAll]
-  );
+  }, [isLoadingMore, pagination, t]);
 
   return {
-    // Durum
-    feeds,
-    items: paginatedItems,
-    selectedFeed,
+    // State
+    selectedFeedId,
     viewMode,
-    filters,
-    stats,
-    isLoading,
+    activeFilter,
+    searchQuery,
+    isBulkMode,
+    selectedItems,
     isLoadingMore,
-    isInitialLoading,
-    isTransitioning,
-    isError,
-    error,
-    pagination,
 
-    // Filtre işlemleri
-    applyFilters,
-    resetFilters,
+    // Data
+    feeds,
+    items: feedItems,
+    favorites,
+    readLaterItems,
 
-    // Feed işlemleri
-    syncFeeds,
-    addFeed,
-    removeFeed,
-    markAllRead,
-    shareItem,
+    // Loading states
+    isLoading: isLoadingFeeds || isLoadingItems,
+    isError: isErrorFeeds || isErrorItems,
 
-    // Temel işlemler
-    toggleRead,
-    toggleFavorite,
-    toggleReadLater,
-    loadMoreItems,
-    cleanupOldItems: serviceCleanupOldItems,
-    isCleaningUp,
-    refreshAll,
-    refreshFeed,
+    // Pagination
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+    hasNextPage: pagination.hasNextPage,
+    hasPreviousPage: pagination.hasPreviousPage,
 
-    // Görünüm işlemleri
+    // Actions
+    setSelectedFeedId,
     setViewMode,
     setActiveFilter,
     setSearchQuery,
+    refreshAll,
+    refreshFeed,
+    toggleFavorite,
+    toggleReadLater,
+    loadMoreItems: handleLoadMore,
+
+    // Bulk actions
+    toggleBulkMode,
+    toggleItemSelection,
+    handleBulkMarkAsRead,
+    handleBulkMarkAsUnread,
+    handleBulkAddToFavorites,
+    handleBulkAddToReadLater,
   };
 }

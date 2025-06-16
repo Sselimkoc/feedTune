@@ -16,20 +16,29 @@ import {
   Sun,
   LogOut,
   User,
+  Laptop,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { ThemeToggle } from "@/components/features/theme/themeToggle";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 
 export function MobileNavigation() {
   const pathname = usePathname();
   const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const { user, signOut } = useAuthStore();
+  const { settings } = useSettingsStore();
+  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
 
   // Public menu items - visible to all users
   const publicMenuItems = [
@@ -70,8 +79,45 @@ export function MobileNavigation() {
   ];
 
   const activeMenuItems = [...publicMenuItems];
-  if (user) {
+  if (userId) {
     activeMenuItems.push(...protectedMenuItems);
+  }
+
+  // Next theme in rotation (dark -> light -> system -> dark)
+  const getNextTheme = () => {
+    if (theme === "dark") return "light";
+    if (theme === "light") return "system";
+    return "dark";
+  };
+
+  // Get icon based on theme
+  const getThemeIcon = () => {
+    if (theme === "dark") return <Moon className="w-5 h-5 mr-3 text-primary" />;
+    if (theme === "light") return <Sun className="w-5 h-5 mr-3 text-primary" />;
+    return <Laptop className="w-5 h-5 mr-3 text-primary" />;
+  };
+
+  // Get theme name for display
+  const getThemeName = () => {
+    if (theme === "dark") return t("settings.theme.dark");
+    if (theme === "light") return t("settings.theme.light");
+    return t("settings.theme.system");
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      router.push("/auth/login");
+      setOpen(false);
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast.error(t("errors.signOutFailed"));
+    }
+  };
+
+  if (isLoadingUser) {
+    return null;
   }
 
   return (
@@ -147,7 +193,7 @@ export function MobileNavigation() {
             <div className="p-3 space-y-1">
               {/* Bottom Menu Items - Only show relevant users */}
               {bottomMenuItems.map((item) => {
-                if (item.protected && !user) {
+                if (item.protected && !userId) {
                   return null;
                 }
 
@@ -170,58 +216,34 @@ export function MobileNavigation() {
               })}
 
               {/* Theme Change */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start px-3 py-2 rounded-md text-sm font-medium"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              >
-                {theme === "dark" ? (
-                  <Sun className="w-5 h-5 mr-3 text-amber-500" />
-                ) : (
-                  <Moon className="w-5 h-5 mr-3 text-blue-600" />
-                )}
-                {theme === "dark"
-                  ? t("navigation.lightMode")
-                  : t("navigation.darkMode")}
-              </Button>
-
-              {/* User Info */}
-              {user ? (
-                <>
-                  <Separator className="my-2" />
-                  <div className="flex items-center gap-3 px-3 py-2">
-                    <User className="w-5 h-5 text-muted-foreground" />
-                    <div className="flex-1 overflow-hidden">
-                      <p className="text-sm font-medium truncate">
-                        {user.email}
-                      </p>
-                    </div>
+              <div className="flex flex-col p-3 rounded-md bg-muted/40">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {getThemeIcon()}
+                    <span className="text-sm font-medium">
+                      {getThemeName()}
+                    </span>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-destructive px-3 py-2 rounded-md text-sm font-medium"
-                    onClick={() => {
-                      signOut();
-                      setOpen(false);
-                    }}
+                    className="w-8 h-8 p-0 rounded-full flex items-center justify-center"
+                    onClick={() => setTheme(getNextTheme())}
                   >
-                    <LogOut className="w-5 h-5 mr-3" />
-                    {t("navigation.signOut")}
+                    <Settings className="w-4 h-4" />
                   </Button>
-                </>
-              ) : (
+                </div>
+              </div>
+
+              {/* Sign Out */}
+              {userId && (
                 <Button
-                  variant="default"
-                  size="sm"
-                  className="w-full justify-start px-3 py-2 rounded-md text-sm font-medium"
-                  asChild
+                  variant="ghost"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-muted"
+                  onClick={handleSignOut}
                 >
-                  <Link href="/?modal=auth" onClick={() => setOpen(false)}>
-                    <User className="w-5 h-5 mr-3" />
-                    {t("navigation.signIn")}
-                  </Link>
+                  <LogOut className="w-5 h-5" />
+                  {t("auth.signOut")}
                 </Button>
               )}
             </div>

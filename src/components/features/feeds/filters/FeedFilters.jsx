@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -74,37 +74,120 @@ export const FeedFilters = memo(function FeedFilters({
     [filters, onFilterChange]
   );
 
+  // Aktif filtreleri göster
+  const activeFilters = useMemo(() => {
+    const result = [];
+
+    // Feed türü filtresi
+    if (filters.feedType && filters.feedType !== "all") {
+      result.push({
+        key: "feedType",
+        value: filters.feedType,
+        label: filters.feedType === "youtube" ? "YouTube" : "RSS",
+        icon:
+          filters.feedType === "youtube" ? (
+            <Youtube className="h-3 w-3" />
+          ) : (
+            <Rss className="h-3 w-3" />
+          ),
+      });
+    }
+
+    // Okunma durumu filtresi
+    if (filters.readStatus) {
+      result.push({
+        key: "readStatus",
+        value: filters.readStatus,
+        label:
+          filters.readStatus === "read" ? t("feeds.read") : t("feeds.unread"),
+        icon:
+          filters.readStatus === "read" ? (
+            <BookCheck className="h-3 w-3" />
+          ) : (
+            <CircleSlash className="h-3 w-3" />
+          ),
+      });
+    }
+
+    // Sıralama filtresi
+    if (filters.sortBy && filters.sortBy !== "newest") {
+      const sortLabels = {
+        oldest: t("feeds.oldest"),
+        unread: t("feeds.unreadFirst"),
+        favorites: t("feeds.favorites"),
+      };
+
+      const sortIcons = {
+        oldest: <Clock className="h-3 w-3" />,
+        unread: <CircleSlash className="h-3 w-3" />,
+        favorites: <Star className="h-3 w-3" />,
+      };
+
+      result.push({
+        key: "sortBy",
+        value: filters.sortBy,
+        label: sortLabels[filters.sortBy] || filters.sortBy,
+        icon: sortIcons[filters.sortBy],
+      });
+    }
+
+    return result;
+  }, [filters, t]);
+
   return (
-    <div className="flex flex-col gap-4 mb-6">
-      <div className="flex flex-wrap justify-between items-center gap-2">
-        {/* Sol kısım: Görünüm ve feed türü filtreleri */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Görünüm seçenekleri */}
-          <div className="bg-muted/40 rounded-lg p-1 flex">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={cn(
+                    "h-8 w-8 border-dashed",
+                    isRefreshing && "animate-spin"
+                  )}
+                  disabled={disabled || isRefreshing}
+                  onClick={onRefresh}
+                  aria-label={t("feeds.refreshFeed")}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("feeds.refreshFeed")}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <div className="flex items-center">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant={viewAs === "grid" ? "secondary" : "ghost"}
+                    variant={viewAs === "grid" ? "default" : "outline"}
                     size="icon"
-                    onClick={() => handleViewChange("grid")}
+                    className="h-8 w-8 rounded-r-none"
                     disabled={disabled}
-                    className="h-8 w-8 rounded-md"
+                    onClick={() => handleViewChange("grid")}
+                    aria-label={t("feeds.gridView")}
                   >
                     <LayoutGrid className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{t("feeds.gridView")}</TooltipContent>
               </Tooltip>
+            </TooltipProvider>
 
+            <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant={viewAs === "list" ? "secondary" : "ghost"}
+                    variant={viewAs === "list" ? "default" : "outline"}
                     size="icon"
-                    onClick={() => handleViewChange("list")}
+                    className="h-8 w-8 rounded-l-none"
                     disabled={disabled}
-                    className="h-8 w-8 rounded-md"
+                    onClick={() => handleViewChange("list")}
+                    aria-label={t("feeds.listView")}
                   >
                     <List className="h-4 w-4" />
                   </Button>
@@ -113,66 +196,82 @@ export const FeedFilters = memo(function FeedFilters({
               </Tooltip>
             </TooltipProvider>
           </div>
-
-          {/* Feed türü butonları */}
-          <div className="flex items-center gap-2 ml-2">
-            <Button
-              variant={
-                !filters.feedType || filters.feedType === "all"
-                  ? "default"
-                  : "outline"
-              }
-              size="sm"
-              onClick={() => handleTypeFilterChange("all")}
-              disabled={disabled}
-              className={cn(
-                "h-8 px-3 text-xs",
-                !filters.feedType || filters.feedType === "all"
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "text-muted-foreground"
-              )}
-            >
-              <CircleSlash className="h-3.5 w-3.5 mr-1.5" />
-              {t("feeds.all")}
-            </Button>
-
-            <Button
-              variant={filters.feedType === "youtube" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleTypeFilterChange("youtube")}
-              disabled={disabled}
-              className={cn(
-                "h-8 px-3 text-xs",
-                filters.feedType === "youtube"
-                  ? "bg-red-600 hover:bg-red-700 text-white border-red-500"
-                  : "border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-              )}
-            >
-              <Youtube className="h-3.5 w-3.5 mr-1.5" />
-              {t("feeds.youtube")}
-            </Button>
-
-            <Button
-              variant={filters.feedType === "rss" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleTypeFilterChange("rss")}
-              disabled={disabled}
-              className={cn(
-                "h-8 px-3 text-xs",
-                filters.feedType === "rss"
-                  ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-500"
-                  : "border border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
-              )}
-            >
-              <Rss className="h-3.5 w-3.5 mr-1.5" />
-              {t("feeds.rss")}
-            </Button>
-          </div>
         </div>
 
-        {/* Sağ kısım: Sıralama ve yenileme */}
-        <div className="flex items-center gap-2">
-          {/* Sıralama dropdown */}
+        <div className="flex items-center flex-wrap gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={filters.feedType === "rss" ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 px-3"
+                  disabled={disabled}
+                  onClick={() =>
+                    handleTypeFilterChange(
+                      filters.feedType === "rss" ? "all" : "rss"
+                    )
+                  }
+                  aria-label={t("feeds.filterRss")}
+                >
+                  <Rss className="h-4 w-4 mr-1.5" />
+                  <span>RSS</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("feeds.filterRss")}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={
+                    filters.feedType === "youtube" ? "default" : "outline"
+                  }
+                  size="sm"
+                  className="h-8 px-3"
+                  disabled={disabled}
+                  onClick={() =>
+                    handleTypeFilterChange(
+                      filters.feedType === "youtube" ? "all" : "youtube"
+                    )
+                  }
+                  aria-label={t("feeds.filterYoutube")}
+                >
+                  <Youtube className="h-4 w-4 mr-1.5" />
+                  <span>YouTube</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("feeds.filterYoutube")}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={
+                    filters.readStatus === "unread" ? "default" : "outline"
+                  }
+                  size="sm"
+                  className="h-8 px-3"
+                  disabled={disabled}
+                  onClick={() =>
+                    handleReadStatusChange(
+                      filters.readStatus === "unread" ? null : "unread"
+                    )
+                  }
+                  aria-label={t("feeds.filterUnread")}
+                >
+                  <CircleSlash className="h-4 w-4 mr-1.5" />
+                  <span>{t("feeds.unread")}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("feeds.filterUnread")}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <Select
             value={filters.sortBy || "newest"}
             onValueChange={handleSortChange}
@@ -208,64 +307,55 @@ export const FeedFilters = memo(function FeedFilters({
               </SelectItem>
             </SelectContent>
           </Select>
-
-          {/* Okunma durumu dropdown */}
-          <Select
-            value={filters.readStatus || "all"}
-            onValueChange={handleReadStatusChange}
-            disabled={disabled}
-          >
-            <SelectTrigger className="h-8 w-[130px] text-xs">
-              <SelectValue placeholder={t("feeds.readStatus")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                <div className="flex items-center">
-                  <CircleSlash className="mr-2 h-3.5 w-3.5" />
-                  <span>{t("feeds.all")}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="unread">
-                <div className="flex items-center">
-                  <Badge
-                    variant="default"
-                    className="mr-2 h-[6px] w-[6px] rounded-full p-0"
-                  />
-                  <span>{t("feeds.unread")}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="read">
-                <div className="flex items-center">
-                  <BookCheck className="mr-2 h-3.5 w-3.5" />
-                  <span>{t("feeds.read")}</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Yenileme butonu */}
-          {onRefresh && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={onRefresh}
-                    disabled={disabled || isRefreshing}
-                    className="h-8 w-8"
-                  >
-                    <RefreshCw
-                      className={cn("h-4 w-4", isRefreshing && "animate-spin")}
-                    />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("feeds.refresh")}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
         </div>
       </div>
+
+      {/* Aktif filtreler badges */}
+      {activeFilters.length > 0 && (
+        <div className="flex flex-wrap gap-2 animate-in fade-in-50 duration-300">
+          {activeFilters.map((filter) => (
+            <Badge
+              key={`${filter.key}-${filter.value}`}
+              variant="outline"
+              className="flex items-center gap-1 bg-muted/50 hover:bg-muted transition-colors px-2 py-1 h-6"
+              onClick={() => {
+                // Filtreyi kaldır
+                if (filter.key === "feedType") {
+                  handleTypeFilterChange("all");
+                } else if (filter.key === "readStatus") {
+                  handleReadStatusChange(null);
+                } else if (filter.key === "sortBy") {
+                  handleSortChange("newest");
+                }
+              }}
+            >
+              {filter.icon}
+              <span className="text-xs">{filter.label}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-4 w-4 p-0 ml-1 hover:bg-background/20"
+                aria-label={`${t("common.remove")} ${filter.label}`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 6L6 18"></path>
+                  <path d="M6 6l12 12"></path>
+                </svg>
+              </Button>
+            </Badge>
+          ))}
+        </div>
+      )}
     </div>
   );
 });

@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useFeedService } from "./useFeedService";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
 import { toast } from "sonner";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "react-i18next";
+import { usePagination } from "@/hooks/features/feed-screen/usePagination";
 
 /**
  * Favoriler ekranı için özelleştirilmiş hook
@@ -12,8 +14,13 @@ import { useLanguage } from "@/hooks/useLanguage";
  * @returns {Object} Favori içeriklerle ilgili veriler ve fonksiyonlar
  */
 export function useFavoritesScreen() {
-  const { t } = useLanguage();
-  const { user } = useAuthStore();
+  const { t } = useTranslation();
+  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
+  const [viewMode, setViewMode] = useState("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Feed servisi hook'unu kullan
   const {
@@ -40,7 +47,7 @@ export function useFavoritesScreen() {
   // Bir öğeyi favorilerden kaldır
   const removeFavorite = useCallback(
     async (itemId) => {
-      if (!user) {
+      if (!userId) {
         toast.error(t("errors.loginRequired"));
         return false;
       }
@@ -54,7 +61,7 @@ export function useFavoritesScreen() {
         return false;
       }
     },
-    [user, toggleFavorite, t]
+    [userId, toggleFavorite, t]
   );
 
   return {

@@ -1,14 +1,19 @@
 "use client";
 
 import { memo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ContentHeader } from "@/components/shared/ContentHeader";
+import { Card } from "@/components/ui/card";
 import { ContentList } from "@/components/shared/ContentList";
-import { KeyboardShortcutsDialog } from "@/components/features/feeds/dialogs/KeyboardShortcutsDialog";
+import { EmptyState } from "@/components/ui-states/EmptyState";
+import { LoadingState } from "@/components/ui-states/LoadingState";
+import { ErrorState } from "@/components/ui-states/ErrorState";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useLanguage } from "@/hooks/useLanguage";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "@/hooks/useTheme";
 
 /**
- * İçerik konteyneri bileşeni - Tüm içerik sayfaları için standart düzen sağlar
- * Favoriler, Daha Sonra Oku ve Beslemeler sayfaları için kullanılabilir
+ * Tüm içerik sayfaları (feeds, favorites, read-later) için standart içerik kapsayıcısı
  */
 const ContentContainer = memo(function ContentContainer({
   // Header props
@@ -20,133 +25,233 @@ const ContentContainer = memo(function ContentContainer({
   headerDescription,
 
   // Content props
-  items,
-  isLoading,
-  isError,
-  error,
+  contentType, // "youtube", "rss" vb.
+  items = [],
+  isLoading = false,
+  isTransitioning = false,
+  isRefreshing = false,
+  isError = false,
+  error = null,
+  isEmpty = false,
+
   cardType,
   emptyIcon,
   emptyTitle,
   emptyDescription,
+  emptyActionText,
+  onEmptyAction,
 
   // Callbacks
   onToggleFavorite,
   onToggleReadLater,
   onItemClick,
 
-  // Dialog control
-  showKeyboardShortcuts,
-  onShowKeyboardShortcuts,
-  onKeyboardShortcutsChange,
+  // Dialog
+  onOpenShortcutsDialog = () => {},
 
-  // Additional components
-  extraHeaderButtons,
-  sidebarContent,
-  extraDialogs,
+  // Pagination
+  hasMore = false,
+  loadMoreItems = () => {},
+  isLoadingMore = false,
+
+  // Diğer bileşenler
+  sidebar = null,
+  toolbar = null,
+
+  // Direkt içerik geçişi
   children,
+  className = "",
 }) {
-  // Memoize HeaderClickHandler
-  const handleHeaderRefresh = useCallback(() => {
+  const { t } = useLanguage();
+  const { theme } = useTheme();
+  const { isCompactMode } = useSettingsStore();
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
+  // Tema renklerini belirle
+  const getContainerBackground = () => {
+    if (theme === "dark") {
+      return contentType === "youtube"
+        ? "bg-gradient-to-b from-red-950/5 to-zinc-900/30"
+        : contentType === "rss"
+        ? "bg-gradient-to-b from-blue-950/5 to-zinc-900/30"
+        : "bg-gradient-to-b from-zinc-900/5 to-zinc-900/10";
+    } else {
+      return contentType === "youtube"
+        ? "bg-gradient-to-b from-red-50/80 to-zinc-100/30"
+        : contentType === "rss"
+        ? "bg-gradient-to-b from-blue-50/80 to-zinc-100/30"
+        : "bg-gradient-to-b from-zinc-50/80 to-zinc-100/30";
+    }
+  };
+
+  // Boş durumda eylem fonksiyonu
+  const handleEmptyAction = useCallback(() => {
+    if (onEmptyAction) {
+      onEmptyAction();
+    } else if (onRefresh) {
+      onRefresh();
+    }
+  }, [onEmptyAction, onRefresh]);
+
+  // Yeniden deneme fonksiyonu
+  const handleRetry = useCallback(() => {
     if (onRefresh) {
       onRefresh();
     }
   }, [onRefresh]);
 
-  // Memoize Dialog control handlers
-  const handleKeyboardShortcutsChange = useCallback(
-    (isOpen) => {
-      if (onKeyboardShortcutsChange) {
-        onKeyboardShortcutsChange(isOpen);
-      }
+  // Animasyon için varyantlar
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut",
+        when: "beforeChildren",
+      },
     },
-    [onKeyboardShortcutsChange]
-  );
+    exit: {
+      opacity: 0,
+      transition: {
+        duration: 0.2,
+      },
+    },
+  };
 
   return (
-    <div className="flex flex-col min-h-screen relative">
-      {/* Gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-b from-background via-background to-muted/20 pointer-events-none -z-10" />
+    <Card
+      className={`flex h-full w-full flex-grow flex-col overflow-hidden ${className}`}
+    >
+      <motion.div
+        className={`flex h-full w-full flex-col overflow-hidden ${getContainerBackground()}`}
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+      >
+        {/* Header kısmı */}
+        <div className="flex flex-col space-y-1 p-4 pb-0 sm:p-6 sm:pb-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {headerIcon && (
+                <div className="h-5 w-5 text-foreground/70">{headerIcon}</div>
+              )}
+              <h1 className="text-xl font-semibold">{headerTitle}</h1>
+            </div>
 
-      {/* Header */}
-      <ContentHeader
-        viewMode={viewMode}
-        onViewModeChange={onViewModeChange}
-        onRefresh={handleHeaderRefresh}
-        onShowKeyboardShortcuts={onShowKeyboardShortcuts}
-        icon={headerIcon}
-        title={headerTitle}
-        description={headerDescription}
-        extraButtons={extraHeaderButtons}
-      />
+            {toolbar && (
+              <div className="flex items-center gap-2">{toolbar}</div>
+            )}
+          </div>
 
-      {/* Main Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="flex flex-col lg:flex-row flex-1 gap-4 md:gap-6 p-3 md:p-6"
-        >
-          {/* Sidebar - For pages that need a sidebar like feeds page */}
-          {sidebarContent && (
-            <motion.aside
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="w-full lg:w-80 xl:w-96 lg:order-2"
-            >
-              <div className="sticky top-6">{sidebarContent}</div>
-            </motion.aside>
+          {headerDescription && (
+            <p className="text-sm text-muted-foreground">{headerDescription}</p>
+          )}
+        </div>
+
+        {/* Ana içerik alanı */}
+        <div className="flex flex-1 overflow-hidden pt-4">
+          {/* Sidebar */}
+          {sidebar && (
+            <aside className="hidden w-56 shrink-0 border-r px-4 md:block">
+              {sidebar}
+            </aside>
           )}
 
-          {/* Main Content */}
-          <motion.main
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className={`flex-1 min-w-0 ${
-              sidebarContent ? "lg:order-1" : ""
-            } relative`}
-          >
-            {/* Glass effect background */}
-            <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] rounded-xl -z-10 shadow-sm border border-border/40" />
+          {/* İçerik */}
+          <div className="flex-1 overflow-hidden px-3 pb-4 sm:px-6">
+            <AnimatePresence mode="wait">
+              {items && items.length > 0 ? (
+                <motion.div
+                  key="content"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="h-full overflow-auto"
+                >
+                  {/* Yükleme devam ediyorsa bilgi ver */}
+                  {(isLoading || isTransitioning) && !isRefreshing && (
+                    <div className="mb-2 flex items-center justify-center">
+                      <span className="text-xs text-muted-foreground">
+                        {t("feeds.loadingButShowingContent")}
+                      </span>
+                    </div>
+                  )}
 
-            <div className="p-4 md:p-6">
-              {children || (
-                <ContentList
-                  items={items}
+                  {children || (
+                    <ContentList
+                      items={items}
+                      viewMode={viewMode}
+                      cardType={cardType}
+                      isCompactMode={isCompactMode}
+                      onToggleFavorite={onToggleFavorite}
+                      onToggleReadLater={onToggleReadLater}
+                      onItemClick={onItemClick}
+                      isMobile={isMobile}
+                      hasMore={hasMore}
+                      loadMoreItems={loadMoreItems}
+                      isLoadingMore={isLoadingMore}
+                    />
+                  )}
+                </motion.div>
+              ) : isLoading || isTransitioning ? (
+                <LoadingState
+                  key="loading"
                   viewMode={viewMode}
-                  cardType={cardType}
-                  isLoading={isLoading}
-                  isError={isError}
+                  title={
+                    isRefreshing ? t("feeds.refreshing") : t("feeds.loading")
+                  }
+                  description={
+                    isRefreshing
+                      ? t("feeds.refreshingDescription")
+                      : t("feeds.loadingDescription")
+                  }
+                  contentType={contentType}
+                  minimal={isRefreshing}
+                  showSpinner={!isRefreshing}
+                />
+              ) : isError ? (
+                <ErrorState
+                  key="error"
+                  contentType={contentType}
+                  errorType={
+                    error?.name === "NetworkError"
+                      ? "network"
+                      : error?.status >= 500
+                      ? "server"
+                      : "default"
+                  }
+                  title={t("errors.loadingFailed")}
+                  description={error?.message || t("errors.somethingWentWrong")}
+                  actionText={t("errors.tryAgain")}
+                  onAction={handleRetry}
                   error={error}
-                  emptyIcon={emptyIcon}
-                  emptyTitle={emptyTitle}
-                  emptyDescription={emptyDescription}
-                  onRetry={handleHeaderRefresh}
-                  onToggleFavorite={onToggleFavorite}
-                  onToggleReadLater={onToggleReadLater}
-                  onItemClick={onItemClick}
+                  showDetails={process.env.NODE_ENV === "development"}
+                />
+              ) : isEmpty && (
+                <EmptyState
+                  key="empty"
+                  type={contentType || "default"}
+                  icon={emptyIcon}
+                  title={emptyTitle || t("common.noContent")}
+                  description={
+                    emptyDescription || t("common.noContentDescription")
+                  }
+                  actionText={emptyActionText}
+                  onAction={handleEmptyAction}
+                  isRefreshable={!!onRefresh}
                 />
               )}
-            </div>
-          </motion.main>
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Dialogs */}
-      {showKeyboardShortcuts !== undefined && (
-        <KeyboardShortcutsDialog
-          isOpen={showKeyboardShortcuts}
-          onOpenChange={handleKeyboardShortcutsChange}
-        />
-      )}
-
-      {/* Additional dialogs - For pages that need specific dialogs like the feeds page */}
-      {extraDialogs}
-    </div>
+            </AnimatePresence>
+          </div>
+        </div>
+      </motion.div>
+    </Card>
   );
 });
+
+ContentContainer.displayName = "ContentContainer";
 
 export { ContentContainer };

@@ -3,116 +3,118 @@
 import { useState, useEffect } from "react";
 import { feedService } from "@/services/feedService";
 import { FeedRepository } from "@/repositories/feedRepository";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthenticatedUser } from "@/hooks/auth/useAuthenticatedUser";
 
 /**
- * Debug Test Sayfası
- * Bu sayfa, yeni yapılandırılmış repository ve service modüllerini test etmek için kullanılır.
+ * Debug Test Page
+ * This page is used to test the newly configured repository and service modules.
  */
 export default function DebugTestPage() {
   const [logs, setLogs] = useState([]);
-  const [user, setUser] = useState(null);
   const [testRunning, setTestRunning] = useState(false);
-  const { user: authUser } = useAuthStore();
+  const { userId, isLoading: isLoadingUser } = useAuthenticatedUser();
   const feedRepository = new FeedRepository();
 
   useEffect(() => {
-    if (authUser) {
-      setUser(authUser);
-      log(`Kullanıcı oturumu bulundu: ${authUser.id.slice(0, 8)}...`);
+    if (userId) {
+      log(`User session found: ${userId.slice(0, 8)}...`);
     }
-  }, [authUser]);
+  }, [userId]);
 
   const log = (message, type = "info") => {
     setLogs((prev) => [...prev, { message, type, time: new Date() }]);
   };
 
   const runBasicTests = async () => {
-    if (!user) {
-      log("Kullanıcı oturumu gerekli. Lütfen giriş yapın.", "error");
+    if (!userId) {
+      log("User session required. Please log in.", "error");
       return;
     }
 
     setTestRunning(true);
-    log("🔍 Test başlatılıyor...");
+    log("🔍 Starting test...");
 
     try {
-      // 1. FeedRepository testi
-      log("1. FeedRepository testi başlatılıyor...");
-      const feeds = await feedRepository.getFeeds(user.id);
-      log(`✅ ${feeds.length} adet feed bulundu`);
+      // 1. FeedRepository test
+      log("1. Starting FeedRepository test...");
+      const feeds = await feedRepository.getFeeds(userId);
+      log(`✅ Found ${feeds.length} feeds`);
 
       if (feeds.length > 0) {
-        // 2. Feed içeriklerini getir
-        log("2. Feed içerikleri getiriliyor...");
+        // 2. Get feed contents
+        log("2. Getting feed contents...");
         const feedIds = feeds.map((feed) => feed.id);
         const items = await feedRepository.getFeedItems(
           feedIds,
           5,
           null,
-          user.id
+          userId
         );
         log(
-          `✅ Feed içerikleri başarıyla alındı: ${JSON.stringify(
+          `✅ Feed contents successfully retrieved: ${JSON.stringify(
             items,
             null,
             2
           ).slice(0, 100)}...`
         );
 
-        // 3. FeedService testi
-        log("3. FeedService testi başlatılıyor...");
-        const serviceFeeds = await feedService.getFeeds(user.id);
-        log(
-          `✅ FeedService üzerinden ${serviceFeeds.length} adet feed bulundu`
-        );
+        // 3. FeedService test
+        log("3. Starting FeedService test...");
+        const serviceFeeds = await feedService.getFeeds(userId);
+        log(`✅ Found ${serviceFeeds.length} feeds through FeedService`);
 
-        const serviceItems = await feedService.getFeedItems(
-          feedIds,
-          5,
-          user.id
-        );
-        log(`✅ FeedService üzerinden feed içerikleri başarıyla alındı`);
+        const serviceItems = await feedService.getFeedItems(feedIds, 5, userId);
+        log(`✅ Feed contents successfully retrieved through FeedService`);
       }
 
-      log("🎉 Tüm testler başarıyla tamamlandı!");
+      log("🎉 All tests completed successfully!");
     } catch (error) {
-      log(`❌ Test sırasında hata oluştu: ${error.message}`, "error");
-      console.error("Test hatası:", error);
+      log(`❌ Error during test: ${error.message}`, "error");
+      console.error("Test error:", error);
     } finally {
       setTestRunning(false);
     }
   };
 
+  if (isLoadingUser) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="flex items-center justify-center h-96">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Debug Test Sayfası</h1>
+      <h1 className="text-2xl font-bold mb-4">Debug Test Page</h1>
 
       <div className="bg-gray-100 p-4 rounded-lg mb-4">
-        <h2 className="text-lg font-semibold mb-2">Kullanıcı Durumu</h2>
-        {user ? (
+        <h2 className="text-lg font-semibold mb-2">User Status</h2>
+        {userId ? (
           <p className="text-green-600">
-            ✅ Oturum açık: {user.email} ({user.id.slice(0, 8)}...)
+            ✅ Session active: {userId.slice(0, 8)}...
           </p>
         ) : (
-          <p className="text-red-600">❌ Oturum açık değil</p>
+          <p className="text-red-600">❌ No active session</p>
         )}
       </div>
 
       <div className="mb-4">
         <button
           onClick={runBasicTests}
-          disabled={!user || testRunning}
+          disabled={!userId || testRunning}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
         >
-          {testRunning ? "Test çalışıyor..." : "Temel Testleri Çalıştır"}
+          {testRunning ? "Test running..." : "Run Basic Tests"}
         </button>
       </div>
 
       <div className="bg-gray-800 text-green-400 p-4 rounded-lg h-96 overflow-auto font-mono text-sm">
-        <h2 className="text-white text-lg font-semibold mb-2">Log Çıktısı</h2>
+        <h2 className="text-white text-lg font-semibold mb-2">Log Output</h2>
         {logs.length === 0 ? (
-          <p className="text-gray-500 italic">Henüz log yok</p>
+          <p className="text-gray-500 italic">No logs yet</p>
         ) : (
           <div className="space-y-1">
             {logs.map((log, index) => (

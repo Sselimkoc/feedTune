@@ -18,7 +18,7 @@ import {
 export function HomeRecentContent({ recentItems, isLoading }) {
   const { t, language } = useLanguage();
 
-  // Yükleme durumu
+  // Loading state
   if (isLoading) {
     return (
       <section className="py-6 lg:py-8">

@@ -1,246 +1,186 @@
 "use client";
 
-import { memo, useCallback, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { memo, useCallback, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import { ContentCard } from "@/components/shared/ContentCard";
-import { toast } from "sonner";
-import { stripHtml } from "@/lib/utils";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { EmptyState } from "@/components/ui-states/EmptyState";
-import { LoadingState } from "@/components/ui-states/LoadingState";
-import { ErrorState } from "@/components/ui-states/ErrorState";
+import { Loader2 } from "lucide-react";
+import { useInView } from "react-intersection-observer";
+import { useTheme } from "@/hooks/useTheme";
+import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "react-i18next";
 
 /**
- * İçerik listesi bileşeni - Favoriler ve Daha Sonra Oku sayfaları için genel liste görünümü
+ * İçerik öğelerinin listesini görüntüler
  */
 const ContentList = memo(function ContentList({
-  items,
-  viewMode,
-  cardType,
-  isLoading,
-  isError,
-  error,
-  emptyIcon,
-  emptyTitle,
-  emptyDescription,
-  loadingTitle,
-  onRetry,
+  items = [],
+  cardType = "feed",
+  viewMode = "grid",
+  isCompactMode = false,
   onToggleFavorite,
   onToggleReadLater,
   onItemClick,
+  isMobile = false,
+  hasMore = false,
+  onLoadMore,
+  isLoadingMore = false,
+  onMarkAsRead,
+  onMarkAsUnread,
 }) {
-  const { t } = useLanguage();
+  const { theme } = useTheme();
+  const { t } = useTranslation();
+  const loaderRef = useRef(null);
+  const listRef = useRef(null);
+  const loadingRef = useRef(false);
 
-  // Optimistik UI için geçici durumları tutacak state
-  const [optimisticStates, setOptimisticStates] = useState({});
+  const { ref, inView } = useInView({
+    threshold: 0.5,
+    triggerOnce: false,
+  });
 
-  // Paylaşım işlemi
-  const handleShareItem = useCallback(
-    (item) => {
-      const shareUrl = item.url;
-      if (navigator.share && shareUrl) {
-        navigator.share({
-          title: item.title,
-          text: stripHtml(item.description).slice(0, 100),
-          url: shareUrl,
-        });
-      } else if (shareUrl) {
-        navigator.clipboard.writeText(shareUrl);
-        toast.success(t("common.success"), {
-          description: t("feeds.urlCopied"),
-        });
+  const handleIntersection = useCallback(async () => {
+    if (inView && !loadingRef.current) {
+      loadingRef.current = true;
+      try {
+        await onLoadMore();
+      } finally {
+        loadingRef.current = false;
       }
-    },
-    [t]
-  );
+    }
+  }, [inView, onLoadMore]);
 
-  // İçerik tıklama
-  const handleItemClick = useCallback(
-    (url, item) => {
+  useEffect(() => {
+    handleIntersection();
+  }, [handleIntersection]);
+
+  // Kart üzerine tıklama işleyicisi
+  const handleCardClick = useCallback(
+    (item) => {
       if (onItemClick) {
-        onItemClick(url, item);
-      } else if (url) {
-        window.open(url, "_blank");
+        onItemClick(item);
       }
     },
     [onItemClick]
   );
 
-  // Favori değiştirme - optimistik UI güncellemesi ile
+  // Favori durumu değiştirme işleyicisi
   const handleToggleFavorite = useCallback(
-    async (itemId, isFavorite) => {
-      // Optimistik UI güncelleme
-      setOptimisticStates((prev) => ({
-        ...prev,
-        [itemId]: {
-          ...prev[itemId],
-          isFavorite,
-        },
-      }));
-
+    (item) => {
       if (onToggleFavorite) {
-        try {
-          await onToggleFavorite(itemId, isFavorite);
-
-          // Başarılı durumda bildirim göster
-          toast.success(
-            isFavorite
-              ? t("notifications.addedToFavorites")
-              : t("notifications.removedFromFavorites"),
-            {
-              position: "bottom-right",
-              duration: 2000,
-            }
-          );
-        } catch (error) {
-          // Hata durumunda optimistik güncellemeyi geri al
-          setOptimisticStates((prev) => ({
-            ...prev,
-            [itemId]: {
-              ...prev[itemId],
-              isFavorite: !isFavorite,
-            },
-          }));
-          toast.error(t("errors.actionFailed"), {
-            description: t("errors.tryAgain"),
-            position: "bottom-right",
-          });
-          console.error("Favori değiştirme başarısız:", error);
-        }
+        onToggleFavorite(item);
       }
     },
-    [onToggleFavorite, t]
+    [onToggleFavorite]
   );
 
-  // Daha sonra oku değiştirme - optimistik UI güncellemesi ile
+  // Daha sonra oku durumu değiştirme işleyicisi
   const handleToggleReadLater = useCallback(
-    async (itemId, isReadLater) => {
-      // Optimistik UI güncelleme
-      setOptimisticStates((prev) => ({
-        ...prev,
-        [itemId]: {
-          ...prev[itemId],
-          isReadLater,
-        },
-      }));
-
+    (item) => {
       if (onToggleReadLater) {
-        try {
-          await onToggleReadLater(itemId, isReadLater);
-
-          // Başarılı durumda bildirim göster
-          toast.success(
-            isReadLater
-              ? t("notifications.addedToReadLater")
-              : t("notifications.removedFromReadLater"),
-            {
-              position: "bottom-right",
-              duration: 2000,
-            }
-          );
-        } catch (error) {
-          // Hata durumunda optimistik güncellemeyi geri al
-          setOptimisticStates((prev) => ({
-            ...prev,
-            [itemId]: {
-              ...prev[itemId],
-              isReadLater: !isReadLater,
-            },
-          }));
-          toast.error(t("errors.actionFailed"), {
-            description: t("errors.tryAgain"),
-            position: "bottom-right",
-          });
-          console.error("Daha sonra oku değiştirme başarısız:", error);
-        }
+        onToggleReadLater(item);
       }
     },
-    [onToggleReadLater, t]
+    [onToggleReadLater]
   );
 
-  // Hata durumu
-  if (isError) {
-    return (
-      <ErrorState
-        error={error}
-        onRetry={onRetry}
-        title={t(`${cardType}.errorTitle`)}
-        description={t(`${cardType}.errorDescription`)}
-      />
-    );
+  // Animasyon varyantları
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05,
+        when: "beforeChildren",
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.3 },
+    },
+  };
+
+  // Liste boşsa erken döndür
+  if (items.length === 0) {
+    return null;
   }
 
-  // Boş durum
-  if (!isLoading && (!items || items.length === 0)) {
-    return (
-      <EmptyState
-        title={emptyTitle || t(`${cardType}.emptyTitle`)}
-        description={emptyDescription || t(`${cardType}.emptyDescription`)}
-        icon={emptyIcon}
-      />
-    );
-  }
-
-  // Yükleme durumu
-  if (isLoading) {
-    return <LoadingState viewMode={viewMode} title={loadingTitle} />;
-  }
-
-  // İçerik listesini render et
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={`content-${cardType}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
-        className={
-          viewMode === "list"
-            ? "space-y-4 flex flex-col w-full gap-4"
-            : "space-y-4 md:space-y-0 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-5"
-        }
+    <motion.div
+      ref={listRef}
+      className="flex flex-col space-y-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* İçerik öğeleri gridi/listesi */}
+      <div
+        className={`grid gap-4 ${
+          viewMode === "grid"
+            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+            : "grid-cols-1"
+        }`}
       >
-        {Array.isArray(items) &&
-          items.map((item) => {
-            // Optimistik güncelleme için durumları
-            const optimisticState = optimisticStates[item.id];
-            const isFavorite =
-              optimisticState?.isFavorite !== undefined
-                ? optimisticState.isFavorite
-                : item.is_favorite;
-            const isReadLater =
-              optimisticState?.isReadLater !== undefined
-                ? optimisticState.isReadLater
-                : item.is_read_later;
+        {items.map((item) => (
+          <motion.div key={item.id} variants={itemVariants} layout>
+            <ContentCard
+              item={item}
+              cardType={cardType}
+              viewMode={viewMode}
+              isCompactMode={isCompactMode}
+              onClick={() => handleCardClick(item)}
+              onToggleFavorite={() => handleToggleFavorite(item)}
+              onToggleReadLater={() => handleToggleReadLater(item)}
+              onMarkAsRead={onMarkAsRead}
+              onMarkAsUnread={onMarkAsUnread}
+              isMobile={isMobile}
+            />
+          </motion.div>
+        ))}
+      </div>
 
-            return (
-              <ContentCard
-                key={item?.id || `item-${Math.random()}`}
-                item={{
-                  ...item,
-                  is_favorite: isFavorite,
-                  is_read_later: isReadLater,
-                }}
-                viewMode={viewMode}
-                cardType={cardType}
-                isFavorite={isFavorite}
-                isReadLater={isReadLater}
-                onClick={(url) => handleItemClick(url, item)}
-                onFavorite={() => handleToggleFavorite(item.id, !isFavorite)}
-                onReadLater={() => {
-                  // Daha sonra oku sayfasında, öğeyi listeden kaldırmak için false değeri kullan
-                  const newValue =
-                    cardType === "readLater" ? false : !isReadLater;
-                  handleToggleReadLater(item.id, newValue);
-                }}
-                onShare={() => handleShareItem(item)}
-              />
-            );
-          })}
-      </motion.div>
-    </AnimatePresence>
+      {/* Daha fazla yükleme göstergesi */}
+      {hasMore && (
+        <div ref={ref} className="flex justify-center py-4">
+          <div ref={loaderRef} className="flex flex-col items-center">
+            <Loader2
+              className={`h-8 w-8 animate-spin ${
+                theme === "dark" ? "text-zinc-400" : "text-zinc-500"
+              }`}
+            />
+            <p
+              className={`mt-2 text-sm ${
+                theme === "dark" ? "text-zinc-400" : "text-zinc-500"
+              }`}
+            >
+              {isLoadingMore
+                ? t("feeds.loadingMoreItems")
+                : t("feeds.scrollToLoadMore")}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Sonuna geldiniz mesajı */}
+      {!hasMore && items.length > 0 && (
+        <div className="flex justify-center py-4">
+          <p
+            className={`text-sm ${
+              theme === "dark" ? "text-zinc-400" : "text-zinc-500"
+            }`}
+          >
+            {t("feeds.endOfList")}
+          </p>
+        </div>
+      )}
+    </motion.div>
   );
 });
+
+ContentList.displayName = "ContentList";
 
 export { ContentList };

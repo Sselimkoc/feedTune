@@ -3,29 +3,42 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { subscribeToAuthChanges, checkSession } from "@/lib/auth/userUtils";
 import { useAuthStore } from "@/store/useAuthStore";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-// Auth context oluştur
+// Create auth context
 const AuthContext = createContext(null);
 
 /**
- * Auth Provider bileşeni
- * Tüm uygulamada auth durumunu yönetir
+ * Auth Provider component
+ * Manages authentication state across the application
  */
 export function AuthProvider({ children }) {
-  const { setSession, user } = useAuthStore();
+  const supabase = createClientComponentClient();
+  const { user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // İlk yükleme kontrolü
+    // Initial loading check
     const initAuth = async () => {
       setIsLoading(true);
       try {
-        const session = await checkSession();
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+        if (error) throw error;
+
         if (session) {
-          await setSession(session);
+          const {
+            data: { user },
+            error: userError,
+          } = await supabase.auth.getUser();
+          if (userError) throw userError;
+          useAuthStore.setState({ user, session });
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
+        useAuthStore.setState({ user: null, session: null });
       } finally {
         setIsLoading(false);
       }
@@ -33,14 +46,24 @@ export function AuthProvider({ children }) {
 
     initAuth();
 
-    // Auth değişikliklerini dinle
+    // Listen for auth changes
     const subscription = subscribeToAuthChanges(async (event, session) => {
       console.log("Auth state changed:", event);
 
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        await setSession(session);
-      } else if (event === "SIGNED_OUT") {
-        await setSession(null);
+      try {
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          const {
+            data: { user },
+            error,
+          } = await supabase.auth.getUser();
+          if (error) throw error;
+          useAuthStore.setState({ user, session });
+        } else if (event === "SIGNED_OUT") {
+          useAuthStore.setState({ user: null, session: null });
+        }
+      } catch (error) {
+        console.error("Auth state change error:", error);
+        useAuthStore.setState({ user: null, session: null });
       }
     });
 
@@ -48,9 +71,9 @@ export function AuthProvider({ children }) {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [setSession]);
+  }, [supabase]);
 
-  // Auth context değeri
+  // Auth context value
   const value = {
     user,
     isAuthenticated: !!user,
@@ -61,7 +84,7 @@ export function AuthProvider({ children }) {
 }
 
 /**
- * Auth durumunu kullanmak için hook
+ * Hook to use auth state
  */
 export function useAuth() {
   const context = useContext(AuthContext);

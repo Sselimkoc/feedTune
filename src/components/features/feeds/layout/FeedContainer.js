@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, memo, useCallback, useEffect } from "react";
+import { useState, memo, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFeedScreen } from "@/hooks/features/useFeedScreen";
 import { ContentContainer } from "@/components/shared/ContentContainer";
@@ -18,6 +18,12 @@ import {
   ListFilter,
   Search,
   RefreshCw,
+  BookCheck,
+  Star,
+  Bookmark,
+  CheckSquare,
+  Plus,
+  Loader2,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -29,11 +35,30 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { formatRelativeTime } from "@/utils/dateUtils";
 import { FeedService } from "@/services/feedService";
-import { useFeedService } from "@/hooks/useFeedService";
+import { useFeedService } from "@/hooks/features/useFeedService";
 import { useEnhancedFeed } from "@/hooks/useEnhancedFeed";
+import { ContentList } from "@/components/shared/ContentList";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
+import { ContentCard } from "@/components/shared/ContentCard";
+import { LoadingState } from "@/components/ui-states/LoadingState";
+import { ErrorState } from "@/components/ui-states/ErrorState";
+import { EmptyState } from "@/components/ui-states/EmptyState";
 
-export const FeedContainer = memo(function FeedContainer() {
-  const { t } = useLanguage();
+/**
+ * FeedContainer Component
+ * Main container for displaying feed content with sidebar, toolbar, and content list
+ */
+export const FeedContainer = memo(function FeedContainer({
+  initialFeedId,
+  headerIcon,
+}) {
+  const { t } = useTranslation();
   const {
     feeds,
     items,
@@ -58,7 +83,10 @@ export const FeedContainer = memo(function FeedContainer() {
     refreshAll,
     loadMoreItems,
     pagination,
-  } = useFeedScreen();
+    bulkActions,
+    markAsRead,
+    markAsUnread,
+  } = useFeedScreen({ initialFeedId });
 
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
@@ -69,6 +97,7 @@ export const FeedContainer = memo(function FeedContainer() {
 
   const { isRefreshing, refreshFeed: enhancedRefreshFeed } = useEnhancedFeed();
 
+  // Effect to filter items based on search query
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredItems(items);
@@ -85,6 +114,18 @@ export const FeedContainer = memo(function FeedContainer() {
     setFilteredItems(filtered);
   }, [items, searchQuery]);
 
+  // UseEffect to render items even if loading state gets stuck
+  useEffect(() => {
+    if (isLoading && items && items.length > 0) {
+      console.log("Force rendering items despite loading state:", items.length);
+    }
+  }, [isLoading, items]);
+
+  // Items are available but still in loading state - apply a forceful fix
+  const shouldForceRenderItems =
+    items && items.length > 0 && isLoading && !isTransitioning;
+
+  // Event handlers
   const handleShowKeyboardShortcuts = useCallback(() => {
     setShowKeyboardShortcuts(true);
   }, []);
@@ -115,11 +156,9 @@ export const FeedContainer = memo(function FeedContainer() {
     }
   }, [showSearch]);
 
-  const handleLoadMore = useCallback(() => {
-    if (!isLoadingMore && pagination.hasMore) {
-      loadMoreItems();
-    }
-  }, [isLoadingMore, pagination.hasMore, loadMoreItems]);
+  const handleLoadMore = useCallback(async () => {
+    await loadMoreItems();
+  }, [loadMoreItems]);
 
   const handleItemClick = useCallback(
     async (url, item) => {
@@ -129,7 +168,7 @@ export const FeedContainer = memo(function FeedContainer() {
           try {
             await toggleRead(item.id, true);
           } catch (error) {
-            console.error("İçerik okundu işaretlenemedi:", error);
+            console.error("Content could not be marked as read:", error);
           }
         }
       }
@@ -174,379 +213,372 @@ export const FeedContainer = memo(function FeedContainer() {
     }
   };
 
-  const extraButtons = (
-    <>
-      {selectedFeed && (
-        <>
+  const renderBulkActionBar = useCallback(() => {
+    if (!bulkActions?.isBulkSelectionMode || !bulkActions.selectedCount)
+      return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        transition={{ duration: 0.2 }}
+        className="sticky bottom-4 left-0 right-0 z-10 mx-auto max-w-3xl bg-primary text-primary-foreground rounded-lg shadow-lg flex items-center justify-between px-4 py-2"
+      >
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="rounded-full px-2 py-1">
+            {bulkActions.selectedCount} {t("feeds.selected")}
+          </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => bulkActions.toggleSelectAll(items)}
+            className="text-primary-foreground hover:text-primary-foreground/90 hover:bg-primary-foreground/10"
+          >
+            {bulkActions.selectedCount === items.length
+              ? t("feeds.deselectAll")
+              : t("feeds.selectAll")}
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => bulkActions.markSelectedAsRead()}
+            className="text-primary-foreground hover:text-primary-foreground/90 hover:bg-primary-foreground/10"
+          >
+            <BookCheck className="mr-2 h-4 w-4" />
+            {t("feeds.markAsRead")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => bulkActions.toggleSelectedFavorite(true)}
+            className="text-primary-foreground hover:text-primary-foreground/90 hover:bg-primary-foreground/10"
+          >
+            <Star className="mr-2 h-4 w-4" />
+            {t("feeds.addToFavorites")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => bulkActions.toggleSelectedReadLater(true)}
+            className="text-primary-foreground hover:text-primary-foreground/90 hover:bg-primary-foreground/10"
+          >
+            <Bookmark className="mr-2 h-4 w-4" />
+            {t("feeds.addToReadLater")}
+          </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="gap-2"
+            onClick={() => bulkActions.toggleBulkSelectionMode()}
+            className="bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30"
           >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            {isRefreshing
-              ? selectedFeed.url.includes("hurriyet.com.tr")
-                ? t("feeds.refreshingFeedWithoutCache")
-                : t("feeds.refreshingFeed")
-              : selectedFeed.url.includes("hurriyet.com.tr")
-              ? t("feeds.refreshFeedWithoutCache")
-              : t("feeds.refreshFeed")}
+            {t("feeds.cancel")}
           </Button>
-        </>
-      )}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-9 w-9 rounded-full"
-        onClick={handleToggleSearch}
-        aria-label={t("common.search")}
-      >
-        <Search className="h-4 w-4" />
-      </Button>
-      <AddFeedButton onAddFeed={handleAddFeed} />
-      <FilterButton onOpenFilters={handleOpenFilters} />
-    </>
-  );
+        </div>
+      </motion.div>
+    );
+  }, [bulkActions, items, t]);
 
-  const feedHeaderIcon = selectedFeed ? (
-    <div className="w-6 h-6 flex-shrink-0">
-      {selectedFeed.icon ? (
-        <img
-          src={selectedFeed.icon}
-          alt=""
-          className="w-full h-full object-contain rounded-sm"
-        />
-      ) : selectedFeed.type === "youtube" ? (
-        <Youtube className="w-full h-full text-red-500" />
-      ) : (
-        <Rss className="w-full h-full text-primary" />
-      )}
-    </div>
-  ) : (
-    <Rss className="h-6 w-6 text-primary" />
-  );
+  const renderBulkSelectionButton = useCallback(() => {
+    if (isLoading || items.length === 0 || !bulkActions) return null;
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0"
+            onClick={bulkActions.toggleBulkSelectionMode}
+            aria-label={t("feeds.bulkActions")}
+          >
+            <CheckSquare className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{t("feeds.bulkActions")}</TooltipContent>
+      </Tooltip>
+    );
+  }, [bulkActions, isLoading, items.length, t]);
+
+  const extraButtons = useMemo(() => {
+    const buttons = [];
+
+    buttons.push(
+      <Tooltip key="search">
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0"
+            onClick={handleToggleSearch}
+            aria-label={t("feeds.search")}
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{t("feeds.search")}</TooltipContent>
+      </Tooltip>
+    );
+
+    // Add bulk selection button
+    const bulkSelectionButton = renderBulkSelectionButton();
+    if (bulkSelectionButton) {
+      buttons.push(bulkSelectionButton);
+    }
+
+    // Add Feed Button
+    buttons.push(
+      <Tooltip key="add-feed">
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0"
+            onClick={handleAddFeed}
+            aria-label={t("feeds.addNewFeed")}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{t("feeds.addNewFeed")}</TooltipContent>
+      </Tooltip>
+    );
+
+    return buttons;
+  }, [handleAddFeed, handleToggleSearch, renderBulkSelectionButton, t]);
+
+  // Feed header icon logic
+  const feedHeaderIcon =
+    headerIcon ||
+    (selectedFeed ? (
+      <div className="w-6 h-6 flex-shrink-0">
+        {selectedFeed.icon ? (
+          <img
+            src={selectedFeed.icon}
+            alt=""
+            className="w-full h-full object-contain rounded-sm"
+          />
+        ) : selectedFeed.type === "youtube" ? (
+          <Youtube className="w-full h-full text-red-500" />
+        ) : (
+          <Rss className="w-full h-full text-primary" />
+        )}
+      </div>
+    ) : (
+      <Rss className="h-6 w-6 text-primary" />
+    ));
 
   const feedTitle = selectedFeed ? selectedFeed.title : t("feeds.allFeeds");
   const feedDescription = selectedFeed
     ? selectedFeed.description || t("feeds.noDescription")
     : t("feeds.allFeedsDescription");
 
-  const customContent = (
-    <div className="flex-1 min-w-0">
-      <AnimatePresence mode="wait">
-        {showSearch && (
-          <motion.div
-            key="search"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="mb-4"
-          >
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder={t("common.searchItems")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-                autoFocus
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 rounded-full"
-                  onClick={() => setSearchQuery("")}
-                >
-                  <span className="sr-only">{t("common.clear")}</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M18 6 6 18" />
-                    <path d="m6 6 12 12" />
-                  </svg>
-                </Button>
-              )}
-            </div>
-          </motion.div>
+  const customContent = useMemo(
+    () => (
+      <div className="flex-1 min-w-0">
+        {isLoadingMore && (
+          <div className="flex justify-center mb-4">
+            <span className="text-sm text-muted-foreground flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t("feeds.loadingMore")}
+            </span>
+          </div>
         )}
-      </AnimatePresence>
 
-      <div className="space-y-4">
-        {isInitialLoading ? (
-          <div
-            className={`grid grid-cols-1 ${
-              viewMode === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : ""
-            } gap-4`}
-          >
-            {Array(6)
-              .fill(0)
-              .map((_, index) => (
-                <div
-                  key={`skeleton-${index}-${Date.now()}`}
-                  className="flex flex-col border rounded-lg overflow-hidden"
-                >
-                  <Skeleton className="h-40 w-full rounded-none" />
-                  <div className="p-4 space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
-                </div>
-              ))}
+        {searchQuery && (
+          <div className="mb-4 flex items-center justify-between">
+            <Badge variant="outline" className="px-3 py-1 text-sm gap-2">
+              <Search className="h-3 w-3" />
+              {t("search.resultsFor")} "{searchQuery}"
+            </Badge>
+            <Badge variant="secondary">
+              {filteredItems.length} {t("search.results")}
+            </Badge>
           </div>
-        ) : isError ? (
-          <div className="bg-destructive/10 border-destructive/30 border rounded-lg p-6 flex flex-col items-center justify-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="42"
-              height="42"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-destructive mb-4"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <h3 className="text-lg font-medium mb-2">{t("common.error")}</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {error?.message || t("common.errorOccurred")}
-            </p>
-            <Button onClick={refreshAll} variant="outline" className="gap-2">
-              <RefreshCw className="h-4 w-4" />
-              {t("common.retry")}
-            </Button>
-          </div>
-        ) : filteredItems.length === 0 ? (
-          <div className="p-10 flex flex-col items-center justify-center text-center border rounded-lg bg-muted/30">
-            {searchQuery ? (
-              <>
-                <Search className="h-10 w-10 text-muted-foreground opacity-30 mb-4" />
-                <h3 className="text-lg font-medium mb-2">
-                  {t("search.noResults")}
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-md mb-4">
-                  {t("search.tryDifferentTerms")}
-                </p>
-                <Button variant="outline" onClick={() => setSearchQuery("")}>
-                  {t("search.clearSearch")}
-                </Button>
-              </>
-            ) : (
-              <>
-                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Rss className="h-7 w-7 text-muted-foreground opacity-40" />
-                </div>
-                <h3 className="text-lg font-medium mb-2">
-                  {t("feeds.noItems")}
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-md mb-4">
-                  {t("feeds.noItemsDescription")}
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <Button
-                    onClick={refreshAll}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    {t("common.refresh")}
-                  </Button>
-                  <Button
-                    onClick={handleAddFeed}
-                    variant="default"
-                    className="gap-2"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M5 12h14" />
-                      <path d="M12 5v14" />
-                    </svg>
-                    {t("feeds.addFeed.title")}
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        ) : (
-          <>
-            {searchQuery && (
-              <div className="mb-4 flex items-center justify-between">
-                <Badge variant="outline" className="px-3 py-1 text-sm gap-2">
-                  <Search className="h-3 w-3" />
-                  {t("search.resultsFor")} "{searchQuery}"
-                </Badge>
-                <Badge variant="secondary">
-                  {filteredItems.length} {t("search.results")}
-                </Badge>
-              </div>
-            )}
-            <div
-              className={`grid grid-cols-1 ${
-                viewMode === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : ""
-              } gap-4`}
-            >
-              <AnimatePresence mode="sync">
-                {filteredItems.map((item) => (
-                  <FeedItem
-                    key={item.id}
-                    item={item}
-                    viewMode={viewMode}
-                    onClick={handleItemClick}
-                    onFavorite={toggleFavorite}
-                    onReadLater={toggleReadLater}
-                    onShare={shareItem}
-                    onToggleRead={handleToggleRead}
-                  />
-                ))}
-              </AnimatePresence>
-            </div>
-
-            {pagination?.hasMore && (
-              <div className="flex justify-center mt-8">
-                <Button
-                  onClick={handleLoadMore}
-                  disabled={isLoadingMore}
-                  variant="outline"
-                  className="px-8"
-                >
-                  {isLoadingMore ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-muted-foreground"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      {t("common.loading")}
-                    </>
-                  ) : (
-                    t("feeds.loadMore")
-                  )}
-                </Button>
-              </div>
-            )}
-          </>
         )}
+
+        <ContentList
+          items={filteredItems}
+          viewMode={viewMode}
+          cardType="feed"
+          isLoading={isLoading || isTransitioning}
+          isError={isError}
+          error={error}
+          onRetry={refreshAll}
+          onToggleFavorite={toggleFavorite}
+          onToggleReadLater={toggleReadLater}
+          onItemClick={handleItemClick}
+          bulkActions={bulkActions}
+          selectable={bulkActions?.isBulkSelectionMode}
+          onLoadMore={handleLoadMore}
+          onMarkAsRead={markAsRead}
+          onMarkAsUnread={markAsUnread}
+        />
+
+        {!isLoading &&
+          !isLoadingMore &&
+          filteredItems.length > 0 &&
+          pagination?.hasMore && (
+            <div className="flex justify-center mt-8 mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLoadMore}
+                disabled={isLoadingMore}
+                className="gap-2"
+              >
+                {isLoadingMore ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                {t("feeds.loadMore")}
+              </Button>
+            </div>
+          )}
+
+        <AnimatePresence>{renderBulkActionBar()}</AnimatePresence>
       </div>
-    </div>
+    ),
+    [
+      bulkActions,
+      error,
+      filteredItems,
+      handleItemClick,
+      isError,
+      isLoading,
+      isLoadingMore,
+      isTransitioning,
+      handleLoadMore,
+      pagination?.hasMore,
+      refreshAll,
+      renderBulkActionBar,
+      searchQuery,
+      t,
+      toggleFavorite,
+      toggleReadLater,
+      viewMode,
+      markAsRead,
+      markAsUnread,
+    ]
   );
 
   if (!feeds || feeds.length === 0) {
     return (
-      <ContentContainer
-        viewMode={viewMode}
-        onViewModeChange={handleViewModeChange}
-        onRefresh={refreshAll}
-        headerIcon={<Rss className="h-6 w-6 text-primary" />}
-        headerTitle={t("feeds.title")}
-        headerDescription={t("feeds.description")}
-        items={[]}
-        isLoading={isLoading}
-        isError={isError}
-        error={error}
-        cardType="feed"
-        emptyIcon={<Rss className="h-10 w-10 opacity-20" />}
-        emptyTitle={t("feeds.emptyTitle")}
-        emptyDescription={t("feeds.emptyDescription")}
-        onToggleFavorite={toggleFavorite}
-        onToggleReadLater={toggleReadLater}
-        extraHeaderButtons={extraButtons}
-        extraDialogs={
-          <AddFeedDialog
-            open={showAddFeedDialog}
-            onOpenChange={setShowAddFeedDialog}
-            onFeedAdded={refreshAll}
-          />
-        }
-      />
+      <TooltipProvider>
+        <ContentContainer
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          onRefresh={refreshAll}
+          headerIcon={headerIcon || <Rss className="h-6 w-6 text-primary" />}
+          headerTitle={t("feeds.title")}
+          headerDescription={t("feeds.description")}
+          items={[]}
+          isLoading={isLoading}
+          isError={isError}
+          error={error}
+          cardType="feed"
+          emptyIcon={<Rss className="h-10 w-10 opacity-20" />}
+          emptyTitle={t("feeds.emptyTitle")}
+          emptyDescription={t("feeds.emptyDescription")}
+          onToggleFavorite={toggleFavorite}
+          onToggleReadLater={toggleReadLater}
+          extraHeaderButtons={extraButtons}
+          extraDialogs={
+            <>
+              <AddFeedDialog
+                open={showAddFeedDialog}
+                onOpenChange={setShowAddFeedDialog}
+                onFeedAdded={refreshAll}
+              />
+              <KeyboardShortcutsDialog
+                isOpen={showKeyboardShortcuts}
+                onOpenChange={handleKeyboardShortcutsChange}
+              />
+            </>
+          }
+        >
+          {isLoading ? (
+            <LoadingState
+              title={t("feeds.loading")}
+              description={t("feeds.loadingDescription")}
+            />
+          ) : isError ? (
+            <ErrorState
+              title={t("errors.somethingWentWrong")}
+              description={t("errors.tryAgain")}
+            />
+          ) : !items?.length ? (
+            <EmptyState
+              title={t("feeds.emptyTitle")}
+              description={t("feeds.emptyDescription")}
+            />
+          ) : (
+            customContent
+          )}
+        </ContentContainer>
+      </TooltipProvider>
     );
   }
 
   return (
-    <ContentContainer
-      viewMode={viewMode}
-      onViewModeChange={handleViewModeChange}
-      onRefresh={refreshAll}
-      headerIcon={feedHeaderIcon}
-      headerTitle={feedTitle}
-      headerDescription={feedDescription}
-      isLoading={isLoading || isTransitioning}
-      isError={isError}
-      error={error}
-      showKeyboardShortcuts={showKeyboardShortcuts}
-      onShowKeyboardShortcuts={handleShowKeyboardShortcuts}
-      onKeyboardShortcutsChange={handleKeyboardShortcutsChange}
-      extraHeaderButtons={extraButtons}
-      sidebarContent={
-        <FeedSidebar
-          feeds={feeds}
-          selectedFeed={selectedFeed}
-          onFeedSelect={setActiveFilter}
-          stats={stats}
-        />
-      }
-      extraDialogs={
-        <>
-          <FilterDialog
-            open={showFilterDialog}
-            onOpenChange={setShowFilterDialog}
-            onApplyFilters={applyFilters}
-            onResetFilters={resetFilters}
-            activeFilter={selectedFeed?.id}
-            filters={filters}
-          />
-          <AddFeedDialog
-            open={showAddFeedDialog}
-            onOpenChange={setShowAddFeedDialog}
-            onFeedAdded={refreshAll}
-          />
-        </>
-      }
-    >
-      {customContent}
-    </ContentContainer>
+    <TooltipProvider>
+      <div className="feed-container w-full h-full relative">
+        <ContentContainer
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          onRefresh={refreshAll}
+          headerIcon={feedHeaderIcon}
+          headerTitle={feedTitle}
+          headerDescription={feedDescription}
+          isLoading={isLoading || isTransitioning}
+          isError={isError}
+          error={error}
+          showKeyboardShortcuts={showKeyboardShortcuts}
+          onShowKeyboardShortcuts={handleShowKeyboardShortcuts}
+          onKeyboardShortcutsChange={handleKeyboardShortcutsChange}
+          extraHeaderButtons={extraButtons}
+          sidebarContent={
+            <FeedSidebar
+              feeds={feeds}
+              selectedFeed={selectedFeed}
+              onFeedSelect={setActiveFilter}
+              stats={stats}
+            />
+          }
+          extraDialogs={
+            <>
+              <FilterDialog
+                open={showFilterDialog}
+                onOpenChange={setShowFilterDialog}
+                onApplyFilters={applyFilters}
+                onResetFilters={resetFilters}
+                activeFilter={selectedFeed?.id}
+                filters={filters}
+              />
+              <AddFeedDialog
+                open={showAddFeedDialog}
+                onOpenChange={setShowAddFeedDialog}
+                onFeedAdded={refreshAll}
+              />
+              <KeyboardShortcutsDialog
+                isOpen={showKeyboardShortcuts}
+                onOpenChange={handleKeyboardShortcutsChange}
+              />
+            </>
+          }
+        >
+          {customContent}
+        </ContentContainer>
+      </div>
+    </TooltipProvider>
   );
 });
+
+// Set default props
+FeedContainer.defaultProps = {
+  initialFeedId: null,
+  headerIcon: null,
+};

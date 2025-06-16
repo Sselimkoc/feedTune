@@ -1,61 +1,200 @@
-- React.memo() ile gereksiz render'ları önleyebiliriz
-- useMemo ve useCallback ile hesaplamaları optimize edebiliriz
-- Virtualization (react-window veya react-virtualized) ile uzun listeleri optimize edebiliriz
+<think>
+Okay, the user wants to improve the feed display and interactions on their feeds page. Let me start by understanding the current setup. From the code provided, I see they're using React with Next.js, Radix UI, and Tailwind. The main components involved are FeedScreen, FeedFilters, ContentCard, and hooks like useFeedScreen and usePagination.
 
-- Zustand yerine Jotai veya Valtio gibi daha atomik state yönetimi kullanılabilir
-- Sayfalama (pagination) veya sonsuz scroll eklenebilir
-- Veri fetch işlemleri için abort controller kullanılabilir
+First, I need to identify areas for improvement. The user mentioned buttons and all operations, so I should look at UI/UX, performance, accessibility, and functionality. Let's break it down.
 
-- Rate limiting eklenebilir
-- API anahtarları için rotation sistemi kurulabilir
-- Request validation eklenebilir
-- CORS politikaları daha sıkı hale getirilebilir
+UI/UX Enhancements: The current filters might be too basic. Adding more visual feedback, like badges for active filters, would help. Also, the view mode (grid/list) could have better transitions. The ContentCard component might benefit from a more modern design with hover effects and better touch support.
 
-- JWT token rotation eklenebilir
-- Refresh token mekanizması geliştirilebilir
-- Session timeout yönetimi eklenebilir
-- 2FA desteği eklenebilir
+Performance: They're already using React Server Components and Suspense, but maybe there's room for dynamic imports or memoization. The FeedFilters component is memoized, but other parts like ContentCard could use memoization to prevent unnecessary re-renders.
 
-- Hassas veriler için encryption eklenebilir
-- XSS koruması için daha sıkı önlemler alınabilir
-- Content Security Policy (CSP) headers eklenebilir
-- Input sanitization güçlendirilebilir
+Accessibility: Check if buttons have proper ARIA labels and if the filters are keyboard-navigable. Adding screen reader support and focus styles would improve accessibility.
+
+Functionality: The sorting options are limited. Adding more criteria like popularity or duration (for videos) would be useful. Also, bulk actions for marking items as read or favoriting multiple items at once could enhance user experience.
+
+Error Handling and Loading States: The current loading states might be minimal. Adding skeleton loaders and better error messages with retry buttons would make the UI more robust.
+
+Localization: The existing JSON files for en and tr need to be updated with new keys for any added features, like new filter labels or button texts.
+
+Now, prioritizing these improvements. Start with UI/UX changes as they directly affect user interaction. Then move to performance optimizations, followed by accessibility and functionality additions. Each step should be tested to ensure stability.
+
+For the implementation plan, I'll outline each area with specific tasks, like updating the ContentCard component, enhancing filters, adding new hooks for bulk actions, and improving localization. Each task should reference the relevant code files to modify, such as FeedFilters.jsx for adding new filter buttons or usePagination.js for adjusting the sorting logic.
+
+I also need to ensure that any new features are properly integrated with existing hooks and state management. For example, adding new sorting options would require updates to the useFilters hook and the FeedService to handle the new parameters.
+
+Testing is crucial. After each change, checking for regressions in functionality and performance is necessary. Using tools like Lighthouse can help assess accessibility and performance improvements.
+
+Finally, documenting the changes in the code and updating the localization files will maintain consistency and make future updates easier.
+</think>
+
+İşte besleme gösterimi ve etkileşimler için kapsamlı bir geliştirme planı:
+
+### 1. UI/UX İyileştirmeleri
+**a. Görsel Hiyerarşi Güncellemesi**
+- `FeedFilters` bileşenini daha kompakt hale getirelim
+- Aktif filtreleri gösteren badge'ler ekleyelim
+```diff
+// src/components/features/feeds/filters/FeedFilters.jsx
++ <div className="flex flex-wrap gap-2">
++   {Object.entries(activeFilters).map(([key, value]) => (
++     <Badge key={key} variant="outline">
++       {filterLabels[key]}: {value}
++     </Badge>
++   ))}
++ </div>
+```
+
+**b. View Mode Enhancements**
+- Grid/List geçiş animasyonları ekleyelim
+```jsx
+// ContentCard.js'de
+<motion.div
+  layout
+  transition={{ duration: 0.2 }}
+  className={cardClasses}
+>
+```
+
+**c. Etkileşimli Öğe Yönetimi**
+- Çoklu seçim ve toplu işlemler
+```jsx
+// useFeedScreen.js'e yeni hook ekleyelim
+const useBulkActions = () => {
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  
+  const toggleSelection = (itemId) => {
+    setSelectedItems(prev => {
+      const next = new Set(prev);
+      next.has(itemId) ? next.delete(itemId) : next.add(itemId);
+      return next;
+    });
+  };
+  
+  return { selectedItems, toggleSelection };
+};
+```
+
+### 2. Performans Optimizasyonları
+**a. Veri Yükleme Stratejileri**
+- Viewport'ta görünmeyen öğeler için sanallaştırma
+```bash
+npm install react-virtualized
+```
+```jsx
+// FeedScreen.js'de
+import { List, AutoSizer } from 'react-virtualized';
+
+<AutoSizer>
+  {({ height, width }) => (
+    <List
+      height={height}
+      width={width}
+      rowCount={items.length}
+      rowHeight={viewMode === 'grid' ? 300 : 150}
+      rowRenderer={({ index, key, style }) => (
+        <ContentCard key={key} style={style} item={items[index]} />
+      )}
+    />
+  )}
+</AutoSizer>
+```
+
+**b. Görsel Optimizasyon**
+- Resimler için blur placeholder ve lazy loading
+```jsx
+// ContentCard.js'de
+<img 
+  src={item.thumbnail}
+  loading="lazy"
+  placeholder="blur"
+  className="object-cover w-full h-40"
+/>
+```
+
+### 3. Erişilebilirlik Geliştirmeleri
+**a. Klavye Navigasyonu**
+```jsx
+// ContentCard.js'ye keyboard event handlers ekleyelim
+const handleKeyDown = (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    onClick?.();
+  }
+};
+
+<div 
+  role="button"
+  tabIndex={0}
+  onKeyDown={handleKeyDown}
+  {...props}
+>
+```
+
+**b. ARIA Etiketleri**
+```jsx
+// FeedFilters.jsx'te
+<Button
+  aria-label={t('feeds.filters.refresh')}
+  onClick={onRefresh}
+>
+  <RefreshCw />
+</Button>
+```
+
+### 4. Yeni Özellikler
+**a. Gelişmiş Sıralama**
+```jsx
+// useFilters.js'e yeni sıralama seçenekleri ekleyelim
+const SORT_OPTIONS = [
+  { value: 'newest', label: t('feeds.sort.newest') },
+  { value: 'popular', label: t('feeds.sort.popular') },
+  { value: 'duration', label: t('feeds.sort.duration') }
+];
+```
+
+**b. Akıllı Arama Filtreleri**
+```jsx
+// FeedService.js'de arama algoritması geliştirelim
+const searchItems = (items, query) => {
+  const terms = query.toLowerCase().split(' ');
+  return items.filter(item => 
+    terms.every(term =>
+      item.title.toLowerCase().includes(term) ||
+      item.description?.toLowerCase().includes(term)
+    )
+  );
+};
+```
+
+### 5. Hata Yönetimi ve Yükleme Durumları
+**a. Skeleton Loading**
+```jsx
+// Yeni SkeletonCard.js bileşeni oluşturalım
+const SkeletonCard = () => (
+  <div className="animate-pulse bg-muted rounded-lg p-4">
+    <div className="h-40 bg-gray-300 rounded-lg mb-4" />
+    <div className="h-4 bg-gray-300 rounded w-3/4 mb-2" />
+    <div className="h-4 bg-gray-300 rounded w-1/2" />
+  </div>
+);
+```
+
+**b. Hata Sınırları**
+```jsx
+// FeedScreen.js'de ErrorBoundary ekleyelim
+import { ErrorBoundary } from 'react-error-boundary';
+
+<ErrorBoundary
+  fallback={<ErrorFallback />}
+  onReset={() => window.location.reload()}
+>
+  {/* Feed içeriği */}
+</ErrorBoundary>
+```
+
+### Uygulama Adımları
+1. Öncelikle UI/UX iyileştirmeleriyle başlayalım
+2. Performans optimizasyonlarını test ortamında doğrulayalım
+3. Erişilebilirlik geliştirmelerini tüm bileşenlere yayalım
+4. Yeni özellikleri aşamalı olarak ekleyelim
+5. Son olarak hata yönetimini ve yükleme durumlarını iyileştirelim
 
 
-- Global error boundary eklenebilir
-- Hata logları için bir servis kullanılabilir (Sentry gibi)
-- Kullanıcı dostu hata mesajları geliştirilebilir
-- API hata yönetimi standardize edilebilir
-
-
-- Daha modüler bir yapı kurulabilir
-- Custom hook'lar ayrı bir dizinde toplanabilir
-- Utility fonksiyonları gruplanabilir
-
-
-
-- JSDoc ile kod dokümantasyonu eklenebilir
-- README dosyası geliştirilebilir
-- API dokümantasyonu eklenebilir
-- Deployment guide eklenebilir
-
-- Performance monitoring eklenebilir
-- User analytics eklenebilir
-- Error tracking sistemi kurulabilir
-- Logging sistemi geliştirilebilir
-
-- Meta tag'ler optimize edilebilir
-- Semantic HTML kullanımı artırılabilir
-- ARIA attributes eklenebilir
-- Lighthouse score iyileştirilebilir
-
-- CI/CD pipeline kurulabilir
-- Docker containerization eklenebilir
-- Environment yönetimi geliştirilebilir
-- Build optimizasyonları yapılabilir
-
-- klavye klavuzu eklenebilir
-use feeds hooku rss ve yt rss için farklı tablolardan data cekerken usefeedstoreda eskı tek tablodan cekmeye calısıyor
-
- 
-addyoutuberss kodunu guncelle

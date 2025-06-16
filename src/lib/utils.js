@@ -31,11 +31,11 @@ export function stripHtml(html) {
  */
 export function isValidUrl(url) {
   if (!url) return false;
-  
+
   try {
     const urlObj = new URL(url);
     // http veya https protokolü kullanmalı
-    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    return urlObj.protocol === "http:" || urlObj.protocol === "https:";
   } catch (e) {
     return false;
   }
@@ -113,6 +113,28 @@ export function formatRelativeDate(date, language = "tr", t) {
     return format(targetDate, t("time.formats.medium"), { locale });
   } catch (error) {
     console.error("Tarih formatlanırken hata oluştu:", error);
+    return "";
+  }
+}
+
+/**
+ * Extracts the domain from a URL
+ * @param {string} url - The URL to extract the domain from
+ * @returns {string} The extracted domain
+ */
+export function extractDomain(url) {
+  if (!url) return "";
+
+  try {
+    // Add protocol if not present
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url;
+    }
+
+    const urlObj = new URL(url);
+    return urlObj.hostname.replace(/^www\./, "");
+  } catch (error) {
+    console.error("Error extracting domain:", error);
     return "";
   }
 }
