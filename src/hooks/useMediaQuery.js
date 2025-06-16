@@ -8,33 +8,25 @@ import { useState, useEffect } from "react";
  * @returns {boolean} Whether the media query matches
  */
 export function useMediaQuery(query) {
-  // Initialize with null to avoid hydration mismatch
   const [matches, setMatches] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-
-    // Create media query
     const media = window.matchMedia(query);
 
     // Set initial value
-    if (media.matches !== matches) {
-      setMatches(media.matches);
-    }
+    setMatches(media.matches);
 
     // Create event listener
-    const listener = () => setMatches(media.matches);
+    const listener = (e) => setMatches(e.matches);
 
     // Add listener
     media.addEventListener("change", listener);
 
     // Clean up
     return () => media.removeEventListener("change", listener);
-  }, [query, matches]);
+  }, [query]);
 
-  // Return false during SSR to avoid hydration mismatch
-  return mounted ? matches : false;
+  return matches;
 }
 
 /**

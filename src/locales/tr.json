@@ -408,6 +408,56 @@
         "performance": "Lighthouse Performans Skoru",
         "accessibility": "Erişilebilirlik Skoru"
       }
+    },
+    "showcase": {
+      "title": "FeedTune'u Keşfedin",
+      "subtitle": "Güçlü özelliklerimizle içerik tüketiminin geleceğini deneyimleyin",
+      "learnMore": "Daha Fazla",
+      "feedManagement": {
+        "title": "Feed Yönetimi",
+        "description": "Tüm RSS feedlerinizi tek bir yerde organize edin ve yönetin. İçerik kaynaklarınızı kolayca ekleyin, kategorize edin ve özelleştirin."
+      },
+      "youtube": {
+        "title": "YouTube Entegrasyonu",
+        "description": "Favori YouTube kanallarınızı RSS üzerinden takip edin ve hiçbir videoyu kaçırmayın. Videoları doğrudan uygulama içinde izleyin."
+      },
+      "reading": {
+        "title": "Okuma Deneyimi",
+        "description": "Özelleştirilebilir yazı tipleri, temalar ve düzenlerle temiz, dikkat dağıtmayan bir okuma deneyiminin keyfini çıkarın."
+      },
+      "sharing": {
+        "title": "Kolay Paylaşım",
+        "description": "İlginç makaleleri doğrudan uygulamadan ağınızla paylaşın. Makaleleri daha sonra okumak için kaydedin."
+      },
+      "responsive": "Duyarlı Tasarım",
+      "darkMode": "Karanlık Mod",
+      "multilingual": "Çoklu Dil",
+      "search": "Akıllı Arama"
+    },
+    "community": {
+      "title": "Topluluğumuza Katılın",
+      "subtitle": "Diğer okuyucular ve içerik üreticileriyle bağlantı kurun",
+      "stats": {
+        "users": "Aktif Kullanıcı",
+        "feeds": "Yönetilen Feed",
+        "rating": "Kullanıcı Puanı"
+      },
+      "roles": {
+        "developer": "Yazılım Geliştirici",
+        "contentCreator": "İçerik Üreticisi",
+        "journalist": "Teknoloji Gazetecisi"
+      },
+      "testimonials": {
+        "alex": "FeedTune, teknoloji haberlerini takip etme şeklimi değiştirdi. Temiz arayüzü ve güçlü özellikleriyle tercih ettiğim feed okuyucu.",
+        "sarah": "Bir içerik üreticisi olarak, FeedTune sektör trendlerini takip etmeme ve izleyicilerimle daha etkili bir şekilde etkileşim kurmama yardımcı oluyor.",
+        "david": "Kullandığım en iyi RSS okuyucu. Feedleri organize etme ve içerik paylaşma yeteneği, gazeteci olarak işimi çok kolaylaştırıyor."
+      },
+      "join": {
+        "title": "Katılın",
+        "github": "GitHub'da Yıldızlayın",
+        "twitter": "Twitter'da Takip Edin",
+        "support": "Projeyi Destekleyin"
+      }
     }
   },
   "explore": {

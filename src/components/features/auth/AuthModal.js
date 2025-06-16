@@ -222,6 +222,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
                         placeholder={t("auth.emailPlaceholder")}
                         required
                         className="pl-10"
+                        autoComplete="email"
                       />
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     </div>
@@ -238,6 +239,11 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
                         placeholder={t("auth.passwordPlaceholder")}
                         required
                         className="pl-10 pr-10"
+                        autoComplete={
+                          mode === "signup"
+                            ? "new-password"
+                            : "current-password"
+                        }
                       />
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Button

@@ -9,10 +9,11 @@ import { feedService } from "@/services/feedService";
 import { HomeStats } from "@/components/home/HomeStats";
 import { HomeFeedManagement } from "@/components/home/HomeFeedManagement";
 import { HomeRecentContent } from "@/components/home/HomeRecentContent";
-import HomeHero from "@/components/home/HomeHero";
-import { HomeFeatures } from "@/components/home/HomeFeatures";
-import { HomeAbout } from "@/components/home/HomeAbout";
-import { HomeTechnology } from "@/components/home/HomeTechnology";
+import HomeHero from "@/components/public-home/HomeHero";
+import { HomeAbout } from "@/components/public-home/HomeAbout";
+import { HomeTechnology } from "@/components/public-home/HomeTechnology";
+import { HomeShowcase } from "@/components/public-home/HomeShowcase";
+import { HomeCommunity } from "@/components/public-home/HomeCommunity";
 import { HomeModals } from "@/components/home/HomeModals";
 import { EmptyState } from "@/components/ui-states/EmptyState";
 import { LoadingState } from "@/components/ui-states/LoadingState";
@@ -69,9 +70,10 @@ export function HomeContent() {
       return (
         <>
           <HomeHero onAuthClick={handleAuthClick} />
-          <HomeFeatures />
           <HomeAbout />
+          <HomeShowcase />
           <HomeTechnology />
+          <HomeCommunity />
         </>
       );
     }

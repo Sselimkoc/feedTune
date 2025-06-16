@@ -71,7 +71,11 @@ export function HeaderNav() {
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-full w-10 h-10 flex items-center justify-center hover:bg-accent/50 transition-all duration-300"
             aria-label={
-              theme === "dark" ? "Açık temaya geç" : "Koyu temaya geç"
+              mounted
+                ? theme === "dark"
+                  ? "Açık temaya geç"
+                  : "Koyu temaya geç"
+                : "Tema değiştir"
             }
           >
             {mounted ? (

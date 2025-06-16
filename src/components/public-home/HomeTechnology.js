@@ -10,7 +10,6 @@ import {
   Database,
   Code2,
   Layers,
-  Gauge,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -60,20 +59,11 @@ export function HomeTechnology() {
       description: t("home.technology.radix.description"),
       tech: "Radix UI",
     },
-    {
-      icon: <Gauge className="w-6 h-6 text-teal-500" />,
-      title: t("home.technology.performance.title"),
-      description: t("home.technology.performance.description"),
-      tech: "Server Components",
-    },
   ];
 
   return (
-    <section className="py-16 relative overflow-hidden" id="technology">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-
-      <div className="container mx-auto px-4 relative">
+    <section className="py-12 md:py-20 bg-muted/30">
+      <div className="container mx-auto px-4">
         <motion.div
           className="text-center mb-12"
           initial={{ opacity: 0, y: 20 }}
@@ -88,62 +78,25 @@ export function HomeTechnology() {
             {t("home.technology.subtitle")}
           </p>
         </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {technologies.map((tech, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {technologies.map((tech, idx) => (
             <motion.div
-              key={index}
+              key={tech.tech}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 hover:shadow-lg transition-all duration-300"
+              transition={{ duration: 0.5, delay: idx * 0.1 }}
+              className="flex flex-col items-center bg-card/80 rounded-xl p-6 shadow-md"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-background rounded-lg p-2">{tech.icon}</div>
-                <span className="text-sm font-medium text-muted-foreground">
-                  {tech.tech}
-                </span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">{tech.title}</h3>
-              <p className="text-muted-foreground text-sm">
+              <div className="mb-3">{tech.icon}</div>
+              <h3 className="text-xl font-semibold mb-2">{tech.title}</h3>
+              <p className="text-muted-foreground text-center mb-2">
                 {tech.description}
               </p>
+              <span className="text-xs text-muted-foreground">{tech.tech}</span>
             </motion.div>
           ))}
         </div>
-
-        {/* Performance Metrics */}
-        <motion.div
-          className="mt-16 bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-8"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">
-                {"<1s"}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {t("home.technology.metrics.loadTime")}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">99</div>
-              <div className="text-sm text-muted-foreground">
-                {t("home.technology.metrics.performance")}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">100%</div>
-              <div className="text-sm text-muted-foreground">
-                {t("home.technology.metrics.accessibility")}
-              </div>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </section>
   );

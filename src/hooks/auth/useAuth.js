@@ -17,9 +17,26 @@ export function useAuth() {
   const handleSubmit = async (mode, onSuccess) => {
     setIsLoading(true);
 
+    // Client-side validation
+    if (!email || !password) {
+      toast.error(t("auth.loginRequired"));
+      setIsLoading(false);
+      return { success: false, error: t("auth.loginRequired") };
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      toast.error(t("auth.invalidCredentials"));
+      setIsLoading(false);
+      return { success: false, error: t("auth.invalidCredentials") };
+    }
+    if (password.length < 6) {
+      toast.error(t("auth.weakPassword"));
+      setIsLoading(false);
+      return { success: false, error: t("auth.weakPassword") };
+    }
+
     try {
       if (mode === "signup") {
-        const result = await signUp(email, password);
+        const result = await signUp({ email, password });
         if (result.success) {
           toast.success(t("auth.successSignUp"));
           onSuccess?.();
@@ -27,7 +44,7 @@ export function useAuth() {
         }
         return result;
       } else {
-        const result = await signIn(email, password);
+        const result = await signIn({ email, password });
         if (result.success) {
           toast.success(t("auth.loginSuccess"));
           onSuccess?.();

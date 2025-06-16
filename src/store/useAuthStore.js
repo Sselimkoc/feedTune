@@ -6,9 +6,6 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
-// Not: Store içinde useLanguage hook'unu doğrudan kullanamayız çünkü hook'lar sadece React bileşenlerinde kullanılabilir.
-// Bu nedenle toast mesajlarını doğrudan kullanıcı arayüzü bileşenlerinde çevireceğiz.
-
 // Auth ile ilgili toast mesajları için sabit anahtarlar tanımlayalım
 const AUTH_MESSAGES = {
   VERIFICATION_EMAIL_SENT: "auth.verificationEmailSent",

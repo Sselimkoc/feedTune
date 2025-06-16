@@ -547,12 +547,10 @@
     "emptyState": "You haven't added any feeds yet.",
     "emptyStateAction": "Add some feeds to get started",
     "hero": {
-      "tagline": "Manage your RSS and YouTube content in one place",
+      "title": "Your Personal Feed Reader",
+      "subtitle": "Stay updated with your favorite content in one place",
       "getStarted": "Get Started",
-      "learnMore": "Learn More",
-      "availableIn": "Available in",
-      "dashboardImageAlt": "FeedTune dashboard preview",
-      "newFeature": "New Feature"
+      "learnMore": "Learn More"
     },
     "feedManagement": {
       "title": "Your Feeds",
@@ -686,6 +684,56 @@
         "loadTime": "Page Load Time",
         "performance": "Lighthouse Performance Score",
         "accessibility": "Accessibility Score"
+      }
+    },
+    "showcase": {
+      "title": "Discover FeedTune",
+      "subtitle": "Experience the future of content consumption with our powerful features",
+      "learnMore": "Learn More",
+      "feedManagement": {
+        "title": "Feed Management",
+        "description": "Organize and manage all your RSS feeds in one place. Add, categorize, and customize your content sources effortlessly."
+      },
+      "youtube": {
+        "title": "YouTube Integration",
+        "description": "Follow your favorite YouTube channels through RSS and never miss an upload. Watch videos directly within the app."
+      },
+      "reading": {
+        "title": "Reading Experience",
+        "description": "Enjoy a clean, distraction-free reading experience with customizable fonts, themes, and layouts."
+      },
+      "sharing": {
+        "title": "Easy Sharing",
+        "description": "Share interesting articles with your network directly from the app. Save articles for later reading."
+      },
+      "responsive": "Responsive Design",
+      "darkMode": "Dark Mode",
+      "multilingual": "Multi-language",
+      "search": "Smart Search"
+    },
+    "community": {
+      "title": "Join Our Community",
+      "subtitle": "Connect with fellow readers and content creators",
+      "stats": {
+        "users": "Active Users",
+        "feeds": "Feeds Managed",
+        "rating": "User Rating"
+      },
+      "roles": {
+        "developer": "Software Developer",
+        "contentCreator": "Content Creator",
+        "journalist": "Tech Journalist"
+      },
+      "testimonials": {
+        "alex": "FeedTune has revolutionized how I stay updated with tech news. The clean interface and powerful features make it my go-to feed reader.",
+        "sarah": "As a content creator, FeedTune helps me keep track of industry trends and engage with my audience more effectively.",
+        "david": "The best RSS reader I've used. The ability to organize feeds and share content makes my work as a journalist much easier."
+      },
+      "join": {
+        "title": "Get Involved",
+        "github": "Star on GitHub",
+        "twitter": "Follow on Twitter",
+        "support": "Support Project"
       }
     }
   },

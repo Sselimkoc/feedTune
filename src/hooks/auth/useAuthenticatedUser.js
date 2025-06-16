@@ -16,11 +16,22 @@ export function useAuthenticatedUser() {
           data: { user },
           error,
         } = await supabase.auth.getUser();
-        if (error) throw error;
+        if (error) {
+          // Only log unexpected errors
+          if (error.name !== "AuthSessionMissingError") {
+            console.error("Error getting authenticated user:", error);
+            setError(error);
+          }
+          setUserId(null);
+          return;
+        }
         setUserId(user?.id || null);
       } catch (error) {
-        console.error("Error getting authenticated user:", error);
-        setError(error);
+        // Only log unexpected errors
+        if (error.name !== "AuthSessionMissingError") {
+          console.error("Error getting authenticated user:", error);
+          setError(error);
+        }
         setUserId(null);
       } finally {
         setIsLoading(false);
