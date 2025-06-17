@@ -158,7 +158,7 @@ export function EmailVerification({ email, onLoginClick, onResendEmail }) {
 
         {/* Confirmation message */}
         {showConfirmation && (
-          <div className="absolute bottom-4 left-0 right-0 mx-auto w-5/6 bg-green-500 text-white py-2 px-4 rounded-lg">
+          <div className="absolute bottom-4 left-0 right-0 mx-auto w-5/6 bg-blue-500 text-white py-2 px-4 rounded-lg">
             <div className="flex items-center">
               <Check className="h-5 w-5 mr-2" />
               <span>

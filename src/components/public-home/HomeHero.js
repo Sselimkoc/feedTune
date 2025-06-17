@@ -48,8 +48,20 @@ export default function HomeHero({ onAuthClick }) {
 
   if (isMobile) {
     return (
-      <section className="flex justify-center items-center w-full py-6 md:py-12">
-        <div className="w-full max-w-md bg-card/80 rounded-xl shadow-md p-5 flex flex-col items-center gap-4">
+      <section className="flex justify-center items-center w-full py-6 md:py-12 relative overflow-hidden">
+        {/* Mobile background logo */}
+        <div className="absolute inset-0 -z-10">
+          <Image
+            src="/images/feedtunelogo.png"
+            alt="FeedTune Background Logo"
+            width={300}
+            height={300}
+            className="opacity-30 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ objectFit: "contain" }}
+            priority
+          />
+        </div>
+        <div className="w-full max-w-md bg-card/80 rounded-xl shadow-md p-5 flex flex-col items-center gap-4 relative z-10">
           <h1 className="text-xl md:text-3xl font-bold text-center">
             FeedTune
           </h1>

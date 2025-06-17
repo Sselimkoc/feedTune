@@ -99,7 +99,7 @@ export function SidebarNavigation() {
   ];
 
   return (
-    <ScrollArea className="h-full py-6 bg-[#151c29] shadow border-r border-blue-900">
+    <ScrollArea className="h-full py-6 bg-white dark:bg-[#151c29] shadow border-r border-blue-900">
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
           <div className="space-y-1">

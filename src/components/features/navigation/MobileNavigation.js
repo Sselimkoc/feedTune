@@ -85,6 +85,11 @@ export function MobileNavigation() {
   const activeMenuItems = [...publicMenuItems];
   if (userId) {
     activeMenuItems.push(...protectedMenuItems);
+    activeMenuItems.push({
+      name: t("navigation.settings"),
+      href: "/settings",
+      icon: <Settings className="w-5 h-5" />,
+    });
   }
 
   // Next theme in rotation (dark -> light -> system -> dark)
@@ -141,17 +146,19 @@ export function MobileNavigation() {
   }, [signOut, router, toast, t]);
 
   return (
-    <div className="lg:hidden fixed top-0 left-0 right-0 h-14 border-b bg-background z-50 px-4 flex items-center justify-between">
+    <div className="lg:hidden fixed top-0 left-0 right-0 h-14 border-b bg-white dark:bg-[#151c29] z-50 px-4 flex items-center justify-between">
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-2">
+      <Link href="/" className="flex items-center gap-2 h-full">
         <Image
           src="/images/feedtunelogo.png"
           alt="FeedTune Logo"
-          width={24}
-          height={24}
-          className="w-6 h-6 text-primary"
+          width={28}
+          height={28}
+          className="w-7 h-7"
         />
-        <span className="font-bold text-lg">FeedTune</span>
+        <span className="font-bold text-xl text-blue-500 hover:text-blue-600 transition-colors">
+          FeedTune
+        </span>
       </Link>
 
       {/* Mobile Menu Trigger */}
@@ -160,9 +167,9 @@ export function MobileNavigation() {
           <Button
             variant="ghost"
             size="icon"
-            className="w-9 h-9 rounded-full hover:bg-accent/50 flex items-center justify-center"
+            className="w-10 h-10 rounded-full flex items-center justify-center border border-transparent hover:border-accent hover:bg-transparent transition-all duration-300"
           >
-            <Menu className="w-[18px] h-[18px]" />
+            <Menu className="w-[22px] h-[22px]" />
             <span className="sr-only">{t("common.menu")}</span>
           </Button>
         </SheetTrigger>
@@ -254,7 +261,7 @@ export function MobileNavigation() {
                     className="w-8 h-8 p-0 rounded-full flex items-center justify-center"
                     onClick={() => setTheme(getNextTheme())}
                   >
-                    <Settings className="w-4 h-4" />
+                    <Moon className="w-4 h-4" />
                   </Button>
                 </div>
               </div>

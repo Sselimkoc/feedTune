@@ -83,43 +83,45 @@ export function SettingsContent() {
   }
 
   return (
-    <section className="py-6 lg:py-8 relative">
+    <section className="py-4 px-2 sm:py-6 sm:px-0 lg:py-8 relative">
       {/* Background animated patterns */}
       <div className="absolute inset-0 overflow-hidden -z-10">
         <div
-          className="absolute top-1/4 right-1/3 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/4 right-1/3 w-48 h-48 sm:w-72 sm:h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "8s" }}
         ></div>
         <div
-          className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-1/3 left-1/4 w-64 h-64 sm:w-96 sm:h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "10s" }}
         ></div>
         <div
-          className="absolute top-1/2 left-2/3 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/2 left-2/3 w-40 h-40 sm:w-64 sm:h-64 bg-violet-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "12s" }}
         ></div>
       </div>
 
-      <div className="container relative z-10">
+      <div className="container relative z-10 px-0 sm:px-4">
         <motion.div
-          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4"
+          className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center gap-3 mb-4"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center gap-3">
-            <Settings2 className="h-6 w-6 text-blue-500" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Settings2 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
             <div>
-              <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
-              <p className="text-sm text-muted-foreground">
+              <h1 className="text-lg sm:text-2xl font-bold">
+                {t("settings.title")}
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {t("settings.description")}
               </p>
             </div>
           </div>
         </motion.div>
 
-        <div className="grid gap-6">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1">
           {/* Appearance & Language */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -127,8 +129,8 @@ export function SettingsContent() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-blue-900/30 shadow-sm hover:shadow-md transition-all duration-300">
-              <CardHeader className="bg-blue-500/5 pb-3">
+            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-blue-900/30 shadow-sm hover:shadow-md transition-all duration-300 w-full">
+              <CardHeader className="bg-blue-500/5 pb-2 sm:pb-3">
                 <div className="flex items-center gap-2">
                   {theme === "dark" ? (
                     <Moon className="h-4 w-4 text-blue-500" />
@@ -137,7 +139,7 @@ export function SettingsContent() {
                   ) : (
                     <Monitor className="h-4 w-4 text-blue-500" />
                   )}
-                  <CardTitle className="text-base">
+                  <CardTitle className="text-sm sm:text-base">
                     {t("settings.appearance.title")}
                   </CardTitle>
                 </div>
@@ -145,13 +147,13 @@ export function SettingsContent() {
                   {t("settings.appearance.description")}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-4 space-y-6">
+              <CardContent className="pt-3 sm:pt-4 space-y-4 sm:space-y-6">
                 {/* Theme Selection */}
-                <div className="space-y-3">
-                  <Label className="text-sm text-muted-foreground">
+                <div className="space-y-2 sm:space-y-3">
+                  <Label className="text-xs sm:text-sm text-muted-foreground">
                     {t("settings.theme.title")}
                   </Label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     <motion.div
                       className={`flex flex-col items-center justify-center p-3 rounded-md border cursor-pointer transition-all duration-300 shadow-sm
                         ${
@@ -233,11 +235,11 @@ export function SettingsContent() {
                 <Separator />
 
                 {/* Language Selection */}
-                <div className="space-y-3">
-                  <Label className="text-sm text-muted-foreground">
+                <div className="space-y-2 sm:space-y-3">
+                  <Label className="text-xs sm:text-sm text-muted-foreground">
                     {t("settings.language.title")}
                   </Label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <motion.div
                       className={`flex flex-col items-center justify-center p-3 rounded-md border cursor-pointer transition-all duration-300 shadow-sm
                         ${
@@ -252,14 +254,8 @@ export function SettingsContent() {
                       }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      <Globe
-                        className={`h-5 w-5 mb-1 transition-all duration-300 ${
-                          language === "en"
-                            ? "text-foreground"
-                            : "text-foreground"
-                        }`}
-                      />
-                      <span className="text-sm font-medium">🇬🇧 English</span>
+                      <span className="text-2xl mb-1">🇬🇧</span>
+                      <span className="text-sm font-medium">English</span>
                     </motion.div>
                     <motion.div
                       className={`flex flex-col items-center justify-center p-3 rounded-md border cursor-pointer transition-all duration-300 shadow-sm
@@ -275,14 +271,8 @@ export function SettingsContent() {
                       }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      <Globe
-                        className={`h-5 w-5 mb-1 transition-all duration-300 ${
-                          language === "tr"
-                            ? "text-foreground"
-                            : "text-foreground"
-                        }`}
-                      />
-                      <span className="text-sm font-medium">🇹🇷 Türkçe</span>
+                      <span className="text-2xl mb-1">🇹🇷</span>
+                      <span className="text-sm font-medium">Türkçe</span>
                     </motion.div>
                   </div>
                 </div>
@@ -297,11 +287,11 @@ export function SettingsContent() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-blue-900/30 shadow-sm hover:shadow-md transition-all duration-300">
-              <CardHeader className="bg-blue-500/5 pb-3">
+            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-blue-900/30 shadow-sm hover:shadow-md transition-all duration-300 w-full">
+              <CardHeader className="bg-blue-500/5 pb-2 sm:pb-3">
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-blue-500" />
-                  <CardTitle className="text-base">
+                  <CardTitle className="text-sm sm:text-base">
                     {t("settings.profile.title")}
                   </CardTitle>
                 </div>
@@ -309,7 +299,7 @@ export function SettingsContent() {
                   {t("settings.profile.description")}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-4">
+              <CardContent className="pt-3 sm:pt-4">
                 <ProfileSettings />
               </CardContent>
             </Card>
@@ -322,11 +312,11 @@ export function SettingsContent() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-blue-900/30 shadow-sm hover:shadow-md transition-all duration-300">
-              <CardHeader className="bg-blue-500/5 pb-3">
+            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-blue-900/30 shadow-sm hover:shadow-md transition-all duration-300 w-full">
+              <CardHeader className="bg-blue-500/5 pb-2 sm:pb-3">
                 <div className="flex items-center gap-2">
                   <RefreshCw className="h-4 w-4 text-blue-500" />
-                  <CardTitle className="text-base">
+                  <CardTitle className="text-sm sm:text-base">
                     {t("settings.data.title")}
                   </CardTitle>
                 </div>
@@ -334,7 +324,7 @@ export function SettingsContent() {
                   {t("settings.data.description")}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-4 space-y-4">
+              <CardContent className="pt-3 sm:pt-4 space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-sm font-medium">

@@ -59,25 +59,25 @@ export function ErrorState({
             ? "bg-red-950/10"
             : contentType === "rss"
             ? "bg-blue-950/10"
-            : "bg-zinc-900/20",
+            : "bg-blue-950/10",
         iconBg:
           contentType === "youtube"
             ? "bg-red-900/20"
             : contentType === "rss"
             ? "bg-blue-900/20"
-            : "bg-zinc-800/30",
+            : "bg-blue-900/20",
         iconColor:
           contentType === "youtube"
             ? "text-red-500"
             : contentType === "rss"
             ? "text-blue-500"
-            : "text-amber-500",
+            : "text-blue-500",
         borderColor:
           contentType === "youtube"
             ? "border-red-900/20"
             : contentType === "rss"
             ? "border-blue-900/20"
-            : "border-amber-900/20",
+            : "border-blue-900/20",
         titleColor: "text-zinc-200",
         descriptionColor: "text-zinc-400",
         btnVariant: "secondary",
@@ -91,25 +91,25 @@ export function ErrorState({
             ? "bg-red-50/50"
             : contentType === "rss"
             ? "bg-blue-50/50"
-            : "bg-amber-50/50",
+            : "bg-blue-50/50",
         iconBg:
           contentType === "youtube"
             ? "bg-red-100"
             : contentType === "rss"
             ? "bg-blue-100"
-            : "bg-amber-100",
+            : "bg-blue-100",
         iconColor:
           contentType === "youtube"
             ? "text-red-600"
             : contentType === "rss"
             ? "text-blue-600"
-            : "text-amber-600",
+            : "text-blue-600",
         borderColor:
           contentType === "youtube"
             ? "border-red-200"
             : contentType === "rss"
             ? "border-blue-200"
-            : "border-amber-200",
+            : "border-blue-200",
         titleColor: "text-zinc-800",
         descriptionColor: "text-zinc-600",
         btnVariant: "outline",
