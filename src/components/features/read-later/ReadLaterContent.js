@@ -7,6 +7,7 @@ import { BookmarkCheck } from "lucide-react";
 import { ContentCard } from "@/components/shared/ContentCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { ModernContentCard } from "@/components/shared/ModernContentCard";
 
 export const ReadLaterContent = memo(function ReadLaterContent() {
   const { t } = useTranslation();
@@ -150,20 +151,13 @@ export const ReadLaterContent = memo(function ReadLaterContent() {
                 </Button>
               </div>
             ) : (
-              <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+              <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {items.map((item) => (
-                  <ContentCard
+                  <ModernContentCard
                     key={item.id}
                     item={item}
-                    viewMode="grid"
-                    cardType="readLater"
-                    onFavorite={() =>
-                      handleToggleFavorite(item.id, !item.is_favorite)
-                    }
-                    onReadLater={() =>
-                      handleToggleReadLater(item.id, !item.is_read_later)
-                    }
-                    onClick={() => handleItemClick(item.url, item)}
+                    onFavorite={() => {}}
+                    onReadLater={() => {}}
                   />
                 ))}
               </div>

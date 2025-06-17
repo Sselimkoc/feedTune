@@ -60,11 +60,7 @@ export function AppLayout({ children }) {
           !!userId ? "lg:pl-64 pt-16" : "pt-16"
         }`}
       >
-        <div className="max-w-5xl mx-auto px-4 py-8">
-          <div className="glass rounded-xl p-6 min-h-[calc(100vh-4rem)] shadow-xl">
-            {children}
-          </div>
-        </div>
+        <div className="w-full px-0 py-8">{children}</div>
       </main>
     </div>
   );
