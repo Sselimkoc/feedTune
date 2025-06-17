@@ -29,6 +29,17 @@ export function FeedPage() {
       ? items
       : items.filter((item) => selectedFeedIds.includes(item.feed_id));
 
+  // Enrich items with feed/channel title if missing
+  const itemsWithFeedTitle = filteredItems.map((item) => {
+    const feed = feeds.find((f) => f.id === item.feed_id);
+    return {
+      ...item,
+      channelTitle: item.channelTitle || item.channel || feed?.title || "",
+      feedTitle: item.feedTitle || item.feed_title || feed?.title || "",
+      logoUrl: feed?.icon || feed?.logo || item.channelLogo || item.logo || "",
+    };
+  });
+
   return (
     <div className="flex flex-col min-h-screen relative">
       {/* Background animated patterns */}
@@ -64,9 +75,26 @@ export function FeedPage() {
             {t("feeds.description")}
           </p>
         </header>
+        {/* Feed Filter Bar */}
+        <nav className="w-full flex flex-wrap gap-2 mb-8 bg-white/10 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl shadow px-4 py-3">
+          {feeds.map((feed) => (
+            <button
+              key={feed.id}
+              onClick={() => handleFeedSelect(feed.id)}
+              className={cn(
+                "px-4 py-2 rounded-full border transition-all text-sm font-medium bg-white/20 dark:bg-white/10 backdrop-blur hover:bg-emerald-500/20",
+                selectedFeedIds.includes(feed.id)
+                  ? "border-emerald-500 text-emerald-600 shadow"
+                  : "border-white/20 text-zinc-300"
+              )}
+            >
+              {feed.title}
+            </button>
+          ))}
+        </nav>
         {/* Card Grid */}
         <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-          {items.map((item) => (
+          {itemsWithFeedTitle.map((item) => (
             <ModernContentCard
               key={item.id}
               item={item}

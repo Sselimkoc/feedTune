@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { Heart, Bookmark, PlayCircle } from "lucide-react";
+import { Heart, Bookmark, PlayCircle, Youtube, Rss } from "lucide-react";
 
 export function ModernContentCard({ item, onFavorite, onReadLater }) {
   // Use thumbnail for YouTube, image for others
@@ -9,7 +9,19 @@ export function ModernContentCard({ item, onFavorite, onReadLater }) {
       : item.image || "/images/placeholder.webp";
 
   return (
-    <div className="bg-zinc-900 rounded-xl overflow-hidden shadow-lg flex flex-col transition-transform duration-200 hover:-translate-y-1 hover:shadow-2xl w-full max-w-md mx-auto cursor-pointer">
+    <div className="rounded-2xl shadow-xl bg-white/20 dark:bg-white/10 backdrop-blur-lg border border-white/30 dark:border-white/10 overflow-hidden flex flex-col transition-all hover:scale-105 hover:shadow-emerald-500/30 w-full max-w-md mx-auto cursor-pointer">
+      {/* Platform Icon */}
+      <div className="absolute z-20 m-3">
+        {item.type === "youtube" ? (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/60 dark:bg-zinc-900/70 backdrop-blur text-xs font-semibold text-red-600 shadow">
+            <Youtube className="w-4 h-4 text-red-500" /> YouTube
+          </span>
+        ) : item.type === "rss" ? (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/60 dark:bg-zinc-900/70 backdrop-blur text-xs font-semibold text-orange-500 shadow">
+            <Rss className="w-4 h-4 text-orange-400" /> RSS
+          </span>
+        ) : null}
+      </div>
       {/* Thumbnail */}
       <div className="relative w-full pt-[56.25%] bg-zinc-800">
         <img
@@ -32,6 +44,22 @@ export function ModernContentCard({ item, onFavorite, onReadLater }) {
           {item.description || "Bu video için açıklama bulunmamaktadır."}
         </p>
         <div className="flex items-center justify-end border-t border-white/10 pt-3 mt-auto gap-2">
+          {/* Logo and Channel/Feed Title */}
+          <div className="flex items-center flex-1 min-w-0 gap-2 text-xs text-zinc-400 truncate">
+            {item.logoUrl && (
+              <img
+                src={item.logoUrl}
+                alt="Logo"
+                className="w-6 h-6 rounded-full object-cover border border-white/20"
+                loading="lazy"
+              />
+            )}
+            <span className="truncate">
+              {item.type === "youtube"
+                ? item.channelTitle || item.channel || ""
+                : item.feedTitle || item.feed_title || ""}
+            </span>
+          </div>
           <button
             className="icon-button flex items-center justify-center p-2 rounded-md text-white hover:bg-white/10 hover:text-emerald-300 transition"
             onClick={onFavorite}
