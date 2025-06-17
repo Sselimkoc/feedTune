@@ -99,7 +99,7 @@ export function SidebarNavigation() {
   ];
 
   return (
-    <ScrollArea className="h-full py-6">
+    <ScrollArea className="h-full py-6 bg-[#151c29] shadow border-r border-blue-900">
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
           <div className="space-y-1">
@@ -112,8 +112,8 @@ export function SidebarNavigation() {
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300",
                     "border border-transparent",
                     pathname === item.href
-                      ? "bg-accent/10 border-accent text-foreground"
-                      : "text-foreground hover:bg-accent/5 hover:border-accent/30"
+                      ? "bg-blue-500/10 border-blue-500 text-blue-600 shadow"
+                      : "text-foreground hover:bg-blue-500/10 hover:border-blue-500/30"
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -147,7 +147,7 @@ export function SidebarNavigation() {
               </div>
               <Button
                 variant="ghost"
-                className="w-full justify-start gap-3"
+                className="w-full justify-start gap-3 text-red-500 hover:bg-red-500/10 hover:text-red-500"
                 onClick={handleSignOutClick}
               >
                 <LogOutIcon className="h-4 w-4" />

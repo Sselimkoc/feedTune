@@ -39,34 +39,28 @@ export function HeaderNav() {
   );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-background shadow-sm dark:border-b dark:shadow-none">
-      <div className="container mx-auto px-4 h-16 flex justify-between items-center">
-        {/* Logo */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Link href="/" className="flex items-center gap-2 h-full shrink-0">
-            <Image
-              src="/images/feedtunelogo.png"
-              alt="FeedTune Logo"
-              width={24}
-              height={24}
-              className="w-6 h-6 text-primary"
-            />
-            <span className="font-bold text-xl">FeedTune</span>
-          </Link>
-        </motion.div>
+    <header className="fixed top-0 left-0 right-0 z-40 bg-[#151c29] shadow border-b border-blue-900">
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+        {/* Left: Logo */}
+        <Link href="/" className="flex items-center gap-2 h-full">
+          <Image
+            src="/images/feedtunelogo.png"
+            alt="FeedTune Logo"
+            width={28}
+            height={28}
+            className="w-7 h-7"
+          />
+          <span className="font-bold text-xl text-blue-500 hover:text-blue-600 transition-colors">
+            FeedTune
+          </span>
+        </Link>
 
-        {/* Sağ taraf - Tema ve Dil Değiştirme */}
-        <motion.div
-          className="flex items-center gap-4"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          {/* Theme Switcher - Client-side rendering check */}
+        {/* Center: (optional, empty for now) */}
+        <div className="flex-1 flex justify-center"></div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2">
+          {/* Theme Switcher */}
           <Button
             variant="ghost"
             size="icon"
@@ -82,16 +76,11 @@ export function HeaderNav() {
           >
             {mounted ? (
               theme === "dark" ? (
-                <div className="relative">
-                  <Sun className="h-[18px] w-[18px] text-foreground" />
-                </div>
+                <Sun className="h-[18px] w-[18px] text-foreground" />
               ) : (
-                <div className="relative">
-                  <Moon className="h-[18px] w-[18px] text-foreground" />
-                </div>
+                <Moon className="h-[18px] w-[18px] text-foreground" />
               )
             ) : (
-              // Static content for initial render during hydration
               <div className="w-[18px] h-[18px]"></div>
             )}
           </Button>
@@ -133,7 +122,7 @@ export function HeaderNav() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-        </motion.div>
+        </div>
       </div>
     </header>
   );

@@ -87,15 +87,15 @@ export function SettingsContent() {
       {/* Background animated patterns */}
       <div className="absolute inset-0 overflow-hidden -z-10">
         <div
-          className="absolute top-1/4 right-1/3 w-72 h-72 bg-primary/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/4 right-1/3 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "8s" }}
         ></div>
         <div
-          className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-blue-500/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "10s" }}
         ></div>
         <div
-          className="absolute top-1/2 left-2/3 w-64 h-64 bg-yellow-500/5 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/2 left-2/3 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "12s" }}
         ></div>
       </div>
@@ -109,7 +109,7 @@ export function SettingsContent() {
           transition={{ duration: 0.5 }}
         >
           <div className="flex items-center gap-3">
-            <Settings2 className="h-6 w-6 text-primary" />
+            <Settings2 className="h-6 w-6 text-blue-500" />
             <div>
               <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
               <p className="text-sm text-muted-foreground">
@@ -127,15 +127,15 @@ export function SettingsContent() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm hover:shadow-md transition-all duration-300">
-              <CardHeader className="bg-accent/5 pb-3">
+            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-blue-900/30 shadow-sm hover:shadow-md transition-all duration-300">
+              <CardHeader className="bg-blue-500/5 pb-3">
                 <div className="flex items-center gap-2">
                   {theme === "dark" ? (
-                    <Moon className="h-4 w-4 text-accent" />
+                    <Moon className="h-4 w-4 text-blue-500" />
                   ) : theme === "light" ? (
-                    <Sun className="h-4 w-4 text-accent" />
+                    <Sun className="h-4 w-4 text-blue-500" />
                   ) : (
-                    <Monitor className="h-4 w-4 text-accent" />
+                    <Monitor className="h-4 w-4 text-blue-500" />
                   )}
                   <CardTitle className="text-base">
                     {t("settings.appearance.title")}
@@ -297,10 +297,10 @@ export function SettingsContent() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm hover:shadow-md transition-all duration-300">
-              <CardHeader className="bg-accent/5 pb-3">
+            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-blue-900/30 shadow-sm hover:shadow-md transition-all duration-300">
+              <CardHeader className="bg-blue-500/5 pb-3">
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-accent" />
+                  <User className="h-4 w-4 text-blue-500" />
                   <CardTitle className="text-base">
                     {t("settings.profile.title")}
                   </CardTitle>
@@ -322,10 +322,10 @@ export function SettingsContent() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm hover:shadow-md transition-all duration-300">
-              <CardHeader className="bg-accent/5 pb-3">
+            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-blue-900/30 shadow-sm hover:shadow-md transition-all duration-300">
+              <CardHeader className="bg-blue-500/5 pb-3">
                 <div className="flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 text-accent" />
+                  <RefreshCw className="h-4 w-4 text-blue-500" />
                   <CardTitle className="text-base">
                     {t("settings.data.title")}
                   </CardTitle>

@@ -9,7 +9,7 @@ export function ModernContentCard({ item, onFavorite, onReadLater }) {
       : item.image || "/images/placeholder.webp";
 
   return (
-    <div className="rounded-2xl shadow-xl bg-white/20 dark:bg-white/10 backdrop-blur-lg border border-white/30 dark:border-white/10 overflow-hidden flex flex-col transition-all hover:scale-105 hover:shadow-emerald-500/30 w-full max-w-md mx-auto cursor-pointer">
+    <div className="rounded-2xl shadow-xl bg-white/20 dark:bg-white/10 backdrop-blur-lg border border-blue-300/20 dark:border-blue-900/30 overflow-hidden flex flex-col transition-all hover:scale-105 hover:shadow-blue-500/30 w-full max-w-md mx-auto cursor-pointer">
       {/* Platform Icon */}
       <div className="absolute z-20 m-3">
         {item.type === "youtube" ? (
@@ -37,7 +37,7 @@ export function ModernContentCard({ item, onFavorite, onReadLater }) {
       </div>
       {/* Content */}
       <div className="flex flex-col flex-grow p-4 text-white">
-        <h3 className="text-lg font-semibold mb-2 text-emerald-300 leading-tight line-clamp-2">
+        <h3 className="text-lg font-semibold mb-2 text-blue-400 leading-tight line-clamp-2">
           {item.title || "Başlıksız Video"}
         </h3>
         <p className="text-sm text-zinc-300 mb-4 flex-grow line-clamp-3">
@@ -61,7 +61,7 @@ export function ModernContentCard({ item, onFavorite, onReadLater }) {
             </span>
           </div>
           <button
-            className="icon-button flex items-center justify-center p-2 rounded-md text-white hover:bg-white/10 hover:text-emerald-300 transition"
+            className="icon-button flex items-center justify-center p-2 rounded-md text-white hover:bg-white/10 hover:text-blue-400 transition"
             onClick={onFavorite}
             type="button"
             aria-label="Favori"
@@ -69,7 +69,7 @@ export function ModernContentCard({ item, onFavorite, onReadLater }) {
             <Heart className="w-5 h-5" />
           </button>
           <button
-            className="icon-button flex items-center justify-center p-2 rounded-md text-white hover:bg-white/10 hover:text-sky-400 transition"
+            className="icon-button flex items-center justify-center p-2 rounded-md text-white hover:bg-white/10 hover:text-indigo-400 transition"
             onClick={onReadLater}
             type="button"
             aria-label="Sonra İzle"

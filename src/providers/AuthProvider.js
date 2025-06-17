@@ -94,7 +94,7 @@ export function AuthProvider({ children }) {
           }
           router.refresh();
           // Force redirect to home page
-          router.push("/");
+          router.push("/home");
         }
       } catch (error) {
         console.error("[AuthProvider] Auth state change error:", error);

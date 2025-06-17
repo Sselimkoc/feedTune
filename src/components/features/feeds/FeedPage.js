@@ -45,30 +45,30 @@ export function FeedPage() {
       {/* Background animated patterns */}
       <div className="absolute inset-0 overflow-hidden -z-10">
         <div
-          className="absolute top-1/4 right-1/3 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "10s" }}
         ></div>
         <div
-          className="absolute bottom-1/3 left-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "12s" }}
         ></div>
         <div
-          className="absolute top-1/2 left-2/3 w-56 h-56 bg-teal-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/2 left-2/3 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "14s" }}
         ></div>
         <div
-          className="absolute top-1/3 left-1/4 w-40 h-40 bg-sky-500/5 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/3 left-1/4 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "16s" }}
         ></div>
         <div
-          className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "18s" }}
         ></div>
       </div>
       <div className="w-full px-8 relative z-10">
         {/* Header */}
         <header className="mb-8">
-          <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-emerald-500 drop-shadow-sm">
+          <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-blue-500 drop-shadow-sm">
             {t("feeds.title")}
           </h1>
           <p className="text-muted-foreground text-base max-w-2xl">
@@ -76,15 +76,15 @@ export function FeedPage() {
           </p>
         </header>
         {/* Feed Filter Bar */}
-        <nav className="w-full flex flex-wrap gap-2 mb-8 bg-white/10 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl shadow px-4 py-3">
+        <nav className="w-full flex flex-wrap gap-2 mb-8 bg-blue-500/10 dark:bg-blue-900/20 backdrop-blur-md border border-blue-300/20 dark:border-blue-900/30 rounded-xl shadow px-4 py-3">
           {feeds.map((feed) => (
             <button
               key={feed.id}
               onClick={() => handleFeedSelect(feed.id)}
               className={cn(
-                "px-4 py-2 rounded-full border transition-all text-sm font-medium bg-white/20 dark:bg-white/10 backdrop-blur hover:bg-emerald-500/20",
+                "px-4 py-2 rounded-full border transition-all text-sm font-medium bg-white/20 dark:bg-white/10 backdrop-blur hover:bg-blue-500/20",
                 selectedFeedIds.includes(feed.id)
-                  ? "border-emerald-500 text-emerald-600 shadow"
+                  ? "border-blue-500 text-blue-600 shadow"
                   : "border-white/20 text-zinc-300"
               )}
             >

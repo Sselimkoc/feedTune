@@ -63,23 +63,23 @@ export const FavoritesContent = memo(function FavoritesContent() {
       {/* Background animated patterns */}
       <div className="absolute inset-0 overflow-hidden -z-10">
         <div
-          className="absolute top-1/4 right-1/3 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "10s" }}
         ></div>
         <div
-          className="absolute bottom-1/3 left-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "12s" }}
         ></div>
         <div
-          className="absolute top-1/2 left-2/3 w-56 h-56 bg-teal-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/2 left-2/3 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "14s" }}
         ></div>
         <div
-          className="absolute top-1/3 left-1/4 w-40 h-40 bg-sky-500/5 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/3 left-1/4 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "16s" }}
         ></div>
         <div
-          className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "18s" }}
         ></div>
       </div>
@@ -88,9 +88,9 @@ export const FavoritesContent = memo(function FavoritesContent() {
         {/* Header */}
         <header className="w-full max-w-screen-2xl mx-auto px-2 md:px-6 mt-8 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Bookmark className="h-7 w-7 text-emerald-600" />
+            <Bookmark className="h-7 w-7 text-blue-600" />
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-emerald-500 drop-shadow-sm">
+              <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-blue-500 drop-shadow-sm">
                 {t("favorites.title")}
               </h1>
               <p className="text-muted-foreground text-base max-w-2xl">
@@ -124,7 +124,7 @@ export const FavoritesContent = memo(function FavoritesContent() {
                 <Button
                   onClick={() => window.location.reload()}
                   variant="outline"
-                  className="bg-emerald-600 hover:bg-emerald-700 dark:bg-primary dark:hover:bg-primary/90"
+                  className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
                 >
                   {t("common.retry")}
                 </Button>
@@ -144,7 +144,7 @@ export const FavoritesContent = memo(function FavoritesContent() {
                 </span>
                 <Button
                   variant="outline"
-                  className="bg-emerald-600 hover:bg-emerald-700 dark:bg-primary dark:hover:bg-primary/90"
+                  className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
                   asChild
                 >
                   <Link href="/feeds">{t("favorites.emptyButton")}</Link>
