@@ -127,7 +127,7 @@ export function SettingsContent() {
                     ${
                       theme === "light"
                         ? "border-accent bg-accent/10 text-foreground"
-                        : "border-border hover:border-accent/30 text-muted-foreground hover:text-foreground"
+                        : "border-border hover:border-accent/30 text-foreground hover:text-foreground"
                     }`}
                   onClick={() => handleThemeChange("light")}
                   whileHover={{
@@ -138,9 +138,7 @@ export function SettingsContent() {
                 >
                   <Sun
                     className={`h-5 w-5 mb-1 transition-all duration-300 ${
-                      theme === "light"
-                        ? "text-foreground"
-                        : "text-muted-foreground"
+                      theme === "light" ? "text-foreground" : "text-foreground"
                     }`}
                   />
                   <span className="text-sm font-medium">
@@ -152,7 +150,7 @@ export function SettingsContent() {
                     ${
                       theme === "dark"
                         ? "border-accent bg-accent/10 text-foreground"
-                        : "border-border hover:border-accent/30 text-muted-foreground hover:text-foreground"
+                        : "border-border hover:border-accent/30 text-foreground hover:text-foreground"
                     }`}
                   onClick={() => handleThemeChange("dark")}
                   whileHover={{
@@ -163,9 +161,7 @@ export function SettingsContent() {
                 >
                   <Moon
                     className={`h-5 w-5 mb-1 transition-all duration-300 ${
-                      theme === "dark"
-                        ? "text-foreground"
-                        : "text-muted-foreground"
+                      theme === "dark" ? "text-foreground" : "text-foreground"
                     }`}
                   />
                   <span className="text-sm font-medium">
@@ -177,7 +173,7 @@ export function SettingsContent() {
                     ${
                       theme === "system"
                         ? "border-accent bg-accent/10 text-foreground"
-                        : "border-border hover:border-accent/30 text-muted-foreground hover:text-foreground"
+                        : "border-border hover:border-accent/30 text-foreground hover:text-foreground"
                     }`}
                   onClick={() => handleThemeChange("system")}
                   whileHover={{
@@ -188,9 +184,7 @@ export function SettingsContent() {
                 >
                   <Monitor
                     className={`h-5 w-5 mb-1 transition-all duration-300 ${
-                      theme === "system"
-                        ? "text-foreground"
-                        : "text-muted-foreground"
+                      theme === "system" ? "text-foreground" : "text-foreground"
                     }`}
                   />
                   <span className="text-sm font-medium">
@@ -213,7 +207,7 @@ export function SettingsContent() {
                     ${
                       language === "tr"
                         ? "border-accent bg-accent/10 text-foreground"
-                        : "border-border hover:border-accent/30 text-muted-foreground hover:text-foreground"
+                        : "border-border hover:border-accent/30 text-foreground hover:text-foreground"
                     }`}
                   onClick={() => handleLanguageChange("tr")}
                   whileHover={{
@@ -224,9 +218,7 @@ export function SettingsContent() {
                 >
                   <Globe
                     className={`h-5 w-5 mb-1 transition-all duration-300 ${
-                      language === "tr"
-                        ? "text-foreground"
-                        : "text-muted-foreground"
+                      language === "tr" ? "text-foreground" : "text-foreground"
                     }`}
                   />
                   <span className="text-sm font-medium">Türkçe</span>
@@ -236,7 +228,7 @@ export function SettingsContent() {
                     ${
                       language === "en"
                         ? "border-accent bg-accent/10 text-foreground"
-                        : "border-border hover:border-accent/30 text-muted-foreground hover:text-foreground"
+                        : "border-border hover:border-accent/30 text-foreground hover:text-foreground"
                     }`}
                   onClick={() => handleLanguageChange("en")}
                   whileHover={{
@@ -247,9 +239,7 @@ export function SettingsContent() {
                 >
                   <Globe
                     className={`h-5 w-5 mb-1 transition-all duration-300 ${
-                      language === "en"
-                        ? "text-foreground"
-                        : "text-muted-foreground"
+                      language === "en" ? "text-foreground" : "text-foreground"
                     }`}
                   />
                   <span className="text-sm font-medium">English</span>

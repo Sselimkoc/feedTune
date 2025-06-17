@@ -49,7 +49,7 @@ export default async function RootLayout({ children }) {
     ];
 
     if (protectedRoutes.some((route) => pathname.startsWith(route))) {
-      redirect("/login");
+      redirect("/n");
     }
   }
 

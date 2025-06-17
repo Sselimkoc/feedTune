@@ -89,7 +89,7 @@ export function HomeContent() {
     if (!feeds?.length) {
       return <EmptyState onAddFeed={handleAddFeed} />;
     }
-    console.log('HomeContent user:', user);
+    console.log("HomeContent user:", user);
     return (
       <div className="space-y-8">
         <HomeStats stats={stats} />

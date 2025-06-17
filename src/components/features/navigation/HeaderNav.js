@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 export function HeaderNav() {
   const { theme, setTheme } = useTheme();
@@ -38,15 +39,24 @@ export function HeaderNav() {
   );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-lg shadow-sm dark:border-b dark:shadow-none">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-background shadow-sm dark:border-b dark:shadow-none">
       <div className="container mx-auto px-4 h-16 flex justify-between items-center">
-        {/* Logo - Removed from HeaderNav as it's now in SidebarNavigation */}
+        {/* Logo */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Removed the entire Link component that contained the Rss icon */}
+          <Link href="/" className="flex items-center gap-2 h-full shrink-0">
+            <Image
+              src="/images/feedtunelogo.png"
+              alt="FeedTune Logo"
+              width={24}
+              height={24}
+              className="w-6 h-6 text-primary"
+            />
+            <span className="font-bold text-xl">FeedTune</span>
+          </Link>
         </motion.div>
 
         {/* Sağ taraf - Tema ve Dil Değiştirme */}
@@ -73,11 +83,11 @@ export function HeaderNav() {
             {mounted ? (
               theme === "dark" ? (
                 <div className="relative">
-                  <Sun className="h-[18px] w-[18px] text-primary" />
+                  <Sun className="h-[18px] w-[18px] text-foreground" />
                 </div>
               ) : (
                 <div className="relative">
-                  <Moon className="h-[18px] w-[18px] text-primary" />
+                  <Moon className="h-[18px] w-[18px] text-foreground" />
                 </div>
               )
             ) : (
@@ -97,7 +107,7 @@ export function HeaderNav() {
               >
                 <div className="relative">
                   {mounted && (
-                    <Languages className="h-[18px] w-[18px] text-primary" />
+                    <Languages className="h-[18px] w-[18px] text-foreground" />
                   )}
                   {!mounted && <div className="h-[18px] w-[18px]"></div>}
                 </div>

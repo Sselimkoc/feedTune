@@ -96,17 +96,6 @@ export function SidebarNavigation() {
   return (
     <ScrollArea className="h-full py-6">
       <div className="space-y-4 py-4">
-        {/* Logo */}
-        <div className="flex items-center gap-2 px-6 pb-4">
-          <Image
-            src="/images/feedtunelogo.png"
-            alt="FeedTune Logo"
-            width={24}
-            height={24}
-            className="w-6 h-6 text-primary"
-          />
-          <span className="font-bold text-xl">FeedTune</span>
-        </div>
         <div className="px-3 py-2">
           <div className="space-y-1">
             <nav className="grid gap-2 px-2">
@@ -115,11 +104,11 @@ export function SidebarNavigation() {
                   key={index}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium",
-                    "hover:border-accent hover:text-accent-foreground hover:bg-transparent border border-transparent",
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300",
+                    "border border-transparent",
                     pathname === item.href
-                      ? "bg-accent border-accent"
-                      : "transparent"
+                      ? "bg-accent/10 border-accent text-foreground"
+                      : "text-foreground hover:bg-accent/5 hover:border-accent/30"
                   )}
                 >
                   <item.icon className="h-4 w-4" />

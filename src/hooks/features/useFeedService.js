@@ -18,6 +18,7 @@ import { useToast } from "@/components/ui/use-toast";
 export function useFeedService() {
   const queryClient = useQueryClient();
   const { user, isLoading: isLoadingUser } = useAuth();
+  // console.log(user.id,"user.id in useFeedService");
   const userId = user?.id;
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -46,6 +47,7 @@ export function useFeedService() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+      console.log(data, "data in useFeedService");
       return data;
     },
     enabled: !!userId,
@@ -312,7 +314,7 @@ export function useFeedService() {
       }
       await addFeedMutation.mutateAsync({ url, type });
     },
-    [userId, addFeedMutation, toast, t]
+    [userId, addFeedMutation, t]
   );
 
   // Edit Feed functionality

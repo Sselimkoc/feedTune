@@ -33,7 +33,7 @@ export function AppLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header always visible for authenticated users */}
+      {/* Header (existing) */}
       {!!userId && (
         <div className="fixed top-0 left-0 right-0 z-30">
           <HeaderNav />

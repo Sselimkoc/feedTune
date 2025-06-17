@@ -56,7 +56,7 @@ export async function middleware(req) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const redirectUrl = new URL("/login", req.url);
+      const redirectUrl = new URL("/", req.url);
       redirectUrl.searchParams.set("redirectTo", pathname);
       return NextResponse.redirect(redirectUrl);
     }
@@ -74,7 +74,7 @@ export async function middleware(req) {
     }
 
     // Redirect to login with error for non-API routes
-    const redirectUrl = new URL("/login", req.url);
+    const redirectUrl = new URL("/", req.url);
     redirectUrl.searchParams.set("error", "auth_error");
     return NextResponse.redirect(redirectUrl);
   }
