@@ -1,23 +1,17 @@
 "use client";
 
 import { useFeedService } from "@/hooks/features/useFeedService";
-import { ContentHeader } from "@/components/shared/ContentHeader";
-import { Rss } from "lucide-react";
-import { useLanguage } from "@/hooks/useLanguage";
-import { FeedList } from "./FeedList";
-import { FeedSidebar } from "./layout/FeedSidebar";
-import { MobileFeedNav } from "./layout/MobileFeedNav";
+import { ContentCard } from "@/components/shared/ContentCard";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Rss } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function FeedPage() {
-  const { t } = useLanguage();
-  const { feeds, isLoading, error, invalidateFeedsQuery } = useFeedService();
+  const { feeds, items, isLoading, error } = useFeedService();
   const [selectedFeedIds, setSelectedFeedIds] = useState([]);
-  const [activeFilters, setActiveFilters] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState("grid");
 
+  // Feed selection logic
   const handleFeedSelect = (feedId) => {
     setSelectedFeedIds((prev) =>
       prev.includes(feedId)
@@ -26,128 +20,105 @@ export function FeedPage() {
     );
   };
 
-  const handleFilterToggle = (filter) => {
-    setActiveFilters((prev) =>
-      prev.includes(filter)
-        ? prev.filter((f) => f !== filter)
-        : [...prev, filter]
-    );
-  };
-
-  const handleSearchChange = (query) => {
-    setSearchQuery(query);
-  };
-
-  const handleClearFilters = () => {
-    setActiveFilters([]);
-    setSearchQuery("");
-  };
-
-  const handleFeedDelete = async (feedId) => {
-    await invalidateFeedsQuery();
-  };
-
-  const filteredFeeds = feeds?.filter((feed) => {
-    const matchesSearch = feed.title
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesFilters =
-      activeFilters.length === 0 ||
-      activeFilters.some((filter) => {
-        switch (filter) {
-          case "unread":
-            return feed.unread_count > 0;
-          case "favorites":
-            return feed.favorite_count > 0;
-          case "readLater":
-            return feed.read_later_count > 0;
-          default:
-            return true;
-        }
-      });
-    return matchesSearch && matchesFilters;
-  });
-
-  const statistics = {
-    totalFeeds: feeds?.length || 0,
-    unreadItems:
-      feeds?.reduce((sum, feed) => sum + (feed.unread_count || 0), 0) || 0,
-    favorites:
-      feeds?.reduce((sum, feed) => sum + (feed.favorite_count || 0), 0) || 0,
-    readLater:
-      feeds?.reduce((sum, feed) => sum + (feed.read_later_count || 0), 0) || 0,
-  };
+  // Filter items by selected feeds
+  const filteredItems =
+    selectedFeedIds.length === 0
+      ? items
+      : items.filter((item) => selectedFeedIds.includes(item.feed_id));
 
   return (
-    <div className="flex h-full">
-      {/* Sidebar - Desktop */}
-      <div className="hidden lg:block w-80 border-r">
-        <FeedSidebar
-          feeds={feeds}
-          selectedFeedIds={selectedFeedIds}
-          activeFilters={activeFilters}
-          searchQuery={searchQuery}
-          statistics={statistics}
-          onFeedSelect={handleFeedSelect}
-          onFilterToggle={handleFilterToggle}
-          onSearchChange={handleSearchChange}
-          onClearFilters={handleClearFilters}
-        />
-      </div>
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-background to-muted/60">
+      {/* Header */}
+      <header className="w-full max-w-screen-2xl mx-auto px-2 md:px-6 mt-8 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-primary drop-shadow-sm">
+            İçerikler
+          </h1>
+          <p className="text-muted-foreground text-base max-w-2xl">
+            Seçili beslemelerden gelen en güncel içerikleri keşfet.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant={selectedFeedIds.length === 0 ? "default" : "outline"}
+            onClick={() => setSelectedFeedIds([])}
+            size="sm"
+          >
+            Tümünü Göster
+          </Button>
+        </div>
+      </header>
+
+      {/* Feed Filter Bar */}
+      <nav className="w-full max-w-screen-2xl mx-auto px-2 md:px-6 mb-8 overflow-x-auto">
+        <div className="flex gap-2 pb-2">
+          {feeds.map((feed) => (
+            <button
+              key={feed.id}
+              onClick={() => handleFeedSelect(feed.id)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-full transition-all border border-transparent hover:bg-primary/10 hover:border-primary/30 text-left whitespace-nowrap",
+                selectedFeedIds.includes(feed.id)
+                  ? "bg-primary/10 border-primary/40 text-primary font-semibold shadow"
+                  : "text-muted-foreground"
+              )}
+            >
+              <span className="truncate font-medium">{feed.title}</span>
+              <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted/60">
+                {feed.type}
+              </span>
+            </button>
+          ))}
+        </div>
+      </nav>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-0">
-        {/* Mobile Navigation */}
-        <div className="lg:hidden">
-          <MobileFeedNav
-            feeds={feeds}
-            selectedFeedIds={selectedFeedIds}
-            activeFilters={activeFilters}
-            searchQuery={searchQuery}
-            statistics={statistics}
-            onFeedSelect={handleFeedSelect}
-            onFilterToggle={handleFilterToggle}
-            onSearchChange={handleSearchChange}
-            onClearFilters={handleClearFilters}
-          />
-        </div>
-
-        {/* Content Header */}
-        <ContentHeader
-          title={t("feeds.title")}
-          description={t("feeds.description")}
-          icon={<Rss className="h-6 w-6" />}
-          actions={
-            <div className="flex items-center gap-2">
+      <main className="flex-1 w-full max-w-screen-2xl mx-auto px-2 md:px-6">
+        <section className="flex-1">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-96">
+              <span className="animate-pulse text-lg text-muted-foreground">
+                Yükleniyor...
+              </span>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-96 text-center">
+              <span className="text-destructive text-2xl font-bold mb-2">
+                Hata!
+              </span>
+              <span className="text-muted-foreground mb-4">
+                İçerikler yüklenemedi.
+              </span>
               <Button
-                variant={viewMode === "grid" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
+                onClick={() => window.location.reload()}
+                variant="outline"
               >
-                {t("common.grid")}
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-              >
-                {t("common.list")}
+                Yenile
               </Button>
             </div>
-          }
-        />
-
-        {/* Feed List */}
-        <div className="flex-1 p-6 overflow-auto">
-          <FeedList
-            feeds={filteredFeeds}
-            isLoading={isLoading}
-            error={error}
-            viewMode={viewMode}
-            onFeedDelete={handleFeedDelete}
-          />
-        </div>
-      </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-96 text-center">
+              <img
+                src="/images/placeholder.webp"
+                alt="Boş"
+                className="w-32 h-32 opacity-60 mb-4"
+              />
+              <span className="text-lg font-semibold mb-2">
+                Hiç içerik bulunamadı
+              </span>
+              <span className="text-muted-foreground mb-4">
+                Seçili beslemelerde henüz içerik yok.
+              </span>
+            </div>
+          ) : (
+            <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+              {filteredItems.map((item) => (
+                <ContentCard key={item.id} item={item} viewMode="grid" />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   );
 }

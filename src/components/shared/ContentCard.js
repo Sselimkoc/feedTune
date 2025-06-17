@@ -491,399 +491,72 @@ export const ContentCard = memo(
       }
     }, [item]);
 
-    // Card içeriğini viewMode'a göre render et
-    if (viewMode === "grid") {
-      return (
-        <motion.div
-          ref={ref}
-          layout
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{
-            duration: 0.3,
-            ease: "easeOut",
-            layout: {
-              duration: 0.2,
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-            },
-          }}
-          whileHover={{ scale: 1.02, translateY: -2 }}
-          className="h-full w-full"
-        >
-          <Card
-            className={cn(
-              "overflow-hidden h-full flex flex-col transition-all duration-300",
-              "border bg-card text-card-foreground rounded-xl",
-              "hover:shadow-md group",
-              "hover:border-[var(--hover-border-color)]",
-              cardStyles.highlightClass,
-              cardStyles.borderClass,
-              cardStyles.selectionClass,
-              className
-            )}
-            style={{
-              ...cardStyles.borderStyle,
-              ...cardStyles.hoverBorderStyle,
-            }}
-            tabIndex={0}
-            role="article"
-            aria-label={item?.title || t("feeds.content.titleNotFound")}
-            onKeyDown={handleKeyDown}
-            onClick={
-              selectable
-                ? () => onSelect?.(item?.id)
-                : () => onClick?.(item?.link || item?.url)
-            }
-          >
-            {/* Seçim modu için checkbox */}
-            {selectable && (
-              <div
-                className="absolute left-2 top-2 z-20 bg-background/90 backdrop-blur-sm rounded-full p-0.5 shadow-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect?.(item?.id);
-                }}
-              >
-                <Checkbox
-                  checked={isSelected}
-                  aria-label={t("feeds.select")}
-                  className="h-5 w-5 rounded-full data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                />
-              </div>
-            )}
-
-            {/* Kart başlığı */}
-            <div className="relative">
-              {/* Görsel alanı */}
-              <div
-                className={cn(
-                  "w-full overflow-hidden bg-muted/70",
-                  imageError || !isImageLoaded ? "h-28" : "aspect-video"
-                )}
-              >
-                {!imageError && isImageLoaded ? (
-                  <div
-                    className={cn(
-                      "relative h-full w-full overflow-hidden",
-                      !isImageLoaded && "animate-pulse bg-muted"
-                    )}
-                  >
-                    <Image
-                      src={getValidImageUrl}
-                      alt={item?.title || ""}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className={cn(
-                        "object-cover transition-all duration-300",
-                        !isImageLoaded && "opacity-0",
-                        isImageLoaded && "opacity-100"
-                      )}
-                      onLoad={handleImageLoad}
-                      onError={handleImageError}
-                      priority={false}
-                      unoptimized={true}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/60">
-                    {renderFeedBadge}
-                  </div>
-                )}
-              </div>
-
-              {/* Feed bilgisi */}
-              {renderFeedBadge && (
-                <div className="absolute left-2 bottom-2 flex items-center gap-1.5 bg-background/70 backdrop-blur-sm text-xs px-2 py-1 rounded-md shadow-sm">
-                  {renderFeedBadge}
-                </div>
-              )}
-            </div>
-
-            <CardContent className="flex-1 flex flex-col p-3 gap-2">
-              {/* Başlık */}
-              <div className="flex-1">
-                <h3
-                  className={cn(
-                    "font-medium text-foreground line-clamp-2 leading-snug text-sm md:text-base mb-1",
-                    getIsRead() && "text-muted-foreground"
-                  )}
-                >
-                  {item?.title || t("feeds.content.titleNotFound")}
-                </h3>
-
-                {/* Açıklama */}
-                {item?.description && (
-                  <p className="text-muted-foreground text-xs line-clamp-2 leading-snug mt-1">
-                    {truncateText(stripHtml(item.description), 120)}
-                  </p>
-                )}
-              </div>
-
-              {/* Alt bilgi alanı */}
-              <div className="flex items-center justify-between mt-auto pt-2">
-                {/* Tarih */}
-                <div className="text-xs text-muted-foreground">
-                  {formattedDate}
-                </div>
-
-                {/* Aksiyon butonları */}
-                <div className="flex space-x-1">
-                  {/* Daha sonra oku */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={cn(
-                            "h-7 w-7",
-                            getIsReadLater() && "text-primary bg-primary/10"
-                          )}
-                          onClick={handleReadLaterToggle}
-                          aria-label={
-                            getIsReadLater()
-                              ? t("feeds.content.removeFromReadLater")
-                              : t("feeds.content.addToReadLater")
-                          }
-                        >
-                          {getIsReadLater() ? (
-                            <BookmarkCheck className="h-3.5 w-3.5" />
-                          ) : (
-                            <Bookmark className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        {getIsReadLater()
-                          ? t("feeds.content.removeFromReadLater")
-                          : t("feeds.content.addToReadLater")}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Favori */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={cn(
-                            "h-7 w-7",
-                            getIsFavorite() &&
-                              "text-yellow-500 bg-yellow-500/10"
-                          )}
-                          onClick={handleFavoriteToggle}
-                          aria-label={
-                            getIsFavorite()
-                              ? t("feeds.content.removeFromFavorites")
-                              : t("feeds.content.addToFavorites")
-                          }
-                        >
-                          <Star
-                            className={cn(
-                              "h-3.5 w-3.5",
-                              getIsFavorite() && "fill-yellow-500"
-                            )}
-                          />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        {getIsFavorite()
-                          ? t("feeds.content.removeFromFavorites")
-                          : t("feeds.content.addToFavorites")}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Paylaş */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onShare) {
-                              onShare(item);
-                            } else {
-                              handleShare();
-                            }
-                          }}
-                          aria-label={t("feeds.content.share")}
-                        >
-                          <Share className="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        {t("feeds.content.share")}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Link */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (item?.link || item?.url) {
-                              window.open(item.link || item.url, "_blank");
-                            }
-                          }}
-                          aria-label={t("feeds.content.openInNewTab")}
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        {t("feeds.content.openInNewTab")}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      );
-    }
-
-    // Liste görünümü
-    if (viewMode === "list") {
-      return (
-        <motion.div
-          ref={ref}
-          layout
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
-          transition={{
-            duration: 0.2,
-            ease: "easeOut",
-            layout: {
-              duration: 0.2,
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-            },
-          }}
-          whileHover={{ scale: 1.01 }}
-          className="w-full"
-        >
-          <Card
-            className={cn(
-              "light-card hover:shadow-md transition-all duration-200 group",
-              cardStyles.borderClass,
-              "hover:border-[var(--hover-border-color)]",
-              cardStyles.highlightClass,
-              isSelected && "ring-2 ring-primary ring-offset-2",
-              className
-            )}
-            style={{
-              ...cardStyles.borderStyle,
-              ...cardStyles.hoverBorderStyle,
-            }}
-            tabIndex={0}
-            role="article"
-            aria-label={item?.title || t("feeds.content.titleNotFound")}
-            onKeyDown={handleKeyDown}
-            onClick={
-              selectable
-                ? () => onSelect?.(item?.id)
-                : () => onClick?.(item?.link || item?.url)
-            }
-          >
-            {/* Checkbox for selection mode */}
-            {selectable && (
-              <div
-                className="absolute left-2 top-2 z-20 bg-background/80 backdrop-blur-sm rounded-full p-0.5"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect?.(item?.id);
-                }}
-              >
-                <Checkbox
-                  checked={isSelected}
-                  aria-label={t("feeds.select")}
-                  className="h-5 w-5 rounded-full data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                />
-              </div>
-            )}
-
-            <div className="flex gap-4 p-4">
-              {/* Resim */}
-              <div className="relative w-48 h-32 flex-shrink-0 rounded-md overflow-hidden">
-                <Image
-                  src={getValidImageUrl}
-                  alt={item?.title || t("feeds.content.imageAlt")}
-                  fill
-                  className={cn(
-                    "object-cover rounded-md transition-all duration-300 group-hover:scale-105",
-                    isImageLoaded ? "opacity-100" : "opacity-0"
-                  )}
-                  onError={handleImageError}
-                  onLoad={handleImageLoad}
-                  sizes="(max-width: 768px) 192px, 192px"
-                  priority={false}
-                />
-                {!getIsRead() && (
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "absolute top-2 right-2",
-                      cardStyles.highlightClass
-                    )}
-                  >
-                    {t("feeds.new")}
-                  </Badge>
-                )}
-
-                {renderFeedBadge}
-              </div>
-
-              {/* İçerik */}
-              <div className="flex flex-col flex-grow min-w-0">
-                <div className="flex-grow">
-                  <h3 className="font-semibold text-lg mb-2 line-clamp-1 group-hover:text-primary transition-colors">
-                    {item?.title || t("feeds.content.titleNotFound")}
-                  </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                    {truncateText(stripHtml(item?.description || ""), 120)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formattedDate}
-                  </p>
-                </div>
-                {actionButtons}
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-      );
-    }
-  }),
-  (prevProps, nextProps) => {
-    // Önemli değişiklikleri kontrol ederek gereksiz render'ları önle
+    // Modern, visually striking card design
     return (
-      prevProps.item?.id === nextProps.item?.id &&
-      prevProps.isRead === nextProps.isRead &&
-      prevProps.isFavorite === nextProps.isFavorite &&
-      prevProps.isReadLater === nextProps.isReadLater &&
-      prevProps.viewMode === nextProps.viewMode &&
-      prevProps.isSelected === nextProps.isSelected &&
-      prevProps.selectable === nextProps.selectable
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        className={cn(
+          "group rounded-xl bg-card/80 backdrop-blur-md shadow-lg hover:shadow-2xl border border-border/30 hover:border-primary/40 p-5 flex flex-col min-h-[220px] cursor-pointer hover:scale-[1.03] transition-all duration-300",
+          className
+        )}
+        onClick={onClick}
+      >
+        {/* Badge */}
+        <div className="flex items-center gap-2 mb-2">
+          {item.type === "youtube" ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 text-xs font-bold shadow-sm">
+              <YoutubeIcon className="w-4 h-4" /> YouTube
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold shadow-sm">
+              <RssIcon className="w-4 h-4" /> RSS
+            </span>
+          )}
+        </div>
+        {/* Title */}
+        <h3 className="font-extrabold text-lg mb-1 line-clamp-2 text-foreground drop-shadow-sm">
+          {item.title}
+        </h3>
+        {/* Description */}
+        <p className="text-muted-foreground text-sm line-clamp-2 mb-2">
+          {item.description || t("feeds.content.noDescription")}
+        </p>
+        {/* Bottom row: date & actions */}
+        <div className="flex items-center justify-between mt-auto pt-2">
+          <span className="text-xs text-muted-foreground">
+            {item.published_at
+              ? new Date(item.published_at).toLocaleDateString(
+                  language === "tr" ? "tr-TR" : "en-US",
+                  { day: "numeric", month: "long", year: "numeric" }
+                )
+              : ""}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hover:bg-primary/10 transition-colors"
+              onClick={onReadLater}
+            >
+              <Bookmark className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hover:bg-primary/10 transition-colors"
+              onClick={onFavorite}
+            >
+              <Star className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </motion.div>
     );
-  }
+  })
 );
 
 ContentCard.displayName = "ContentCard";

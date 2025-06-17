@@ -18,7 +18,7 @@ export async function generateMetadata() {
 
 export default function FavoritesPage() {
   return (
-    <div className="max-w-[1600px] mx-auto py-4 px-3 sm:px-4 md:py-6 md:px-6">
+    <div className="max-w-screen-2xl mx-auto py-8 px-2 md:px-6">
       <Suspense
         fallback={
           <div className="flex justify-center items-center min-h-[70vh]">
