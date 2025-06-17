@@ -5,7 +5,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 
-const AuthContext = createContext({
+// Create and export the context
+export const AuthContext = createContext({
   user: null,
   session: null,
   isLoading: true,
@@ -37,14 +38,24 @@ export function AuthProvider({ children }) {
     setSession,
   } = useAuthStore();
 
+  console.log("[AuthProvider] Initial state:", {
+    isInitialized,
+    user,
+    session,
+    isLoading,
+    error,
+  });
+
   // Initialize auth state
   useEffect(() => {
     const initAuth = async () => {
+      console.log("[AuthProvider] Initializing auth state...");
       try {
         await initialize();
         setIsInitialized(true);
+        console.log("[AuthProvider] Auth state initialized successfully");
       } catch (error) {
-        console.error("Auth initialization error:", error);
+        console.error("[AuthProvider] Auth initialization error:", error);
         setIsInitialized(true);
       }
     };
@@ -54,20 +65,28 @@ export function AuthProvider({ children }) {
 
   // Listen for auth changes
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized) {
+      console.log(
+        "[AuthProvider] Not initialized yet, skipping auth state change listener"
+      );
+      return;
+    }
 
+    console.log("[AuthProvider] Setting up auth state change listener");
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event);
+      console.log("[AuthProvider] Auth state changed:", { event, session });
 
       try {
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          console.log("Auth state: SIGNED_IN or TOKEN_REFRESHED");
+          console.log(
+            "[AuthProvider] Handling SIGNED_IN or TOKEN_REFRESHED event"
+          );
           await setSession(session);
           router.refresh();
         } else if (event === "SIGNED_OUT") {
-          console.log("Auth state: SIGNED_OUT, clearing session...");
+          console.log("[AuthProvider] Handling SIGNED_OUT event");
           await setSession(null);
           // Clear any remaining state
           if (typeof window !== "undefined") {
@@ -78,11 +97,12 @@ export function AuthProvider({ children }) {
           router.push("/");
         }
       } catch (error) {
-        console.error("Auth state change error:", error);
+        console.error("[AuthProvider] Auth state change error:", error);
       }
     });
 
     return () => {
+      console.log("[AuthProvider] Cleaning up auth state change listener");
       subscription?.unsubscribe();
     };
   }, [isInitialized, setSession, router]);
@@ -98,7 +118,10 @@ export function AuthProvider({ children }) {
     updateProfile,
   };
 
+  console.log("[AuthProvider] Current value:", value);
+
   if (isLoading) {
+    console.log("[AuthProvider] Loading state, showing spinner");
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

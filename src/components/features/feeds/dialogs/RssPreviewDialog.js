@@ -45,7 +45,6 @@ import {
 } from "lucide-react";
 import { timeAgo } from "@/utils/dateUtils";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 

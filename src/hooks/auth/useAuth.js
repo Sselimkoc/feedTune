@@ -13,7 +13,7 @@ export function useAuthActions() {
   const { signIn, signUp, signOut, updateProfile } = useAuthContext();
   const { toast } = useToast();
 
-  // Özel toast fonksiyonlarını tanımlıyoruz
+  // Custom toast functions
   const toastSuccess = (message) =>
     toast({ title: message, variant: "default" });
   const toastError = (message) =>

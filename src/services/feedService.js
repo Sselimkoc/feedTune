@@ -74,22 +74,25 @@ export class FeedService {
    */
   async getFeeds(userId) {
     try {
-      console.log("feedService.getFeeds başladı, userId:", userId);
+      console.log("[FeedService] Fetching feeds for user:", userId);
       if (!userId) {
-        console.warn(
-          "getFeeds çağrısı userId olmadan yapıldı, boş dizi dönüyor"
-        );
+        console.warn("[FeedService] No userId provided");
         return [];
       }
 
-      console.log("Repository çağrılıyor, userId:", userId);
-      const result = await this.feedRepository.getFeeds(userId);
-      console.log("Feed sonucu:", result?.length || 0);
-      return result;
+      const feeds = await this.feedRepository.getFeeds(userId);
+      console.log("[FeedService] Repository response:", feeds);
+
+      if (!feeds || feeds.length === 0) {
+        console.log("[FeedService] No feeds found for user");
+        return [];
+      }
+
+      console.log(`[FeedService] Found ${feeds.length} feeds for user`);
+      return feeds;
     } catch (error) {
-      console.error("Error fetching feed list:", error);
-      toast.error("An error occurred while loading feeds.");
-      return [];
+      console.error("[FeedService] Error in getFeeds:", error);
+      throw error;
     }
   }
 

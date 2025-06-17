@@ -20,83 +20,51 @@ export class FeedRepository {
    * @param {Date|null} timestamp - Önbellek kontrolü için timestamp
    * @returns {Promise<Array>} - Beslemeler listesi
    */
-  async getFeeds(userId, timestamp = null) {
-    if (!userId) {
-      console.error("Repository: getFeeds userId olmadan çağrıldı!");
-      throw new Error("Kullanıcı ID'si gerekli");
-    }
-
+  async getFeeds(userId) {
     try {
-      console.log("Repository: getFeeds başladı - userId:", userId);
-      let query = this.supabase
+      console.log("[FeedRepository] Fetching feeds for user:", userId);
+      if (!userId) {
+        console.warn("[FeedRepository] No userId provided");
+        return [];
+      }
+
+      const { data, error } = await this.supabase
         .from("feeds")
         .select(
           `
           id,
-          title, 
+          title,
           url,
           description,
           icon,
-          type, 
+          type,
           category_id,
           last_fetched,
-          created_at
+          created_at,
+          user_id
         `
         )
         .eq("user_id", userId)
         .is("deleted_at", null)
-        .order("title");
+        .order("created_at", { ascending: false });
 
-      // Timestamp varsa, bu tarihten sonraki değişiklikleri getir
-      if (timestamp) {
-        // timestamp milisaniye cinsinden ise, ISO string formatına dönüştür
-        if (typeof timestamp === "number" || /^\d+$/.test(timestamp)) {
-          const date = new Date(parseInt(timestamp));
-          timestamp = date.toISOString();
-        }
-        query = query.gt("updated_at", timestamp);
-      }
-
-      console.log("Repository: Sorgu oluşturuldu, çalıştırılıyor...");
-      const { data, error } = await query;
+      console.log("[FeedRepository] Supabase response:", { data, error });
 
       if (error) {
-        console.error("Repository: Feeds fetch error:", error);
-        throw new Error(`Beslemeler yüklenirken hata oluştu: ${error.message}`);
+        console.error("[FeedRepository] Error fetching feeds:", error);
+        throw error;
       }
 
-      console.log("Repository: Feed sonucu - Feed sayısı:", data?.length || 0);
-
-      // Sonuç boşsa, direkt olarak Supabase üzerinden basit bir sorgu dene
       if (!data || data.length === 0) {
-        console.log("Repository: Hiç feed bulunamadı, basit sorgu deneniyor");
-        try {
-          const { data: checkData, error: checkError } = await this.supabase
-            .from("feeds")
-            .select("id, title, user_id")
-            .limit(5);
-
-          if (checkError) {
-            console.error("Repository: Kontrol sorgusu hatası:", checkError);
-          } else {
-            console.log(
-              "Repository: Kontrol sorgusu sonucu:",
-              checkData?.length || 0,
-              "feed bulundu"
-            );
-            console.log("Repository: Örnek feed:", checkData?.[0]);
-          }
-        } catch (e) {
-          console.error("Repository: Kontrol sorgusu exception:", e);
-        }
+        console.log("[FeedRepository] No feeds found for user");
+        return [];
       }
 
-      return data || [];
+      console.log(`[FeedRepository] Found ${data.length} feeds for user`);
+      return data;
     } catch (error) {
-      console.error("Repository: getFeeds error:", error);
-      throw new Error(
-        `Beslemeleri getirirken bir hata oluştu: ${error.message}`
-      );
+      console.error("[FeedRepository] Error in getFeeds:", error);
+      throw error;
     }
   }
 

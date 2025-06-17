@@ -1,10 +1,14 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Create a single instance of the Supabase client
+let supabaseInstance = null;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables");
+export function getSupabaseClient() {
+  if (!supabaseInstance) {
+    supabaseInstance = createClientComponentClient();
+  }
+  return supabaseInstance;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Export the singleton instance
+export const supabase = getSupabaseClient();

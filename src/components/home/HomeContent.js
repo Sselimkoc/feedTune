@@ -23,6 +23,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 export function HomeContent() {
   const { user } = useSession();
   const { t } = useLanguage();
+  console.log("HomeContent user:", user);
 
   // Modal states
   const [showAuthModal, setShowAuthModal] = useState(false);

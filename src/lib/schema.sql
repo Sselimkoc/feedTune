@@ -156,6 +156,13 @@ CREATE POLICY youtube_items_select_policy ON youtube_items FOR SELECT USING (fee
 CREATE POLICY tags_policy ON tags FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY item_tags_policy ON item_tags FOR ALL USING (auth.uid() = user_id);
 
+-- Feed tablosu için daha detaylı RLS politikaları
+DROP POLICY IF EXISTS feeds_policy ON feeds;
+CREATE POLICY feeds_select_policy ON feeds FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY feeds_insert_policy ON feeds FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY feeds_update_policy ON feeds FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY feeds_delete_policy ON feeds FOR DELETE USING (auth.uid() = user_id);
+
 -- Tetikleyiciler
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$

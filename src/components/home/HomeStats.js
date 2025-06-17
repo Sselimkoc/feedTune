@@ -5,40 +5,50 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Rss, FileText, Eye, Star, BookmarkCheck } from "lucide-react";
 
-export function HomeStats({ stats }) {
+export function HomeStats({ stats = {} }) {
   const { t } = useTranslation();
+
+  const defaultStats = {
+    totalFeeds: 0,
+    totalItems: 0,
+    unreadItems: 0,
+    favoriteItems: 0,
+    readLaterItems: 0,
+  };
+
+  const safeStats = { ...defaultStats, ...stats };
 
   const statItems = [
     {
-      value: stats.totalFeeds,
+      value: safeStats.totalFeeds,
       label: t("home.stats.totalFeeds"),
       icon: Rss,
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
     },
     {
-      value: stats.totalItems,
+      value: safeStats.totalItems,
       label: t("home.stats.totalItems"),
       icon: FileText,
       color: "text-indigo-500",
       bgColor: "bg-indigo-500/10",
     },
     {
-      value: stats.unreadItems,
+      value: safeStats.unreadItems,
       label: t("home.stats.unreadItems"),
       icon: Eye,
       color: "text-violet-500",
       bgColor: "bg-violet-500/10",
     },
     {
-      value: stats.favoriteItems,
+      value: safeStats.favoriteItems,
       label: t("home.stats.favoriteItems"),
       icon: Star,
       color: "text-amber-500",
       bgColor: "bg-amber-500/10",
     },
     {
-      value: stats.readLaterItems,
+      value: safeStats.readLaterItems,
       label: t("home.stats.readLaterItems"),
       icon: BookmarkCheck,
       color: "text-emerald-500",
