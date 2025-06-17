@@ -1,0 +1,39 @@
+{
+  "common": {
+    "success": "Success",
+    "error": "Error",
+    "retry": "Retry",
+    "delete": "Delete",
+    "grid": "Grid",
+    "list": "List"
+  },
+  "feeds": {
+    "title": "Feeds",
+    "description": "Manage your RSS feeds and subscriptions",
+    "navigation": "Feed Navigation",
+    "search": "Search feeds...",
+    "add": "Add Feed",
+    "visitWebsite": "Visit Website",
+    "noDescription": "No description available",
+    "totalFeeds": "Total Feeds",
+    "unreadItems": "Unread Items",
+    "favorites": "Favorites",
+    "readLater": "Read Later",
+    "deleteSuccess": "Feed deleted successfully",
+    "deleteError": "Failed to delete feed",
+    "empty": {
+      "title": "No Feeds Yet",
+      "description": "Add your first feed to get started"
+    },
+    "error": {
+      "title": "Error Loading Feeds",
+      "description": "There was a problem loading your feeds. Please try again."
+    }
+  },
+  "interactions": {
+    "addSuccess": "Interaction added successfully",
+    "addError": "Failed to add interaction",
+    "removeSuccess": "Interaction removed successfully",
+    "removeError": "Failed to remove interaction"
+  }
+} 

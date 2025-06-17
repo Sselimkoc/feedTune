@@ -76,7 +76,7 @@ CREATE TABLE youtube_items (
 );
 
 -- Ortak içerik etkileşim tablosu
-CREATE TABLE user_interaction (
+CREATE TABLE user_interactions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   item_id UUID NOT NULL,
@@ -124,12 +124,12 @@ CREATE INDEX youtube_items_feed_id_published_at_idx ON youtube_items(feed_id, pu
 CREATE INDEX youtube_items_published_at_idx ON youtube_items(published_at DESC);
 CREATE INDEX youtube_items_video_id_idx ON youtube_items(video_id);
 
-CREATE INDEX user_interaction_user_id_idx ON user_interaction(user_id);
-CREATE INDEX user_interaction_item_id_idx ON user_interaction(item_id);
-CREATE INDEX user_interaction_item_type_idx ON user_interaction(item_type);
-CREATE INDEX user_interaction_is_favorite_idx ON user_interaction(user_id, is_favorite) WHERE is_favorite = true;
-CREATE INDEX user_interaction_is_read_later_idx ON user_interaction(user_id, is_read_later) WHERE is_read_later = true;
-CREATE INDEX user_interaction_is_read_idx ON user_interaction(user_id, is_read);
+CREATE INDEX user_interactions_user_id_idx ON user_interactions(user_id);
+CREATE INDEX user_interactions_item_id_idx ON user_interactions(item_id);
+CREATE INDEX user_interactions_item_type_idx ON user_interactions(item_type);
+CREATE INDEX user_interactions_is_favorite_idx ON user_interactions(user_id, is_favorite) WHERE is_favorite = true;
+CREATE INDEX user_interactions_is_read_later_idx ON user_interactions(user_id, is_read_later) WHERE is_read_later = true;
+CREATE INDEX user_interactions_is_read_idx ON user_interactions(user_id, is_read);
 
 CREATE INDEX item_tags_user_id_idx ON item_tags(user_id);
 CREATE INDEX item_tags_tag_id_idx ON item_tags(tag_id);
@@ -140,7 +140,7 @@ CREATE INDEX item_tags_item_type_idx ON item_tags(item_type);
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feeds ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_interaction ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_interactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rss_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE youtube_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
@@ -150,7 +150,7 @@ ALTER TABLE item_tags ENABLE ROW LEVEL SECURITY;
 CREATE POLICY users_policy ON users FOR ALL USING (auth.uid() = id);
 CREATE POLICY categories_policy ON categories FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY feeds_policy ON feeds FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY user_interaction_policy ON user_interaction FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY user_interactions_policy ON user_interactions FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY rss_items_select_policy ON rss_items FOR SELECT USING (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()));
 CREATE POLICY youtube_items_select_policy ON youtube_items FOR SELECT USING (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()));
 CREATE POLICY tags_policy ON tags FOR ALL USING (auth.uid() = user_id);

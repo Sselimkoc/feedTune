@@ -21,7 +21,7 @@ export function useFeedItems() {
       skipInvalidation = false,
     }) => {
       const supabase = createSupabaseClient();
-      const { error } = await supabase.from("user_interaction").upsert(
+      const { error } = await supabase.from("user_interactions").upsert(
         {
           user_id: userId,
           item_id: itemId,
@@ -68,7 +68,7 @@ export function useFeedItems() {
         skipInvalidation = false,
       }) => {
         const supabase = createSupabaseClient();
-        const { error } = await supabase.from("user_interaction").upsert(
+        const { error } = await supabase.from("user_interactions").upsert(
           {
             user_id: userId,
             item_id: itemId,
@@ -109,7 +109,7 @@ export function useFeedItems() {
         skipInvalidation = false,
       }) => {
         const supabase = createSupabaseClient();
-        const { error } = await supabase.from("user_interaction").upsert(
+        const { error } = await supabase.from("user_interactions").upsert(
           {
             user_id: userId,
             item_id: itemId,

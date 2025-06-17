@@ -18,26 +18,30 @@ import {
   Youtube,
   Newspaper,
   FilterIcon,
+  Plus,
+  X,
 } from "lucide-react";
 import { AddFeedDialog } from "@/components/features/feeds/dialogs/AddFeedDialog";
+import Link from "next/link";
 
 /**
  * Feed sayfası için sidebar bileşeni
  */
 export function FeedSidebar({
   feeds = [],
-  selectedFeedId = null,
-  stats = {},
-  onFeedSelect = () => {},
-  onAddFeed = () => {},
-  onRemoveFeed = () => {},
-  onSyncFeeds = () => {},
+  selectedFeedIds = [],
+  activeFilters = [],
+  searchQuery = "",
+  statistics = {},
+  onSelectFeed = () => {},
+  onToggleFilter = () => {},
+  onSearchChange = () => {},
+  onClearFilters = () => {},
 }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
 
   // State yönetimi
-  const [searchQuery, setSearchQuery] = useState("");
   const [isAddFeedDialogOpen, setIsAddFeedDialogOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -74,7 +78,7 @@ export function FeedSidebar({
   const handleAddFeed = useCallback(
     async (feedData) => {
       try {
-        await onAddFeed(feedData);
+        await onSelectFeed([feedData.id]);
         setIsAddFeedDialogOpen(false);
         return true;
       } catch (error) {
@@ -82,7 +86,7 @@ export function FeedSidebar({
         return false;
       }
     },
-    [onAddFeed]
+    [onSelectFeed]
   );
 
   // Feed senkronizasyon işleyicisi
@@ -91,13 +95,13 @@ export function FeedSidebar({
 
     setIsRefreshing(true);
     try {
-      await onSyncFeeds();
+      await onSelectFeed(feeds.map((feed) => feed.id));
     } catch (error) {
       console.error("Feed senkronizasyonu sırasında hata:", error);
     } finally {
       setIsRefreshing(false);
     }
-  }, [onSyncFeeds, isRefreshing]);
+  }, [onSelectFeed, feeds]);
 
   // Animasyon varyantları
   const listVariants = {
@@ -140,81 +144,73 @@ export function FeedSidebar({
     }
   };
 
-  // Feed yönetim komponentleri
-  const getSidebarHeader = () => (
-    <div className="space-y-4 py-2">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">{t("feeds.yourFeeds")}</h2>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 w-8 p-0"
-          onClick={handleSyncFeeds}
-          disabled={isRefreshing}
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-          />
-          <span className="sr-only">{t("feeds.syncFeeds")}</span>
-        </Button>
-      </div>
+  const handleSearch = (e) => {
+    onSearchChange(e.target.value);
+  };
 
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("feeds.searchFeeds")}
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Button
-          size="sm"
-          className="shrink-0"
-          onClick={() => setIsAddFeedDialogOpen(true)}
-        >
-          <PlusCircle className="mr-1 h-4 w-4" />
-          <span>{t("feeds.add")}</span>
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={selectedFeedId === null ? "secondary" : "outline"}
-          size="sm"
-          onClick={() => onFeedSelect(null)}
-          className="flex items-center gap-1"
-        >
-          <Newspaper className="h-4 w-4" />
-          {t("feeds.allFeeds")}
-          {stats.totalItems > 0 && (
-            <Badge variant="secondary" className="ml-1 h-5 px-2">
-              {stats.totalItems}
-            </Badge>
-          )}
-        </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {}} // TODO: Filtreleme işlevselliği gelecekte eklenebilir
-          className="flex items-center gap-1"
-        >
-          <FilterIcon className="h-4 w-4" />
-          {t("feeds.filters")}
-        </Button>
-      </div>
-
-      <Separator />
-    </div>
-  );
+  const handleClearSearch = () => {
+    onSearchChange("");
+  };
 
   return (
-    <div className="h-full flex flex-col">
-      {getSidebarHeader()}
+    <div className="flex flex-col h-full">
+      {/* Search Bar */}
+      <div className="relative mb-4">
+        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder={t("feeds.search")}
+          value={searchQuery}
+          onChange={handleSearch}
+          className="pl-8"
+        />
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1 h-7 w-7"
+            onClick={handleClearSearch}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
 
-      <ScrollArea className="flex-1 pr-3">
+      {/* Add Feed Button */}
+      <Button asChild className="mb-4">
+        <Link href="/feeds/add" className="w-full">
+          <Plus className="mr-2 h-4 w-4" />
+          {t("feeds.add")}
+        </Link>
+      </Button>
+
+      <Separator className="mb-4" />
+
+      {/* Statistics */}
+      <div className="space-y-2 mb-4">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">{t("feeds.totalFeeds")}</span>
+          <span className="font-medium">{statistics.totalFeeds}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">
+            {t("feeds.unreadItems")}
+          </span>
+          <span className="font-medium">{statistics.unreadItems}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">{t("feeds.favorites")}</span>
+          <span className="font-medium">{statistics.favorites}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">{t("feeds.readLater")}</span>
+          <span className="font-medium">{statistics.readLater}</span>
+        </div>
+      </div>
+
+      <Separator className="mb-4" />
+
+      {/* Feed List */}
+      <ScrollArea className="flex-1">
         <motion.div
           variants={listVariants}
           initial="hidden"
@@ -231,12 +227,16 @@ export function FeedSidebar({
               {feeds.map((feed) => (
                 <motion.div key={feed.id} variants={itemVariants}>
                   <Button
-                    variant={selectedFeedId === feed.id ? "secondary" : "ghost"}
+                    variant={
+                      selectedFeedIds.includes(feed.id) ? "secondary" : "ghost"
+                    }
                     size="sm"
                     className={`w-full justify-start ${
-                      selectedFeedId === feed.id ? "font-medium" : "font-normal"
+                      selectedFeedIds.includes(feed.id)
+                        ? "font-medium"
+                        : "font-normal"
                     }`}
-                    onClick={() => onFeedSelect(feed.id)}
+                    onClick={() => onSelectFeed([feed.id])}
                   >
                     <div className="flex w-full items-center justify-between">
                       <div className="flex items-center gap-2 truncate">
@@ -257,7 +257,7 @@ export function FeedSidebar({
                           className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:opacity-100"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onRemoveFeed(feed.id);
+                            onSelectFeed([feed.id]);
                           }}
                         >
                           <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />

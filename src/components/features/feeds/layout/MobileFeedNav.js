@@ -1,16 +1,16 @@
-import { memo, useCallback, useState } from "react";
+"use client";
+
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X } from "lucide-react";
-import FeedSidebar from "./FeedSidebar";
-import { useTheme } from "@/hooks/useTheme";
+import { Menu } from "lucide-react";
+import { FeedSidebar } from "./FeedSidebar";
 
 /**
  * MobileFeedNav Component
  * Mobile navigation for feeds page
  */
-function MobileFeedNav({
+export function MobileFeedNav({
   feeds,
   selectedFeedIds,
   activeFilters,
@@ -22,56 +22,35 @@ function MobileFeedNav({
   onClearFilters,
 }) {
   const { t } = useLanguage();
-  const { theme } = useTheme();
-  const [isOpen, setIsOpen] = useState(false);
-
-  // Handle closing the sidebar after selecting a feed
-  const handleSelectFeed = useCallback(
-    (feedIds) => {
-      onSelectFeed(feedIds);
-      setIsOpen(false);
-    },
-    [onSelectFeed]
-  );
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet>
       <SheetTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
           className="md:hidden"
-          aria-label={t("common.openMenu")}
+          aria-label={t("common.menu")}
         >
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[85vw] max-w-sm p-0">
-        <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b p-4">
+      <SheetContent side="left" className="w-[280px] p-0">
+        <div className="flex flex-col h-full">
+          <div className="p-4">
             <h2 className="text-lg font-semibold">{t("feeds.navigation")}</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsOpen(false)}
-              aria-label={t("common.close")}
-            >
-              <X className="h-5 w-5" />
-            </Button>
           </div>
-          <div className="h-full overflow-auto p-4">
+          <div className="flex-1 overflow-auto">
             <FeedSidebar
               feeds={feeds}
               selectedFeedIds={selectedFeedIds}
               activeFilters={activeFilters}
               searchQuery={searchQuery}
               statistics={statistics}
-              onSelectFeed={handleSelectFeed}
+              onSelectFeed={onSelectFeed}
               onToggleFilter={onToggleFilter}
               onSearchChange={onSearchChange}
               onClearFilters={onClearFilters}
-              theme={theme}
-              isMobile={true}
             />
           </div>
         </div>
@@ -79,5 +58,3 @@ function MobileFeedNav({
     </Sheet>
   );
 }
-
-export default memo(MobileFeedNav);

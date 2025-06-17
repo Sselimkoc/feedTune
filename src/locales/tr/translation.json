@@ -1,0 +1,39 @@
+{
+  "common": {
+    "success": "Başarılı",
+    "error": "Hata",
+    "retry": "Tekrar Dene",
+    "delete": "Sil",
+    "grid": "Izgara",
+    "list": "Liste"
+  },
+  "feeds": {
+    "title": "Beslemeler",
+    "description": "RSS beslemelerinizi ve aboneliklerinizi yönetin",
+    "navigation": "Besleme Gezinmesi",
+    "search": "Beslemelerde ara...",
+    "add": "Besleme Ekle",
+    "visitWebsite": "Web Sitesini Ziyaret Et",
+    "noDescription": "Açıklama mevcut değil",
+    "totalFeeds": "Toplam Besleme",
+    "unreadItems": "Okunmamış Öğeler",
+    "favorites": "Favoriler",
+    "readLater": "Daha Sonra Oku",
+    "deleteSuccess": "Besleme başarıyla silindi",
+    "deleteError": "Besleme silinemedi",
+    "empty": {
+      "title": "Henüz Besleme Yok",
+      "description": "Başlamak için ilk beslemenizi ekleyin"
+    },
+    "error": {
+      "title": "Beslemeler Yüklenirken Hata",
+      "description": "Beslemeleriniz yüklenirken bir sorun oluştu. Lütfen tekrar deneyin."
+    }
+  },
+  "interactions": {
+    "addSuccess": "Etkileşim başarıyla eklendi",
+    "addError": "Etkileşim eklenemedi",
+    "removeSuccess": "Etkileşim başarıyla kaldırıldı",
+    "removeError": "Etkileşim kaldırılamadı"
+  }
+} 

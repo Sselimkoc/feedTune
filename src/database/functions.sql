@@ -17,13 +17,13 @@ BEGIN
     FROM feed_items fi
     JOIN user_feeds uf ON fi.feed_id = uf.id
   ),
-  user_interactions AS (
+  user_interactionss AS (
     SELECT 
       uii.item_id,
       uii.is_read,
       uii.is_favorite,
       uii.is_read_later
-    FROM user_interaction uii
+    FROM user_interactions uii
     WHERE uii.user_id = user_id_param
   )
   SELECT
@@ -32,17 +32,17 @@ BEGIN
     (
       SELECT COUNT(*) 
       FROM user_feed_items ufi
-      LEFT JOIN user_interactions ui ON ufi.id = ui.item_id
+      LEFT JOIN user_interactionss ui ON ufi.id = ui.item_id
       WHERE ui.is_read IS NULL OR ui.is_read = false
     ) AS unread_items,
     (
       SELECT COUNT(*) 
-      FROM user_interactions
+      FROM user_interactionss
       WHERE is_favorite = true
     ) AS favorite_items,
     (
       SELECT COUNT(*) 
-      FROM user_interactions
+      FROM user_interactionss
       WHERE is_read_later = true
     ) AS read_later_items;
 END;

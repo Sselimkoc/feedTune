@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/hooks/useLanguage";
 
 // Constants
 const STALE_TIME = 1000 * 60 * 5; // 5 minutes
@@ -13,163 +14,143 @@ const CACHE_TIME = 1000 * 60 * 30; // 30 minutes
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
+// Helper to fetch all feed IDs for the current user
+async function fetchUserFeedIds(userId) {
+  const { data, error } = await supabase
+    .from("feeds")
+    .select("id")
+    .eq("user_id", userId);
+  if (error) throw error;
+  return (data || []).map((feed) => feed.id);
+}
+
+// Helper to fetch interactions for a given type and join table, filtered by user's feeds
+async function fetchInteractionsByTypeV2({ userId, type, interactionField }) {
+  const table = type === "rss" ? "rss_interactions" : "youtube_interactions";
+  const joinTable = type === "rss" ? "rss_items" : "youtube_items";
+  const joinFields =
+    type === "rss"
+      ? "id, title, description, url, published_at, feed_id, feed_title"
+      : "id, title, description, url, published_at, feed_id, channel_title";
+  const feedIds = await fetchUserFeedIds(userId);
+  if (feedIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from(table)
+    .select(`*, ${joinTable} (${joinFields})`)
+    .eq("user_id", userId)
+    .eq(interactionField, true)
+    .in("item_id", feedIds)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data || []).map((row) => ({ ...row, type }));
+}
+
+// Helper to fetch all items with interactions, filtered by user's feeds
+async function fetchAllItemsWithInteractions(userId) {
+  const feedIds = await fetchUserFeedIds(userId);
+  if (feedIds.length === 0) return [];
+  const [rss, yt] = await Promise.all([
+    supabase
+      .from("rss_items")
+      .select(
+        "*, interactions:rss_interactions(is_read, is_favorite, is_read_later, user_id)"
+      )
+      .in("feed_id", feedIds)
+      .order("published_at", { ascending: false }),
+    supabase
+      .from("youtube_items")
+      .select(
+        "*, interactions:youtube_interactions(is_read, is_favorite, is_read_later, user_id)"
+      )
+      .in("feed_id", feedIds)
+      .order("published_at", { ascending: false }),
+  ]);
+  const process = (data, type) =>
+    (data?.data || []).map((item) => {
+      const interactions = Array.isArray(item.interactions)
+        ? item.interactions
+        : [];
+      return {
+        ...item,
+        type,
+        is_read: interactions.some((i) => i?.is_read && i?.user_id === userId),
+        is_favorite: interactions.some(
+          (i) => i?.is_favorite && i?.user_id === userId
+        ),
+        is_read_later: interactions.some(
+          (i) => i?.is_read_later && i?.user_id === userId
+        ),
+      };
+    });
+  return [...process(rss, "rss"), ...process(yt, "youtube")].sort(
+    (a, b) => new Date(b.published_at) - new Date(a.published_at)
+  );
+}
+
 export function useFeedService() {
   const { user } = useAuth();
-  const userId = user?.id;
-  const { t } = useTranslation();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
 
-  // Fetch feeds
+  // Fetch feeds with their categories
   const feedsQuery = useQuery({
-    queryKey: ["feeds", userId],
+    queryKey: ["feeds", user?.id],
     queryFn: async () => {
-      if (!userId) return [];
+      if (!user) return [];
+
       try {
-        // First get feeds
         const { data: feeds, error: feedsError } = await supabase
           .from("feeds")
           .select(
             `
-            id,
-            title,
-            url,
-            description,
-            icon,
-            type,
-            category_id,
-            last_fetched,
-            created_at,
-            user_id
-          `
+    *,
+    category:categories(*)
+  `
           )
-          .eq("user_id", userId)
-          .is("deleted_at", null)
+          .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
-        if (feedsError) throw feedsError;
-
-        // Then get categories
-        const categoryIds = feeds
-          .map((feed) => feed.category_id)
-          .filter((id) => id !== null);
-
-        let categories = [];
-        if (categoryIds.length > 0) {
-          const { data: categoriesData, error: categoriesError } =
-            await supabase.from("categories").select("*").in("id", categoryIds);
-
-          if (categoriesError) throw categoriesError;
-          categories = categoriesData || [];
+        if (feedsError) {
+          console.error("Error fetching feeds:", feedsError);
+          throw feedsError;
         }
 
-        // Combine feeds with categories
-        const feedsWithCategories = feeds.map((feed) => ({
-          ...feed,
-          category:
-            categories.find((cat) => cat.id === feed.category_id) || null,
-        }));
-
-        return feedsWithCategories;
+        // Ensure we return an array even if data is null
+        return feeds || [];
       } catch (error) {
-        console.error("[useFeedService] Error fetching feeds:", error);
-        throw error;
+        console.error("Error in feeds query:", error);
+        return [];
       }
     },
-    enabled: !!userId,
-    staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
-    retry: MAX_RETRIES,
-    retryDelay: RETRY_DELAY,
-  });
-
-  // Fetch RSS items with user interactions
-  const itemsQuery = useQuery({
-    queryKey: ["items", userId],
-    queryFn: async () => {
-      if (!userId) return [];
-      try {
-        // First get all RSS items for user's feeds
-        const feedIds = feedsQuery.data?.map((feed) => feed.id) || [];
-        if (feedIds.length === 0) return [];
-
-        const { data: items, error: itemsError } = await supabase
-          .from("rss_items")
-          .select("*")
-          .in("feed_id", feedIds)
-          .order("published_at", { ascending: false });
-
-        if (itemsError) throw itemsError;
-
-        // Then get user interactions
-        const { data: interactions, error: interactionsError } = await supabase
-          .from("user_interaction")
-          .select("*")
-          .eq("user_id", userId)
-          .in(
-            "item_id",
-            items.map((item) => item.id)
-          );
-
-        if (interactionsError) throw interactionsError;
-
-        // Combine items with interactions
-        return items.map((item) => ({
-          ...item,
-          is_read: interactions.some((i) => i.item_id === item.id && i.is_read),
-          is_favorite: interactions.some(
-            (i) => i.item_id === item.id && i.is_favorite
-          ),
-          is_read_later: interactions.some(
-            (i) => i.item_id === item.id && i.is_read_later
-          ),
-        }));
-      } catch (error) {
-        console.error("[useFeedService] Error fetching items:", error);
-        throw error;
-      }
-    },
-    enabled: !!userId && !!feedsQuery.data,
-    staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
-    retry: MAX_RETRIES,
-    retryDelay: RETRY_DELAY,
+    enabled: !!user,
   });
 
   // Fetch favorites
   const favoritesQuery = useQuery({
-    queryKey: ["favorites", userId],
+    queryKey: ["favorites", user?.id],
     queryFn: async () => {
-      if (!userId) return [];
+      if (!user) return [];
       try {
-        const { data, error } = await supabase
-          .from("user_interaction")
-          .select(
-            `
-            *,
-            rss_items (
-              id,
-              title,
-              description,
-              url,
-              published_at,
-              feed_id,
-              feed_title
-            )
-          `
-          )
-          .eq("user_id", userId)
-          .eq("is_favorite", true)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        return data || [];
+        const [rssFavorites, youtubeFavorites] = await Promise.all([
+          fetchInteractionsByTypeV2({
+            userId: user.id,
+            type: "rss",
+            interactionField: "is_favorite",
+          }),
+          fetchInteractionsByTypeV2({
+            userId: user.id,
+            type: "youtube",
+            interactionField: "is_favorite",
+          }),
+        ]);
+        return [...rssFavorites, ...youtubeFavorites];
       } catch (error) {
         console.error("[useFeedService] Error fetching favorites:", error);
         throw error;
       }
     },
-    enabled: !!userId,
+    enabled: !!user,
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
     retry: MAX_RETRIES,
@@ -178,32 +159,23 @@ export function useFeedService() {
 
   // Fetch read later items
   const readLaterQuery = useQuery({
-    queryKey: ["read_later", userId],
+    queryKey: ["read_later", user?.id],
     queryFn: async () => {
-      if (!userId) return [];
+      if (!user) return [];
       try {
-        const { data, error } = await supabase
-          .from("user_interaction")
-          .select(
-            `
-            *,
-            rss_items (
-              id,
-              title,
-              description,
-              url,
-              published_at,
-              feed_id,
-              feed_title
-            )
-          `
-          )
-          .eq("user_id", userId)
-          .eq("is_read_later", true)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        return data || [];
+        const [rssReadLater, youtubeReadLater] = await Promise.all([
+          fetchInteractionsByTypeV2({
+            userId: user.id,
+            type: "rss",
+            interactionField: "is_read_later",
+          }),
+          fetchInteractionsByTypeV2({
+            userId: user.id,
+            type: "youtube",
+            interactionField: "is_read_later",
+          }),
+        ]);
+        return [...rssReadLater, ...youtubeReadLater];
       } catch (error) {
         console.error(
           "[useFeedService] Error fetching read later items:",
@@ -212,11 +184,26 @@ export function useFeedService() {
         throw error;
       }
     },
-    enabled: !!userId,
+    enabled: !!user,
     staleTime: STALE_TIME,
     cacheTime: CACHE_TIME,
     retry: MAX_RETRIES,
     retryDelay: RETRY_DELAY,
+  });
+
+  // Fetch all items (rss + youtube)
+  const itemsQuery = useQuery({
+    queryKey: ["items", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      try {
+        return await fetchAllItemsWithInteractions(user.id);
+      } catch (error) {
+        console.error("Error in items query:", error);
+        return [];
+      }
+    },
+    enabled: !!user,
   });
 
   // Calculate stats
@@ -233,16 +220,102 @@ export function useFeedService() {
     };
   }, [feedsQuery.data, itemsQuery.data]);
 
+  // Add interaction
+  const addInteraction = async (itemId, type, itemType) => {
+    if (!user) return;
+    const table =
+      itemType === "rss" ? "rss_interactions" : "youtube_interactions";
+    try {
+      const { error } = await supabase.from(table).insert({
+        user_id: user.id,
+        item_id: itemId,
+        [type]: true,
+      });
+      if (error) throw error;
+      await queryClient.invalidateQueries(["items", user.id]);
+      await queryClient.invalidateQueries(["favorites", user.id]);
+      await queryClient.invalidateQueries(["read_later", user.id]);
+      toast({
+        title: t("common.success"),
+        description: t("interactions.addSuccess"),
+      });
+    } catch (error) {
+      console.error("Error adding interaction:", error);
+      toast({
+        title: t("common.error"),
+        description: t("interactions.addError"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Remove interaction
+  const removeInteraction = async (itemId, type, itemType) => {
+    if (!user) return;
+    const table =
+      itemType === "rss" ? "rss_interactions" : "youtube_interactions";
+    try {
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .match({ user_id: user.id, item_id: itemId });
+      if (error) throw error;
+      await queryClient.invalidateQueries(["items", user.id]);
+      await queryClient.invalidateQueries(["favorites", user.id]);
+      await queryClient.invalidateQueries(["read_later", user.id]);
+      toast({
+        title: t("common.success"),
+        description: t("interactions.removeSuccess"),
+      });
+    } catch (error) {
+      console.error("Error removing interaction:", error);
+      toast({
+        title: t("common.error"),
+        description: t("interactions.removeError"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Delete feed
+  const deleteFeed = async (feedId) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("feeds")
+        .delete()
+        .eq("id", feedId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      await queryClient.invalidateQueries(["feeds", user.id]);
+
+      toast({
+        title: t("common.success"),
+        description: t("feeds.deleteSuccess"),
+      });
+    } catch (error) {
+      console.error("Error deleting feed:", error);
+      toast({
+        title: t("common.error"),
+        description: t("feeds.deleteError"),
+        variant: "destructive",
+      });
+    }
+  };
+
   // Add feed mutation
   const addFeedMutation = useMutation({
     mutationFn: async (feedData) => {
-      if (!userId) throw new Error("User not authenticated");
+      if (!user) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
         .from("feeds")
         .insert({
           ...feedData,
-          user_id: userId,
+          user_id: user.id,
         })
         .select()
         .single();
@@ -251,17 +324,17 @@ export function useFeedService() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["feeds", userId]);
+      queryClient.invalidateQueries(["feeds", user.id]);
       toast({
-        title: t("feeds.addSuccess"),
-        description: t("feeds.addSuccessDescription"),
+        title: t("common.success"),
+        description: t("feeds.addSuccess"),
       });
     },
     onError: (error) => {
-      console.error("[useFeedService] Error adding feed:", error);
+      console.error("Error adding feed:", error);
       toast({
-        title: t("feeds.addError"),
-        description: error.message,
+        title: t("common.error"),
+        description: t("feeds.addError"),
         variant: "destructive",
       });
     },
@@ -270,13 +343,13 @@ export function useFeedService() {
   // Edit feed mutation
   const editFeedMutation = useMutation({
     mutationFn: async ({ id, ...feedData }) => {
-      if (!userId) throw new Error("User not authenticated");
+      if (!user) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
         .from("feeds")
         .update(feedData)
         .eq("id", id)
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .select()
         .single();
 
@@ -284,167 +357,92 @@ export function useFeedService() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["feeds", userId]);
+      queryClient.invalidateQueries(["feeds", user.id]);
       toast({
-        title: t("feeds.editSuccess"),
-        description: t("feeds.editSuccessDescription"),
+        title: t("common.success"),
+        description: t("feeds.editSuccess"),
       });
     },
     onError: (error) => {
-      console.error("[useFeedService] Error editing feed:", error);
+      console.error("Error editing feed:", error);
       toast({
-        title: t("feeds.editError"),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Delete feed mutation
-  const deleteFeedMutation = useMutation({
-    mutationFn: async (feedId) => {
-      if (!userId) throw new Error("User not authenticated");
-
-      const { error } = await supabase
-        .from("feeds")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", feedId)
-        .eq("user_id", userId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["feeds", userId]);
-      toast({
-        title: t("feeds.deleteSuccess"),
-        description: t("feeds.deleteSuccessDescription"),
-      });
-    },
-    onError: (error) => {
-      console.error("[useFeedService] Error deleting feed:", error);
-      toast({
-        title: t("feeds.deleteError"),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Toggle item interaction mutation
-  const toggleItemInteractionMutation = useMutation({
-    mutationFn: async ({ itemId, type, value }) => {
-      if (!userId) throw new Error("User not authenticated");
-
-      const { data, error } = await supabase
-        .from("user_interaction")
-        .upsert({
-          user_id: userId,
-          item_id: itemId,
-          item_type: "rss",
-          [type]: value,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["items", userId]);
-      queryClient.invalidateQueries(["favorites", userId]);
-      queryClient.invalidateQueries(["read_later", userId]);
-    },
-    onError: (error) => {
-      console.error("[useFeedService] Error toggling item interaction:", error);
-      toast({
-        title: t("items.interactionError"),
-        description: error.message,
+        title: t("common.error"),
+        description: t("feeds.editError"),
         variant: "destructive",
       });
     },
   });
 
   // Refresh all feeds
-  const refreshAllFeeds = useCallback(async () => {
-    if (!userId) return;
+  const refreshAllFeeds = async () => {
+    if (!user) return;
     try {
       // Implement feed refresh logic here
-      await queryClient.invalidateQueries(["feeds", userId]);
-      await queryClient.invalidateQueries(["items", userId]);
+      await queryClient.invalidateQueries(["feeds", user.id]);
+      await queryClient.invalidateQueries(["items", user.id]);
       toast({
-        title: t("feeds.refreshSuccess"),
-        description: t("feeds.refreshSuccessDescription"),
+        title: t("common.success"),
+        description: t("feeds.refreshSuccess"),
       });
     } catch (error) {
-      console.error("[useFeedService] Error refreshing feeds:", error);
+      console.error("Error refreshing feeds:", error);
       toast({
-        title: t("feeds.refreshError"),
-        description: error.message,
+        title: t("common.error"),
+        description: t("feeds.refreshError"),
         variant: "destructive",
       });
     }
-  }, [userId, queryClient, toast, t]);
+  };
 
   // Sync single feed
-  const syncFeed = useCallback(
-    async (feedId) => {
-      if (!userId) return;
-      try {
-        // Implement single feed sync logic here
-        await queryClient.invalidateQueries(["feeds", userId]);
-        await queryClient.invalidateQueries(["items", userId]);
-        toast({
-          title: t("feeds.syncSuccess"),
-          description: t("feeds.syncSuccessDescription"),
-        });
-      } catch (error) {
-        console.error("[useFeedService] Error syncing feed:", error);
-        toast({
-          title: t("feeds.syncError"),
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-    },
-    [userId, queryClient, toast, t]
-  );
+  const syncFeed = async (feedId) => {
+    if (!user) return;
+    try {
+      // Implement single feed sync logic here
+      await queryClient.invalidateQueries(["feeds", user.id]);
+      await queryClient.invalidateQueries(["items", user.id]);
+      toast({
+        title: t("common.success"),
+        description: t("feeds.syncSuccess"),
+      });
+    } catch (error) {
+      console.error("Error syncing feed:", error);
+      toast({
+        title: t("common.error"),
+        description: t("feeds.syncError"),
+        variant: "destructive",
+      });
+    }
+  };
 
   return {
-    // Data
     feeds: feedsQuery.data || [],
     items: itemsQuery.data || [],
     favorites: favoritesQuery.data || [],
     readLaterItems: readLaterQuery.data || [],
     stats,
-
-    // Loading states
-    isLoadingFeeds: feedsQuery.isLoading,
-    isLoadingItems: itemsQuery.isLoading,
-    isLoadingFavorites: favoritesQuery.isLoading,
-    isLoadingReadLater: readLaterQuery.isLoading,
     isLoading:
       feedsQuery.isLoading ||
       itemsQuery.isLoading ||
       favoritesQuery.isLoading ||
       readLaterQuery.isLoading,
-
-    // Errors
-    feedsError: feedsQuery.error,
-    itemsError: itemsQuery.error,
-    favoritesError: favoritesQuery.error,
-    readLaterError: readLaterQuery.error,
-    addFeedError: addFeedMutation.error,
-    editFeedError: editFeedMutation.error,
-    deleteFeedError: deleteFeedMutation.error,
+    error: feedsQuery.error || itemsQuery.error,
 
     // Mutations
     addFeed: addFeedMutation.mutate,
     editFeed: editFeedMutation.mutate,
-    deleteFeed: deleteFeedMutation.mutate,
-    toggleItemInteraction: toggleItemInteractionMutation.mutate,
+    deleteFeed,
+
+    // Interactions
+    addInteraction,
+    removeInteraction,
 
     // Actions
     refreshAllFeeds,
     syncFeed,
+
+    // Invalidate queries
+    invalidateFeedsQuery: () =>
+      queryClient.invalidateQueries(["feeds", user?.id]),
   };
 }

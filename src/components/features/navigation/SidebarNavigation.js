@@ -77,6 +77,11 @@ export function SidebarNavigation() {
       icon: HomeIcon,
     },
     {
+      title: t("navigation.feeds"),
+      href: "/feeds",
+      icon: Rss,
+    },
+    {
       title: t("navigation.readLater"),
       href: "/read-later",
       icon: BookmarkIcon,

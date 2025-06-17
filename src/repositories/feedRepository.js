@@ -356,7 +356,7 @@ export class FeedRepository {
       // Favori işaretlenen içerik ID'lerini al
       const { data: interactions, error: interactionError } =
         await this.supabase
-          .from("user_interaction")
+          .from("user_interactions")
           .select("item_id, item_type")
           .eq("user_id", userId)
           .eq("is_favorite", true);
@@ -431,7 +431,7 @@ export class FeedRepository {
       // Daha sonra oku işaretlenen içerik ID'lerini al
       const { data: interactions, error: interactionError } =
         await this.supabase
-          .from("user_interaction")
+          .from("user_interactions")
           .select("item_id, item_type")
           .eq("user_id", userId)
           .eq("is_read_later", true);
@@ -598,7 +598,7 @@ export class FeedRepository {
     try {
       // Önce mevcut etkileşimi kontrol et
       const { data: existing, error: fetchError } = await this.supabase
-        .from("user_interaction")
+        .from("user_interactions")
         .select("*")
         .eq("user_id", userId)
         .eq("item_id", itemId)
@@ -617,7 +617,7 @@ export class FeedRepository {
       if (!existing) {
         // Etkileşim yoksa yeni oluştur
         const { data, error } = await this.supabase
-          .from("user_interaction")
+          .from("user_interactions")
           .insert({
             user_id: userId,
             item_id: itemId,
@@ -636,7 +636,7 @@ export class FeedRepository {
       } else {
         // Etkileşim varsa güncelle
         const { data, error } = await this.supabase
-          .from("user_interaction")
+          .from("user_interactions")
           .update({
             ...updates,
             updated_at: new Date().toISOString(),
@@ -682,7 +682,7 @@ export class FeedRepository {
       );
 
       const { data, error } = await this.supabase
-        .from("user_interaction")
+        .from("user_interactions")
         .select("*")
         .eq("user_id", userId)
         .in("item_id", itemIds);
@@ -880,7 +880,7 @@ export class FeedRepository {
 
       if (keepFavorites || keepReadLater) {
         let query = this.supabase
-          .from("user_interaction")
+          .from("user_interactions")
           .select("item_id")
           .eq("user_id", userId);
 

@@ -37,7 +37,7 @@ export async function GET(request) {
       checkTableExists(supabase, "feeds"),
       checkTableExists(supabase, "rss_items"),
       checkTableExists(supabase, "youtube_items"),
-      checkTableExists(supabase, "user_interaction"),
+      checkTableExists(supabase, "user_interactions"),
     ];
 
     const [feedsExist, rssItemsExist, youtubeItemsExist, interactionsExist] =
@@ -47,7 +47,7 @@ export async function GET(request) {
       feeds: feedsExist,
       rss_items: rssItemsExist,
       youtube_items: youtubeItemsExist,
-      user_interaction: interactionsExist,
+      user_interactions: interactionsExist,
     };
 
     // Feed verilerini kontrol et
@@ -111,14 +111,14 @@ export async function GET(request) {
     // Kullanıcı etkileşimlerini kontrol et
     if (checkUserInteractions) {
       const { data: interactions, error: interactionsError } = await supabase
-        .from("user_interaction")
+        .from("user_interactions")
         .select(
           "id, user_id, item_id, item_type, is_read, is_favorite, is_read_later, created_at"
         )
         .eq("user_id", userId)
         .limit(10);
 
-      diagnosticResult.tables.user_interaction = {
+      diagnosticResult.tables.user_interactions = {
         count: interactions?.length || 0,
         error: interactionsError ? interactionsError.message : null,
         sample: interactions?.slice(0, 3) || [],
