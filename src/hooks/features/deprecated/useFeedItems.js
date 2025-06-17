@@ -3,14 +3,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
 
 // Supabase client'ı oluştur
 const createSupabaseClient = () => createClientComponentClient();
 
 export function useFeedItems() {
   const queryClient = useQueryClient();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   // Okundu/Okunmadı Durumu
   const { mutate: toggleItemRead, isLoading: isTogglingRead } = useMutation({

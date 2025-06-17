@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Trash2, PlusCircle, Rss, Youtube } from "lucide-react";
+import {
+  ExternalLink,
+  Trash2,
+  PlusCircle,
+  Rss,
+  Youtube,
+  ArrowRight,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import Image from "next/image";
@@ -199,10 +206,10 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.6 }}
           >
-            <Button variant="outline" size="sm" asChild className="group">
+            <Button variant="outline" size="sm" className="group" asChild>
               <Link href="/feeds">
                 {t("home.feedManagement.viewAllFeeds")}
-                <ExternalLink className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
           </motion.div>

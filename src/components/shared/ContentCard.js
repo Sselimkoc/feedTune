@@ -500,7 +500,11 @@ export const ContentCard = memo(
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.2 }}
         className={cn(
-          "group rounded-xl bg-card/80 backdrop-blur-md shadow-lg hover:shadow-2xl border border-border/30 hover:border-primary/40 p-5 flex flex-col min-h-[220px] cursor-pointer hover:scale-[1.03] transition-all duration-300",
+          "group rounded-xl",
+          "bg-white/90 dark:bg-card/80",
+          "backdrop-blur-md shadow-lg hover:shadow-2xl",
+          "border border-border/30 hover:border-primary/40",
+          "p-5 flex flex-col min-h-[220px] cursor-pointer hover:scale-[1.03] transition-all duration-300",
           className
         )}
         onClick={onClick}

@@ -111,21 +111,39 @@ export function HomeContent() {
   };
 
   return (
-    <div className="min-h-screen">
-      {renderContent()}
+    <section className="py-6 lg:py-8 relative">
+      {/* Background animated patterns */}
+      <div className="absolute inset-0 overflow-hidden -z-10">
+        <div
+          className="absolute top-1/4 right-1/3 w-72 h-72 bg-primary/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "8s" }}
+        ></div>
+        <div
+          className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-blue-500/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "10s" }}
+        ></div>
+        <div
+          className="absolute top-1/2 left-2/3 w-64 h-64 bg-yellow-500/5 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "12s" }}
+        ></div>
+      </div>
 
-      <HomeModals
-        showAuthModal={showAuthModal}
-        setShowAuthModal={setShowAuthModal}
-        showAddFeedDialog={showAddFeedDialog}
-        setShowAddFeedDialog={setShowAddFeedDialog}
-        showDeleteDialog={showDeleteDialog}
-        setShowDeleteDialog={setShowDeleteDialog}
-        onDeleteFeed={handleDeleteFeed}
-        isDeleting={false}
-        onFeedAdded={refreshAll}
-        feedToDelete={feedToDelete}
-      />
-    </div>
+      <div className="container relative z-10">
+        {renderContent()}
+
+        <HomeModals
+          showAuthModal={showAuthModal}
+          setShowAuthModal={setShowAuthModal}
+          showAddFeedDialog={showAddFeedDialog}
+          setShowAddFeedDialog={setShowAddFeedDialog}
+          showDeleteDialog={showDeleteDialog}
+          setShowDeleteDialog={setShowDeleteDialog}
+          onDeleteFeed={handleDeleteFeed}
+          isDeleting={false}
+          onFeedAdded={refreshAll}
+          feedToDelete={feedToDelete}
+        />
+      </div>
+    </section>
   );
 }

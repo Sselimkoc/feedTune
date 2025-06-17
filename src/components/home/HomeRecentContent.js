@@ -13,6 +13,7 @@ import {
   BookmarkCheck,
   Star,
   Loader2,
+  ArrowRight,
 } from "lucide-react";
 
 export function HomeRecentContent({ recentItems, isLoading }) {
@@ -90,7 +91,7 @@ export function HomeRecentContent({ recentItems, isLoading }) {
                   ease: "easeOut",
                 }}
               >
-                <Card className="h-full bg-card hover:bg-accent/5 transition-all duration-300 border-muted hover:shadow-md">
+                <Card className="h-full bg-card/50 backdrop-blur-sm border-primary/10 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px]">
                   <CardContent className="p-3 h-full flex flex-col">
                     <a
                       href={item.url}
@@ -199,6 +200,12 @@ export function HomeRecentContent({ recentItems, isLoading }) {
                 <p className="text-sm text-muted-foreground mb-4">
                   {t("home.recentContent.noContent")}
                 </p>
+                <Button variant="outline" size="sm" className="group" asChild>
+                  <Link href="/feeds">
+                    {t("home.recentContent.browseFeeds")}
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           </motion.div>

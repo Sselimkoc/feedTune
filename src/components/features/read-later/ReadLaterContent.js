@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useCallback, memo } from "react";
-import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "react-i18next";
 import { useReadLaterScreen } from "@/hooks/features/useReadLaterScreen";
-import { useHotkeys } from "react-hotkeys-hook";
 import { BookmarkCheck } from "lucide-react";
-import { ContentContainer } from "@/components/shared/ContentContainer";
-import { toast } from "sonner";
+import { ContentCard } from "@/components/shared/ContentCard";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export const ReadLaterContent = memo(function ReadLaterContent() {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const {
     items,
     isLoading,
@@ -23,22 +23,9 @@ export const ReadLaterContent = memo(function ReadLaterContent() {
   } = useReadLaterScreen();
 
   // State
-  const [viewMode, setViewMode] = useState("grid");
-  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [viewMode] = useState("grid");
 
   // Event Handlers
-  const handleShowKeyboardShortcuts = useCallback(() => {
-    setShowKeyboardShortcuts(true);
-  }, []);
-
-  const handleKeyboardShortcutsChange = useCallback((isOpen) => {
-    setShowKeyboardShortcuts(isOpen);
-  }, []);
-
-  const handleViewModeChange = useCallback((mode) => {
-    setViewMode(mode);
-  }, []);
-
   const handleToggleFavorite = useCallback(
     async (itemId, newValue) => {
       return await toggleFavorite(itemId, newValue);
@@ -60,50 +47,130 @@ export const ReadLaterContent = memo(function ReadLaterContent() {
         if (item && !item.is_read) {
           try {
             await toggleRead(item.id, true);
-            toast.success(t("notifications.itemRead"), {
-              position: "bottom-right",
-              duration: 2000,
-            });
           } catch (error) {
             console.error("İçerik okundu işaretlenemedi:", error);
           }
         }
       }
     },
-    [toggleRead, t]
+    [toggleRead]
   );
 
-  // Keyboard Shortcuts
-  useHotkeys("r", refresh, { enableOnFormTags: false });
-  useHotkeys("v", () => setViewMode(viewMode === "grid" ? "list" : "grid"), {
-    enableOnFormTags: false,
-  });
-  useHotkeys("k", () => setShowKeyboardShortcuts(true), {
-    enableOnFormTags: false,
-  });
-
   return (
-    <ContentContainer
-      viewMode={viewMode}
-      onViewModeChange={handleViewModeChange}
-      onRefresh={refresh}
-      headerIcon={<BookmarkCheck className="h-6 w-6 text-blue-500" />}
-      headerTitle={t("readLater.title")}
-      headerDescription={t("readLater.description")}
-      items={items}
-      isLoading={isLoading}
-      isError={isError}
-      error={error}
-      cardType="readLater"
-      emptyIcon={<BookmarkCheck className="h-10 w-10 opacity-20" />}
-      emptyTitle={t("readLater.emptyTitle")}
-      emptyDescription={t("readLater.emptyDescription")}
-      onToggleFavorite={handleToggleFavorite}
-      onToggleReadLater={handleToggleReadLater}
-      onItemClick={handleItemClick}
-      showKeyboardShortcuts={showKeyboardShortcuts}
-      onShowKeyboardShortcuts={handleShowKeyboardShortcuts}
-      onKeyboardShortcutsChange={handleKeyboardShortcutsChange}
-    />
+    <div className="flex flex-col min-h-screen relative">
+      {/* Background animated patterns */}
+      <div className="absolute inset-0 overflow-hidden -z-10">
+        <div
+          className="absolute top-1/4 right-1/3 w-72 h-72 bg-emerald-500/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "8s" }}
+        ></div>
+        <div
+          className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-blue-500/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "10s" }}
+        ></div>
+        <div
+          className="absolute top-1/2 left-2/3 w-64 h-64 bg-teal-500/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "12s" }}
+        ></div>
+        {/* Additional light mode patterns */}
+        <div
+          className="absolute top-1/3 left-1/4 w-80 h-80 bg-sky-500/5 dark:bg-transparent rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "15s" }}
+        ></div>
+        <div
+          className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-cyan-500/5 dark:bg-transparent rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "13s" }}
+        ></div>
+      </div>
+
+      <div className="container relative z-10">
+        {/* Header */}
+        <header className="w-full max-w-screen-2xl mx-auto px-2 md:px-6 mt-8 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <BookmarkCheck className="h-7 w-7 text-emerald-600" />
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-emerald-500 drop-shadow-sm">
+                {t("readLater.title")}
+              </h1>
+              <p className="text-muted-foreground text-base max-w-2xl">
+                {t("readLater.description")}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={refresh} size="sm">
+              {t("common.refresh")}
+            </Button>
+          </div>
+        </header>
+        {/* Main Content */}
+        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-2 md:px-6">
+          <section className="flex-1">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-96">
+                <span className="animate-pulse text-lg text-muted-foreground">
+                  {t("common.loading")}
+                </span>
+              </div>
+            ) : isError ? (
+              <div className="flex flex-col items-center justify-center h-96 text-center">
+                <span className="text-destructive text-2xl font-bold mb-2">
+                  {t("common.error")}
+                </span>
+                <span className="text-muted-foreground mb-4">
+                  {error?.message || t("common.errorDescription")}
+                </span>
+                <Button
+                  onClick={() => window.location.reload()}
+                  variant="outline"
+                  className="bg-emerald-600 hover:bg-emerald-700 dark:bg-primary dark:hover:bg-primary/90"
+                >
+                  {t("common.retry")}
+                </Button>
+              </div>
+            ) : !items || items.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-96 text-center">
+                <img
+                  src="/images/placeholder.webp"
+                  alt="Boş"
+                  className="w-32 h-32 opacity-60 mb-4"
+                />
+                <span className="text-lg font-semibold mb-2">
+                  {t("readLater.emptyTitle")}
+                </span>
+                <span className="text-muted-foreground mb-4">
+                  {t("readLater.emptyDescription")}
+                </span>
+                <Button
+                  variant="outline"
+                  className="bg-emerald-600 hover:bg-emerald-700 dark:bg-primary dark:hover:bg-primary/90"
+                  asChild
+                >
+                  <Link href="/feeds">{t("readLater.emptyButton")}</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                {items.map((item) => (
+                  <ContentCard
+                    key={item.id}
+                    item={item}
+                    viewMode="grid"
+                    cardType="readLater"
+                    onFavorite={() =>
+                      handleToggleFavorite(item.id, !item.is_favorite)
+                    }
+                    onReadLater={() =>
+                      handleToggleReadLater(item.id, !item.is_read_later)
+                    }
+                    onClick={() => handleItemClick(item.url, item)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </main>
+      </div>
+    </div>
   );
 });

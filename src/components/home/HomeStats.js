@@ -60,16 +60,18 @@ export function HomeStats({ stats = {} }) {
     <section className="py-6 lg:py-8">
       <div className="container">
         <motion.div
-          className="mb-4"
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-xl font-bold mb-1">{t("home.stats.title")}</h2>
-          <p className="text-sm text-muted-foreground">
-            {t("home.stats.description")}
-          </p>
+          <div>
+            <h2 className="text-xl font-bold mb-1">{t("home.stats.title")}</h2>
+            <p className="text-sm text-muted-foreground">
+              {t("home.stats.description")}
+            </p>
+          </div>
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">

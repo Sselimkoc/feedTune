@@ -6,6 +6,7 @@ import { useFeedItems } from "@/hooks/features/deprecated/useFeedItems";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/components/ui/use-toast";
 import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
+import { useFeedService } from "@/hooks/features/useFeedService";
 
 /**
  * Daha Sonra Oku ekranı için özelleştirilmiş hook
@@ -17,16 +18,14 @@ export function useReadLaterScreen() {
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const { handleFeedAction } = useFeedActions();
-
   const {
-    feedItems,
+    readLaterItems: items,
     isLoading: isLoadingItems,
     error,
-    fetchFeedItems,
-  } = useFeedItems({
-    feedId: "read-later",
-    userId: user?.id,
-  });
+    toggleReadLater,
+    toggleFavorite,
+    toggleRead,
+  } = useFeedService();
 
   const markAsRead = async (itemId) => {
     if (!user?.id) {
@@ -76,19 +75,16 @@ export function useReadLaterScreen() {
     await handleFeedAction("markAllAsRead", null, user.id);
   };
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchFeedItems();
-    }
-  }, [user?.id, fetchFeedItems]);
-
   return {
-    feedItems,
+    items,
     isLoading: isLoadingItems || isLoading,
     error,
     markAsRead,
     markAsUnread,
     removeFromReadLater,
     markAllAsRead,
+    toggleReadLater,
+    toggleFavorite,
+    toggleRead,
   };
 }
