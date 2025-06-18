@@ -1,4 +1,4 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 
 /**
  * Feed veritabanı erişimi için yardımcı sınıf
@@ -6,7 +6,10 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
  */
 export default class FeedDatabase {
   constructor() {
-    this.supabase = createClientComponentClient();
+    this.supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
   }
 
   /**

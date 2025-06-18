@@ -1,13 +1,16 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = [
+const publicRoutes = [
   "/",
-  "/login",
-  "/signup",
-  "/reset-password",
-  "/api/health",
+  "/home",
+  "/about",
+  "/contact",
+  "/privacy",
+  "/terms",
+  "/api/auth/callback",
+  "/api/webhooks",
 ];
 
 // Public API routes that don't require authentication
@@ -16,7 +19,7 @@ const PUBLIC_API_ROUTES = ["/api/youtube/public-search"];
 // Check if a route is public
 const isPublicRoute = (pathname) => {
   return (
-    PUBLIC_ROUTES.some((route) => pathname.startsWith(route)) ||
+    publicRoutes.some((route) => pathname.startsWith(route)) ||
     PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))
   );
 };
@@ -26,69 +29,74 @@ const isApiRoute = (pathname) => {
   return pathname.startsWith("/api/");
 };
 
-export async function middleware(req) {
-  try {
-    const res = NextResponse.next();
-    const supabase = createMiddlewareClient({ req, res });
-    const { pathname } = req.nextUrl;
+export async function middleware(request) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-    // Skip auth check for public routes
-    if (isPublicRoute(pathname)) {
-      return res;
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name, value, options) {
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name, options) {
+          request.cookies.set({
+            name,
+            value: "",
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value: "",
+            ...options,
+          });
+        },
+      },
     }
+  );
 
-    // Get session with short timeout for API routes
-    const sessionPromise = supabase.auth.getSession();
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error("Auth timeout")),
-        isApiRoute(pathname) ? 1000 : 3000
-      )
-    );
+  // Refresh session if expired - required for Server Components
+  await supabase.auth.getSession();
 
-    const {
-      data: { session },
-    } = await Promise.race([sessionPromise, timeoutPromise]);
-
-    // Handle unauthenticated requests
-    if (!session) {
-      if (isApiRoute(pathname)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-
-      const redirectUrl = new URL("/", req.url);
-      redirectUrl.searchParams.set("redirectTo", pathname);
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    return res;
-  } catch (error) {
-    console.error("Middleware error:", error);
-
-    // Handle timeout and other errors
-    if (isApiRoute(req.nextUrl.pathname)) {
-      return NextResponse.json(
-        { error: "Auth service unavailable" },
-        { status: 503 }
-      );
-    }
-
-    // Redirect to login with error for non-API routes
-    const redirectUrl = new URL("/", req.url);
-    redirectUrl.searchParams.set("error", "auth_error");
-    return NextResponse.redirect(redirectUrl);
-  }
+  return response;
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
+     * Match all request paths except for the ones starting with:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
      */
-    "/((?!_next/static|_next/image|favicon.ico|public/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

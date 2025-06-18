@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import axios from "axios";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 /**
  * YouTube URL'lerini RSS feed URL'lerine dönüştüren yardımcı fonksiyon
@@ -151,8 +151,9 @@ async function convertYoutubeUrlToRss(url) {
 
 export async function POST(request) {
   try {
+    const supabase = createServerSupabaseClient();
+
     // Kullanıcı oturum kontrolü
-    const supabase = createRouteHandlerClient({ cookies });
     const {
       data: { session },
     } = await supabase.auth.getSession();

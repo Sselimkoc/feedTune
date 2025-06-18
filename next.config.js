@@ -2,6 +2,19 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  experimental: {
+    // Optimize for static generation
+    optimizePackageImports: ["@radix-ui/react-icons", "lucide-react"],
+    // Reduce bundle size
+    turbo: {
+      rules: {
+        "*.svg": {
+          loaders: ["@svgr/webpack"],
+          as: "*.js",
+        },
+      },
+    },
+  },
   images: {
     remotePatterns: [
       {

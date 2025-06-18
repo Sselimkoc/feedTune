@@ -5,7 +5,7 @@
  * Bağlantı havuzlaması, önbellek yönetimi ve performans optimizasyonları içerir.
  */
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 
 /**
  * Performans ayarlarını içeren yapılandırma nesnesi
@@ -109,7 +109,10 @@ export class DbClient {
 
     try {
       // Client tarafı bağlantısı kullan - artık server tarafı desteği kaldırıldı
-      this._client = createClientComponentClient();
+      this._client = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      );
     } catch (error) {
       console.error("Supabase bağlantısı oluşturulamadı:", error);
       throw error;

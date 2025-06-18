@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 import axios from "axios";
 
@@ -43,8 +43,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     // Oturum kontrolü
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createServerSupabaseClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();

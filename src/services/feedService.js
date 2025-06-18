@@ -2,7 +2,7 @@
 
 import { FeedRepository } from "@/lib/db/feedRepository";
 import { toast } from "sonner";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 import { FeedParser } from "@/utils/feedParser";
 import { parseURL } from "@/utils/feedParser";
 import { toUTCTimestamp } from "@/utils/dateUtils";
@@ -15,7 +15,10 @@ export class FeedService {
   constructor() {
     this.feedRepository = new FeedRepository();
     this.feedParser = new FeedParser();
-    this.supabase = createClientComponentClient();
+    this.supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
   }
 
   /**

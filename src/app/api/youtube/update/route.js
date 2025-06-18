@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateYoutubeChannel } from "@/lib/youtube-service";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 
 /**
@@ -10,9 +10,8 @@ import { cookies } from "next/headers";
  */
 export async function PUT(request) {
   try {
-    // Oturum kontrolü
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const cookieStore = await cookies();
+    const supabase = createServerSupabaseClient();
 
     const {
       data: { session },
@@ -46,7 +45,10 @@ export async function PUT(request) {
 
     if (feedError || !feed) {
       return NextResponse.json(
-        { error: "You don't have permission to update this feed or the feed was not found" },
+        {
+          error:
+            "You don't have permission to update this feed or the feed was not found",
+        },
         { status: 403 }
       );
     }

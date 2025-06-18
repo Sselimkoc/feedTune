@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 
 /**
@@ -10,7 +10,7 @@ export async function GET(request) {
     // URL search parametreleri
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-    const feedId = searchParams.get("feedId");
+    const channelId = searchParams.get("channelId");
 
     if (!userId) {
       return NextResponse.json(
@@ -19,8 +19,7 @@ export async function GET(request) {
       );
     }
 
-    // Route handler client oluştur
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = createServerSupabaseClient();
 
     // Session kontrolü
     const {
@@ -55,7 +54,7 @@ export async function GET(request) {
 
     // 2. Belirli bir feed veya tüm feed'ler için YouTube içeriklerini kontrol et
     if (feeds && feeds.length > 0) {
-      const targetFeedIds = feedId ? [feedId] : feeds.map((f) => f.id);
+      const targetFeedIds = channelId ? [channelId] : feeds.map((f) => f.id);
 
       const { data: items, error: itemsError } = await supabase
         .from("youtube_items")
@@ -138,7 +137,7 @@ export async function POST(request) {
     }
 
     // Route handler client oluştur
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = createServerSupabaseClient();
 
     // Session kontrolü
     const {

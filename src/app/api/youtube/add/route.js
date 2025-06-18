@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { addYoutubeChannel } from "@/lib/youtube-service";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 
 /**
@@ -10,8 +10,8 @@ import { cookies } from "next/headers";
  */
 export async function POST(request) {
   try {
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const cookieStore = await cookies();
+    const supabase = createServerSupabaseClient();
 
     const {
       data: { session },

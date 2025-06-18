@@ -17,7 +17,7 @@ import {
 } from "@/components/core/ui/tabs";
 import { useTranslation } from "react-i18next";
 import { useAuth, useAuthActions } from "@/hooks/auth/useAuth";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 import { toast } from "sonner";
 import { EmailVerification } from "./EmailVerification";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,7 +72,10 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
 
   const handleResendEmail = async () => {
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      );
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: registeredEmail,

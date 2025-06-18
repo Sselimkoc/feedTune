@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 
 /**
  * Session management custom hook
@@ -16,14 +16,17 @@ export function useSession() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+
   // Check session when component mounts
   useEffect(() => {
     const loadSession = async () => {
       if (!isLoaded) {
         setIsLoading(true);
         try {
-          const supabase = createClientComponentClient();
-
           // Get session
           const { data: sessionData } = await supabase.auth.getSession();
 

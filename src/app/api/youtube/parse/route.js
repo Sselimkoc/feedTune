@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { parseYoutubeChannel } from "@/lib/youtube-service";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 
 /**
@@ -67,7 +67,7 @@ const validateChannelId = (channelId) => {
 export async function GET(request) {
   try {
     const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createServerSupabaseClient();
 
     const {
       data: { session },
@@ -93,17 +93,16 @@ export async function GET(request) {
     if (!validateChannelId(channelId)) {
       return NextResponse.json(
         {
-          error:
-            "Please enter a valid YouTube channel ID, username or URL",
+          error: "Please enter a valid YouTube channel ID, username or URL",
         },
         { status: 400 }
-      );  
+      );
     }
 
     const channelData = await withTimeout(
       parseYoutubeChannel(channelId),
       PARSE_TIMEOUT,
-      "YouTube channel fetch timeout. Please try again."    
+      "YouTube channel fetch timeout. Please try again."
     );
 
     const responseVideos = (channelData.videos || []).slice(0, 5);
@@ -120,13 +119,12 @@ export async function GET(request) {
       return NextResponse.json(
         { error: error.message },
         { status: 408 } // Request Timeout status
-        );
-              }
-
-      return NextResponse.json(
-        { error: error.message || "YouTube channel parsing failed" },
-        { status: 500 }
       );
     }
+
+    return NextResponse.json(
+      { error: error.message || "YouTube channel parsing failed" },
+      { status: 500 }
+    );
   }
- 
+}

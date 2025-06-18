@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 import { FeedParser } from "@/utils/feedParser";
 import axios from "axios";
@@ -11,6 +11,8 @@ export async function POST(request) {
   console.log("📡 YouTube Feed Senkronizasyon API'si çağrıldı");
 
   try {
+    const supabase = createServerSupabaseClient();
+
     // İstek verilerini al
     const requestData = await request.json();
     const { feedId, userId } = requestData;
@@ -26,7 +28,6 @@ export async function POST(request) {
     }
 
     // Oturum doğrulama
-    const supabase = createRouteHandlerClient({ cookies });
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -573,13 +574,22 @@ async function checkRlsPolicies(supabase) {
  * API durum kontrolü
  */
 export async function GET() {
-  // RLS politikalarını kontrol et
-  const supabase = createRouteHandlerClient({ cookies });
-  const rlsCheck = await checkRlsPolicies(supabase);
+  try {
+    const supabase = createServerSupabaseClient();
 
-  return NextResponse.json({
-    status: "available",
-    message: "YouTube Senkronizasyon API'si çalışıyor",
-    rls: rlsCheck,
-  });
+    // RLS politikalarını kontrol et
+    const rlsCheck = await checkRlsPolicies(supabase);
+
+    return NextResponse.json({
+      status: "available",
+      message: "YouTube Senkronizasyon API'si çalışıyor",
+      rls: rlsCheck,
+    });
+  } catch (error) {
+    console.error(`❌ Genel hata:`, error);
+    return NextResponse.json(
+      { error: `Senkronizasyon hatası: ${error.message}` },
+      { status: 500 }
+    );
+  }
 }
