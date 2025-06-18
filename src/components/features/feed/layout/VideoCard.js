@@ -36,7 +36,7 @@ const VideoCard = ({ video }) => {
 
       {/* Video Content */}
       <div className="p-4 flex flex-col flex-grow">
-        <h3 className="text-lg font-semibold mb-2 text-green-300 leading-tight line-clamp-2">
+        <h3 className="text-lg font-semibold mb-2 text-foreground leading-tight line-clamp-2">
           {video.title || "Başlıksız Video"}
         </h3>
 

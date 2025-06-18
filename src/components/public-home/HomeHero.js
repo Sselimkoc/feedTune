@@ -8,9 +8,11 @@ import Link from "next/link";
 import { ArrowRight, Zap } from "lucide-react";
 import Image from "next/image";
 import { useState, useCallback } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function HomeHero({ onAuthClick }) {
   const { t } = useTranslation();
+  const { language, changeLanguage } = useLanguage();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   // Particle animation (copied from AuthModal)
@@ -80,8 +82,29 @@ export default function HomeHero({ onAuthClick }) {
             <span className="text-xs text-muted-foreground">
               {t("home.hero.availableIn")}
             </span>
-            <span className="text-xs font-medium">🇹🇷 Türkçe</span>
-            <span className="text-xs font-medium">· 🇬🇧 English</span>
+            <button
+              className={`text-xs font-medium px-1 py-0.5 rounded transition-colors ${
+                language === "tr"
+                  ? "bg-primary/10 text-primary"
+                  : "hover:bg-muted"
+              }`}
+              onClick={() => changeLanguage("tr")}
+              type="button"
+            >
+              🇹🇷 Türkçe
+            </button>
+            <span className="text-xs font-medium">·</span>
+            <button
+              className={`text-xs font-medium px-1 py-0.5 rounded transition-colors ${
+                language === "en"
+                  ? "bg-primary/10 text-primary"
+                  : "hover:bg-muted"
+              }`}
+              onClick={() => changeLanguage("en")}
+              type="button"
+            >
+              🇬🇧 English
+            </button>
           </div>
         </div>
       </section>
@@ -203,8 +226,29 @@ export default function HomeHero({ onAuthClick }) {
             <span className="text-sm text-muted-foreground">
               {t("home.hero.availableIn")}
             </span>
-            <span className="text-sm font-medium">🇹🇷 Türkçe</span>
-            <span className="text-sm font-medium">· 🇬🇧 English</span>
+            <button
+              className={`text-sm font-medium px-1 py-0.5 rounded transition-colors ${
+                language === "tr"
+                  ? "bg-primary/10 text-primary"
+                  : "hover:bg-muted"
+              }`}
+              onClick={() => changeLanguage("tr")}
+              type="button"
+            >
+              🇹🇷 Türkçe
+            </button>
+            <span className="text-sm font-medium">·</span>
+            <button
+              className={`text-sm font-medium px-1 py-0.5 rounded transition-colors ${
+                language === "en"
+                  ? "bg-primary/10 text-primary"
+                  : "hover:bg-muted"
+              }`}
+              onClick={() => changeLanguage("en")}
+              type="button"
+            >
+              🇬🇧 English
+            </button>
           </div>
         </div>
       </div>

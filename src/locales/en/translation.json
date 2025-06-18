@@ -5,7 +5,11 @@
     "retry": "Retry",
     "delete": "Delete",
     "grid": "Grid",
-    "list": "List"
+    "list": "List",
+    "menu": "Menu",
+    "close": "Close",
+    "loading": "Loading...",
+    "refresh": "Refresh"
   },
   "feeds": {
     "title": "Feeds",
@@ -35,5 +39,295 @@
     "addError": "Failed to add interaction",
     "removeSuccess": "Interaction removed successfully",
     "removeError": "Failed to remove interaction"
+  },
+  "home": {
+    "hero": {
+      "subtitle": "Your modern feed reader. All your content, one place.",
+      "getStarted": "Get Started",
+      "learnMore": "Learn More",
+      "availableIn": "Available in:",
+      "newFeature": "New! Try our latest features"
+    },
+    "stats": {
+      "title": "Statistics",
+      "description": "Your feed statistics",
+      "totalFeeds": "Total Feeds",
+      "totalItems": "Total Items",
+      "unreadItems": "Unread Items",
+      "favoriteItems": "Favorite Items",
+      "readLaterItems": "Read Later Items"
+    },
+    "about": {
+      "title": "Why FeedTune?",
+      "subtitle": "Discover the features that make FeedTune unique.",
+      "reading": {
+        "title": "Easy Reading",
+        "description": "Read your favorite content in a distraction-free interface."
+      },
+      "sync": {
+        "title": "Sync Across Devices",
+        "description": "Access your feeds anywhere, anytime."
+      },
+      "share": {
+        "title": "Share Easily",
+        "description": "Share interesting articles with your friends."
+      },
+      "responsive": {
+        "title": "Responsive Design",
+        "description": "Enjoy a seamless experience on any device."
+      },
+      "theme": {
+        "title": "Dark & Light Mode",
+        "description": "Switch between dark and light themes."
+      },
+      "ui": {
+        "title": "Modern UI",
+        "description": "A clean and modern user interface."
+      },
+      "language": {
+        "title": "Multilingual",
+        "description": "Use FeedTune in your preferred language."
+      },
+      "security": {
+        "title": "Secure",
+        "description": "Your data is safe and private."
+      }
+    },
+    "feedManagement": {
+      "title": "Feed Management",
+      "description": "Manage your feeds easily.",
+      "viewContent": "View Content",
+      "addFeed": "Add Feed",
+      "addFeedDescription": "Add a new feed to your list.",
+      "noFeedsTitle": "No Feeds Yet",
+      "noFeeds": "Add your first feed to get started.",
+      "addFirstFeed": "Add First Feed",
+      "viewAllFeeds": "View All Feeds"
+    },
+    "recentContent": {
+      "title": "Recent Content",
+      "description": "Latest items from your feeds.",
+      "loading": "Loading recent content...",
+      "read": "Read",
+      "unknownSource": "Unknown Source",
+      "noContentTitle": "No Recent Content",
+      "noContent": "No recent items found.",
+      "browseFeeds": "Browse Feeds",
+      "timeAgo": {
+        "justNow": "just now",
+        "minutesAgo": "{{count}} minutes ago",
+        "hoursAgo": "{{count}} hours ago",
+        "daysAgo": "{{count}} days ago"
+      }
+    },
+    "showcase": {
+      "title": "Showcase",
+      "subtitle": "What makes FeedTune special?",
+      "feedManagement": {
+        "title": "Feed Management",
+        "description": "Organize and manage all your feeds in one place."
+      },
+      "youtube": {
+        "title": "YouTube Integration",
+        "description": "Follow YouTube channels as feeds."
+      },
+      "reading": {
+        "title": "Reading Features",
+        "description": "Enjoy a distraction-free reading experience."
+      },
+      "sharing": {
+        "title": "Easy Sharing",
+        "description": "Share content with a single click."
+      },
+      "learnMore": "Learn More",
+      "responsive": "Responsive",
+      "darkMode": "Dark Mode",
+      "multilingual": "Multilingual",
+      "search": "Search"
+    },
+    "community": {
+      "title": "Community",
+      "subtitle": "Join our growing community.",
+      "roles": {
+        "developer": "Developer",
+        "contentCreator": "Content Creator",
+        "journalist": "Journalist"
+      },
+      "testimonials": {
+        "alex": "FeedTune has changed the way I read news!",
+        "sarah": "I love the clean interface and easy sharing.",
+        "david": "Perfect for keeping up with my favorite channels."
+      },
+      "stats": {
+        "users": "Users",
+        "feeds": "Feeds",
+        "rating": "Rating"
+      },
+      "join": {
+        "title": "Join Us!",
+        "github": "Star on GitHub",
+        "twitter": "Follow on Twitter",
+        "support": "Support Us"
+      }
+    },
+    "technology": {
+      "title": "Technology Stack",
+      "subtitle": "Built with modern technologies.",
+      "nextjs": {
+        "title": "Next.js",
+        "description": "The React framework for production."
+      },
+      "react": {
+        "title": "React",
+        "description": "A library for building user interfaces."
+      },
+      "tailwind": {
+        "title": "Tailwind CSS",
+        "description": "A utility-first CSS framework."
+      },
+      "auth": {
+        "title": "Supabase Auth",
+        "description": "Secure authentication for your app."
+      },
+      "database": {
+        "title": "PostgreSQL",
+        "description": "Reliable and powerful database."
+      },
+      "typescript": {
+        "title": "TypeScript",
+        "description": "Typed JavaScript at scale."
+      },
+      "radix": {
+        "title": "Radix UI",
+        "description": "Primitives for building high-quality design systems."
+      }
+    }
+  },
+  "navigation": {
+    "home": "Home",
+    "feeds": "Feeds",
+    "favorites": "Favorites",
+    "readLater": "Read Later",
+    "settings": "Settings",
+    "tagline": "All your feeds, one place."
+  },
+  "nav": {
+    "logout": "Log out",
+    "login": "Log in",
+    "register": "Register"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your preferences and account.",
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the look and feel."
+    },
+    "theme": {
+      "title": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "language": "Language",
+    "languageChanged": "Language changed",
+    "languageChangedDescription": "The interface language has been updated.",
+    "account": {
+      "freePlan": "Free Plan"
+    },
+    "profile": {
+      "title": "Profile Settings",
+      "description": "Update your profile information.",
+      "email": "Email",
+      "emailHelp": "Your email address is used for login.",
+      "newPassword": "New Password",
+      "passwordPlaceholder": "Enter new password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter new password",
+      "update": "Update Profile",
+      "updating": "Updating...",
+      "dangerZone": "Danger Zone",
+      "delete": "Delete Account",
+      "deleting": "Deleting...",
+      "deleteWarning": "This action is irreversible. Your account and all data will be deleted.",
+      "deleteWarningConfirm": "Are you sure you want to delete your account? This cannot be undone!",
+      "accountDeletedSuccess": "Your account has been deleted.",
+      "accountDeletionFailed": "Account deletion failed. Please try again."
+    },
+    "data": {
+      "title": "Data Management",
+      "description": "Manage your app data.",
+      "refresh": {
+        "title": "Refresh Data",
+        "description": "Reload your feeds and items.",
+        "button": "Refresh",
+        "success": "Data refreshed",
+        "successDescription": "Your data has been updated."
+      },
+      "reset": {
+        "title": "Reset Data",
+        "description": "Clear all your app data.",
+        "button": "Reset",
+        "success": "Data reset",
+        "successDescription": "All your data has been cleared."
+      }
+    }
+  },
+  "toast": {
+    "success": "Success!",
+    "error": "An error occurred.",
+    "info": "Information",
+    "warning": "Warning"
+  },
+  "auth": {
+    "login": "Log in",
+    "register": "Register",
+    "logout": "Log out",
+    "logoutSuccess": "You have been logged out.",
+    "logoutError": "Logout failed. Please try again.",
+    "loginSuccess": "Login successful! Welcome back.",
+    "loginError": "Login failed. Please check your credentials.",
+    "registerSuccess": "Registration successful! Please check your email.",
+    "registerError": "Registration failed. Please try again.",
+    "verification": {
+      "title": "Verify Your Email",
+      "description": "Please verify your email address before you can start using your account.",
+      "checkInbox": "Please check your inbox",
+      "emailSentTo": "Verification email sent to:",
+      "step1": "Open your email and click the verification link",
+      "step2": "Clicking the link will redirect you to the verification page",
+      "step3": "After verification is complete, you can log in to your account",
+      "goToLogin": "Go to login page",
+      "resendEmail": "Resend verification email",
+      "resendingEmail": "Sending email...",
+      "emailResent": "Verification email has been resent",
+      "resendError": "Failed to resend verification email"
+    },
+    "termsText": "By continuing, you agree to our",
+    "termsLink": "Terms of Service"
+  },
+  "emptyState": {
+    "defaultTitle": "Nothing here yet",
+    "defaultDescription": "There is no content to display.",
+    "searchTitle": "No results found",
+    "searchDescription": "Try a different search term.",
+    "errorTitle": "Something went wrong",
+    "errorDescription": "An error occurred. Please try again.",
+    "tryAgain": "Try Again",
+    "refresh": "Refresh"
+  },
+  "readLater": {
+    "title": "Read Later",
+    "description": "Items you saved to read later.",
+    "emptyTitle": "No items yet",
+    "emptyDescription": "You haven't saved any items to read later.",
+    "emptyButton": "Browse Feeds"
+  },
+  "favorites": {
+    "title": "Favorites",
+    "description": "Your favorite items.",
+    "emptyTitle": "No favorites yet",
+    "emptyDescription": "You haven't added any items to favorites.",
+    "emptyButton": "Browse Feeds"
   }
 } 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Server, Youtube } from "lucide-react";
 import { Button } from "@/components/core/ui/button";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {

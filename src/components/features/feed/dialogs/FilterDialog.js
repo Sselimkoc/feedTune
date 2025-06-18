@@ -27,11 +27,11 @@ import {
 } from "@/components/core/ui/form";
 import { Checkbox } from "@/components/core/ui/checkbox";
 import { useForm } from "react-hook-form";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { motion } from "framer-motion";
 import { ArrowDownAZ, ArrowUpAZ, Filter, RefreshCw, Star } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/core/ui/radio-group";
-import { Label } from "@/components/core/ui/label";
+import { Label as UILabel } from "@/components/core/ui/label";
 import { Rss, Youtube } from "lucide-react";
 
 export function FilterDialog({
@@ -121,19 +121,21 @@ export function FilterDialog({
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="newest" id="newest" />
-                  <Label htmlFor="newest">{t("feeds.newest")}</Label>
+                  <UILabel htmlFor="newest">{t("feeds.newest")}</UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="oldest" id="oldest" />
-                  <Label htmlFor="oldest">{t("feeds.oldest")}</Label>
+                  <UILabel htmlFor="oldest">{t("feeds.oldest")}</UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="unread" id="unread-first" />
-                  <Label htmlFor="unread-first">{t("feeds.unreadFeeds")}</Label>
+                  <UILabel htmlFor="unread-first">
+                    {t("feeds.unreadFeeds")}
+                  </UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="favorites" id="favorites" />
-                  <Label htmlFor="favorites">{t("feeds.favorites")}</Label>
+                  <UILabel htmlFor="favorites">{t("feeds.favorites")}</UILabel>
                 </div>
               </RadioGroup>
             </div>
@@ -147,15 +149,17 @@ export function FilterDialog({
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value={null} id="show-all" />
-                  <Label htmlFor="show-all">{t("feeds.all")}</Label>
+                  <UILabel htmlFor="show-all">{t("feeds.all")}</UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="read" id="show-read" />
-                  <Label htmlFor="show-read">{t("feeds.showRead")}</Label>
+                  <UILabel htmlFor="show-read">{t("feeds.showRead")}</UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="unread" id="show-unread" />
-                  <Label htmlFor="show-unread">{t("feeds.showUnread")}</Label>
+                  <UILabel htmlFor="show-unread">
+                    {t("feeds.showUnread")}
+                  </UILabel>
                 </div>
               </RadioGroup>
             </div>
@@ -169,21 +173,21 @@ export function FilterDialog({
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="all" id="show-all-types" />
-                  <Label htmlFor="show-all-types">{t("feeds.all")}</Label>
+                  <UILabel htmlFor="show-all-types">{t("feeds.all")}</UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="rss" id="show-rss" />
-                  <Label htmlFor="show-rss" className="flex items-center">
+                  <UILabel htmlFor="show-rss" className="flex items-center">
                     <Rss className="mr-1 h-3.5 w-3.5 text-orange-500" />
                     <span>RSS</span>
-                  </Label>
+                  </UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="youtube" id="show-youtube" />
-                  <Label htmlFor="show-youtube" className="flex items-center">
+                  <UILabel htmlFor="show-youtube" className="flex items-center">
                     <Youtube className="mr-1 h-3.5 w-3.5 text-red-500" />
                     <span>YouTube</span>
-                  </Label>
+                  </UILabel>
                 </div>
               </RadioGroup>
             </div>

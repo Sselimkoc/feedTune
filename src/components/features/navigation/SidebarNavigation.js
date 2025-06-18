@@ -77,7 +77,7 @@ export function SidebarNavigation() {
   const items = [
     {
       title: t("navigation.home"),
-      href: "/home",
+      href: "/",
       icon: HomeIcon,
     },
     {

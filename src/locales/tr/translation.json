@@ -5,7 +5,11 @@
     "retry": "Tekrar Dene",
     "delete": "Sil",
     "grid": "Izgara",
-    "list": "Liste"
+    "list": "Liste",
+    "menu": "Menü",
+    "close": "Kapat",
+    "loading": "Yükleniyor...",
+    "refresh": "Yenile"
   },
   "feeds": {
     "title": "Beslemeler",
@@ -35,5 +39,295 @@
     "addError": "Etkileşim eklenemedi",
     "removeSuccess": "Etkileşim başarıyla kaldırıldı",
     "removeError": "Etkileşim kaldırılamadı"
+  },
+  "home": {
+    "hero": {
+      "subtitle": "Modern besleme okuyucunuz. Tüm içerikleriniz tek yerde.",
+      "getStarted": "Başla",
+      "learnMore": "Daha Fazla Bilgi",
+      "availableIn": "Kullanılabilir diller:",
+      "newFeature": "Yeni! Son özelliklerimizi deneyin"
+    },
+    "stats": {
+      "title": "İstatistikler",
+      "description": "Besleme istatistikleriniz",
+      "totalFeeds": "Toplam Besleme",
+      "totalItems": "Toplam İçerik",
+      "unreadItems": "Okunmamış İçerik",
+      "favoriteItems": "Favori İçerik",
+      "readLaterItems": "Daha Sonra Oku"
+    },
+    "about": {
+      "title": "Neden FeedTune?",
+      "subtitle": "FeedTune'u benzersiz kılan özellikleri keşfedin.",
+      "reading": {
+        "title": "Kolay Okuma",
+        "description": "Favori içeriklerinizi dikkat dağıtmadan okuyun."
+      },
+      "sync": {
+        "title": "Cihazlar Arası Senkronizasyon",
+        "description": "Beslemelerinize her yerden erişin."
+      },
+      "share": {
+        "title": "Kolay Paylaşım",
+        "description": "İlginç makaleleri arkadaşlarınızla paylaşın."
+      },
+      "responsive": {
+        "title": "Duyarlı Tasarım",
+        "description": "Her cihazda sorunsuz deneyim yaşayın."
+      },
+      "theme": {
+        "title": "Koyu & Açık Mod",
+        "description": "Koyu ve açık tema arasında geçiş yapın."
+      },
+      "ui": {
+        "title": "Modern Arayüz",
+        "description": "Temiz ve modern bir kullanıcı arayüzü."
+      },
+      "language": {
+        "title": "Çok Dilli",
+        "description": "FeedTune'u tercih ettiğiniz dilde kullanın."
+      },
+      "security": {
+        "title": "Güvenli",
+        "description": "Verileriniz güvende ve gizli."
+      }
+    },
+    "feedManagement": {
+      "title": "Besleme Yönetimi",
+      "description": "Beslemelerinizi kolayca yönetin.",
+      "viewContent": "İçeriği Görüntüle",
+      "addFeed": "Besleme Ekle",
+      "addFeedDescription": "Listene yeni bir besleme ekle.",
+      "noFeedsTitle": "Henüz Besleme Yok",
+      "noFeeds": "Başlamak için ilk beslemeni ekle.",
+      "addFirstFeed": "İlk Beslemeyi Ekle",
+      "viewAllFeeds": "Tüm Beslemeleri Gör"
+    },
+    "recentContent": {
+      "title": "Son İçerikler",
+      "description": "Beslemelerinizden en son içerikler.",
+      "loading": "Son içerikler yükleniyor...",
+      "read": "Oku",
+      "unknownSource": "Bilinmeyen Kaynak",
+      "noContentTitle": "Son İçerik Yok",
+      "noContent": "Hiç yeni içerik bulunamadı.",
+      "browseFeeds": "Beslemelere Göz At",
+      "timeAgo": {
+        "justNow": "şimdi",
+        "minutesAgo": "{{count}} dakika önce",
+        "hoursAgo": "{{count}} saat önce",
+        "daysAgo": "{{count}} gün önce"
+      }
+    },
+    "showcase": {
+      "title": "Vitrin",
+      "subtitle": "FeedTune'u özel kılan nedir?",
+      "feedManagement": {
+        "title": "Besleme Yönetimi",
+        "description": "Tüm beslemelerinizi tek yerde yönetin."
+      },
+      "youtube": {
+        "title": "YouTube Entegrasyonu",
+        "description": "YouTube kanallarını besleme olarak takip edin."
+      },
+      "reading": {
+        "title": "Okuma Özellikleri",
+        "description": "Dikkat dağıtmayan okuma deneyimi yaşayın."
+      },
+      "sharing": {
+        "title": "Kolay Paylaşım",
+        "description": "İçeriği tek tıkla paylaşın."
+      },
+      "learnMore": "Daha Fazla Bilgi",
+      "responsive": "Duyarlı",
+      "darkMode": "Koyu Mod",
+      "multilingual": "Çok Dilli",
+      "search": "Ara"
+    },
+    "community": {
+      "title": "Topluluk",
+      "subtitle": "Büyüyen topluluğumuza katılın.",
+      "roles": {
+        "developer": "Geliştirici",
+        "contentCreator": "İçerik Üretici",
+        "journalist": "Gazeteci"
+      },
+      "testimonials": {
+        "alex": "FeedTune haber okuma alışkanlığımı değiştirdi!",
+        "sarah": "Temiz arayüzü ve kolay paylaşımı çok sevdim.",
+        "david": "Favori kanallarımı takip etmek için harika."
+      },
+      "stats": {
+        "users": "Kullanıcı",
+        "feeds": "Besleme",
+        "rating": "Puan"
+      },
+      "join": {
+        "title": "Bize Katılın!",
+        "github": "GitHub'da Yıldızla",
+        "twitter": "Twitter'da Takip Et",
+        "support": "Bize Destek Ol"
+      }
+    },
+    "technology": {
+      "title": "Teknoloji Altyapısı",
+      "subtitle": "Modern teknolojilerle geliştirildi.",
+      "nextjs": {
+        "title": "Next.js",
+        "description": "Üretim için React framework'ü."
+      },
+      "react": {
+        "title": "React",
+        "description": "Kullanıcı arayüzleri için kütüphane."
+      },
+      "tailwind": {
+        "title": "Tailwind CSS",
+        "description": "Yardımcı sınıf tabanlı CSS framework'ü."
+      },
+      "auth": {
+        "title": "Supabase Auth",
+        "description": "Uygulamanız için güvenli kimlik doğrulama."
+      },
+      "database": {
+        "title": "PostgreSQL",
+        "description": "Güvenilir ve güçlü veritabanı."
+      },
+      "typescript": {
+        "title": "TypeScript",
+        "description": "Büyük projeler için tipli JavaScript."
+      },
+      "radix": {
+        "title": "Radix UI",
+        "description": "Yüksek kaliteli tasarım sistemleri için bileşenler."
+      }
+    }
+  },
+  "navigation": {
+    "home": "Ana Sayfa",
+    "feeds": "Beslemeler",
+    "favorites": "Favoriler",
+    "readLater": "Daha Sonra Oku",
+    "settings": "Ayarlar",
+    "tagline": "Tüm beslemelerin tek yerde."
+  },
+  "nav": {
+    "logout": "Çıkış yap",
+    "login": "Giriş yap",
+    "register": "Kayıt ol"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "description": "Tercihlerinizi ve hesabınızı yönetin.",
+    "appearance": {
+      "title": "Görünüm",
+      "description": "Görünümü özelleştir."
+    },
+    "theme": {
+      "title": "Tema",
+      "light": "Açık",
+      "dark": "Koyu",
+      "system": "Sistem"
+    },
+    "language": "Dil",
+    "languageChanged": "Dil değiştirildi",
+    "languageChangedDescription": "Arayüz dili güncellendi.",
+    "account": {
+      "freePlan": "Ücretsiz Plan"
+    },
+    "profile": {
+      "title": "Profil Ayarları",
+      "description": "Profil bilgilerinizi güncelleyin.",
+      "email": "E-posta",
+      "emailHelp": "Giriş için e-posta adresiniz kullanılır.",
+      "newPassword": "Yeni Şifre",
+      "passwordPlaceholder": "Yeni şifre girin",
+      "confirmPassword": "Şifreyi Onayla",
+      "confirmPasswordPlaceholder": "Yeni şifreyi tekrar girin",
+      "update": "Profili Güncelle",
+      "updating": "Güncelleniyor...",
+      "dangerZone": "Tehlikeli Alan",
+      "delete": "Hesabı Sil",
+      "deleting": "Siliniyor...",
+      "deleteWarning": "Bu işlem geri alınamaz. Hesabınız ve tüm verileriniz silinecek.",
+      "deleteWarningConfirm": "Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!",
+      "accountDeletedSuccess": "Hesabınız silindi.",
+      "accountDeletionFailed": "Hesap silme başarısız. Lütfen tekrar deneyin."
+    },
+    "data": {
+      "title": "Veri Yönetimi",
+      "description": "Uygulama verilerinizi yönetin.",
+      "refresh": {
+        "title": "Verileri Yenile",
+        "description": "Beslemeleri ve içerikleri yeniden yükle.",
+        "button": "Yenile",
+        "success": "Veriler yenilendi",
+        "successDescription": "Verileriniz güncellendi."
+      },
+      "reset": {
+        "title": "Verileri Sıfırla",
+        "description": "Tüm uygulama verilerinizi temizleyin.",
+        "button": "Sıfırla",
+        "success": "Veriler sıfırlandı",
+        "successDescription": "Tüm verileriniz temizlendi."
+      }
+    }
+  },
+  "toast": {
+    "success": "Başarılı!",
+    "error": "Bir hata oluştu.",
+    "info": "Bilgi",
+    "warning": "Uyarı"
+  },
+  "auth": {
+    "login": "Giriş yap",
+    "register": "Kayıt ol",
+    "logout": "Çıkış yap",
+    "logoutSuccess": "Başarıyla çıkış yaptınız.",
+    "logoutError": "Çıkış başarısız. Lütfen tekrar deneyin.",
+    "loginSuccess": "Giriş başarılı! Tekrar hoş geldiniz.",
+    "loginError": "Giriş başarısız. Bilgilerinizi kontrol edin.",
+    "registerSuccess": "Kayıt başarılı! Lütfen e-postanızı kontrol edin.",
+    "registerError": "Kayıt başarısız. Lütfen tekrar deneyin.",
+    "verification": {
+      "title": "E-postanızı Doğrulayın",
+      "description": "Hesabınızı kullanmaya başlamadan önce lütfen e-posta adresinizi doğrulayın.",
+      "checkInbox": "Lütfen gelen kutunuzu kontrol edin",
+      "emailSentTo": "Doğrulama e-postası gönderildi:",
+      "step1": "E-postanızı açın ve doğrulama bağlantısına tıklayın",
+      "step2": "Bağlantıya tıklayınca doğrulama sayfasına yönlendirileceksiniz",
+      "step3": "Doğrulama tamamlandıktan sonra hesabınıza giriş yapabilirsiniz",
+      "goToLogin": "Giriş sayfasına git",
+      "resendEmail": "Doğrulama e-postasını tekrar gönder",
+      "resendingEmail": "E-posta gönderiliyor...",
+      "emailResent": "Doğrulama e-postası tekrar gönderildi",
+      "resendError": "Doğrulama e-postası tekrar gönderilemedi"
+    },
+    "termsText": "Devam ederek",
+    "termsLink": "Kullanım Şartları"
+  },
+  "emptyState": {
+    "defaultTitle": "Henüz içerik yok",
+    "defaultDescription": "Görüntülenecek içerik bulunamadı.",
+    "searchTitle": "Sonuç bulunamadı",
+    "searchDescription": "Farklı bir arama deneyin.",
+    "errorTitle": "Bir şeyler yanlış gitti",
+    "errorDescription": "Bir hata oluştu. Lütfen tekrar deneyin.",
+    "tryAgain": "Tekrar Dene",
+    "refresh": "Yenile"
+  },
+  "readLater": {
+    "title": "Daha Sonra Oku",
+    "description": "Daha sonra okumak için kaydettiğiniz içerikler.",
+    "emptyTitle": "Henüz içerik yok",
+    "emptyDescription": "Daha sonra okumak için hiç içerik kaydetmediniz.",
+    "emptyButton": "Beslemelere Göz At"
+  },
+  "favorites": {
+    "title": "Favoriler",
+    "description": "Favori içerikleriniz.",
+    "emptyTitle": "Henüz favori yok",
+    "emptyDescription": "Henüz favorilere içerik eklemediniz.",
+    "emptyButton": "Beslemelere Göz At"
   }
 } 

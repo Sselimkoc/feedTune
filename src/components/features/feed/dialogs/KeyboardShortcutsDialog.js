@@ -9,7 +9,7 @@ import {
   DialogClose,
 } from "@/components/core/ui/dialog";
 import { Button } from "@/components/core/ui/button";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Keyboard } from "lucide-react";
 import { ScrollArea } from "@/components/core/ui/scroll-area";
 

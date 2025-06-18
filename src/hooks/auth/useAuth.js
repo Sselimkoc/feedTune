@@ -27,7 +27,7 @@ export function useAuthActions() {
         toastError,
       });
       if (success) {
-        router.push("/home");
+        router.push("/");
       }
       return { success, error };
     } catch (error) {
