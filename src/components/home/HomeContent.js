@@ -22,6 +22,7 @@ export function HomeContent({
   feeds = [],
   stats = {},
   recentItems = [],
+  isLoading = false,
 }) {
   const { user } = useSession();
   const { t } = useLanguage();
@@ -70,11 +71,18 @@ export function HomeContent({
         </>
       );
     }
-
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-96">
+          <span className="animate-pulse text-lg text-muted-foreground">
+            {t("common.loading")}
+          </span>
+        </div>
+      );
+    }
     if (!feeds?.length) {
       return <EmptyState onAddFeed={handleAddFeed} />;
     }
-
     return (
       <div className="space-y-8">
         <HomeStats stats={stats} />

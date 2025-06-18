@@ -114,6 +114,7 @@ export default async function HomePage() {
 
   const session = await getSession(supabase);
   const { feeds, stats, recentItems } = await getFeedsData(session);
+  const isLoading = !session; // Simulate loading state if session is not ready
 
   return (
     <HomeContent
@@ -121,6 +122,7 @@ export default async function HomePage() {
       feeds={feeds}
       stats={stats}
       recentItems={recentItems}
+      isLoading={isLoading}
     />
   );
 }
