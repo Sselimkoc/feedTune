@@ -1,6 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { Button } from "@/components/core/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/core/ui/dialog";
 import { RefreshCw } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 

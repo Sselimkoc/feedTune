@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/core/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";

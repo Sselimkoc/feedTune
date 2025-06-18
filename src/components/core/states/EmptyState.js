@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/core/ui/button";
 import { useTheme } from "@/hooks/useTheme";
 import { motion } from "framer-motion";
 import {
@@ -17,7 +17,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/core/ui/card";
 
 const CONTENT_TYPE_ICONS = {
   youtube: YoutubeIcon,

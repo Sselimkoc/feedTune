@@ -1,8 +1,8 @@
 "use client";
 
 import { AuthModal } from "@/components/features/auth/AuthModal";
-import { AddFeedDialog } from "../features/feeds/dialogs/AddFeedDialog";
-import { DeleteFeedDialog } from "../features/feeds/dialogs/DeleteFeedDialog";
+import { AddFeedDialog } from "../features/feed/dialogs/AddFeedDialog";
+import { DeleteFeedDialog } from "../features/feed/dialogs/DeleteFeedDialog";
 
 export function HomeModals({
   showAuthModal,

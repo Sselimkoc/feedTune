@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/core/ui/button";
 import { useTranslation } from "react-i18next";
 import { Mail, ArrowRight, Check, RefreshCw } from "lucide-react";
 

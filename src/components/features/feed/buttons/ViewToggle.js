@@ -1,7 +1,7 @@
 "use client";
 
 import { LayoutGrid, List } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/core/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -10,7 +10,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/components/core/ui/tooltip";
 
 export function ViewToggle({ viewMode, onViewModeChange }) {
   const { t } = useLanguage();

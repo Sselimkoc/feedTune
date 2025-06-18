@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Server, Youtube } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/core/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -11,9 +11,9 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/components/core/ui/tooltip";
 import { useFeedService } from "@/hooks/features/useFeedService";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 
 export function SyncButton({
   feedId,

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/core/ui/button";
 import { useTheme } from "@/hooks/useTheme";
 import { motion } from "framer-motion";
 import {

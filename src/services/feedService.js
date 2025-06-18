@@ -1,6 +1,6 @@
 "use client";
 
-import { FeedRepository } from "@/repositories/feedRepository";
+import { FeedRepository } from "@/lib/db/feedRepository";
 import { toast } from "sonner";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { FeedParser } from "@/utils/feedParser";

@@ -8,15 +8,15 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/components/core/ui/dialog";
+import { Button } from "@/components/core/ui/button";
+import { Input } from "@/components/core/ui/input";
+import { Label } from "@/components/core/ui/label";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
 import { feedService } from "@/services/feedService";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/core/ui/card";
 import {
   Rss,
   Youtube,
@@ -28,18 +28,27 @@ import {
   Info,
   ArrowRight,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/core/ui/badge";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/core/ui/tabs";
+import { Separator } from "@/components/core/ui/separator";
 import {
   CardHeader,
   CardTitle,
   CardDescription,
   CardFooter,
-} from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+} from "@/components/core/ui/card";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/core/ui/alert";
 import { Users2, Film, Calendar, AlignLeft } from "lucide-react";
 import axios from "axios";
 import { youtubeService } from "@/lib/youtube/service";
@@ -54,17 +63,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from "@/components/core/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+} from "@/components/core/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/core/ui/radio-group";
 import { useTranslation } from "react-i18next";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 import { useRouter } from "next/navigation";
 
 /**

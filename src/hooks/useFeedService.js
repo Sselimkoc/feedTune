@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useSupabase } from "@/hooks/useSupabase";
-import { FeedRepository } from "@/repositories/feedRepository";
+import { FeedRepository } from "@/lib/db/feedRepository";
 import { feedService } from "@/services/feedService";
 import { FeedParser } from "@/utils/feedParser";
 

@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/core/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/core/ui/dropdown-menu";
 import { Globe } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useSettingsStore } from "@/store/useSettingsStore";

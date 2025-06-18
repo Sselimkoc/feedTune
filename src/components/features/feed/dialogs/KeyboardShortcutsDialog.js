@@ -7,11 +7,11 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@/components/core/ui/dialog";
+import { Button } from "@/components/core/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Keyboard } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/core/ui/scroll-area";
 
 export function KeyboardShortcutsDialog({ isOpen, onOpenChange }) {
   const { t } = useLanguage();

@@ -8,15 +8,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@/components/core/ui/dialog";
+import { Button } from "@/components/core/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/core/ui/select";
 import {
   Form,
   FormControl,
@@ -24,14 +24,14 @@ import {
   FormField,
   FormItem,
   FormLabel,
-} from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
+} from "@/components/core/ui/form";
+import { Checkbox } from "@/components/core/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 import { ArrowDownAZ, ArrowUpAZ, Filter, RefreshCw, Star } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/core/ui/radio-group";
+import { Label } from "@/components/core/ui/label";
 import { Rss, Youtube } from "lucide-react";
 
 export function FilterDialog({
