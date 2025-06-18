@@ -1,64 +1,46 @@
 import React from "react";
 import { Heart, Bookmark } from "lucide-react";
 
-const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
+export function FavoriteDetailCard({
+  video,
+  onToggleFavorite,
+  onToggleReadLater,
+}) {
   if (!video) return null;
 
-  const handleFavoriteClick = () => {
-    if (onToggleFavorite) onToggleFavorite(video);
-  };
-
-  const handleWatchLaterClick = () => {
-    if (onToggleReadLater) onToggleReadLater(video);
-  };
-
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg flex flex-col text-white transition-transform duration-200 ease-in-out cursor-pointer hover:-translate-y-1 hover:shadow-xl max-w-sm">
+    <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg flex flex-col text-white transition-transform duration-200 ease-in-out max-w-sm mx-auto mb-8">
       {/* Video Thumbnail Container */}
       <div
         className="relative w-full bg-gray-900"
         style={{ paddingTop: "56.25%" }}
       >
-        {/* Source Badge on top-left of thumbnail */}
-        <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-medium z-10 shadow">
-          {video.source || "YouTube"}
-        </span>
         <img
-          src={
-            video.thumbnail ||
-            "https://via.placeholder.com/480x270?text=Video+Thumbnail"
-          }
-          alt={video.title || "Video Thumbnail"}
+          src={video.thumbnail || "/images/placeholder.webp"}
+          alt={video.title}
           className="absolute top-0 left-0 w-full h-full object-cover"
         />
       </div>
-
-      {/* Video Content */}
+      {/* Content */}
       <div className="p-4 flex flex-col flex-grow">
         <h3 className="text-lg font-semibold mb-2 text-foreground leading-tight line-clamp-2">
-          {video.title || "Başlıksız Video"}
+          {video.title}
         </h3>
-
         <p className="text-sm text-gray-300 mb-4 flex-grow line-clamp-3">
-          {video.description || "Bu video için açıklama bulunmamaktadır."}
+          {video.description || "No description available."}
         </p>
-
-        {/* Bottom Layout - Channel Info and Actions */}
         <div className="flex items-center justify-between mt-auto pt-3 border-t border-white border-opacity-10">
           {/* Channel Info */}
           <div className="flex items-center gap-3 flex-1">
             <img
-              src={
-                video.channelLogo || "https://via.placeholder.com/32x32?text=C"
-              }
+              src={video.channelLogo || "/images/placeholder.webp"}
               alt={video.channelName || "Channel"}
               className="w-8 h-8 rounded-full object-cover"
             />
             <span className="text-sm text-gray-300 truncate">
-              {video.channelName || "Bilinmeyen Kanal"}
+              {video.channelName || "Unknown Channel"}
             </span>
           </div>
-
           {/* Video Actions */}
           <div className="flex gap-2 ml-4">
             <button
@@ -67,10 +49,10 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
                   ? "text-blue-400 bg-blue-500/10"
                   : "hover:text-blue-400"
               }`}
-              onClick={handleWatchLaterClick}
-              title="Kaydet"
+              onClick={() => onToggleReadLater && onToggleReadLater(video)}
+              aria-label="Read Later"
+              title="Read Later"
             >
-              {/* Save/Bookmark Icon */}
               <Bookmark
                 className="w-5 h-5"
                 fill={video.is_read_later ? "currentColor" : "none"}
@@ -83,8 +65,9 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
                   ? "text-red-500 bg-red-500/10"
                   : "hover:text-red-500"
               }`}
-              onClick={handleFavoriteClick}
-              title="Favori"
+              onClick={() => onToggleFavorite && onToggleFavorite(video)}
+              aria-label="Favorite"
+              title="Favorite"
             >
               <Heart
                 className="w-5 h-5"
@@ -97,6 +80,4 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
       </div>
     </div>
   );
-};
-
-export default VideoCard;
+}

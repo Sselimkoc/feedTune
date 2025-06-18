@@ -4,10 +4,73 @@ import { useTranslation } from "react-i18next";
 import { BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/core/ui/button";
 import Link from "next/link";
-import VideoCard from "@/components/VideoCard";
+import { FavoriteDetailCard } from "../favorites/FavoriteDetailCard";
+import { useFeedService } from "@/hooks/features/useFeedService";
 
-export function ReadLaterContent({ items = [] }) {
+export function ReadLaterContent() {
   const { t } = useTranslation();
+  const {
+    readLaterItems: items,
+    isLoading,
+    error,
+    toggleReadLater,
+    toggleFavorite,
+  } = useFeedService();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <span className="animate-pulse text-lg text-muted-foreground">
+          {t("common.loading")}
+        </span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 text-center">
+        <span className="text-destructive text-2xl font-bold mb-2">
+          {t("common.error")}
+        </span>
+        <span className="text-muted-foreground mb-4">
+          {error?.message || t("common.errorDescription")}
+        </span>
+        <Button
+          onClick={() => window.location.reload()}
+          variant="outline"
+          className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
+        >
+          {t("common.retry")}
+        </Button>
+      </div>
+    );
+  }
+
+  if (!items || items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 text-center">
+        <img
+          src="/images/placeholder.webp"
+          alt="Boş"
+          className="w-32 h-32 opacity-60 mb-4"
+        />
+        <span className="text-lg font-semibold mb-2">
+          {t("readLater.emptyTitle")}
+        </span>
+        <span className="text-muted-foreground mb-4">
+          {t("readLater.emptyDescription")}
+        </span>
+        <Button
+          variant="outline"
+          className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
+          asChild
+        >
+          <Link href="/feeds">{t("readLater.emptyButton")}</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen relative">
@@ -53,34 +116,16 @@ export function ReadLaterContent({ items = [] }) {
         {/* Main Content */}
         <main className="flex-1 w-full max-w-screen-2xl mx-auto px-2 md:px-6">
           <section className="flex-1">
-            {items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-96 text-center">
-                <img
-                  src="/images/placeholder.webp"
-                  alt="Boş"
-                  className="w-32 h-32 opacity-60 mb-4"
+            <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+              {items.map((item) => (
+                <FavoriteDetailCard
+                  key={item.id}
+                  video={item}
+                  onToggleFavorite={toggleFavorite}
+                  onToggleReadLater={toggleReadLater}
                 />
-                <span className="text-lg font-semibold mb-2">
-                  {t("readLater.emptyTitle")}
-                </span>
-                <span className="text-muted-foreground mb-4">
-                  {t("readLater.emptyDescription")}
-                </span>
-                <Button
-                  variant="outline"
-                  className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
-                  asChild
-                >
-                  <Link href="/feeds">{t("readLater.emptyButton")}</Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                {items.map((item) => (
-                  <VideoCard key={item.id} video={item} />
-                ))}
-              </div>
-            )}
+              ))}
+            </div>
           </section>
         </main>
       </div>

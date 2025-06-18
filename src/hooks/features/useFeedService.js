@@ -24,25 +24,61 @@ async function fetchUserFeedIds(userId) {
   return (data || []).map((feed) => feed.id);
 }
 
-// Helper to fetch interactions for a given type and join table, filtered by user's feeds
-async function fetchInteractionsByTypeV2({ userId, type, interactionField }) {
-  const table = type === "rss" ? "rss_interactions" : "youtube_interactions";
-  const joinTable = type === "rss" ? "rss_items" : "youtube_items";
-  const joinFields =
-    type === "rss"
-      ? "id, title, description, url, published_at, feed_id, feed_title"
-      : "id, title, description, url, published_at, feed_id, channel_title";
-  const feedIds = await fetchUserFeedIds(userId);
-  if (feedIds.length === 0) return [];
-  const { data, error } = await supabase
+/**
+ * Fetches user interactions (e.g., favorites, read later) with joined item details.
+ * @param {Object} params
+ * @param {string} params.userId - User ID
+ * @param {string} params.table - Interaction table name (e.g., "rss_interactions")
+ * @param {string} params.joinTable - Item table name (e.g., "rss_items")
+ * @param {string} params.joinFields - Fields to select from the item table
+ * @param {string} params.interactionField - Interaction field to filter (e.g., "is_favorite")
+ * @param {Array} [params.feedIds] - (Optional) Only include items from these feed IDs
+ * @param {Object} [params.extraFilters] - (Optional) Additional filters for the interaction table
+ * @returns {Promise<Array>} Array of normalized interaction+item objects
+ */
+export async function fetchUserInteractionsWithItems({
+  userId,
+  table,
+  joinTable,
+  joinFields,
+  interactionField,
+  feedIds = null,
+  extraFilters = {},
+}) {
+  // FeedId'leri opsiyonel olarak dışarıdan al veya otomatik çek
+  let _feedIds = feedIds;
+  if (!_feedIds) {
+    const { data: feeds, error: feedsError } = await supabase
+      .from("feeds")
+      .select("id")
+      .eq("user_id", userId);
+    if (feedsError) throw feedsError;
+    _feedIds = (feeds || []).map((feed) => feed.id);
+  }
+  if (!_feedIds || _feedIds.length === 0) return [];
+
+  // Supabase query builder
+  let query = supabase
     .from(table)
     .select(`*, ${joinTable} (${joinFields})`)
     .eq("user_id", userId)
     .eq(interactionField, true)
-    .in("item_id", feedIds)
+    .in("item_id", _feedIds)
     .order("created_at", { ascending: false });
+
+  // Ek filtreler uygula
+  Object.entries(extraFilters).forEach(([key, value]) => {
+    query = query.eq(key, value);
+  });
+
+  const { data, error } = await query;
   if (error) throw error;
-  return (data || []).map((row) => ({ ...row, type }));
+
+  // Normalize: interaction + item
+  return (data || []).map((row) => ({
+    ...row,
+    item: row[joinTable],
+  }));
 }
 
 // Helper to fetch all items with interactions, filtered by user's feeds
@@ -126,71 +162,6 @@ export function useFeedService() {
     enabled: !!user,
   });
 
-  // Fetch favorites
-  const favoritesQuery = useQuery({
-    queryKey: ["favorites", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      try {
-        const [rssFavorites, youtubeFavorites] = await Promise.all([
-          fetchInteractionsByTypeV2({
-            userId: user.id,
-            type: "rss",
-            interactionField: "is_favorite",
-          }),
-          fetchInteractionsByTypeV2({
-            userId: user.id,
-            type: "youtube",
-            interactionField: "is_favorite",
-          }),
-        ]);
-        return [...rssFavorites, ...youtubeFavorites];
-      } catch (error) {
-        console.error("[useFeedService] Error fetching favorites:", error);
-        throw error;
-      }
-    },
-    enabled: !!user,
-    staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
-    retry: MAX_RETRIES,
-    retryDelay: RETRY_DELAY,
-  });
-
-  // Fetch read later items
-  const readLaterQuery = useQuery({
-    queryKey: ["read_later", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      try {
-        const [rssReadLater, youtubeReadLater] = await Promise.all([
-          fetchInteractionsByTypeV2({
-            userId: user.id,
-            type: "rss",
-            interactionField: "is_read_later",
-          }),
-          fetchInteractionsByTypeV2({
-            userId: user.id,
-            type: "youtube",
-            interactionField: "is_read_later",
-          }),
-        ]);
-        return [...rssReadLater, ...youtubeReadLater];
-      } catch (error) {
-        console.error(
-          "[useFeedService] Error fetching read later items:",
-          error
-        );
-        throw error;
-      }
-    },
-    enabled: !!user,
-    staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
-    retry: MAX_RETRIES,
-    retryDelay: RETRY_DELAY,
-  });
-
   // Fetch all items (rss + youtube)
   const itemsQuery = useQuery({
     queryKey: ["items", user?.id],
@@ -204,6 +175,34 @@ export function useFeedService() {
       }
     },
     enabled: !!user,
+  });
+
+  // Favorites: filter itemsQuery.data for is_favorite
+  const favoritesQuery = useQuery({
+    queryKey: ["favorites", user?.id],
+    queryFn: async () => {
+      if (!user || !itemsQuery.data) return [];
+      return (itemsQuery.data || []).filter((item) => item.is_favorite);
+    },
+    enabled: !!user && !itemsQuery.isLoading && !itemsQuery.isError,
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    retry: MAX_RETRIES,
+    retryDelay: RETRY_DELAY,
+  });
+  console.log(favoritesQuery.data,"fav----")
+  // Read later: filter itemsQuery.data for is_read_later
+  const readLaterQuery = useQuery({
+    queryKey: ["read_later", user?.id],
+    queryFn: async () => {
+      if (!user || !itemsQuery.data) return [];
+      return (itemsQuery.data || []).filter((item) => item.is_read_later);
+    },
+    enabled: !!user && !itemsQuery.isLoading && !itemsQuery.isError,
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    retry: MAX_RETRIES,
+    retryDelay: RETRY_DELAY,
   });
 
   // Calculate stats
@@ -240,16 +239,40 @@ export function useFeedService() {
         description: t("interactions.addSuccess"),
       });
     } catch (error) {
-      console.error("Error adding interaction:", error);
-      toast({
-        title: t("common.error"),
-        description: t("interactions.addError"),
-        variant: "destructive",
-      });
+      if (error.code === "23505") {
+        // Kayıt zaten varsa, ilgili alanı update et
+        const { error: updateError } = await supabase
+          .from(table)
+          .update({ [type]: true })
+          .match({ user_id: user.id, item_id: itemId });
+        if (updateError) {
+          toast({
+            title: t("common.error"),
+            description: t("interactions.addError"),
+            variant: "destructive",
+          });
+        } else {
+          await queryClient.invalidateQueries(["items", user.id]);
+          await queryClient.invalidateQueries(["favorites", user.id]);
+          await queryClient.invalidateQueries(["read_later", user.id]);
+          toast({
+            title: t("common.info"),
+            description: t("interactions.updatedExisting"),
+            variant: "default",
+          });
+        }
+      } else {
+        console.error("Error adding interaction:", error);
+        toast({
+          title: t("common.error"),
+          description: t("interactions.addError"),
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  // Remove interaction
+  // Remove interaction: update instead of delete for safer state management
   const removeInteraction = async (itemId, type, itemType) => {
     if (!user) return;
     const table =
@@ -257,7 +280,7 @@ export function useFeedService() {
     try {
       const { error } = await supabase
         .from(table)
-        .delete()
+        .update({ [type]: false })
         .match({ user_id: user.id, item_id: itemId });
       if (error) throw error;
       await queryClient.invalidateQueries(["items", user.id]);
@@ -444,5 +467,8 @@ export function useFeedService() {
     // Invalidate queries
     invalidateFeedsQuery: () =>
       queryClient.invalidateQueries(["feeds", user?.id]),
+
+    // User
+    user,
   };
 }

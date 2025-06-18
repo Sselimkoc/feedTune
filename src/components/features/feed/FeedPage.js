@@ -1,18 +1,28 @@
 "use client";
 
 import { useFeedService } from "@/hooks/features/useFeedService";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Rss } from "lucide-react";
 import { Button } from "@/components/core/ui/button";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardTitle } from "@/components/core/ui/card";
 import VideoCard from "./layout/VideoCard";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function FeedPage() {
-  const { feeds, items, isLoading, error } = useFeedService();
+  const {
+    feeds,
+    items,
+    isLoading,
+    error,
+    addInteraction,
+    removeInteraction,
+    user,
+  } = useFeedService();
   const [selectedFeedIds, setSelectedFeedIds] = useState([]);
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   // Feed selection logic
   const handleFeedSelect = (feedId) => {
@@ -40,6 +50,40 @@ export function FeedPage() {
     };
   });
 
+  // Favori toggle fonksiyonu
+  const handleToggleFavorite = async (video) => {
+    if (!video) return;
+    const itemType =
+      video.type || (video.feed_type || "").toLowerCase() || "rss";
+    if (video.is_favorite) {
+      await removeInteraction(video.id, "is_favorite", itemType);
+    } else {
+      await addInteraction(video.id, "is_favorite", itemType);
+    }
+  };
+
+  // Sonra oku toggle fonksiyonu
+  const handleToggleReadLater = async (video) => {
+    if (!video) return;
+    const itemType =
+      video.type || (video.feed_type || "").toLowerCase() || "rss";
+    if (video.is_read_later) {
+      await removeInteraction(video.id, "is_read_later", itemType);
+    } else {
+      await addInteraction(video.id, "is_read_later", itemType);
+    }
+  };
+
+  useEffect(() => {
+    const handleFocus = () => {
+      queryClient.invalidateQueries(["items", user?.id]);
+      queryClient.invalidateQueries(["favorites", user?.id]);
+      queryClient.invalidateQueries(["read_later", user?.id]);
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [queryClient, user?.id]);
+
   return (
     <div className="flex flex-col min-h-screen relative">
       {/* Background animated patterns */}
@@ -65,39 +109,68 @@ export function FeedPage() {
           style={{ animationDuration: "18s" }}
         ></div>
       </div>
-      <div className="w-full px-8 relative z-10">
+
+      <div className="container relative z-10">
         {/* Header */}
-        <header className="mb-8">
-          <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-blue-500 drop-shadow-sm">
-            {t("feeds.title")}
-          </h1>
-          <p className="text-muted-foreground text-base max-w-2xl">
-            {t("feeds.description")}
-          </p>
+        <header className="w-full max-w-screen-2xl mx-auto px-2 md:px-6 mt-8 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Rss className="h-7 w-7 text-blue-600" />
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-blue-500 drop-shadow-sm">
+                {t("feeds.title")}
+              </h1>
+              <p className="text-muted-foreground text-base max-w-2xl">
+                {t("feeds.description")}
+              </p>
+            </div>
+          </div>
         </header>
         {/* Feed Filter Bar */}
-        <nav className="w-full flex flex-wrap gap-2 mb-8 bg-blue-500/10 dark:bg-blue-900/20 backdrop-blur-md border border-blue-300/20 dark:border-blue-900/30 rounded-xl shadow px-4 py-3">
+        <nav className="w-full overflow-x-auto flex gap-2 mb-8 py-2 px-1 bg-white/10 dark:bg-gray-800/30 rounded-xl shadow-inner sticky top-0 z-20">
+          <button
+            onClick={() => setSelectedFeedIds([])}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium",
+              selectedFeedIds.length === 0
+                ? "bg-blue-600 text-white shadow"
+                : "bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-blue-100"
+            )}
+          >
+            <span className="font-bold">Tümü</span>
+          </button>
           {feeds.map((feed) => (
             <button
               key={feed.id}
               onClick={() => handleFeedSelect(feed.id)}
               className={cn(
-                "px-4 py-2 rounded-full border transition-all text-sm font-medium bg-white/20 dark:bg-white/10 backdrop-blur hover:bg-blue-500/20",
+                "flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium",
                 selectedFeedIds.includes(feed.id)
-                  ? "border-blue-500 text-blue-600 shadow"
-                  : "border-white/20 text-zinc-300"
+                  ? "bg-blue-600 text-white shadow"
+                  : "bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-blue-100"
               )}
             >
-              {feed.title}
+              {feed.icon && (
+                <img src={feed.icon} alt="" className="w-5 h-5 rounded-full" />
+              )}
+              <span>{feed.title}</span>
             </button>
           ))}
         </nav>
-        {/* Card Grid */}
-        <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-          {itemsWithFeedTitle.map((item) => (
-            <VideoCard key={item.id} video={item} />
-          ))}
-        </div>
+        {/* Main Content */}
+        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-2 md:px-6">
+          <section className="flex-1">
+            <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+              {itemsWithFeedTitle.map((item) => (
+                <VideoCard
+                  key={item.id}
+                  video={item}
+                  onToggleFavorite={handleToggleFavorite}
+                  onToggleReadLater={handleToggleReadLater}
+                />
+              ))}
+            </div>
+          </section>
+        </main>
       </div>
     </div>
   );
