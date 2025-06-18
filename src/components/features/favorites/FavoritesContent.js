@@ -125,7 +125,7 @@ export function FavoritesContent() {
         {/* Main Content */}
         <main className="flex-1 w-full max-w-screen-2xl mx-auto px-2 md:px-6">
           <section className="flex-1">
-            <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 px-2">
               {items.map((item) => (
                 <FavoriteDetailCard
                   key={item.id}
