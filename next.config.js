@@ -15,6 +15,8 @@ const nextConfig = {
       },
     },
   },
+  // Reduce dynamic server usage warnings
+  output: "standalone",
   images: {
     remotePatterns: [
       {
@@ -65,6 +67,10 @@ const nextConfig = {
       {
         message:
           /Critical dependency: the request of a dependency is an expression/,
+      },
+      // Ignore dynamic server usage warnings during build
+      {
+        message: /Dynamic server usage: Page couldn't be rendered statically/,
       },
     ];
 

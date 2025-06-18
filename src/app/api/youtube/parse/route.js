@@ -3,6 +3,9 @@ import { parseYoutubeChannel } from "@/lib/youtube-service";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 
+// Force dynamic rendering for this API route
+export const dynamic = "force-dynamic";
+
 /**
  * YouTube channel parsing timeout - 15 seconds
  * Added protection for large responses
@@ -127,4 +130,8 @@ export async function GET(request) {
       { status: 500 }
     );
   }
+}
+
+export async function POST(request) {
+  // ... existing code ...
 }

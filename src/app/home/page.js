@@ -2,7 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { HomeContent } from "@/components/home/HomeContent";
-import { feedService } from "@/services/feedService";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -29,6 +28,7 @@ async function getFeedsData(session) {
   }
 
   try {
+    const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -56,11 +56,26 @@ async function getFeedsData(session) {
 
     if (feedsError) throw feedsError;
 
-    // Get stats
-    const stats = await feedService.getStats(session.user.id);
+    // Get recent items from feed_items
+    const { data: recentItems, error: itemsError } = await supabase
+      .from("feed_items")
+      .select("*")
+      .in(
+        "feed_id",
+        feeds.map((f) => f.id)
+      )
+      .order("published_at", { ascending: false })
+      .limit(10);
 
-    // Get recent items
-    const recentItems = await feedService.getRecentItems(session.user.id);
+    if (itemsError) throw itemsError;
+
+    // Calculate basic stats
+    const stats = {
+      totalFeeds: feeds.length,
+      totalItems: recentItems?.length || 0,
+      rssFeeds: feeds.filter((f) => f.type === "rss").length,
+      youtubeFeeds: feeds.filter((f) => f.type === "youtube").length,
+    };
 
     return {
       feeds: feeds || [],

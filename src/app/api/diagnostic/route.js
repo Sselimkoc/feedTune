@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
+
+// Force dynamic rendering for this API route
+export const dynamic = "force-dynamic";
 
 export async function GET(request) {
   try {
@@ -23,7 +26,7 @@ export async function GET(request) {
 
     // Route handler client oluştur - server tarafında güvenilir auth
     const cookieStore = cookies();
-    const supabase = createServerClient(
+    const supabase = createServerSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
