@@ -3,7 +3,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createBrowserClient } from "@supabase/ssr";
-
 // Auth messages
 const AUTH_MESSAGES = {
   VERIFICATION_EMAIL_SENT: "auth.verificationEmailSent",
@@ -158,10 +157,7 @@ export const useAuthStore = create(
             set({ isLoading: true, isLoggingOut: true, error: null });
             console.log("Attempting to sign out...");
 
-            // First clear the local state
-            set({ user: null, session: null });
-
-            // Then sign out from Supabase
+            // Sign out from Supabase first
             const { error } = await supabase.auth.signOut();
             if (error) {
               console.error("Supabase signOut error:", error);
@@ -169,22 +165,22 @@ export const useAuthStore = create(
             }
 
             console.log("Supabase signOut successful.");
-            set({ isLoading: false });
+
+            // Clear all state at once
+            set({
+              user: null,
+              session: null,
+              isLoading: false,
+              isLoggingOut: false,
+              error: null,
+            });
+
             toastSuccess?.(AUTH_MESSAGES.LOGOUT_SUCCESS);
-
-            // Force a page reload to clear any remaining state
-            if (typeof window !== "undefined") {
-              // isLoggingOut will be reset on reload
-              window.location.href = "/";
-            }
-
-            return { success: true };
+            return { success: true, isLoggingOut: false };
           } catch (error) {
-            set({ isLoggingOut: false });
             console.error("Sign out failed:", error);
+            set({ isLoggingOut: false, isLoading: false });
             return handleAuthError(error, toastError);
-          } finally {
-            set({ isLoading: false });
           }
         },
 

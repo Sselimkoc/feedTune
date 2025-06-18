@@ -6,7 +6,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Image from "next/image";
-
+import { useLanguage } from "@/hooks/useLanguage";
 /**
  * Loading state component with different views
  */
@@ -20,9 +20,11 @@ export function LoadingState({
   showSpinner = true,
   showSkeletons = true,
   minimal = false,
+  message = "",
+  showOverlay = true,
 }) {
   const { theme } = useTheme();
-  const { t } = useTranslation();
+  const { t } = useLanguage();
 
   // Theme-based color variables
   const colors = useMemo(() => {
@@ -192,59 +194,39 @@ export function LoadingState({
     );
   }
 
+  if (!showOverlay) {
+    return (
+      <div className={`flex items-center justify-center p-4 ${className}`}>
+        <div className="flex items-center gap-3">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <span className="text-sm text-muted-foreground">
+            {message || t("common.loading")}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
-      className={`w-full ${className}`}
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
     >
-      {/* Loading header */}
-      {showSpinner && (
+      <div className="flex flex-col items-center gap-4 p-8 rounded-lg bg-background border shadow-lg">
         <motion.div
-          variants={itemVariants}
-          className="flex flex-col items-center justify-center py-8 text-center"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
-          <motion.div
-            variants={pulseVariants}
-            initial="initial"
-            animate="pulse"
-            className={`p-4 rounded-full ${colors.iconBg} mb-4`}
-          >
-            <Loader2 className={`h-8 w-8 animate-spin ${colors.iconColor}`} />
-          </motion.div>
-
-          <motion.h2
-            variants={pulseVariants}
-            initial="initial"
-            animate="pulse"
-            className={`text-xl font-semibold bg-gradient-to-r ${colors.titleGradient} bg-clip-text text-transparent`}
-          >
-            {title || t("common.loading")}
-          </motion.h2>
-
-          {description && (
-            <motion.p
-              variants={pulseVariants}
-              initial="initial"
-              animate="pulse"
-              className={`mt-2 ${colors.textColor}`}
-            >
-              {description}
-            </motion.p>
-          )}
+          <Loader2 className="h-8 w-8 text-primary" />
         </motion.div>
-      )}
-
-      {/* Skeleton grid/list */}
-      <div
-        className={`grid gap-4 ${
-          viewMode === "grid"
-            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-            : "grid-cols-1"
-        }`}
-      >
-        {generateSkeletonItems()}
+        <p className="text-lg font-medium text-foreground">
+          {message || t("common.loading")}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {t("common.pleaseWait")}
+        </p>
       </div>
     </motion.div>
   );

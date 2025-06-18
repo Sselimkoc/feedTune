@@ -9,6 +9,7 @@
     "menu": "Menü",
     "close": "Kapat",
     "loading": "Yükleniyor...",
+    "pleaseWait" : "Lütfen bekleyin...",
     "refresh": "Yenile"
   },
   "feeds": {
@@ -252,7 +253,8 @@
       "deleteWarning": "Bu işlem geri alınamaz. Hesabınız ve tüm verileriniz silinecek.",
       "deleteWarningConfirm": "Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!",
       "accountDeletedSuccess": "Hesabınız silindi.",
-      "accountDeletionFailed": "Hesap silme başarısız. Lütfen tekrar deneyin."
+      "accountDeletionFailed": "Hesap silme başarısız. Lütfen tekrar deneyin.",
+      "profileUpdateError": "Profil güncelleme başarısız. Lütfen tekrar deneyin."
     },
     "data": {
       "title": "Veri Yönetimi",
@@ -280,28 +282,39 @@
     "warning": "Uyarı"
   },
   "auth": {
+    "email" : "Email",
+    "password" : "Şifre",
+    "emailPlaceholder" : "Kullanıcı adınız@örnek.com",
+    "passwordPlaceholder" : "••••••••",
     "login": "Giriş yap",
     "register": "Kayıt ol",
     "logout": "Çıkış yap",
+    "loggingOut": "Çıkış yapılıyor...",
     "logoutSuccess": "Başarıyla çıkış yaptınız.",
     "logoutError": "Çıkış başarısız. Lütfen tekrar deneyin.",
     "loginSuccess": "Giriş başarılı! Tekrar hoş geldiniz.",
     "loginError": "Giriş başarısız. Bilgilerinizi kontrol edin.",
     "registerSuccess": "Kayıt başarılı! Lütfen e-postanızı kontrol edin.",
     "registerError": "Kayıt başarısız. Lütfen tekrar deneyin.",
+    "profileUpdateError": "Profil güncelleme başarısız. Lütfen tekrar deneyin.",
+    "authenticationError": "Kimlik doğrulama başarısız. Lütfen tekrar deneyin.",
+    "rateLimitError": "Çok fazla deneme. Lütfen biraz bekleyin.",
+    "sessionExpired": "Oturum süresi doldu. Lütfen tekrar giriş yapın.",
+    "networkError": "Ağ hatası. Lütfen bağlantınızı kontrol edin.",
+    "verificationEmailSent": "Doğrulama e-postası gönderildi! Lütfen gelen kutunuzu kontrol edin.",
     "verification": {
       "title": "E-postanızı Doğrulayın",
       "description": "Hesabınızı kullanmaya başlamadan önce lütfen e-posta adresinizi doğrulayın.",
       "checkInbox": "Lütfen gelen kutunuzu kontrol edin",
-      "emailSentTo": "Doğrulama e-postası gönderildi:",
+      "emailSentTo": "Doğrulama e-postası gönderildi: ",
       "step1": "E-postanızı açın ve doğrulama bağlantısına tıklayın",
-      "step2": "Bağlantıya tıklayınca doğrulama sayfasına yönlendirileceksiniz",
+      "step2": "Bağlantıya tıklamak sizi doğrulama sayfasına yönlendirecek",
       "step3": "Doğrulama tamamlandıktan sonra hesabınıza giriş yapabilirsiniz",
       "goToLogin": "Giriş sayfasına git",
       "resendEmail": "Doğrulama e-postasını tekrar gönder",
       "resendingEmail": "E-posta gönderiliyor...",
-      "emailResent": "Doğrulama e-postası tekrar gönderildi",
-      "resendError": "Doğrulama e-postası tekrar gönderilemedi"
+      "emailResent": "Doğrulama e-postası başarıyla tekrar gönderildi!",
+      "resendError": "Doğrulama e-postası tekrar gönderilemedi."
     },
     "termsText": "Devam ederek",
     "termsLink": "Kullanım Şartları"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/core/ui/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 
 // Yerel depolama ile önbellek yönetimi için sabitler

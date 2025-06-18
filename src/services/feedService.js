@@ -1,7 +1,7 @@
 "use client";
 
 import { FeedRepository } from "@/lib/db/feedRepository";
-import { toast } from "sonner";
+import { toast } from "@/components/core/ui/use-toast";
 import { createBrowserClient } from "@supabase/ssr";
 import { FeedParser } from "@/utils/feedParser";
 import { parseURL } from "@/utils/feedParser";

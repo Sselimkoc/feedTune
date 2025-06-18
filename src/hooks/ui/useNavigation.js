@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useToast } from "@/components/core/ui/use-toast";
 import { useRouter, usePathname } from "next/navigation";
+import { LoadingState } from "@/components/core/states/LoadingState";
 
 /**
  * Navigation hook that provides necessary state and functions
@@ -20,7 +21,7 @@ import { useRouter, usePathname } from "next/navigation";
  */
 export function useNavigation() {
   const { t } = useTranslation();
-  const { user, signOut } = useAuthStore();
+  const { user, signOut, isLoggingOut } = useAuthStore();
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -45,6 +46,7 @@ export function useNavigation() {
       });
 
       if (success) {
+        // Navigate to home page after successful sign out
         router.push("/");
       } else {
         throw error;
@@ -58,6 +60,20 @@ export function useNavigation() {
       });
     }
   }, [router, signOut, toast, t]);
+
+  // Show loading overlay during sign out
+  if (isLoggingOut) {
+    return {
+      user,
+      items: [],
+      handleSignOut,
+      isLoading: true,
+      isOpen,
+      setIsOpen,
+      pathname,
+      LoadingOverlay: () => <LoadingState message={t("auth.loggingOut")} />,
+    };
+  }
 
   const items = [
     {

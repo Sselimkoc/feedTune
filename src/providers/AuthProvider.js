@@ -87,17 +87,10 @@ export function AuthProvider({ children }) {
             "[AuthProvider] Handling SIGNED_IN or TOKEN_REFRESHED event"
           );
           await setSession(session);
-          router.refresh();
         } else if (event === "SIGNED_OUT") {
           console.log("[AuthProvider] Handling SIGNED_OUT event");
           await setSession(null);
-          // Clear any remaining state
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("auth-storage");
-          }
-          router.refresh();
-          // Force redirect to home page
-          router.push("/");
+          // Let the component handle navigation
         }
       } catch (error) {
         console.error("[AuthProvider] Auth state change error:", error);
@@ -108,7 +101,7 @@ export function AuthProvider({ children }) {
       console.log("[AuthProvider] Cleaning up auth state change listener");
       subscription?.unsubscribe();
     };
-  }, [isInitialized, setSession, router]);
+  }, [isInitialized, setSession]);
 
   const value = {
     user,

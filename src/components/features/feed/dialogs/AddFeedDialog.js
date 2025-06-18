@@ -28,9 +28,6 @@ import {
   Info,
   ArrowRight,
 } from "lucide-react";
-import { Badge } from "@/components/core/ui/badge";
-import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Tabs,
   TabsContent,

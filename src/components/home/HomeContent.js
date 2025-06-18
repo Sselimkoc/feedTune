@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { toast } from "sonner";
+import { Toast } from "../core/ui/toast";
 import { useSession } from "@/hooks/auth/useSession";
 import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
 import { feedService } from "@/services/feedService";

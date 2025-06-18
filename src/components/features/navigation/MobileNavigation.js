@@ -29,6 +29,7 @@ import { useState, useCallback } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/core/ui/use-toast";
+import { LoadingState } from "@/components/core/states/LoadingState";
 import {
   Avatar,
   AvatarFallback,
@@ -41,11 +42,16 @@ export function MobileNavigation() {
   const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const { settings } = useSettingsStore();
-  const { user, signOut } = useAuthStore();
+  const { user, signOut, isLoggingOut } = useAuthStore();
   const userId = user?.id;
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  // Show loading overlay during sign out
+  if (isLoggingOut) {
+    return <LoadingState message={t("auth.loggingOut")} />;
+  }
 
   // Public menu items - visible to all users
   const publicMenuItems = [
@@ -133,8 +139,9 @@ export function MobileNavigation() {
       });
 
       if (success) {
-        router.push("/");
         setOpen(false);
+        // Navigate to home page after successful sign out
+        router.push("/");
       } else {
         throw error;
       }
@@ -146,7 +153,7 @@ export function MobileNavigation() {
         variant: "destructive",
       });
     }
-  }, [signOut, router, toast, t]);
+  }, [signOut, router, toast, t, setOpen]);
 
   return (
     <div className="lg:hidden fixed top-0 left-0 right-0 h-14 border-b bg-white dark:bg-[#151c29] z-50 px-4 flex items-center justify-between">

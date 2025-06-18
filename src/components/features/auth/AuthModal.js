@@ -18,7 +18,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAuth, useAuthActions } from "@/hooks/auth/useAuth";
 import { createBrowserClient } from "@supabase/ssr";
-import { toast } from "sonner";
+import { useToast } from "@/components/core/ui/use-toast";
 import { EmailVerification } from "./EmailVerification";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -46,6 +46,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
   const { t } = useTranslation();
   const { isLoading } = useAuth();
   const { handleSignIn, handleSignUp } = useAuthActions();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (open && !verifyingEmail) {
@@ -83,11 +84,18 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
 
       if (error) throw error;
 
-      toast.success(t("auth.verification.emailResent"));
+      toast({
+        title: t("common.success"),
+        description: t("auth.verification.emailResent"),
+      });
       return true;
     } catch (error) {
       console.error("Error resending verification email:", error);
-      toast.error(error.message || t("auth.verification.resendError"));
+      toast({
+        title: t("common.error"),
+        description: error.message || t("auth.verification.resendError"),
+        variant: "destructive",
+      });
       return false;
     }
   };

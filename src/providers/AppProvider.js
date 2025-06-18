@@ -3,10 +3,11 @@
 import { Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { Toaster } from "sonner";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { LoadingState } from "@/components/core/states/LoadingState";
+import { Toaster } from "@/components/core/ui/toaster";
+import { ToastProvider } from "@/components/core/ui/toast";
 
 /**
  * Component that combines all context providers for the application.

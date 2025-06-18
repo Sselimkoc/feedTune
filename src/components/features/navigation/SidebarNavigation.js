@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -15,6 +15,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWindowSize } from "@/hooks/useWindowSize";
 import { useToast } from "@/components/core/ui/use-toast";
 import { useRouter } from "next/navigation";
+import { LoadingState } from "@/components/core/states/LoadingState";
 import {
   Avatar,
   AvatarFallback,
@@ -35,7 +36,7 @@ import {
 
 export function SidebarNavigation() {
   const { t } = useTranslation();
-  const { user, signOut } = useAuthStore();
+  const { user, signOut, isLoggingOut } = useAuthStore();
   const userId = user?.id;
   const pathname = usePathname();
   const router = useRouter();
@@ -60,6 +61,7 @@ export function SidebarNavigation() {
       });
 
       if (success) {
+        // Navigate to home page after successful sign out
         router.push("/");
       } else {
         throw error;
@@ -73,6 +75,11 @@ export function SidebarNavigation() {
       });
     }
   }, [signOut, router, toast, t]);
+
+  // Show loading overlay during sign out
+  if (isLoggingOut) {
+    return <LoadingState message={t("auth.loggingOut")} />;
+  }
 
   const items = [
     {
