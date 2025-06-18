@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { usePagination } from "@/hooks/features/feed-screen/usePagination";

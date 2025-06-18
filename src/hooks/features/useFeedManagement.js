@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { feedService } from "@/services/feedService";
 

@@ -1,14 +1,14 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/providers/theme-provider";
-import { LanguageProvider } from "@/components/providers/language-provider";
+import { Toaster } from "@/components/core/ui/toaster";
+import { ThemeProvider } from "@/providers/ThemeProvider";
+import { LanguageProvider } from "@/providers/LanguageProvider";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { AppProvider } from "@/providers/AppProvider";
-import { AppLayout } from "@/components/layouts/AppLayout";
+import { AppLayout } from "@/components/core/layout/AppLayout";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -22,12 +22,12 @@ export default async function RootLayout({ children }) {
   const supabase = createServerComponentClient({ cookies });
 
   try {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-  // If no session and trying to access a protected route
-  if (!session) {
+    // If no session and trying to access a protected route
+    if (!session) {
       let pathname = "/";
       const nextUrl = cookies().get("NEXT_URL")?.value;
 
@@ -40,20 +40,20 @@ export default async function RootLayout({ children }) {
         pathname = "/";
       }
 
-    const protectedRoutes = [
-      "/dashboard",
-      "/settings",
-      "/profile",
-      "/feed",
-      "/tunes",
-    ];
+      const protectedRoutes = [
+        "/dashboard",
+        "/settings",
+        "/profile",
+        "/feed",
+        "/tunes",
+      ];
 
-    if (protectedRoutes.some((route) => pathname.startsWith(route))) {
-      redirect("/n");
+      if (protectedRoutes.some((route) => pathname.startsWith(route))) {
+        redirect("/n");
+      }
     }
-  }
 
-  return (
+    return (
       <html lang="en" suppressHydrationWarning className="scroll-smooth">
         <body
           className={`${inter.variable} font-sans h-full antialiased`}
@@ -111,15 +111,15 @@ export default async function RootLayout({ children }) {
             "--background-rgb": "var(--background)",
           }}
         >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <LanguageProvider>
-            <AuthProvider>
-              <AppProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <LanguageProvider>
+              <AuthProvider>
+                <AppProvider>
                   {/* Dynamic background */}
                   <div className="fixed inset-0 -z-10 overflow-hidden">
                     {/* Base gradient */}
@@ -140,13 +140,13 @@ export default async function RootLayout({ children }) {
                       {children}
                     </div>
                   </AppLayout>
-                <Toaster />
-              </AppProvider>
-            </AuthProvider>
-          </LanguageProvider>
-        </ThemeProvider>
-      </body>
-    </html>
-  );
+                  <Toaster />
+                </AppProvider>
+              </AuthProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </body>
+      </html>
+    );
   }
 }

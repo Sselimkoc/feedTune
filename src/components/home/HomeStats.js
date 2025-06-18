@@ -1,6 +1,11 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/core/ui/card";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Rss, FileText, Eye, Star, BookmarkCheck } from "lucide-react";

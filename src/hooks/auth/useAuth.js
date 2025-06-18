@@ -2,7 +2,7 @@
 
 import { useAuth as useAuthContext } from "@/providers/AuthProvider";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 
 // Export the context hook
 export const useAuth = useAuthContext;

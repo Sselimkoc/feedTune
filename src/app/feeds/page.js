@@ -1,5 +1,4 @@
-import { Metadata } from "next";
-import { FeedPage } from "@/components/features/feeds/FeedPage";
+import { FeedPage } from "@/components/features/feed/FeedPage";
 
 export const metadata = {
   title: "Feeds | FeedTune",

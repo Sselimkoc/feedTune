@@ -1,8 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/core/ui/card";
+import { Button } from "@/components/core/ui/button";
 import {
   ExternalLink,
   Trash2,

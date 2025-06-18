@@ -70,6 +70,7 @@ export const useAuthStore = create(
         session: null,
         isLoading: true,
         error: null,
+        isLoggingOut: false,
 
         // Initialize auth state (no toast here)
         initialize: async () => {
@@ -151,7 +152,7 @@ export const useAuthStore = create(
         // Sign out - accepts toast functions as arguments
         signOut: async ({ toastSuccess, toastError }) => {
           try {
-            set({ isLoading: true, error: null });
+            set({ isLoading: true, isLoggingOut: true, error: null });
             console.log("Attempting to sign out...");
 
             // First clear the local state
@@ -170,11 +171,13 @@ export const useAuthStore = create(
 
             // Force a page reload to clear any remaining state
             if (typeof window !== "undefined") {
+              // isLoggingOut will be reset on reload
               window.location.href = "/";
             }
 
             return { success: true };
           } catch (error) {
+            set({ isLoggingOut: false });
             console.error("Sign out failed:", error);
             return handleAuthError(error, toastError);
           } finally {

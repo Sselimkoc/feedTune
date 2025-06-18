@@ -1,61 +1,13 @@
 "use client";
 
-import { useState, useCallback, memo } from "react";
 import { useTranslation } from "react-i18next";
-import { useReadLaterScreen } from "@/hooks/features/useReadLaterScreen";
 import { BookmarkCheck } from "lucide-react";
-import { ContentCard } from "@/components/shared/ContentCard";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/core/ui/button";
 import Link from "next/link";
-import { ModernContentCard } from "@/components/shared/ModernContentCard";
+import VideoCard from "@/components/VideoCard";
 
-export const ReadLaterContent = memo(function ReadLaterContent() {
+export function ReadLaterContent({ items = [] }) {
   const { t } = useTranslation();
-  const {
-    items,
-    isLoading,
-    isError,
-    error,
-    refresh,
-    toggleRead,
-    toggleFavorite,
-    toggleReadLater,
-    totalReadLater,
-  } = useReadLaterScreen();
-
-  // State
-  const [viewMode] = useState("grid");
-
-  // Event Handlers
-  const handleToggleFavorite = useCallback(
-    async (itemId, newValue) => {
-      return await toggleFavorite(itemId, newValue);
-    },
-    [toggleFavorite]
-  );
-
-  const handleToggleReadLater = useCallback(
-    async (itemId, newValue) => {
-      return await toggleReadLater(itemId, newValue);
-    },
-    [toggleReadLater]
-  );
-
-  const handleItemClick = useCallback(
-    async (url, item) => {
-      if (url) {
-        window.open(url, "_blank");
-        if (item && !item.is_read) {
-          try {
-            await toggleRead(item.id, true);
-          } catch (error) {
-            console.error("İçerik okundu işaretlenemedi:", error);
-          }
-        }
-      }
-    },
-    [toggleRead]
-  );
 
   return (
     <div className="flex flex-col min-h-screen relative">
@@ -97,38 +49,11 @@ export const ReadLaterContent = memo(function ReadLaterContent() {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={refresh} size="sm">
-              {t("common.refresh")}
-            </Button>
-          </div>
         </header>
         {/* Main Content */}
         <main className="flex-1 w-full max-w-screen-2xl mx-auto px-2 md:px-6">
           <section className="flex-1">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-96">
-                <span className="animate-pulse text-lg text-muted-foreground">
-                  {t("common.loading")}
-                </span>
-              </div>
-            ) : isError ? (
-              <div className="flex flex-col items-center justify-center h-96 text-center">
-                <span className="text-destructive text-2xl font-bold mb-2">
-                  {t("common.error")}
-                </span>
-                <span className="text-muted-foreground mb-4">
-                  {error?.message || t("common.errorDescription")}
-                </span>
-                <Button
-                  onClick={() => window.location.reload()}
-                  variant="outline"
-                  className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
-                >
-                  {t("common.retry")}
-                </Button>
-              </div>
-            ) : !items || items.length === 0 ? (
+            {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-96 text-center">
                 <img
                   src="/images/placeholder.webp"
@@ -152,12 +77,7 @@ export const ReadLaterContent = memo(function ReadLaterContent() {
             ) : (
               <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {items.map((item) => (
-                  <ModernContentCard
-                    key={item.id}
-                    item={item}
-                    onFavorite={() => {}}
-                    onReadLater={() => {}}
-                  />
+                  <VideoCard key={item.id} video={item} />
                 ))}
               </div>
             )}
@@ -166,4 +86,4 @@ export const ReadLaterContent = memo(function ReadLaterContent() {
       </div>
     </div>
   );
-});
+}

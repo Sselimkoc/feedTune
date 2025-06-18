@@ -3,9 +3,14 @@
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/core/ui/button";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/core/ui/tabs";
+import { Card, CardContent } from "@/components/core/ui/card";
 import {
   RssIcon,
   YoutubeIcon,
@@ -186,4 +191,4 @@ export function HomeShowcase() {
       </div>
     </section>
   );
-} 
+}

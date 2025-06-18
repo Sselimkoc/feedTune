@@ -22,15 +22,18 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/core/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/core/ui/sheet";
+import { Separator } from "@/components/core/ui/separator";
 import { useState, useCallback } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { ThemeToggle } from "@/components/features/theme/themeToggle";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/components/core/ui/use-toast";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/core/ui/avatar";
 import Image from "next/image";
 
 export function MobileNavigation() {

@@ -1,8 +1,6 @@
-import { Suspense } from "react";
 import { ReadLaterContent } from "@/components/features/read-later/ReadLaterContent";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { Loader2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -64,18 +62,11 @@ async function getReadLaterItems() {
   return itemsWithInteractions || [];
 }
 
-export default function ReadLaterPage() {
+export default async function ReadLaterPage() {
+  const items = await getReadLaterItems();
   return (
     <div className="max-w-screen-2xl mx-auto py-8 px-2 md:px-6">
-      <Suspense
-        fallback={
-          <div className="flex justify-center items-center min-h-[70vh]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        }
-      >
-        <ReadLaterContent />
-      </Suspense>
+      <ReadLaterContent items={items} />
     </div>
   );
 }

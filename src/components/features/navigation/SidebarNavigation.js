@@ -6,16 +6,20 @@ import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/core/ui/button";
+import { Separator } from "@/components/core/ui/separator";
+import { ScrollArea } from "@/components/core/ui/scroll-area";
 import { useTheme } from "@/hooks/useTheme";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWindowSize } from "@/hooks/useWindowSize";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 import { useRouter } from "next/navigation";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/core/ui/avatar";
 import Image from "next/image";
 
 import {
@@ -73,7 +77,7 @@ export function SidebarNavigation() {
   const items = [
     {
       title: t("navigation.home"),
-      href: "/",
+      href: "/home",
       icon: HomeIcon,
     },
     {

@@ -4,12 +4,17 @@ import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth, useAuthActions } from "@/hooks/auth/useAuth";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/components/core/ui/use-toast";
+import { Button } from "@/components/core/ui/button";
+import { Input } from "@/components/core/ui/input";
+import { Label } from "@/components/core/ui/label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/core/ui/card";
+import { Separator } from "@/components/core/ui/separator";
 import { useRouter } from "next/navigation";
 
 export function ProfileSettings() {

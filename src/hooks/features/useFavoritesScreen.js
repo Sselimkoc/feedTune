@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useFeedService } from "./useFeedService";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "@/hooks/features/feed-screen/usePagination";

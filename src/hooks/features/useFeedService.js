@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -104,9 +104,9 @@ export function useFeedService() {
           .from("feeds")
           .select(
             `
-    *,
-    category:categories(*)
-  `
+            *,
+            category:categories(*)
+          `
           )
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });

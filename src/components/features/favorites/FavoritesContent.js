@@ -5,10 +5,9 @@ import { useTranslation } from "react-i18next";
 import { useFavoritesScreen } from "@/hooks/features/useFavoritesScreen";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Bookmark } from "lucide-react";
-import { ContentCard } from "@/components/shared/ContentCard";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/core/ui/button";
 import Link from "next/link";
-import { ModernContentCard } from "@/components/shared/ModernContentCard";
+import VideoCard from "@/components/VideoCard";
 
 export const FavoritesContent = memo(function FavoritesContent() {
   const { t } = useTranslation();
@@ -153,12 +152,7 @@ export const FavoritesContent = memo(function FavoritesContent() {
             ) : (
               <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {items.map((item) => (
-                  <ModernContentCard
-                    key={item.id}
-                    item={item}
-                    onFavorite={() => {}}
-                    onReadLater={() => {}}
-                  />
+                  <VideoCard key={item.id} video={item} />
                 ))}
               </div>
             )}

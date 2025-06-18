@@ -1,23 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/core/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+} from "@/components/core/ui/card";
+import { Label } from "@/components/core/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+} from "@/components/core/ui/select";
+import { Switch } from "@/components/core/ui/switch";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTheme } from "next-themes";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -32,10 +32,10 @@ import {
   RotateCcw,
   Settings2,
 } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/components/core/ui/separator";
 import { motion } from "framer-motion";
 import { ProfileSettings } from "@/components/features/settings/ProfileSettings";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 
 export function SettingsContent() {
   const { settings, updateSettings } = useSettingsStore();

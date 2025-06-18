@@ -6,7 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
-import { LoadingState } from "@/components/ui-states/LoadingState";
+import { LoadingState } from "@/components/core/states/LoadingState";
 
 /**
  * Component that combines all context providers for the application.

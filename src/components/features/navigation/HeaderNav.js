@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/core/ui/button";
 import { Rss, Moon, Sun, Languages, User } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import {
@@ -11,7 +11,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/core/ui/dropdown-menu";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";

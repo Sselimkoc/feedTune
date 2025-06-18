@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 import { useRouter, usePathname } from "next/navigation";
 
 /**

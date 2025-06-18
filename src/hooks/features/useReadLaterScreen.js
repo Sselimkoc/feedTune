@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useFeedItems } from "@/hooks/features/deprecated/useFeedItems";
 import { useTranslation } from "react-i18next";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
 import { useFeedService } from "@/hooks/features/useFeedService";
 

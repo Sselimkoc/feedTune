@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/core/ui/use-toast";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { youtubeService } from "@/lib/youtube/service";
