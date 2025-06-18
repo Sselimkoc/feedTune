@@ -6,7 +6,7 @@ import { LanguageProvider } from "@/providers/LanguageProvider";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AuthProvider } from "@/providers/AuthProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { AppProvider } from "@/providers/AppProvider";
 import { AppLayout } from "@/components/core/layout/AppLayout";
 
@@ -86,7 +86,7 @@ export default async function RootLayout({ children }) {
             disableTransitionOnChange
           >
             <LanguageProvider>
-              <AuthProvider>
+              <AuthProvider initialSession={session}>
                 <AppProvider>
                   {/* Dynamic background */}
                   <div className="fixed inset-0 -z-10 overflow-hidden">
@@ -135,7 +135,7 @@ export default async function RootLayout({ children }) {
             disableTransitionOnChange
           >
             <LanguageProvider>
-              <AuthProvider>
+              <AuthProvider initialSession={session}>
                 <AppProvider>
                   {/* Dynamic background */}
                   <div className="fixed inset-0 -z-10 overflow-hidden">
