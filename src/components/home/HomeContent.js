@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Toast } from "../core/ui/toast";
 import { useSession } from "@/hooks/auth/useSession";
 import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
@@ -19,11 +19,11 @@ import { useLanguage } from "@/hooks/useLanguage";
 
 export function HomeContent({
   initialSession,
-  feeds = [],
-  stats = {},
-  recentItems = [],
+  feeds: initialFeeds = [],
+  stats: initialStats = {},
+  recentItems: initialRecentItems = [],
 }) {
-  const { user, isLoading } = useSession();
+  const { user, isLoading: isSessionLoading } = useSession();
   const { t } = useLanguage();
 
   // Modal states
@@ -31,6 +31,38 @@ export function HomeContent({
   const [showAddFeedDialog, setShowAddFeedDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [feedToDelete, setFeedToDelete] = useState(null);
+
+  // Data states
+  const [feeds, setFeeds] = useState(initialFeeds);
+  const [stats, setStats] = useState(initialStats);
+  const [recentItems, setRecentItems] = useState(initialRecentItems);
+  const [isDataLoading, setIsDataLoading] = useState(false);
+
+  // Fetch feeds and related data after session is available
+  useEffect(() => {
+    async function fetchData() {
+      if (!user) return;
+      setIsDataLoading(true);
+      try {
+        // Fetch feeds
+        const resFeeds = await fetch("/api/feeds");
+        const feedsData = await resFeeds.json();
+        setFeeds(feedsData.feeds || []);
+        setStats(feedsData.stats || {});
+        setRecentItems(feedsData.recentItems || []);
+      } catch (error) {
+        // Optionally handle error
+        setFeeds([]);
+        setStats({});
+        setRecentItems([]);
+      } finally {
+        setIsDataLoading(false);
+      }
+    }
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const { removeFeed } = useFeedActions(
     user,
@@ -70,7 +102,7 @@ export function HomeContent({
         </>
       );
     }
-    if (isLoading) {
+    if (isSessionLoading || isDataLoading) {
       return (
         <div className="flex justify-center items-center h-96">
           <span className="animate-pulse text-lg text-muted-foreground">
