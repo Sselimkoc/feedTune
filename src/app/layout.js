@@ -6,7 +6,6 @@ import { LanguageProvider } from "@/providers/LanguageProvider";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { AppProvider } from "@/providers/AppProvider";
 import { AppLayout } from "@/components/core/layout/AppLayout";
 
@@ -86,31 +85,29 @@ export default async function RootLayout({ children }) {
             disableTransitionOnChange
           >
             <LanguageProvider>
-              <AuthProvider initialSession={session}>
-                <AppProvider>
-                  {/* Dynamic background */}
-                  <div className="fixed inset-0 -z-10 overflow-hidden">
-                    {/* Base gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50/30 to-white dark:from-slate-950 dark:via-indigo-950/20 dark:to-slate-950" />
+              <AppProvider>
+                {/* Dynamic background */}
+                <div className="fixed inset-0 -z-10 overflow-hidden">
+                  {/* Base gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50/30 to-white dark:from-slate-950 dark:via-indigo-950/20 dark:to-slate-950" />
 
-                    {/* Triangle patterns */}
-                    <div className="absolute inset-0">
-                      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center bg-no-repeat bg-[length:100%_100%] opacity-[0.07] dark:opacity-[0.03] animate-[pulse_8s_ease-in-out_infinite]" />
-                      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center bg-no-repeat bg-[length:100%_100%] opacity-[0.07] dark:opacity-[0.03] animate-[pulse_8s_ease-in-out_infinite] animation-delay-4000 rotate-180" />
-                    </div>
-
-                    {/* Subtle noise texture */}
-                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuMDUiLz48L3N2Zz4=')]" />
+                  {/* Triangle patterns */}
+                  <div className="absolute inset-0">
+                    <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center bg-no-repeat bg-[length:100%_100%] opacity-[0.07] dark:opacity-[0.03] animate-[pulse_8s_ease-in-out_infinite]" />
+                    <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center bg-no-repeat bg-[length:100%_100%] opacity-[0.07] dark:opacity-[0.03] animate-[pulse_8s_ease-in-out_infinite] animation-delay-4000 rotate-180" />
                   </div>
 
-                  <AppLayout>
-                    <div className="glass rounded-xl p-6 min-h-[calc(100vh-2rem)]">
-                      {children}
-                    </div>
-                  </AppLayout>
-                  <Toaster />
-                </AppProvider>
-              </AuthProvider>
+                  {/* Subtle noise texture */}
+                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuMDUiLz48L3N2Zz4=')]" />
+                </div>
+
+                <AppLayout>
+                  <div className="glass rounded-xl p-6 min-h-[calc(100vh-2rem)]">
+                    {children}
+                  </div>
+                </AppLayout>
+                <Toaster />
+              </AppProvider>
             </LanguageProvider>
           </ThemeProvider>
         </body>
@@ -135,31 +132,29 @@ export default async function RootLayout({ children }) {
             disableTransitionOnChange
           >
             <LanguageProvider>
-              <AuthProvider initialSession={session}>
-                <AppProvider>
-                  {/* Dynamic background */}
-                  <div className="fixed inset-0 -z-10 overflow-hidden">
-                    {/* Base gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50/30 to-white dark:from-slate-950 dark:via-indigo-950/20 dark:to-slate-950" />
+              <AppProvider>
+                {/* Dynamic background */}
+                <div className="fixed inset-0 -z-10 overflow-hidden">
+                  {/* Base gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50/30 to-white dark:from-slate-950 dark:via-indigo-950/20 dark:to-slate-950" />
 
-                    {/* Triangle patterns */}
-                    <div className="absolute inset-0">
-                      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center bg-no-repeat bg-[length:100%_100%] opacity-[0.07] dark:opacity-[0.03] animate-[pulse_8s_ease-in-out_infinite]" />
-                      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center bg-no-repeat bg-[length:100%_100%] opacity-[0.07] dark:opacity-[0.03] animate-[pulse_8s_ease-in-out_infinite] animation-delay-4000 rotate-180" />
-                    </div>
-
-                    {/* Subtle noise texture */}
-                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuMDUiLz48L3N2Zz4=')]" />
+                  {/* Triangle patterns */}
+                  <div className="absolute inset-0">
+                    <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center bg-no-repeat bg-[length:100%_100%] opacity-[0.07] dark:opacity-[0.03] animate-[pulse_8s_ease-in-out_infinite]" />
+                    <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center bg-no-repeat bg-[length:100%_100%] opacity-[0.07] dark:opacity-[0.03] animate-[pulse_8s_ease-in-out_infinite] animation-delay-4000 rotate-180" />
                   </div>
 
-                  <AppLayout>
-                    <div className="glass rounded-xl p-6 min-h-[calc(100vh-2rem)]">
-                      {children}
-                    </div>
-                  </AppLayout>
-                  <Toaster />
-                </AppProvider>
-              </AuthProvider>
+                  {/* Subtle noise texture */}
+                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuMDUiLz48L3N2Zz4=')]" />
+                </div>
+
+                <AppLayout>
+                  <div className="glass rounded-xl p-6 min-h-[calc(100vh-2rem)]">
+                    {children}
+                  </div>
+                </AppLayout>
+                <Toaster />
+              </AppProvider>
             </LanguageProvider>
           </ThemeProvider>
         </body>

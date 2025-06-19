@@ -1,13 +1,5 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { toast } from "sonner";
-import { createBrowserClient } from "@supabase/ssr";
-import {
-  fetchFeeds,
-  fetchFeedItems,
-  fetchYoutubeItems,
-  limitItemsPerFeed,
-} from "@/hooks/features/useFeeds";
 
 // Önbellek ayarları
 const CACHE_KEY = "feed-cache";

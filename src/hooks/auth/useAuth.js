@@ -1,17 +1,19 @@
 "use client";
 
-import { useAuth as useAuthContext } from "@/providers/AuthProvider";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/core/ui/use-toast";
 import { useTranslation } from "react-i18next";
 
 // Export the context hook
-export const useAuth = useAuthContext;
+export function useAuth() {
+  return useAuthStore();
+}
 
 // Export the actions hook
 export function useAuthActions() {
   const router = useRouter();
-  const { signIn, signUp, signOut, updateProfile } = useAuthContext();
+  const { signIn, signUp, signOut, updateProfile } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
 

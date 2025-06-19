@@ -3,8 +3,7 @@
 import { useState, useCallback } from "react";
 import { Toast } from "../core/ui/toast";
 import { useSession } from "@/hooks/auth/useSession";
-import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
-import { feedService } from "@/services/feedService";
+import { useFeedService } from "@/hooks/features/useFeedService";
 import { HomeStats } from "@/components/home/HomeStats";
 import { HomeFeedManagement } from "@/components/home/HomeFeedManagement";
 import { HomeRecentContent } from "@/components/home/HomeRecentContent";
@@ -17,13 +16,8 @@ import { HomeModals } from "@/components/home/HomeModals";
 import { EmptyState } from "@/components/core/states/EmptyState";
 import { useLanguage } from "@/hooks/useLanguage";
 
-export function HomeContent({
-  initialSession,
-  feeds = [],
-  stats = {},
-  recentItems = [],
-}) {
-  const { user, isLoading } = useSession();
+export function HomeContent({ feeds = [], stats = {}, recentItems = [] }) {
+  const { user, isLoading, deleteFeed } = useFeedService();
   const { t } = useLanguage();
 
   // Modal states
@@ -32,26 +26,18 @@ export function HomeContent({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [feedToDelete, setFeedToDelete] = useState(null);
 
-  const { removeFeed } = useFeedActions(
-    user,
-    () => {}, // refreshAll
-    () => {}, // refreshAll
-    feedService
-  );
-
   // Feed management handlers
   const handleDeleteFeed = useCallback(
     async (feedId) => {
       try {
-        await removeFeed(feedId);
-        // Refresh will be handled by the server component
+        await deleteFeed(feedId);
         window.location.reload();
       } catch (error) {
         console.error("Error deleting feed:", error);
         toast.error(t("feeds.deleteFeedError", { error: error.message }));
       }
     },
-    [removeFeed, t]
+    [deleteFeed, t]
   );
 
   const handleAddFeed = () => setShowAddFeedDialog(true);
