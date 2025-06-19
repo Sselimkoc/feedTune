@@ -22,9 +22,8 @@ export function HomeContent({
   feeds = [],
   stats = {},
   recentItems = [],
-  isLoading = false,
 }) {
-  const { user } = useSession();
+  const { user, isLoading } = useSession();
   const { t } = useLanguage();
 
   // Modal states
