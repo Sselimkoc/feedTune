@@ -55,7 +55,7 @@ export class FeedRepository {
    */
   async getFavoriteItems(userId) {
     try {
-      const result = await this.db.query("user_interactions", {
+      const result = await this.db.query("rss_interactions", {
         eq: { user_id: userId, is_favorite: true },
         order: { created_at: "desc" },
       });
@@ -73,7 +73,7 @@ export class FeedRepository {
    */
   async getReadLaterItems(userId) {
     try {
-      const result = await this.db.query("user_interactions", {
+      const result = await this.db.query("rss_interactions", {
         eq: { user_id: userId, is_read_later: true },
         order: { created_at: "desc" },
       });
@@ -93,10 +93,12 @@ export class FeedRepository {
    * @returns {Promise<Object>} - Güncelleme sonucu
    */
   async updateItemInteraction(userId, itemId, feedType, updates) {
+    const table =
+      feedType === "youtube" ? "youtube_interactions" : "rss_interactions";
     try {
       const result = await this.db.update(
-        "user_interactions",
-        { eq: { user_id: userId, item_id: itemId, feed_type: feedType } },
+        table,
+        { eq: { user_id: userId, item_id: itemId } },
         updates
       );
       return result.data;
@@ -196,9 +198,11 @@ export class FeedRepository {
    * @param {Array} itemIds - Öğe ID'leri
    * @returns {Promise<Array>} - Etkileşimler
    */
-  async getUserInteractions(userId, itemIds) {
+  async getUserInteractions(userId, itemIds, type = "rss") {
+    const table =
+      type === "youtube" ? "youtube_interactions" : "rss_interactions";
     try {
-      const result = await this.db.query("user_interactions", {
+      const result = await this.db.query(table, {
         eq: { user_id: userId },
         in: { item_id: itemIds },
       });

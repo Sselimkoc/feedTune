@@ -121,16 +121,16 @@ export class FeedService {
   /**
    * Kullanıcının favori öğelerini getirir
    * @param {string} userId Kullanıcı ID'si
+   * @param {string} [feedType='rss']
    * @returns {Promise<Array>} Favori öğeler
    */
-  async getFavorites(userId) {
+  async getFavorites(userId, feedType = "rss") {
     try {
       if (!userId) {
         console.warn("getFavorites called without userId");
         return [];
       }
-
-      return await this.feedRepository.getFavoriteItems(userId);
+      return await this.feedRepository.getFavoriteItems(userId, feedType);
     } catch (error) {
       console.error("Error fetching favorites:", error);
       toast.error("An error occurred while loading favorites.");
@@ -141,16 +141,16 @@ export class FeedService {
   /**
    * Kullanıcının daha sonra okuma listesindeki öğeleri getirir
    * @param {string} userId Kullanıcı ID'si
+   * @param {string} [feedType='rss']
    * @returns {Promise<Array>} Daha sonra okunacak öğeler
    */
-  async getReadLaterItems(userId) {
+  async getReadLaterItems(userId, feedType = "rss") {
     try {
       if (!userId) {
         console.warn("getReadLaterItems called without userId");
         return [];
       }
-
-      return await this.feedRepository.getReadLaterItems(userId);
+      return await this.feedRepository.getReadLaterItems(userId, feedType);
     } catch (error) {
       console.error("Error fetching read later list:", error);
       toast.error("An error occurred while loading read later list.");
@@ -161,24 +161,23 @@ export class FeedService {
   /**
    * Öğe okundu/okunmadı durumunu değiştirir
    * @param {string} userId Kullanıcı ID'si
-   * @param {string} itemId Öğe ID'si
+   * @param {string} itemId Öğre ID'si
    * @param {boolean} isRead Okundu durumu
+   * @param {string} [feedType='rss']
    * @returns {Promise<object>} Güncellenen veri
    */
-  async toggleItemReadStatus(userId, itemId, isRead) {
+  async toggleItemReadStatus(userId, itemId, isRead, feedType = "rss") {
     try {
       if (!userId) throw new Error("User ID is required");
       if (!itemId) throw new Error("Item ID is required");
-
       const updates = {
         is_read: isRead,
         read_at: isRead ? new Date().toISOString() : null,
       };
-
       return await this.feedRepository.updateItemInteraction(
         userId,
         itemId,
-        "rss",
+        feedType,
         updates
       );
     } catch (error) {
@@ -191,19 +190,19 @@ export class FeedService {
   /**
    * Öğe favori durumunu değiştirir
    * @param {string} userId Kullanıcı ID'si
-   * @param {string} itemId Öğe ID'si
+   * @param {string} itemId Öğre ID'si
    * @param {boolean} isFavorite Favori durumu
+   * @param {string} [feedType='rss']
    * @returns {Promise<object>} Güncellenen veri
    */
-  async toggleItemFavoriteStatus(userId, itemId, isFavorite) {
+  async toggleItemFavoriteStatus(userId, itemId, isFavorite, feedType = "rss") {
     try {
       if (!userId) throw new Error("User ID is required");
       if (!itemId) throw new Error("Item ID is required");
-
       return await this.feedRepository.updateItemInteraction(
         userId,
         itemId,
-        "rss",
+        feedType,
         {
           is_favorite: isFavorite,
         }
@@ -218,19 +217,24 @@ export class FeedService {
   /**
    * Öğe daha sonra oku durumunu değiştirir
    * @param {string} userId Kullanıcı ID'si
-   * @param {string} itemId Öğe ID'si
+   * @param {string} itemId Öğre ID'si
    * @param {boolean} isReadLater Daha sonra oku durumu
+   * @param {string} [feedType='rss']
    * @returns {Promise<object>} Güncellenen veri
    */
-  async toggleItemReadLaterStatus(userId, itemId, isReadLater) {
+  async toggleItemReadLaterStatus(
+    userId,
+    itemId,
+    isReadLater,
+    feedType = "rss"
+  ) {
     try {
       if (!userId) throw new Error("User ID is required");
       if (!itemId) throw new Error("Item ID is required");
-
       return await this.feedRepository.updateItemInteraction(
         userId,
         itemId,
-        "rss",
+        feedType,
         {
           is_read_later: isReadLater,
         }

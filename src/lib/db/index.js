@@ -139,96 +139,89 @@ export class DbClient {
    * @param {number} cacheTtl - Özel önbellek TTL değeri
    * @returns {Promise<Object>} - Sorgu sonucu
    */
-  async query(table, query = {}, useCache = false, cacheTtl) {
+  async query(table, query = {}, options = {}) {
+    const { single = false } = options;
     if (!table) {
       throw new Error("Tablo adı gerekli");
     }
 
     const supabase = this.getClient();
-    const cacheKey = this.createCacheKey(table, query);
-
-    // Eğer önbellek kullanılabilirse ve sonuç önbellekte varsa
-    if (useCache) {
-      const cachedResult = this.queryCache.get(cacheKey);
-      if (cachedResult) {
-        console.log(`Cache hit for query: ${cacheKey}`);
-        return { data: cachedResult, source: "cache" };
-      }
-    }
 
     try {
-      let queryBuilder = supabase.from(table);
+      let queryBuilder = supabase.from(table).select(query.select || "*");
 
-      // Sorgu parametrelerini uygula
-      if (query.select) queryBuilder = queryBuilder.select(query.select);
-
-      // Count desteği ekle
-      if (query.count) {
-        queryBuilder = queryBuilder.count(query.count);
-      }
-
+      // Eşitlik şartları
       if (query.eq) {
-        Object.entries(query.eq).forEach(([field, value]) => {
+        for (const [field, value] of Object.entries(query.eq)) {
           queryBuilder = queryBuilder.eq(field, value);
-        });
+        }
       }
-
-      // In operatörünü düzgün şekilde kullanabilmek için
+      // Doğru in operatörü kullanımı
       if (query.in) {
-        Object.entries(query.in).forEach(([field, values]) => {
+        for (const [field, values] of Object.entries(query.in)) {
           if (Array.isArray(values) && values.length > 0) {
-            // values bir dizi olarak geldiğinde in operatörünü direkt uygula
-            const filterString = `${field}.in.(${values.join(",")})`;
-            queryBuilder = queryBuilder.or(filterString);
+            queryBuilder = queryBuilder.in(field, values);
           }
-        });
+        }
       }
-
       if (query.is) {
-        Object.entries(query.is).forEach(([field, value]) => {
+        for (const [field, value] of Object.entries(query.is)) {
           queryBuilder = queryBuilder.is(field, value);
-        });
+        }
       }
       if (query.gt) {
-        Object.entries(query.gt).forEach(([field, value]) => {
+        for (const [field, value] of Object.entries(query.gt)) {
           queryBuilder = queryBuilder.gt(field, value);
-        });
+        }
       }
       if (query.lt) {
-        Object.entries(query.lt).forEach(([field, value]) => {
+        for (const [field, value] of Object.entries(query.lt)) {
           queryBuilder = queryBuilder.lt(field, value);
-        });
-      }
-      if (query.order) {
-        Object.entries(query.order).forEach(([field, direction]) => {
-          queryBuilder = queryBuilder.order(field, {
-            ascending: direction === "asc",
-          });
-        });
-      }
-      if (query.limit) queryBuilder = queryBuilder.limit(query.limit);
-      if (query.offset) queryBuilder = queryBuilder.offset(query.offset);
-
-      // Sorguyu çalıştır
-      const { data, error } = await queryBuilder;
-
-      if (error) {
-        console.error(`Query error for ${table}:`, error);
-
-        // Sayım sorguları için özel hata mesajları
-        if (query.count && error.code === "PGRST100") {
-          console.error("Count sorgusu hatası, kullanım: { count: 'exact' }");
         }
-
-        throw error;
       }
-
-      // Sonucu önbelleğe al
-      if (useCache && data) {
-        this.queryCache.set(cacheKey, data, cacheTtl);
+      if (query.gte) {
+        for (const [field, value] of Object.entries(query.gte)) {
+          queryBuilder = queryBuilder.gte(field, value);
+        }
       }
-
-      return { data, source: "db" };
+      if (query.lte) {
+        for (const [field, value] of Object.entries(query.lte)) {
+          queryBuilder = queryBuilder.lte(field, value);
+        }
+      }
+      if (query.neq) {
+        for (const [field, value] of Object.entries(query.neq)) {
+          queryBuilder = queryBuilder.neq(field, value);
+        }
+      }
+      if (query.like) {
+        for (const [field, value] of Object.entries(query.like)) {
+          queryBuilder = queryBuilder.like(field, value);
+        }
+      }
+      // Sıralama
+      if (query.order && typeof query.order === "object") {
+        for (const [key, value] of Object.entries(query.order)) {
+          queryBuilder = queryBuilder.order(key, {
+            ascending: value.toLowerCase() === "asc",
+          });
+        }
+      }
+      if (query.limit && typeof query.limit === "number") {
+        queryBuilder = queryBuilder.limit(query.limit);
+      }
+      // Offset
+      if (query.offset && typeof query.offset === "number") {
+        const start = query.offset;
+        const end = query.offset + (query.limit || 10) - 1;
+        queryBuilder = queryBuilder.range(start, end);
+      }
+      // Tek sonuç mu dönecek?
+      if (single) {
+        queryBuilder = queryBuilder.single();
+      }
+      const { data, error } = await queryBuilder;
+      return { data, error };
     } catch (error) {
       console.error(`Error querying ${table}:`, error);
       throw error;
