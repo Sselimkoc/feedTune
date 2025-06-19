@@ -22,9 +22,8 @@ export function HomeContent({
   feeds = [],
   stats = {},
   recentItems = [],
-  isLoading = false,
 }) {
-  const { user } = useSession();
+  const { user, isLoading } = useSession();
   const { t } = useLanguage();
 
   // Modal states
@@ -60,6 +59,15 @@ export function HomeContent({
 
   // Content render function
   const renderContent = () => {
+    if (isLoading || feeds === undefined || feeds === null) {
+      return (
+        <div className="flex justify-center items-center h-96">
+          <span className="animate-pulse text-lg text-muted-foreground">
+            {t("common.loading")}
+          </span>
+        </div>
+      );
+    }
     if (!user) {
       return (
         <>
@@ -71,16 +79,7 @@ export function HomeContent({
         </>
       );
     }
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center h-96">
-          <span className="animate-pulse text-lg text-muted-foreground">
-            {t("common.loading")}
-          </span>
-        </div>
-      );
-    }
-    if (!feeds?.length) {
+    if (Array.isArray(feeds) && feeds.length === 0) {
       return <EmptyState onAddFeed={handleAddFeed} />;
     }
     return (
