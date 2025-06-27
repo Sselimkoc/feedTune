@@ -6,7 +6,6 @@ import { LanguageProvider } from "@/providers/LanguageProvider";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AuthProvider } from "@/providers/AuthProvider";
 import { AppProvider } from "@/providers/AppProvider";
 import { AppLayout } from "@/components/core/layout/AppLayout";
 

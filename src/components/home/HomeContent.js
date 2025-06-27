@@ -17,7 +17,6 @@ import { EmptyState } from "@/components/core/states/EmptyState";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAddFeed } from "@/hooks/features/feed-screen/useAddFeed";
 
-
 export function HomeContent({
   initialSession,
   feeds: initialFeeds = [],
@@ -40,6 +39,9 @@ export function HomeContent({
   const [isDataLoading, setIsDataLoading] = useState(false);
 
   const { isDialogOpen, openAddFeedDialog, closeAddFeedDialog } = useAddFeed();
+
+  // Use deleteFeed from useFeedService
+  const { deleteFeed } = useFeedService();
 
   // Fetch feeds and related data after session is available
   useEffect(() => {
@@ -67,13 +69,6 @@ export function HomeContent({
     }
   }, [user]);
 
-  const { removeFeed } = useFeedActions(
-    user,
-    () => {}, // refreshAll
-    () => {}, // refreshAll
-    feedService
-  );
-
   // Feed management handlers
   const handleDeleteFeed = useCallback(
     async (feedId) => {
@@ -92,7 +87,12 @@ export function HomeContent({
 
   // Content render function
   const renderContent = () => {
-    if (isLoading || feeds === undefined || feeds === null) {
+    if (
+      isSessionLoading ||
+      isDataLoading ||
+      feeds === undefined ||
+      feeds === null
+    ) {
       return (
         <div className="flex justify-center items-center h-96">
           <span className="animate-pulse text-lg text-muted-foreground">
@@ -110,16 +110,6 @@ export function HomeContent({
           <HomeTechnology />
           <HomeCommunity />
         </>
-      );
-    }
-
-    if (isSessionLoading || isDataLoading) {
-      return (
-        <div className="flex justify-center items-center h-96">
-          <span className="animate-pulse text-lg text-muted-foreground">
-            {t("common.loading")}
-          </span>
-        </div>
       );
     }
 

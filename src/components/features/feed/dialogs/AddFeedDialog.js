@@ -162,13 +162,6 @@ export function AddFeedDialog({
     }
   }, [onSubmit]);
 
-
-  const { addFeed: oldAddFeed } = useFeedActions(
-    userId,
-    refreshFeeds,
-    refreshFeeds,
-    feedService
-  );
   // States
   const [rssUrl, setRssUrl] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
