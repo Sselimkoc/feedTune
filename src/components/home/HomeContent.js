@@ -16,6 +16,7 @@ import { HomeModals } from "@/components/home/HomeModals";
 import { EmptyState } from "@/components/core/states/EmptyState";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAddFeed } from "@/hooks/features/feed-screen/useAddFeed";
+import { useRouter } from "next/navigation";
 
 export function HomeContent({
   initialSession,
@@ -24,6 +25,7 @@ export function HomeContent({
   recentItems: initialRecentItems = [],
 }) {
   const { user, isLoading: isSessionLoading } = useSession();
+  const router = useRouter();
 
   const { t } = useLanguage();
 
@@ -68,6 +70,13 @@ export function HomeContent({
       fetchData();
     }
   }, [user]);
+
+  // Redirect to home if not logged in after session loading
+  useEffect(() => {
+    if (!isSessionLoading && !user) {
+      router.replace("/");
+    }
+  }, [isSessionLoading, user, router]);
 
   // Feed management handlers
   const handleDeleteFeed = useCallback(
