@@ -21,9 +21,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { AddFeedButton } from "@/components/features/feed/buttons/AddFeedButton";
+import { AddFeedDialog } from "@/components/features/feed/dialogs/AddFeedDialog";
+import { useAddFeed } from "@/hooks/features/feed-screen/useAddFeed";
 
 export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
   const { t } = useTranslation();
+  const { isDialogOpen, openAddFeedDialog, closeAddFeedDialog } = useAddFeed();
 
   return (
     <section className="py-6 lg:py-8">
@@ -159,7 +163,7 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
                     "flex items-center justify-center cursor-pointer hover:border-primary/40 transition-all",
                     "hover:shadow-md hover:translate-y-[-2px]"
                   )}
-                  onClick={onAddFeed}
+                  onClick={openAddFeedDialog}
                 >
                   <CardContent className="flex flex-col items-center justify-center p-4 text-center h-full">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
@@ -194,10 +198,7 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
                 <p className="text-sm text-muted-foreground mb-4">
                   {t("home.feedManagement.noFeeds")}
                 </p>
-                <Button onClick={onAddFeed} size="sm" className="group">
-                  <PlusCircle className="mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
-                  {t("home.feedManagement.addFirstFeed")}
-                </Button>
+                <AddFeedButton onAddFeed={openAddFeedDialog} />
               </CardContent>
             </Card>
           </motion.div>
@@ -219,6 +220,10 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
             </Button>
           </motion.div>
         )}
+        <AddFeedDialog
+          isOpen={isDialogOpen}
+          onOpenChange={closeAddFeedDialog}
+        />
       </div>
     </section>
   );

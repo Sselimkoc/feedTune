@@ -72,6 +72,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/core/ui/radio-group";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/components/core/ui/use-toast";
 import { useRouter } from "next/navigation";
+import { useAddFeed } from "@/hooks/features/feed-screen/useAddFeed";
 
 /**
  * Sayıları kullanıcı dostu formata dönüştüren yardımcı fonksiyon
@@ -121,9 +122,7 @@ export function AddFeedDialog({
   const { t } = useTranslation();
   const { user, isLoading: isLoadingUser } = useAuthStore();
   const userId = user?.id;
-  const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("youtube");
-  const { toast } = useToast();
+  const { isLoading, addFeed, closeAddFeedDialog } = useAddFeed(onSubmit);
 
   // Form tanımlama
   const form = useForm({
@@ -137,7 +136,7 @@ export function AddFeedDialog({
     },
   });
 
-  // Tab değiştiğinde form tipini güncelle
+  const [activeTab, setActiveTab] = useState("youtube");
   const handleTabChange = useCallback(
     (tab) => {
       setActiveTab(tab);
@@ -146,19 +145,14 @@ export function AddFeedDialog({
     [form]
   );
 
-  // Form gönderildiğinde
+  // Form submit handler
   const handleSubmit = async (values) => {
-    setIsLoading(true);
-    try {
-      const success = await onSubmit(values);
-      if (success) {
-        form.reset();
-        onOpenChange(false);
-      }
-    } catch (error) {
-      console.error("Form submission error:", error);
-    } finally {
-      setIsLoading(false);
+    const { url, type, ...extraData } = values;
+    const success = await addFeed(url, type, extraData);
+    if (success) {
+      form.reset();
+      closeAddFeedDialog();
+      onOpenChange(false);
     }
   };
 
@@ -169,7 +163,7 @@ export function AddFeedDialog({
     }
   }, [onSubmit]);
 
-  const { addFeed } = useFeedActions(
+  const { addFeed: oldAddFeed } = useFeedActions(
     userId,
     refreshFeeds,
     refreshFeeds,
@@ -437,38 +431,6 @@ export function AddFeedDialog({
     }
   };
 
-  // Handle feed add
-  const handleAddFeed = async (url, type) => {
-    setIsLoading(true);
-    try {
-      if (type === "youtube") {
-        // YouTube URL'ini RSS'e dönüştür ve tür olarak rss belirle
-        const rssUrl = await convertYoutubeToRss(url);
-
-        if (!rssUrl) {
-          throw new Error(t("feeds.addFeed.youtubeConversionFailed"));
-        }
-
-        // RSS URL'ini kullan ve tür olarak rss belirle (YouTube içerikleri de RSS olarak eklenecek)
-        await addFeed(rssUrl, "rss");
-      } else {
-        // Normal RSS beslemeleri için
-        await addFeed(url, type);
-      }
-
-      toast.success(t("feeds.addFeedSuccess"));
-      onOpenChange(false);
-      if (refreshFeeds) {
-        refreshFeeds();
-      }
-    } catch (error) {
-      console.error("Error adding feed:", error);
-      toast.error(error.message || t("feeds.addFeedError"));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // YouTube URL'lerini RSS beslemesine dönüştürür
   const convertYoutubeToRss = async (url) => {
     try {
@@ -531,32 +493,28 @@ export function AddFeedDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col p-0 border-border/50 bg-gradient-to-b from-background to-background/95 backdrop-blur-sm shadow-xl">
-        <DialogHeader className="px-6 pt-6 pb-0 border-b-0">
+      <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col p-0 border border-border/60 bg-gradient-to-b from-background to-background/95 backdrop-blur-md shadow-2xl rounded-2xl">
+        <DialogHeader className="px-8 pt-8 pb-0 border-b-0">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <DialogTitle className="flex items-center gap-2 text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <Plus className="h-4 w-4 text-primary" />
-                  <div className="absolute -inset-1 animate-pulse rounded-full bg-primary/10 blur-sm -z-10"></div>
-                </div>
+                <Plus className="h-5 w-5 text-primary" />
                 {t("feeds.addFeed.title")}
               </DialogTitle>
-              <DialogDescription className="mt-1.5 text-muted-foreground">
+              <DialogDescription className="mt-2 text-muted-foreground text-base">
                 {t("feeds.addFeed.description")}
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
-
-        <div className="px-6 py-5 flex-1 overflow-y-auto">
+        <div className="px-8 py-6 flex-1 overflow-y-auto">
           <Tabs
             defaultValue="youtube"
             value={activeTab}
             onValueChange={handleTabChange}
             className="w-full"
           >
-            <TabsList className="grid grid-cols-2 w-full mb-6">
+            <TabsList className="grid grid-cols-2 w-full mb-8 bg-muted/40 rounded-lg">
               <TabsTrigger value="youtube" className="flex items-center gap-2">
                 <Youtube className="h-4 w-4 text-red-500" />
                 <span>YouTube</span>
@@ -566,43 +524,43 @@ export function AddFeedDialog({
                 <span>RSS Feed</span>
               </TabsTrigger>
             </TabsList>
-
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleSubmit)}
-                className="space-y-4 mt-4"
+                className="space-y-6 mt-2"
               >
-                {/* YouTube tab içeriği */}
+                {/* YouTube tab content */}
                 <TabsContent value="youtube">
                   <FormField
                     control={form.control}
                     name="url"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("feeds.youtubeChannelUrl")}</FormLabel>
+                        <FormLabel>
+                          {t("feeds.addFeed.youtubeChannelUrl")}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="https://www.youtube.com/c/channelname"
                             {...field}
                           />
                         </FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {t("feeds.addFeed.youtubeUrlHelp")}
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {t("feeds.youtubeUrlHelp")}
-                  </p>
                 </TabsContent>
-
-                {/* RSS tab içeriği */}
+                {/* RSS tab content */}
                 <TabsContent value="rss">
                   <FormField
                     control={form.control}
                     name="url"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("feeds.rssUrl")}</FormLabel>
+                        <FormLabel>{t("feeds.addFeed.rssUrl")}</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="https://example.com/feed.xml"
@@ -613,100 +571,99 @@ export function AddFeedDialog({
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="fetch_full_content"
-                    render={({ field }) => (
-                      <FormItem className="mt-4">
-                        <div className="mb-1">
-                          <FormLabel>{t("feeds.contentOptions")}</FormLabel>
-                        </div>
+                  <div className="mt-4">
+                    <FormLabel className="mb-1 block text-sm font-medium">
+                      {t("feeds.addFeed.contentOptions")}
+                    </FormLabel>
+                    <FormField
+                      control={form.control}
+                      name="fetch_full_content"
+                      render={({ field }) => (
                         <RadioGroup
-                          defaultValue={field.value.toString()}
+                          defaultValue={field.value?.toString()}
                           onValueChange={(value) =>
                             field.onChange(value === "true")
                           }
-                          className="flex flex-col space-y-1"
+                          className="flex flex-row gap-6 mt-1"
                         >
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="false" id="summary" />
                             <Label htmlFor="summary">
-                              {t("feeds.useSummary")}
+                              {t("feeds.addFeed.useSummary")}
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="true" id="full" />
                             <Label htmlFor="full">
-                              {t("feeds.useFullContent")}
+                              {t("feeds.addFeed.useFullContent")}
                             </Label>
                           </div>
                         </RadioGroup>
+                      )}
+                    />
+                  </div>
+                </TabsContent>
+                {/* Common fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("feeds.addFeed.customTitle")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder={t(
+                              "feeds.addFeed.leaveBlankForAutoTitle"
+                            )}
+                            {...field}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </TabsContent>
-
-                {/* Ortak alanlar */}
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("feeds.customTitle")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("feeds.leaveBlankForAutoTitle")}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("feeds.category")}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={t("feeds.selectCategory")}
-                            />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="general">
-                            {t("feeds.categories.general")}
-                          </SelectItem>
-                          <SelectItem value="tech">
-                            {t("feeds.categories.tech")}
-                          </SelectItem>
-                          <SelectItem value="news">
-                            {t("feeds.categories.news")}
-                          </SelectItem>
-                          <SelectItem value="entertainment">
-                            {t("feeds.categories.entertainment")}
-                          </SelectItem>
-                          <SelectItem value="other">
-                            {t("feeds.categories.other")}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <DialogFooter className="mt-4 gap-2">
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("feeds.addFeed.category")}</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue
+                                placeholder={t("feeds.addFeed.selectCategory")}
+                              />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="general">
+                              {t("feeds.addFeed.categories.general")}
+                            </SelectItem>
+                            <SelectItem value="tech">
+                              {t("feeds.addFeed.categories.tech")}
+                            </SelectItem>
+                            <SelectItem value="news">
+                              {t("feeds.addFeed.categories.news")}
+                            </SelectItem>
+                            <SelectItem value="entertainment">
+                              {t("feeds.addFeed.categories.entertainment")}
+                            </SelectItem>
+                            <SelectItem value="other">
+                              {t("feeds.addFeed.categories.other")}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <DialogFooter className="mt-8 gap-2 flex flex-row justify-end">
                   <Button
                     type="button"
                     variant="outline"
@@ -715,11 +672,15 @@ export function AddFeedDialog({
                   >
                     {t("common.cancel")}
                   </Button>
-                  <Button type="submit" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="font-semibold"
+                  >
                     {isLoading && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    {t("feeds.addFeed")}
+                    {t("feeds.addFeed.add")}
                   </Button>
                 </DialogFooter>
               </form>

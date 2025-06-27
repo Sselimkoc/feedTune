@@ -39,6 +39,7 @@ export const useAuthStore = create(
     (set, get) => {
       const handleAuthError = (error, toastError) => {
         console.error("Auth error:", error);
+        set({ error, isLoading: false });
 
         // Rate limit
         if (error.status === 429) {
@@ -113,13 +114,7 @@ export const useAuthStore = create(
 
             if (error) throw error;
 
-            const {
-              data: { user },
-              error: userError,
-            } = await supabase.auth.getUser();
-            if (userError) throw userError;
-
-            set({ user, session: data.session, isLoading: false });
+            set({ user: data.user, session: data.session, isLoading: false });
             toastSuccess?.(AUTH_MESSAGES.LOGIN_SUCCESS);
             return { success: true };
           } catch (error) {

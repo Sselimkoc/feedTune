@@ -16,6 +16,7 @@ import { HomeCommunity } from "@/components/public-home/HomeCommunity";
 import { HomeModals } from "@/components/home/HomeModals";
 import { EmptyState } from "@/components/core/states/EmptyState";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAddFeed } from "@/hooks/features/feed-screen/useAddFeed";
 
 export function HomeContent({
   initialSession,
@@ -28,7 +29,6 @@ export function HomeContent({
 
   // Modal states
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showAddFeedDialog, setShowAddFeedDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [feedToDelete, setFeedToDelete] = useState(null);
 
@@ -37,6 +37,8 @@ export function HomeContent({
   const [stats, setStats] = useState(initialStats);
   const [recentItems, setRecentItems] = useState(initialRecentItems);
   const [isDataLoading, setIsDataLoading] = useState(false);
+
+  const { isDialogOpen, openAddFeedDialog, closeAddFeedDialog } = useAddFeed();
 
   // Fetch feeds and related data after session is available
   useEffect(() => {
@@ -86,7 +88,6 @@ export function HomeContent({
     [removeFeed, t]
   );
 
-  const handleAddFeed = () => setShowAddFeedDialog(true);
   const handleAuthClick = () => setShowAuthModal(true);
 
   // Content render function
@@ -174,7 +175,7 @@ export function HomeContent({
         <div className="flex flex-row gap-4 justify-center">
           <button
             className="flex gap-2 items-center px-6 py-3 rounded-full text-base font-semibold shadow-lg bg-blue-600 text-white hover:scale-105 transition-transform"
-            onClick={handleAddFeed}
+            onClick={openAddFeedDialog}
           >
             + Add Feed
           </button>
@@ -317,8 +318,9 @@ export function HomeContent({
         <HomeModals
           showAuthModal={showAuthModal}
           setShowAuthModal={setShowAuthModal}
-          showAddFeedDialog={showAddFeedDialog}
-          setShowAddFeedDialog={setShowAddFeedDialog}
+          isDialogOpen={isDialogOpen}
+          openAddFeedDialog={openAddFeedDialog}
+          closeAddFeedDialog={closeAddFeedDialog}
           showDeleteDialog={showDeleteDialog}
           setShowDeleteDialog={setShowDeleteDialog}
           onDeleteFeed={handleDeleteFeed}

@@ -22,6 +22,8 @@ import {
   X,
 } from "lucide-react";
 import { AddFeedDialog } from "@/components/features/feed/dialogs/AddFeedDialog";
+import { AddFeedButton } from "@/components/features/feed/buttons/AddFeedButton";
+import { useAddFeed } from "@/hooks/features/feed-screen/useAddFeed";
 import Link from "next/link";
 
 /**
@@ -41,9 +43,7 @@ export function FeedSidebar({
   const { theme } = useTheme();
   const { t } = useLanguage();
 
-  // State yönetimi
-  const [isAddFeedDialogOpen, setIsAddFeedDialogOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { isDialogOpen, openAddFeedDialog, closeAddFeedDialog } = useAddFeed();
 
   // Aramalı ve filtrelenmiş feed listesi
   const filteredFeeds = useMemo(() => {
@@ -79,28 +79,19 @@ export function FeedSidebar({
     async (feedData) => {
       try {
         await onSelectFeed([feedData.id]);
-        setIsAddFeedDialogOpen(false);
+        closeAddFeedDialog();
         return true;
       } catch (error) {
         console.error("Feed eklenirken hata oluştu:", error);
         return false;
       }
     },
-    [onSelectFeed]
+    [onSelectFeed, closeAddFeedDialog]
   );
 
   // Feed senkronizasyon işleyicisi
   const handleSyncFeeds = useCallback(async () => {
-    if (isRefreshing) return;
-
-    setIsRefreshing(true);
-    try {
-      await onSelectFeed(feeds.map((feed) => feed.id));
-    } catch (error) {
-      console.error("Feed senkronizasyonu sırasında hata:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
+    await onSelectFeed(feeds.map((feed) => feed.id));
   }, [onSelectFeed, feeds]);
 
   // Animasyon varyantları
@@ -176,12 +167,9 @@ export function FeedSidebar({
       </div>
 
       {/* Add Feed Button */}
-      <Button asChild className="mb-4">
-        <Link href="/feeds/add" className="w-full">
-          <Plus className="mr-2 h-4 w-4" />
-          {t("feeds.add")}
-        </Link>
-      </Button>
+      <div className="mb-4">
+        <AddFeedButton onAddFeed={openAddFeedDialog} />
+      </div>
 
       <Separator className="mb-4" />
 
@@ -277,11 +265,7 @@ export function FeedSidebar({
               <p className="text-sm text-muted-foreground mb-2">
                 {searchQuery ? t("feeds.noSearchResults") : t("feeds.noFeeds")}
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsAddFeedDialogOpen(true)}
-              >
+              <Button variant="outline" size="sm" onClick={openAddFeedDialog}>
                 <PlusCircle className="mr-1 h-4 w-4" />
                 {t("feeds.addFeed")}
               </Button>
@@ -291,11 +275,7 @@ export function FeedSidebar({
       </ScrollArea>
 
       {/* Feed ekleme diyaloğu */}
-      <AddFeedDialog
-        isOpen={isAddFeedDialogOpen}
-        onOpenChange={setIsAddFeedDialogOpen}
-        onSubmit={handleAddFeed}
-      />
+      <AddFeedDialog isOpen={isDialogOpen} onOpenChange={closeAddFeedDialog} />
     </div>
   );
 }
