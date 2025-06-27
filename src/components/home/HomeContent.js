@@ -69,6 +69,13 @@ export function HomeContent({
     }
   }, [user]);
 
+  // Stop loading if session is not loading and user is not logged in
+  useEffect(() => {
+    if (!isSessionLoading && !user) {
+      setIsDataLoading(false);
+    }
+  }, [isSessionLoading, user]);
+
   // Feed management handlers
   const handleDeleteFeed = useCallback(
     async (feedId) => {
