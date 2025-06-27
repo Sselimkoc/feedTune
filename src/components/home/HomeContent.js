@@ -3,8 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Toast } from "../core/ui/toast";
 import { useSession } from "@/hooks/auth/useSession";
-import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
-import { feedService } from "@/services/feedService";
+import { useFeedService } from "@/hooks/features/useFeedService";
 import { HomeStats } from "@/components/home/HomeStats";
 import { HomeFeedManagement } from "@/components/home/HomeFeedManagement";
 import { HomeRecentContent } from "@/components/home/HomeRecentContent";
@@ -18,6 +17,7 @@ import { EmptyState } from "@/components/core/states/EmptyState";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAddFeed } from "@/hooks/features/feed-screen/useAddFeed";
 
+
 export function HomeContent({
   initialSession,
   feeds: initialFeeds = [],
@@ -25,6 +25,7 @@ export function HomeContent({
   recentItems: initialRecentItems = [],
 }) {
   const { user, isLoading: isSessionLoading } = useSession();
+
   const { t } = useLanguage();
 
   // Modal states
@@ -77,21 +78,29 @@ export function HomeContent({
   const handleDeleteFeed = useCallback(
     async (feedId) => {
       try {
-        await removeFeed(feedId);
-        // Refresh will be handled by the server component
+        await deleteFeed(feedId);
         window.location.reload();
       } catch (error) {
         console.error("Error deleting feed:", error);
         toast.error(t("feeds.deleteFeedError", { error: error.message }));
       }
     },
-    [removeFeed, t]
+    [deleteFeed, t]
   );
 
   const handleAuthClick = () => setShowAuthModal(true);
 
   // Content render function
   const renderContent = () => {
+    if (isLoading || feeds === undefined || feeds === null) {
+      return (
+        <div className="flex justify-center items-center h-96">
+          <span className="animate-pulse text-lg text-muted-foreground">
+            {t("common.loading")}
+          </span>
+        </div>
+      );
+    }
     if (!user) {
       return (
         <>
@@ -103,6 +112,7 @@ export function HomeContent({
         </>
       );
     }
+
     if (isSessionLoading || isDataLoading) {
       return (
         <div className="flex justify-center items-center h-96">
@@ -112,7 +122,7 @@ export function HomeContent({
         </div>
       );
     }
-    // Modern dashboard layout (from DashboardContent)
+
     return (
       <div className="w-full max-w-6xl mx-auto px-2 md:px-6 py-10 flex flex-col gap-10 relative z-10">
         <div className="flex flex-col md:flex-row gap-6 items-center md:items-stretch">

@@ -14,7 +14,6 @@ import { Input } from "@/components/core/ui/input";
 import { Label } from "@/components/core/ui/label";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useFeedActions } from "@/hooks/features/feed-screen/useFeedActions";
 import { feedService } from "@/services/feedService";
 import { Card, CardContent } from "@/components/core/ui/card";
 import {
@@ -163,13 +162,13 @@ export function AddFeedDialog({
     }
   }, [onSubmit]);
 
+
   const { addFeed: oldAddFeed } = useFeedActions(
     userId,
     refreshFeeds,
     refreshFeeds,
     feedService
   );
-
   // States
   const [rssUrl, setRssUrl] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");

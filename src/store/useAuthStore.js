@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createBrowserClient } from "@supabase/ssr";
+import { useFeedStore } from "@/store/useFeedStore";
 // Auth messages
 const AUTH_MESSAGES = {
   VERIFICATION_EMAIL_SENT: "auth.verificationEmailSent",
@@ -169,6 +170,8 @@ export const useAuthStore = create(
               isLoggingOut: false,
               error: null,
             });
+            // Clear feed store as well
+            useFeedStore.getState().clearStore();
 
             toastSuccess?.(AUTH_MESSAGES.LOGOUT_SUCCESS);
             return { success: true, isLoggingOut: false };

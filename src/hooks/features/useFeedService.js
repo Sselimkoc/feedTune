@@ -190,7 +190,7 @@ export function useFeedService() {
     retry: MAX_RETRIES,
     retryDelay: RETRY_DELAY,
   });
-  console.log(favoritesQuery.data,"fav----")
+  console.log(favoritesQuery.data, "fav----");
   // Read later: filter itemsQuery.data for is_read_later
   const readLaterQuery = useQuery({
     queryKey: ["read_later", user?.id],
@@ -302,19 +302,46 @@ export function useFeedService() {
 
   // Delete feed
   const deleteFeed = async (feedId) => {
-    if (!user) return;
-
+    if (!user) {
+      toast({
+        title: t("common.error"),
+        description: t("auth.authenticationError"),
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       const { error } = await supabase
         .from("feeds")
         .delete()
         .eq("id", feedId)
         .eq("user_id", user.id);
-
-      if (error) throw error;
-
+      if (error) {
+        if (error.code === "23503") {
+          toast({
+            title: t("common.error"),
+            description:
+              t("feeds.deleteError") + ": " + t("feeds.hasDependencies"),
+            variant: "destructive",
+          });
+        } else if (error.code === "28P01") {
+          toast({
+            title: t("common.error"),
+            description: t("auth.authenticationError"),
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: t("common.error"),
+            description:
+              t("feeds.deleteError") +
+              (error.message ? ": " + error.message : ""),
+            variant: "destructive",
+          });
+        }
+        throw error;
+      }
       await queryClient.invalidateQueries(["feeds", user.id]);
-
       toast({
         title: t("common.success"),
         description: t("feeds.deleteSuccess"),
@@ -323,7 +350,8 @@ export function useFeedService() {
       console.error("Error deleting feed:", error);
       toast({
         title: t("common.error"),
-        description: t("feeds.deleteError"),
+        description:
+          t("feeds.deleteError") + (error?.message ? ": " + error.message : ""),
         variant: "destructive",
       });
     }
