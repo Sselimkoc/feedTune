@@ -10,7 +10,8 @@
     "close": "Close",
     "loading": "Loading...",
     "pleaseWait" : "Please wait...",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "cancel": "Cancel"
   },
   "feeds": {
     "title": "Feeds",
@@ -33,6 +34,34 @@
     "error": {
       "title": "Error Loading Feeds",
       "description": "There was a problem loading your feeds. Please try again."
+    },
+    "addFeed": {
+      "title": "Add New Feed",
+      "description": "Add an RSS or YouTube channel to your feed list.",
+      "youtubeChannelUrl": "YouTube Channel URL or Name",
+      "youtubeUrlOrKeyword": "Paste a YouTube channel URL or type a channel name...",
+      "rssUrl": "RSS Feed URL",
+      "preview": "Preview",
+      "previewOrSearch": "Preview/Search",
+      "invalidUrl": "Please enter a valid URL or channel name.",
+      "noResults": "No channels found for your search.",
+      "success": "Feed added successfully!",
+      "successDescription": "{{title}} has been added to your feeds.",
+      "customTitle": "Custom Title",
+      "leaveBlankForAutoTitle": "Leave blank to use the feed's title automatically",
+      "category": "Category",
+      "selectCategory": "Select category",
+      "categories": {
+        "general": "General",
+        "tech": "Tech",
+        "news": "News",
+        "entertainment": "Entertainment",
+        "other": "Other"
+      },
+      "contentOptions": "Content Options",
+      "useFullContent": "Full Content",
+      "useSummary": "Summary Only",
+      "add": "Add Feed"
     }
   },
   "interactions": {
@@ -296,6 +325,12 @@
     "loginError": "Login failed. Please check your credentials.",
     "registerSuccess": "Registration successful! Please check your email.",
     "registerError": "Registration failed. Please try again.",
+    "emailAlreadyExists": "This email is already registered. Please log in instead.",
+    "emailVerificationRequired": "Please verify your email before logging in.",
+    "emailVerified": "Your email has been verified successfully!",
+    "verifyingEmail": "Verifying your email...",
+    "verificationError": "There was a problem verifying your email.",
+    "redirecting": "Redirecting you to the homepage...",
     "profileUpdateError": "Profile update failed. Please try again.",
     "authenticationError": "Authentication failed. Please try again.",
     "rateLimitError": "Too many attempts. Please wait a moment.",
@@ -305,6 +340,7 @@
     "verification": {
       "title": "Verify Your Email",
       "description": "Please verify your email address before you can start using your account.",
+      "resendDescription": "A new verification email has been sent. Please check your inbox.",
       "checkInbox": "Please check your inbox",
       "emailSentTo": "Verification email sent to: ",
       "step1": "Open your email and click the verification link",

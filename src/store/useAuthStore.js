@@ -38,14 +38,27 @@ const supabase = createBrowserClient(
 export const useAuthStore = create(
   persist(
     (set, get) => {
+      // Handle auth errors with appropriate messages and actions
       const handleAuthError = (error, toastError) => {
         console.error("Auth error:", error);
-        set({ error, isLoading: false });
+        set({ isLoading: false, error });
 
-        // Rate limit
-        if (error.status === 429) {
+        // Rate limit errors
+        if (error.message?.includes("rate limit")) {
           toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
           return { success: false, error };
+        }
+
+        // Email verification errors
+        if (error.message?.includes("email not confirmed")) {
+          toastError?.("auth.emailVerificationRequired");
+          return { success: false, error, status: "email_not_verified" };
+        }
+
+        // Email already exists errors
+        if (error.message?.includes("already registered")) {
+          toastError?.("auth.emailAlreadyExists");
+          return { success: false, error, status: "email_exists" };
         }
 
         // Session/token errors
@@ -130,16 +143,65 @@ export const useAuthStore = create(
           try {
             set({ isLoading: true, error: null });
 
+            // First check if the email exists
+            const checkResponse = await fetch("/api/auth/check-email", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email }),
+            });
+
+            if (!checkResponse.ok) {
+              throw new Error("Failed to check email");
+            }
+
+            const { exists, verified } = await checkResponse.json();
+
+            // If email exists and is verified, show error and prevent signup
+            if (exists && verified) {
+              set({ isLoading: false });
+              toastError?.("auth.emailAlreadyExists");
+              return {
+                success: false,
+                error: "Email already exists",
+                status: "email_exists",
+              };
+            }
+
+            // If email exists but not verified, resend verification email
+            if (exists && !verified) {
+              const { error: resendError } = await supabase.auth.resend({
+                type: "signup",
+                email,
+              });
+
+              if (resendError) throw resendError;
+
+              set({ isLoading: false });
+              toastSuccess?.("auth.verification.emailResent");
+              return { success: true, status: "verification_resent" };
+            }
+
+            // Email doesn't exist, proceed with signup
             const { data, error } = await supabase.auth.signUp({
               email,
               password,
+              options: {
+                // Force email verification even if email confirmations are disabled in Supabase
+                emailRedirectTo: `${window.location.origin}/auth/callback`,
+              },
             });
 
             if (error) throw error;
 
-            set({ user: data.user, session: data.session, isLoading: false });
+            // Clear any session that might have been created
+            // This prevents auto-login for new signups
+            if (data?.session) {
+              await supabase.auth.signOut();
+            }
+
+            set({ isLoading: false });
             toastSuccess?.(AUTH_MESSAGES.VERIFICATION_EMAIL_SENT);
-            return { success: true };
+            return { success: true, status: "new_signup" };
           } catch (error) {
             return handleAuthError(error, toastError);
           } finally {

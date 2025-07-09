@@ -2,52 +2,32 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { toast } from "@/components/core/ui/use-toast";
-import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "react-i18next";
+import { getFromCache, saveToCache } from "@/utils/cacheUtils";
 
-// Yerel depolama ile önbellek yönetimi için sabitler
+// Cache management constants
 const CACHE_KEYS = {
   ITEMS: "feed-pagination-items",
   PAGE_STATE: "feed-pagination-state",
 };
 
-const CACHE_TTL = 1000 * 60 * 5; // 5 dakika
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
-// Önbelleğe alma yardımcıları
-const getLocalCache = (key, defaultValue = null) => {
-  try {
-    if (typeof window === "undefined") return defaultValue;
-
-    const cachedData = localStorage.getItem(key);
-    if (!cachedData) return defaultValue;
-
-    const { expiry, data } = JSON.parse(cachedData);
-    if (expiry < Date.now()) {
-      localStorage.removeItem(key);
-      return defaultValue;
-    }
-
-    return data;
-  } catch (error) {
-    console.warn(`Pagination cache error (${key}):`, error);
-    return defaultValue;
-  }
-};
-
-const setLocalCache = (key, data) => {
-  try {
-    if (typeof window === "undefined") return;
-
-    const cacheData = {
-      expiry: Date.now() + CACHE_TTL,
-      data,
-    };
-
-    localStorage.setItem(key, JSON.stringify(cacheData));
-  } catch (error) {
-    console.warn(`Failed to cache pagination data (${key}):`, error);
-  }
-};
-
+/**
+ * Custom hook for managing pagination in feed screens
+ * Handles loading, caching, and pagination state
+ *
+ * @param {Object} options - Pagination options
+ * @param {Object} options.feedService - Feed service instance
+ * @param {string} options.userId - Current user ID
+ * @param {string} options.selectedFeedId - Selected feed ID
+ * @param {Object} options.activeFilter - Active filter object
+ * @param {Object} options.filters - Filter settings
+ * @param {number} options.initialPage - Initial page number (default: 1)
+ * @param {number} options.initialPageSize - Items per page (default: 20)
+ * @param {number} options.totalItems - Total number of items (default: 0)
+ * @returns {Object} Pagination state and controls
+ */
 export function usePagination({
   feedService,
   userId,
@@ -58,470 +38,245 @@ export function usePagination({
   initialPageSize = 20,
   totalItems = 0,
 }) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const isFirstLoad = useRef(true);
   const prevConfigRef = useRef({ selectedFeedId, activeFilter });
-  const loadingTimerRef = useRef(null);
 
-  // Filtreleme durumuna özgü önbellek anahtarı oluştur
-  const cacheKey = useMemo(() => {
-    const filterStr = JSON.stringify({
-      selectedFeedId: selectedFeedId || "all",
-      activeFilter: activeFilter || "all",
-      readStatus: filters?.readStatus || "all",
-      feedType: filters?.feedType || "all",
-      sortBy: filters?.sortBy || "newest",
-    });
-
-    return `${CACHE_KEYS.ITEMS}_${userId}_${btoa(filterStr)}`;
-  }, [userId, selectedFeedId, activeFilter, filters]);
-
-  // Sayfalama durumu
-  const [paginatedItems, setPaginatedItems] = useState(() => {
-    // İlk yüklemede önbellekten verileri almayı dene
-    return getLocalCache(cacheKey, []);
-  });
-
-  // İlk yükleme durumu
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-
+  // Pagination state
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(totalItems);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
 
-  const totalPages = Math.ceil(totalItems / pageSize);
-  const hasNextPage = page < totalPages;
-  const hasPreviousPage = page > 1;
+  // Create a cache key based on current filters and feed
+  const cacheKey = useMemo(() => {
+    const key = `${CACHE_KEYS.ITEMS}-${userId || "guest"}-${
+      selectedFeedId || "all"
+    }-${activeFilter?.type || "all"}-${activeFilter?.value || "all"}-${
+      filters?.sortBy || "newest"
+    }`;
+    return key;
+  }, [userId, selectedFeedId, activeFilter, filters]);
 
-  const [pagination, setPagination] = useState(() => {
-    // Sayfalama durumunu önbellekten getir veya varsayılan değerleri kullan
-    const cachedState = getLocalCache(CACHE_KEYS.PAGE_STATE);
-    return (
-      cachedState || {
-        page: 1,
-        pageSize: 12,
-        total: 0,
-        hasMore: true,
-      }
-    );
-  });
+  // Create a pagination state cache key
+  const pageStateCacheKey = useMemo(() => {
+    return `${CACHE_KEYS.PAGE_STATE}-${userId || "guest"}-${
+      selectedFeedId || "all"
+    }`;
+  }, [userId, selectedFeedId]);
 
-  // Filtre değişikliğini algıla ve yeniden yükleme yap
-  useEffect(() => {
-    const configChanged =
-      prevConfigRef.current.selectedFeedId !== selectedFeedId ||
-      prevConfigRef.current.activeFilter !== activeFilter;
+  /**
+   * Load items for the current page
+   * @param {number} pageToLoad - Page number to load
+   * @param {boolean} append - Whether to append items to existing ones
+   * @returns {Promise<void>}
+   */
+  const loadItems = useCallback(
+    async (pageToLoad = page, append = false) => {
+      if (!feedService || !userId) return;
 
-    if (configChanged) {
-      console.log("Feed filtreleri değişti, içerik temizleniyor");
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      // Şu anki yapılandırmayı kaydet
-      prevConfigRef.current = { selectedFeedId, activeFilter };
+        const offset = (pageToLoad - 1) * pageSize;
+        const limit = pageSize;
 
-      // Yükleme durumunu ayarla
-      setIsTransitioning(true);
-
-      // Önce önbellekten verileri kontrol et
-      const cachedItems = getLocalCache(cacheKey, null);
-      if (cachedItems && cachedItems.length > 0) {
-        console.log("Önbellekten veriler yükleniyor", {
-          itemCount: cachedItems.length,
+        // Get items from service
+        const result = await feedService.getItems({
+          userId,
+          feedId: selectedFeedId,
+          filter: activeFilter,
+          sortBy: filters?.sortBy,
+          offset,
+          limit,
         });
 
-        setPaginatedItems(cachedItems);
-        setIsInitialLoading(false);
-        setIsTransitioning(false);
+        const newItems = result?.items || [];
+        const totalCount = result?.total || 0;
 
-        return;
-      }
-
-      // Önbellekte veri yoksa temizle ve yeni yükleme başlat
-      setPaginatedItems([]);
-      setPagination((prev) => ({ ...prev, page: 1 }));
-
-      // Yükleme için kısa bir gecikme ile kullanıcı deneyimini iyileştir
-      if (loadingTimerRef.current) {
-        clearTimeout(loadingTimerRef.current);
-      }
-
-      loadingTimerRef.current = setTimeout(() => {
-        loadInitialItems();
-      }, 100);
-    }
-  }, [selectedFeedId, activeFilter, cacheKey]);
-
-  // Filtre objesi oluştur
-  const createFilterObject = useCallback(() => {
-    const filterObj = {};
-
-    if (selectedFeedId) {
-      filterObj.selectedFeedId = selectedFeedId;
-    }
-
-    if (filters?.feedType && filters?.feedType !== "all") {
-      filterObj.feedType = filters.feedType;
-    } else if (activeFilter === "rss" || activeFilter === "youtube") {
-      filterObj.feedType = activeFilter;
-    }
-
-    if (filters?.feedName) {
-      filterObj.feedName = filters.feedName;
-    }
-
-    if (filters?.readStatus) {
-      filterObj.readStatus = filters.readStatus;
-    }
-
-    if (filters?.sortBy) {
-      filterObj.sortBy = filters.sortBy;
-    }
-
-    return filterObj;
-  }, [activeFilter, filters, selectedFeedId]);
-
-  // İlk içerikleri yükle - performans için optimize edildi
-  const loadInitialItems = useCallback(async () => {
-    if (!userId || !feedService) {
-      setIsInitialLoading(false);
-      return;
-    }
-
-    try {
-      setIsInitialLoading(true);
-
-      const filterObj = createFilterObject();
-      console.log("İlk yükleme için filtreler:", filterObj);
-
-      if (typeof feedService.getPaginatedFeedItems !== "function") {
-        console.error(
-          "HATA: feedService.getPaginatedFeedItems metodu bulunamadı"
-        );
-        toast.error(t("errors.loadFailed"));
-        setIsTransitioning(false);
-        setIsInitialLoading(false);
-        return;
-      }
-
-      // API'den verileri getir
-      const result = await feedService.getPaginatedFeedItems(
-        userId,
-        1,
-        pagination.pageSize,
-        filterObj
-      );
-
-      if (result?.data) {
-        // Client-side filtreleme
-        let filteredData = filterItemsClientSide(result.data);
-
-        // Durum güncellemelerini toplu olarak yap
-        setPaginatedItems(filteredData);
-        setPagination((prev) => ({
-          ...prev,
-          page: 1,
-          total: filteredData.length || 0,
-          hasMore: result.hasMore || false,
-        }));
-
-        // Önbelleğe al
-        setLocalCache(cacheKey, filteredData);
-        setLocalCache(CACHE_KEYS.PAGE_STATE, {
-          page: 1,
-          pageSize: pagination.pageSize,
-          total: filteredData.length || 0,
-          hasMore: result.hasMore || false,
-        });
-      }
-    } catch (error) {
-      console.error("İçerik yükleme hatası:", error);
-      toast.error(t("errors.loadFailed"));
-    } finally {
-      setIsTransitioning(false);
-      setIsInitialLoading(false);
-    }
-  }, [
-    userId,
-    feedService,
-    pagination.pageSize,
-    t,
-    createFilterObject,
-    cacheKey,
-  ]);
-
-  // İlk bileşen mount olduğunda içerikleri yükle
-  useEffect(() => {
-    if (isFirstLoad.current) {
-      isFirstLoad.current = false;
-
-      // Önbellekten veriler varsa, API çağrısını atla
-      if (paginatedItems.length > 0) {
-        console.log(
-          "İlk yükleme önbellekten tamamlandı:",
-          paginatedItems.length
-        );
-        setIsInitialLoading(false);
-        return;
-      }
-
-      loadInitialItems();
-    }
-  }, [loadInitialItems, paginatedItems.length]);
-
-  // Client-side filtreleme - İstemci tarafında filtreleme için optimize edilmiş fonksiyon
-  const filterItemsClientSide = useCallback(
-    (items) => {
-      if (!Array.isArray(items)) return [];
-
-      let filteredData = [...items];
-
-      // Feed türü filtreleme
-      if (filters?.feedType && filters.feedType !== "all") {
-        filteredData = filteredData.filter(
-          (item) => item.feed_type === filters.feedType
-        );
-      }
-
-      // Okunma durumu filtreleme
-      if (filters?.readStatus === "read") {
-        filteredData = filteredData.filter((item) => item.is_read);
-      } else if (filters?.readStatus === "unread") {
-        filteredData = filteredData.filter((item) => !item.is_read);
-      }
-
-      // Sıralama
-      if (filters?.sortBy) {
-        if (filters.sortBy === "newest") {
-          filteredData.sort(
-            (a, b) => new Date(b.published_at) - new Date(a.published_at)
-          );
-        } else if (filters.sortBy === "oldest") {
-          filteredData.sort(
-            (a, b) => new Date(a.published_at) - new Date(b.published_at)
-          );
-        } else if (filters.sortBy === "unread") {
-          filteredData.sort((a, b) => {
-            if (!a.is_read && b.is_read) return -1;
-            if (a.is_read && !b.is_read) return 1;
-            return new Date(b.published_at) - new Date(a.published_at);
-          });
-        } else if (filters.sortBy === "favorites") {
-          filteredData.sort((a, b) => {
-            if (a.is_favorite && !b.is_favorite) return -1;
-            if (!a.is_favorite && b.is_favorite) return 1;
-            return new Date(b.published_at) - new Date(a.published_at);
-          });
-        }
-      }
-
-      return filteredData;
-    },
-    [filters]
-  );
-
-  // Daha fazla öğe yükle - performans iyileştirmeli
-  const loadMoreItems = useCallback(async () => {
-    if (
-      !userId ||
-      !feedService ||
-      !pagination.hasMore ||
-      isLoadingMore ||
-      isTransitioning ||
-      typeof feedService.getPaginatedFeedItems !== "function"
-    ) {
-      return false;
-    }
-
-    try {
-      setIsLoadingMore(true);
-      const nextPage = pagination.page + 1;
-      const filterObj = createFilterObject();
-
-      console.log(`Sayfa ${nextPage} yükleniyor:`, filterObj);
-
-      const result = await feedService.getPaginatedFeedItems(
-        userId,
-        nextPage,
-        pagination.pageSize,
-        filterObj
-      );
-
-      if (result?.data?.length > 0) {
-        // Client-side filtreleme ile veriyi işle
-        const filteredNewItems = filterItemsClientSide(result.data);
-
-        // Aynı öğeleri filtrele (duplicate önleme)
-        const existingIds = new Set(paginatedItems.map((item) => item.id));
-        const uniqueNewItems = filteredNewItems.filter(
-          (item) => !existingIds.has(item.id)
-        );
-
-        if (uniqueNewItems.length === 0) {
-          // API yeni öğe döndürmüşse ancak hepsi zaten mevcutsa
-          setPagination((prev) => ({
-            ...prev,
-            hasMore: false,
-          }));
-          return true;
+        // Update state based on append mode
+        if (append) {
+          setItems((prev) => [...prev, ...newItems]);
+        } else {
+          setItems(newItems);
         }
 
-        // Durum güncellemelerini yapıcaz
-        const updatedItems = [...paginatedItems, ...uniqueNewItems];
-        setPaginatedItems(updatedItems);
-        setPagination((prev) => ({
-          ...prev,
-          page: nextPage,
-          total: result.total || prev.total,
-          hasMore: result.hasMore || false,
-        }));
+        setTotal(totalCount);
+        setHasMore(
+          newItems.length > 0 && offset + newItems.length < totalCount
+        );
 
-        // Yeni veriyi önbelleğe al
-        setLocalCache(cacheKey, updatedItems);
-        setLocalCache(CACHE_KEYS.PAGE_STATE, {
-          page: nextPage,
-          pageSize: pagination.pageSize,
-          total: result.total || pagination.total,
-          hasMore: result.hasMore || false,
+        // Cache the items for this configuration
+        try {
+          // Only cache on first page load or when not appending
+          if (pageToLoad === 1 || !append) {
+            saveToCache(
+              cacheKey,
+              {
+                items: append ? [...items, ...newItems] : newItems,
+                total: totalCount,
+                timestamp: Date.now(),
+              },
+              CACHE_TTL
+            );
+          }
+
+          // Cache pagination state
+          saveToCache(
+            pageStateCacheKey,
+            {
+              page: pageToLoad,
+              pageSize,
+              timestamp: Date.now(),
+            },
+            CACHE_TTL
+          );
+        } catch (cacheError) {
+          console.error("Error caching pagination data:", cacheError);
+        }
+
+        return newItems;
+      } catch (err) {
+        console.error("Error loading feed items:", err);
+        setError(err);
+        toast({
+          title: t("errors.loadFailed"),
+          description: t("errors.tryAgainLater"),
+          variant: "destructive",
         });
-
-        return true;
+        return [];
+      } finally {
+        setIsLoading(false);
       }
-
-      // Veri gelmezse, daha fazla öğe olmadığını belirt
-      setPagination((prev) => ({
-        ...prev,
-        hasMore: false,
-      }));
-      return false;
-    } catch (error) {
-      console.error(
-        `Daha fazla içerik yükleme hatası (sayfa ${pagination.page + 1}):`,
-        error
-      );
-      toast.error(t("errors.loadMoreFailed"));
-      return false;
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [
-    userId,
-    feedService,
-    pagination,
-    createFilterObject,
-    isLoadingMore,
-    isTransitioning,
-    t,
-    paginatedItems,
-    filterItemsClientSide,
-    cacheKey,
-  ]);
-
-  // Sayfalamayı sıfırla
-  const resetPagination = useCallback(() => {
-    console.log("Sayfalama durumu sıfırlanıyor");
-    setPagination({
-      page: 1,
-      pageSize: 12,
-      total: 0,
-      hasMore: true,
-    });
-    setPaginatedItems([]);
-    setIsInitialLoading(true);
-
-    // Kısa bir gecikme ile yükleme başlat
-    setTimeout(() => {
-      loadInitialItems();
-    }, 50);
-  }, [loadInitialItems]);
-
-  // Cache'den feed öğelerini alırken yükleme durumunu takip et
-  useEffect(() => {
-    // İlk yükleme durumunu sıfırla
-    if (
-      selectedFeedId !== prevConfigRef.current.selectedFeedId ||
-      activeFilter !== prevConfigRef.current.activeFilter
-    ) {
-      setIsInitialLoading(true);
-      setIsTransitioning(true);
-    }
-
-    // Öğeler yüklendikten sonra loading durumunu kapat
-    if (paginatedItems && paginatedItems.length > 0) {
-      setIsInitialLoading(false);
-
-      // Kısa bir süre sonra geçiş durumunu kapat
-      const timer = setTimeout(() => {
-        setIsTransitioning(false);
-      }, 300);
-
-      return () => clearTimeout(timer);
-    }
-
-    // Geçiş durumunu 500ms sonra kapat
-    if (isTransitioning) {
-      const timer = setTimeout(() => {
-        setIsTransitioning(false);
-      }, 500);
-
-      return () => clearTimeout(timer);
-    }
-  }, [selectedFeedId, activeFilter, paginatedItems, isTransitioning]);
-
-  const nextPage = useCallback(async () => {
-    if (hasNextPage) {
-      setPage((prev) => prev + 1);
-      return true;
-    }
-    return false;
-  }, [hasNextPage]);
-
-  const previousPage = useCallback(() => {
-    if (hasPreviousPage) {
-      setPage((prev) => prev - 1);
-      return true;
-    }
-    return false;
-  }, [hasPreviousPage]);
-
-  const goToPage = useCallback(
-    (pageNumber) => {
-      if (pageNumber >= 1 && pageNumber <= totalPages) {
-        setPage(pageNumber);
-        return true;
-      }
-      return false;
     },
-    [totalPages]
+    [
+      feedService,
+      userId,
+      page,
+      pageSize,
+      selectedFeedId,
+      activeFilter,
+      filters,
+      items,
+      cacheKey,
+      pageStateCacheKey,
+      t,
+    ]
   );
 
-  const changePageSize = useCallback((newPageSize) => {
-    setPageSize(newPageSize);
+  /**
+   * Load the next page of items
+   * @returns {Promise<void>}
+   */
+  const loadMore = useCallback(async () => {
+    if (isLoading || !hasMore) return;
+    const nextPage = page + 1;
+    setPage(nextPage);
+    await loadItems(nextPage, true);
+  }, [isLoading, hasMore, page, loadItems]);
+
+  /**
+   * Refresh items with current settings
+   * @returns {Promise<void>}
+   */
+  const refresh = useCallback(async () => {
     setPage(1);
-  }, []);
+    await loadItems(1, false);
+  }, [loadItems]);
 
-  const reset = useCallback(() => {
-    setPage(initialPage);
-    setPageSize(initialPageSize);
-  }, [initialPage, initialPageSize]);
+  /**
+   * Change page size and reload items
+   * @param {number} newSize - New page size
+   */
+  const changePageSize = useCallback(
+    (newSize) => {
+      setPageSize(newSize);
+      setPage(1);
+      loadItems(1, false);
+    },
+    [loadItems]
+  );
+
+  // Load from cache on initial render
+  useEffect(() => {
+    if (!userId || !feedService) return;
+
+    try {
+      // Try to load items from cache
+      const cachedData = getFromCache(cacheKey);
+      if (cachedData?.items?.length > 0) {
+        setItems(cachedData.items);
+        setTotal(cachedData.total || 0);
+        setHasMore(
+          cachedData.items.length > 0 &&
+            cachedData.items.length < (cachedData.total || 0)
+        );
+      }
+
+      // Try to load pagination state from cache
+      const cachedPageState = getFromCache(pageStateCacheKey);
+      if (cachedPageState) {
+        setPage(cachedPageState.page || 1);
+        setPageSize(cachedPageState.pageSize || initialPageSize);
+      }
+    } catch (error) {
+      console.error("Error loading cached pagination data:", error);
+    }
+  }, [cacheKey, pageStateCacheKey, userId, feedService, initialPageSize]);
+
+  // Handle feed or filter changes
+  useEffect(() => {
+    const prevConfig = prevConfigRef.current;
+
+    // Check if feed or filter has changed
+    if (
+      prevConfig.selectedFeedId !== selectedFeedId ||
+      prevConfig.activeFilter?.type !== activeFilter?.type ||
+      prevConfig.activeFilter?.value !== activeFilter?.value ||
+      prevConfig.filters?.sortBy !== filters?.sortBy
+    ) {
+      // Reset to page 1 when feed or filter changes
+      setPage(1);
+
+      // Update the reference for next comparison
+      prevConfigRef.current = {
+        selectedFeedId,
+        activeFilter,
+        filters,
+      };
+
+      // Only load items if this isn't the first render
+      // (the first render will be handled by the cache effect)
+      if (!isFirstLoad.current) {
+        loadItems(1, false);
+      }
+    }
+
+    isFirstLoad.current = false;
+  }, [selectedFeedId, activeFilter, filters, loadItems]);
+
+  // Load items on initial render or when dependencies change
+  useEffect(() => {
+    if (userId && feedService) {
+      loadItems();
+    }
+  }, [userId, feedService, page, pageSize, loadItems]);
 
   return {
-    paginatedItems,
-    pagination,
-    isLoadingMore,
-    isInitialLoading,
-    isTransitioning,
-    loadMoreItems,
-    resetPagination,
+    items,
+    total,
     page,
     pageSize,
-    totalPages,
-    hasNextPage,
-    hasPreviousPage,
-    nextPage,
-    previousPage,
-    goToPage,
+    isLoading,
+    error,
+    hasMore,
+    loadMore,
+    refresh,
     changePageSize,
-    reset,
+    setPage,
   };
 }

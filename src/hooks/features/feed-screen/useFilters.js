@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import { getFromCache, saveToCache } from "@/utils/cacheUtils";
 
-// Yerel depolama için sabitler
 const FILTERS_STORAGE_KEY = "feedtune-feed-filters";
+const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours
 
-// Varsayılan filtreler
 const DEFAULT_FILTERS = {
   feedType: "all",
   readStatus: "all",
@@ -15,39 +16,53 @@ const DEFAULT_FILTERS = {
 };
 
 /**
- * Feed öğelerini filtrelemek için hook
- * @returns {Object} Filtre işlemleri ve durumu
+ * Custom hook for managing feed filters
+ * Handles filter state, persistence, and URL synchronization
+ *
+ * @returns {Object} Filter state and operations
+ * @returns {Object} filters - Current filter values
+ * @returns {Function} applyFilters - Update multiple filters at once
+ * @returns {Function} updateFilter - Update a single filter
+ * @returns {Function} resetFilters - Reset all filters to defaults
+ * @returns {Function} setFeedNameFilter - Set feed name filter
+ * @returns {Function} setFeedTypeFilter - Set feed type filter
+ * @returns {Function} setReadStatusFilter - Set read status filter
+ * @returns {Function} setSortByFilter - Set sort by filter
  */
 export function useFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isInitializedRef = useRef(false);
+  const { t } = useTranslation();
 
-  // Önbellekten başlangıç değerlerini alma
+  // Get initial filter values from cache
   const [filters, setFilters] = useState(() => {
     try {
-      // Tarayıcı ortamında çalışıyorsa
-      if (typeof window !== "undefined") {
-        const savedFilters = localStorage.getItem(FILTERS_STORAGE_KEY);
-        if (savedFilters) {
-          return JSON.parse(savedFilters);
-        }
-      }
-      return DEFAULT_FILTERS;
+      return getFromCache(FILTERS_STORAGE_KEY, CACHE_TTL) || DEFAULT_FILTERS;
     } catch (error) {
-      console.error("Filtre ayarları yüklenirken hata:", error);
+      console.error("Error loading filter settings:", error);
       return DEFAULT_FILTERS;
     }
   });
 
   const previousFiltersRef = useRef(filters);
 
-  // URL parametrelerinden filtreleri yükle
+  // Create filter object for API calls and caching
+  const filterObject = useMemo(() => {
+    return {
+      feedType: filters.feedType,
+      readStatus: filters.readStatus,
+      sortBy: filters.sortBy,
+      feedName: filters.feedName,
+    };
+  }, [filters]);
+
+  // Load filters from URL parameters
   useEffect(() => {
     const urlFilters = {};
     let hasUrlFilters = false;
 
-    // URL'den tüm filtreleri oku
+    // Read all filters from URL
     if (searchParams.has("feedType")) {
       urlFilters.feedType = searchParams.get("feedType");
       hasUrlFilters = true;
@@ -68,28 +83,33 @@ export function useFilters() {
       hasUrlFilters = true;
     }
 
-    // Eğer URL'de filtreler varsa ve ilk yükleniyorsa, state'i güncelle
+    // If URL has filters and this is initial load, update state
     if (hasUrlFilters && !isInitializedRef.current) {
-      console.log("URL'den filtreleri yüklendi:", urlFilters);
+      console.log("Loaded filters from URL:", urlFilters);
       setFilters((prev) => ({ ...prev, ...urlFilters }));
 
-      // Bu filtreleri localStorage'a da kaydet
-      localStorage.setItem(
-        FILTERS_STORAGE_KEY,
-        JSON.stringify({ ...filters, ...urlFilters })
-      );
+      // Also save to cache
+      try {
+        saveToCache(
+          FILTERS_STORAGE_KEY,
+          { ...filters, ...urlFilters },
+          CACHE_TTL
+        );
+      } catch (error) {
+        console.error("Error saving filters to cache:", error);
+      }
     }
 
     isInitializedRef.current = true;
-  }, [searchParams]);
+  }, [searchParams, filters]);
 
-  // Filtrelerin değişiminde yerel depolamaya kaydet ve URL'i güncelle
+  // Save filters to cache and update URL when they change
   useEffect(() => {
-    // İlk yükleme sırasında değişiklik yapmaktan kaçın
+    // Skip during initial load
     if (!isInitializedRef.current) return;
 
     try {
-      // Aynı değerlere sahip filtreler için kaydetme
+      // Check if filters have actually changed
       const prevFilters = previousFiltersRef.current;
       const hasChanged =
         prevFilters.feedType !== filters.feedType ||
@@ -98,25 +118,28 @@ export function useFilters() {
         prevFilters.feedName !== filters.feedName;
 
       if (hasChanged) {
-        // LocalStorage'a kaydet
-        localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
+        // Save to cache
+        saveToCache(FILTERS_STORAGE_KEY, filters, CACHE_TTL);
         previousFiltersRef.current = { ...filters };
 
-        // URL parametrelerini güncelle
+        // Update URL parameters
         updateUrlWithFilters(filters);
       }
     } catch (error) {
-      console.error("Filtre ayarları kaydedilirken hata:", error);
+      console.error("Error saving filter settings:", error);
     }
   }, [filters]);
 
-  // URL'yi filtrelerle güncelleme işlevi
+  /**
+   * Update URL with current filter values
+   * @param {Object} filterValues - Current filter values
+   */
   const updateUrlWithFilters = useCallback(
     (filterValues) => {
       try {
         const params = new URLSearchParams();
 
-        // Boş olmayan ve varsayılan olmayan değerleri URL'e ekle
+        // Only add non-empty and non-default values to URL
         Object.entries(filterValues).forEach(([key, value]) => {
           if (
             value !== null &&
@@ -129,29 +152,32 @@ export function useFilters() {
         });
 
         const query = params.toString();
-        // shallow: true ile sayfa yenilemeden URL güncellenir
+        // Use shallow routing to update URL without page refresh
         router.push(query ? `?${query}` : "/feeds", { scroll: false });
       } catch (error) {
-        console.error("URL güncelleme hatası:", error);
+        console.error("URL update error:", error);
       }
     },
     [router]
   );
 
-  // Filtreleri güncelle
+  /**
+   * Apply multiple filter updates at once
+   * @param {Object} newFilters - New filter values to apply
+   */
   const applyFilters = useCallback((newFilters) => {
     setFilters((prev) => {
-      // Önceki filtrelerin tam bir kopyasını oluştur
+      // Create a complete copy of previous filters
       const updated = { ...prev };
 
-      // Sadece değişen filtreleri güncelle
+      // Only update filters that have changed
       Object.entries(newFilters).forEach(([key, value]) => {
         if (prev[key] !== value) {
           updated[key] = value;
         }
       });
 
-      // Veriler aynıysa state güncellemesini engelle
+      // Prevent unnecessary state updates
       if (JSON.stringify(updated) === JSON.stringify(prev)) {
         return prev;
       }
@@ -160,27 +186,40 @@ export function useFilters() {
     });
   }, []);
 
-  // Belirli bir filtre değerini güncelle
+  /**
+   * Update a single filter value
+   * @param {string} key - Filter key to update
+   * @param {any} value - New filter value
+   */
   const updateFilter = useCallback((key, value) => {
     setFilters((prev) => {
-      // Değer zaten aynıysa güncelleme yapma
+      // Skip update if value hasn't changed
       if (prev[key] === value) return prev;
       return { ...prev, [key]: value };
     });
   }, []);
 
-  // Tüm filtreleri varsayılan değerlere sıfırla
+  /**
+   * Reset all filters to default values
+   */
   const resetFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
 
-    // URL'yi de temizle
+    // Clear URL parameters
     router.push("/feeds", { scroll: false });
 
-    // LocalStorage'ı temizle
-    localStorage.removeItem(FILTERS_STORAGE_KEY);
+    // Clear from cache
+    try {
+      localStorage.removeItem(FILTERS_STORAGE_KEY);
+    } catch (error) {
+      console.error("Error clearing filter cache:", error);
+    }
   }, [router]);
 
-  // Feed ismi arama filtresi
+  /**
+   * Set feed name filter
+   * @param {string} name - Feed name to filter by
+   */
   const setFeedNameFilter = useCallback(
     (name) => {
       updateFilter("feedName", name);
@@ -188,7 +227,10 @@ export function useFilters() {
     [updateFilter]
   );
 
-  // Feed türü filtresi (tümü, rss, youtube)
+  /**
+   * Set feed type filter (all, rss, youtube)
+   * @param {string} type - Feed type to filter by
+   */
   const setFeedTypeFilter = useCallback(
     (type) => {
       updateFilter("feedType", type);
@@ -196,7 +238,10 @@ export function useFilters() {
     [updateFilter]
   );
 
-  // Okunma durumu filtresi (tümü, okundu, okunmadı)
+  /**
+   * Set read status filter (all, read, unread)
+   * @param {string} status - Read status to filter by
+   */
   const setReadStatusFilter = useCallback(
     (status) => {
       updateFilter("readStatus", status);
@@ -204,7 +249,10 @@ export function useFilters() {
     [updateFilter]
   );
 
-  // Sıralama filtresi
+  /**
+   * Set sort by filter (newest, oldest, etc.)
+   * @param {string} sortBy - Sort method to use
+   */
   const setSortByFilter = useCallback(
     (sortBy) => {
       updateFilter("sortBy", sortBy);
@@ -214,6 +262,7 @@ export function useFilters() {
 
   return {
     filters,
+    filterObject,
     applyFilters,
     updateFilter,
     resetFilters,

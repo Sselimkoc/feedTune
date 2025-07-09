@@ -13,8 +13,8 @@ i18n.use(initReactI18next).init({
       translation: trTranslations,
     },
   },
-  lng: "tr", // Default language
-  fallbackLng: "en",
+  lng: "en", // Default language
+  fallbackLng: "tr",
   interpolation: {
     escapeValue: false,
   },

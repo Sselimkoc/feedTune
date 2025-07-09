@@ -41,6 +41,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
   const [showPassword, setShowPassword] = useState(false);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [isResend, setIsResend] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { t } = useTranslation();
@@ -59,14 +60,38 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
 
     if (mode === "signup") {
       const result = await handleSignUp({ email, password });
+
       if (result?.success) {
-        setRegisteredEmail(email);
-        setVerifyingEmail(true);
+        // Handle different signup scenarios
+        if (result.status === "verification_resent") {
+          // Email exists but is not verified, show verification screen
+          setRegisteredEmail(email);
+          setVerifyingEmail(true);
+          setIsResend(true);
+        } else if (result.status === "new_signup") {
+          // New signup, show verification screen
+          setRegisteredEmail(email);
+          setVerifyingEmail(true);
+          setIsResend(false);
+        }
+      } else if (result?.status === "email_exists") {
+        // Email already exists and is verified, suggest login instead
+        setMode("login");
+        // Pre-fill the email field but clear password
+        setEmail(email);
+        setPassword("");
       }
+      // For other failure cases, error toasts are already shown by the auth store
     } else {
       const result = await handleSignIn({ email, password });
+
       if (result?.success) {
         onOpenChange?.(false);
+      } else if (result?.status === "email_not_verified") {
+        // Email exists but is not verified, show verification screen
+        setRegisteredEmail(result.email || email);
+        setVerifyingEmail(true);
+        setIsResend(true);
       }
     }
   };
@@ -105,6 +130,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
     setMode("login");
     setEmail(registeredEmail);
     setPassword("");
+    setIsResend(false);
   };
 
   const handleOpenChange = (open) => {
@@ -115,6 +141,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
           setMode(defaultTab);
         }
         setShowPassword(false);
+        setIsResend(false);
       }, 300);
     }
     onOpenChange?.(open);
@@ -169,6 +196,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
               email={registeredEmail}
               onLoginClick={handleGoToLogin}
               onResendEmail={handleResendEmail}
+              isResend={isResend}
             />
           ) : (
             <div className="p-6">

@@ -484,6 +484,10 @@ export function useFeedService() {
     editFeed: editFeedMutation.mutate,
     deleteFeed,
 
+    // Mutation states
+    isAddingFeed: addFeedMutation.isPending,
+    isEditingFeed: editFeedMutation.isPending,
+
     // Interactions
     addInteraction,
     removeInteraction,

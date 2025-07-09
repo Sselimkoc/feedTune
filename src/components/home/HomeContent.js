@@ -299,7 +299,6 @@ export function HomeContent({
 
   return (
     <section className="py-6 lg:py-8 relative">
-      {/* Background animated patterns (copied from FavoritesContent) */}
       <div className="absolute inset-0 overflow-hidden -z-10">
         <div
           className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"

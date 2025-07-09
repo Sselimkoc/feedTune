@@ -8,53 +8,7 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { usePagination } from "@/hooks/features/feed-screen/usePagination";
 import { supabase } from "@/lib/supabase";
-
-// Cache için güvenli storage erişimi
-const getLocalStorage = () => {
-  if (typeof window !== "undefined") {
-    return window.localStorage;
-  }
-  return null;
-};
-
-// Cache fonksiyonları
-const getLocalCache = (key) => {
-  try {
-    const storage = getLocalStorage();
-    if (!storage) return null;
-
-    const item = storage.getItem(key);
-    if (!item) return null;
-
-    const { value, timestamp, ttl } = JSON.parse(item);
-    if (Date.now() - timestamp > ttl) {
-      storage.removeItem(key);
-      return null;
-    }
-
-    return value;
-  } catch (error) {
-    console.warn("Cache read error:", error);
-    return null;
-  }
-};
-
-const setLocalCache = (key, value, ttl = 1000 * 60 * 60) => {
-  try {
-    const storage = getLocalStorage();
-    if (!storage) return;
-
-    const item = {
-      value,
-      timestamp: Date.now(),
-      ttl,
-    };
-
-    storage.setItem(key, JSON.stringify(item));
-  } catch (error) {
-    console.warn("Cache write error:", error);
-  }
-};
+import { getFromCache, saveToCache } from "@/utils/cacheUtils";
 
 export function useFeedScreen({ initialFeedId } = {}) {
   const { t } = useTranslation();
@@ -71,7 +25,7 @@ export function useFeedScreen({ initialFeedId } = {}) {
     if (typeof window === "undefined")
       return initialFeedId || urlFeedId || null;
     return (
-      getLocalCache("feed-screen-state")?.selectedFeedId ||
+      getFromCache("feed-screen-state")?.selectedFeedId ||
       initialFeedId ||
       urlFeedId ||
       null
@@ -80,12 +34,12 @@ export function useFeedScreen({ initialFeedId } = {}) {
 
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window === "undefined") return "grid";
-    return getLocalCache("feed-screen-state")?.viewMode || "grid";
+    return getFromCache("feed-screen-state")?.viewMode || "grid";
   });
 
   const [activeFilter, setActiveFilter] = useState(() => {
     if (typeof window === "undefined") return "all";
-    return getLocalCache("feed-screen-state")?.activeFilter || "all";
+    return getFromCache("feed-screen-state")?.activeFilter || "all";
   });
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -123,7 +77,7 @@ export function useFeedScreen({ initialFeedId } = {}) {
   useEffect(() => {
     if (!userId) return;
 
-    setLocalCache(
+    saveToCache(
       "feed-screen-state",
       {
         selectedFeedId,

@@ -10,7 +10,8 @@
     "close": "Kapat",
     "loading": "Yükleniyor...",
     "pleaseWait" : "Lütfen bekleyin...",
-    "refresh": "Yenile"
+    "refresh": "Yenile",
+    "cancel": "İptal"
   },
   "feeds": {
     "title": "Beslemeler",
@@ -33,6 +34,34 @@
     "error": {
       "title": "Beslemeler Yüklenirken Hata",
       "description": "Beslemeleriniz yüklenirken bir sorun oluştu. Lütfen tekrar deneyin."
+    },
+    "addFeed": {
+      "title": "Yeni Besleme Ekle",
+      "description": "RSS veya YouTube kanalını besleme listenize ekleyin.",
+      "youtubeChannelUrl": "YouTube Kanal URL'si veya Adı",
+      "youtubeUrlOrKeyword": "Bir YouTube kanal URL'si yapıştırın veya kanal adı yazın...",
+      "rssUrl": "RSS Besleme URL'si",
+      "preview": "Önizle",
+      "previewOrSearch": "Önizle/Ara",
+      "invalidUrl": "Lütfen geçerli bir URL veya kanal adı girin.",
+      "noResults": "Aramanız için kanal bulunamadı.",
+      "success": "Besleme başarıyla eklendi!",
+      "successDescription": "{{title}} beslemelerinize eklendi.",
+      "customTitle": "Özel Başlık",
+      "leaveBlankForAutoTitle": "Otomatik başlık için boş bırakın",
+      "category": "Kategori",
+      "selectCategory": "Kategori seçin",
+      "categories": {
+        "general": "Genel",
+        "tech": "Teknoloji",
+        "news": "Haber",
+        "entertainment": "Eğlence",
+        "other": "Diğer"
+      },
+      "contentOptions": "İçerik Seçenekleri",
+      "useFullContent": "Tam İçerik",
+      "useSummary": "Sadece Özet",
+      "add": "Besleme Ekle"
     }
   },
   "interactions": {
@@ -282,21 +311,27 @@
     "warning": "Uyarı"
   },
   "auth": {
-    "email" : "Email",
+    "email" : "E-posta",
     "password" : "Şifre",
-    "emailPlaceholder" : "Kullanıcı adınız@örnek.com",
+    "emailPlaceholder" : "isim@ornek.com",
     "passwordPlaceholder" : "••••••••",
-    "login": "Giriş yap",
-    "register": "Kayıt ol",
-    "logout": "Çıkış yap",
+    "login": "Giriş Yap",
+    "register": "Kayıt Ol",
+    "logout": "Çıkış Yap",
     "loggingOut": "Çıkış yapılıyor...",
-    "logoutSuccess": "Başarıyla çıkış yaptınız.",
+    "logoutSuccess": "Çıkış yapıldı.",
     "logoutError": "Çıkış başarısız. Lütfen tekrar deneyin.",
-    "loginSuccess": "Giriş başarılı! Tekrar hoş geldiniz.",
-    "loginError": "Giriş başarısız. Bilgilerinizi kontrol edin.",
+    "loginSuccess": "Giriş başarılı! Hoş geldiniz.",
+    "loginError": "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.",
     "registerSuccess": "Kayıt başarılı! Lütfen e-postanızı kontrol edin.",
     "registerError": "Kayıt başarısız. Lütfen tekrar deneyin.",
-    "profileUpdateError": "Profil güncelleme başarısız. Lütfen tekrar deneyin.",
+    "emailAlreadyExists": "Bu e-posta zaten kayıtlı. Lütfen giriş yapın.",
+    "emailVerificationRequired": "Giriş yapmadan önce lütfen e-postanızı doğrulayın.",
+    "emailVerified": "E-postanız başarıyla doğrulandı!",
+    "verifyingEmail": "E-postanız doğrulanıyor...",
+    "verificationError": "E-postanızı doğrularken bir sorun oluştu.",
+    "redirecting": "Ana sayfaya yönlendiriliyorsunuz...",
+    "profileUpdateError": "Profil güncellenemedi. Lütfen tekrar deneyin.",
     "authenticationError": "Kimlik doğrulama başarısız. Lütfen tekrar deneyin.",
     "rateLimitError": "Çok fazla deneme. Lütfen biraz bekleyin.",
     "sessionExpired": "Oturum süresi doldu. Lütfen tekrar giriş yapın.",
@@ -305,6 +340,7 @@
     "verification": {
       "title": "E-postanızı Doğrulayın",
       "description": "Hesabınızı kullanmaya başlamadan önce lütfen e-posta adresinizi doğrulayın.",
+      "resendDescription": "Yeni bir doğrulama e-postası gönderildi. Lütfen gelen kutunuzu kontrol edin.",
       "checkInbox": "Lütfen gelen kutunuzu kontrol edin",
       "emailSentTo": "Doğrulama e-postası gönderildi: ",
       "step1": "E-postanızı açın ve doğrulama bağlantısına tıklayın",
@@ -313,8 +349,8 @@
       "goToLogin": "Giriş sayfasına git",
       "resendEmail": "Doğrulama e-postasını tekrar gönder",
       "resendingEmail": "E-posta gönderiliyor...",
-      "emailResent": "Doğrulama e-postası başarıyla tekrar gönderildi!",
-      "resendError": "Doğrulama e-postası tekrar gönderilemedi."
+      "emailResent": "Doğrulama e-postası başarıyla yeniden gönderildi!",
+      "resendError": "Doğrulama e-postası gönderilemedi."
     },
     "termsText": "Devam ederek",
     "termsLink": "Kullanım Şartları"

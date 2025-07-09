@@ -29,14 +29,27 @@ export function useAuthActions() {
 
   const handleSignIn = async (credentials) => {
     try {
-      const { success, error } = await signIn({
+      const { success, error, status } = await signIn({
         ...credentials,
         toastSuccess,
         toastError,
       });
+
       if (success) {
         router.push("/");
+        return { success, error };
       }
+
+      // Handle email verification error
+      if (status === "email_not_verified") {
+        return {
+          success: false,
+          error,
+          status: "email_not_verified",
+          email: credentials.email,
+        };
+      }
+
       return { success, error };
     } catch (error) {
       console.error("Sign in error:", error);
@@ -56,10 +69,6 @@ export function useAuthActions() {
         toastSuccess,
         toastError,
       });
-      if (success) {
-        router.push("/auth/verify-email");
-      }
-      return { success, error };
     } catch (error) {
       console.error("Sign up error:", error);
       toast({

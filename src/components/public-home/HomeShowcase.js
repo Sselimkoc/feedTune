@@ -64,7 +64,7 @@ export function HomeShowcase() {
 
   return (
     <section className="py-6 md:py-16 bg-muted/30" id="showcase">
-      <div className="container mx-auto px-2 md:px-4">
+      <div className="container mx-auto px-4 md:px-6 max-w-6xl">
         <motion.div
           className="text-center mb-6 md:mb-12"
           initial={{ opacity: 0, y: 20 }}
@@ -94,7 +94,7 @@ export function HomeShowcase() {
                     <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
                       {feature.icon}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <h3 className="font-semibold text-sm md:text-xl mb-1">
                         {feature.title}
                       </h3>
@@ -128,9 +128,9 @@ export function HomeShowcase() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="grid md:grid-cols-2 gap-8 items-center"
+                    className="grid md:grid-cols-2 gap-8 items-center max-w-5xl mx-auto"
                   >
-                    <div className="space-y-4">
+                    <div className="space-y-4 flex flex-col items-center md:items-start text-center md:text-left">
                       <h3 className="text-2xl font-bold">{feature.title}</h3>
                       <p className="text-muted-foreground">
                         {feature.description}
@@ -140,7 +140,7 @@ export function HomeShowcase() {
                         {t("home.showcase.learnMore")}
                       </Button>
                     </div>
-                    <div className="relative aspect-video rounded-lg overflow-hidden border border-border/50 shadow-xl">
+                    <div className="relative aspect-video rounded-lg overflow-hidden border border-border/50 shadow-xl mx-auto w-full max-w-md">
                       <Image
                         src={feature.image}
                         alt={feature.title}

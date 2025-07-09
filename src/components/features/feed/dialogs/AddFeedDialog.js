@@ -26,6 +26,8 @@ import {
   ExternalLink,
   Info,
   ArrowRight,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import {
   Tabs,
@@ -110,6 +112,14 @@ const formSchema = z.object({
   fetch_full_content: z.boolean().optional(),
 });
 
+const categories = [
+  { value: "general", label: "General" },
+  { value: "tech", label: "Tech" },
+  { value: "news", label: "News" },
+  { value: "entertainment", label: "Entertainment" },
+  { value: "other", label: "Other" },
+];
+
 /**
  * Yeni feed eklemek için dialog bileşeni
  */
@@ -122,6 +132,7 @@ export function AddFeedDialog({
   const { user, isLoading: isLoadingUser } = useAuthStore();
   const userId = user?.id;
   const { isLoading, addFeed, closeAddFeedDialog } = useAddFeed(onSubmit);
+  const { toast } = useToast();
 
   // Form tanımlama
   const form = useForm({
@@ -171,6 +182,18 @@ export function AddFeedDialog({
   // Preview states
   const [rssPreview, setRssPreview] = useState(null);
   const [youtubeChannel, setYoutubeChannel] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("general");
+  const [fetchFullContent, setFetchFullContent] = useState(false);
+
+  // New states for YouTube search
+  const [ytSearchResults, setYtSearchResults] = useState([]);
+  const [ytSearchLoading, setYtSearchLoading] = useState(false);
+  const [ytSearchError, setYtSearchError] = useState("");
 
   // Reset states when dialog closes
   useEffect(() => {
@@ -180,7 +203,16 @@ export function AddFeedDialog({
       setYoutubeUrl("");
       setRssPreview(null);
       setYoutubeChannel(null);
-      setError(null);
+      setPreview(null);
+      setPreviewLoading(false);
+      setPreviewError("");
+      setShowAdvanced(false);
+      setTitle("");
+      setCategory("general");
+      setFetchFullContent(false);
+      setYtSearchResults([]);
+      setYtSearchLoading(false);
+      setYtSearchError("");
     }
   }, [isOpen]);
 
@@ -197,285 +229,130 @@ export function AddFeedDialog({
     setError(null);
   };
 
-  // Handle RSS search
-  const handleRssSearch = async () => {
-    if (!rssUrl || searching) return;
+  // Helper: is input a YouTube URL?
+  function isYoutubeUrl(val) {
+    return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(val);
+  }
 
-    setSearching(true);
-    setRssPreview(null);
-    setError(null);
-
-    // Timeout kontrolü için
-    const timeoutId = setTimeout(() => {
-      if (searching) {
-        setSearching(false);
-        setError(
-          t("feeds.timeoutError") ||
-            "İstek zaman aşımına uğradı. Lütfen tekrar deneyin."
-        );
-      }
-    }, 20000); // 20 saniye timeout
-
-    try {
-      console.log("RSS önizleme isteği gönderiliyor:", rssUrl);
-      const response = await fetch("/api/rss-preview", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url: rssUrl }),
-      });
-
-      const data = await response.json();
-
-      clearTimeout(timeoutId); // Başarılı cevap aldığımız için timeout'u temizle
-
-      if (!response.ok) {
-        console.error("RSS önizleme API hatası:", data);
-        throw new Error(data.error || "Failed to preview RSS feed");
-      }
-
-      if (!data || !data.title) {
-        console.warn("Geçersiz RSS verisi:", data);
-        setError(t("feeds.invalidRssFeed"));
-        return;
-      }
-
-      console.log("RSS önizleme başarılı:", data);
-      setRssPreview({
-        title: data.title || "Untitled Feed",
-        description: data.description || "",
-        items: data.items || 0,
-        url: rssUrl,
-        image: data.image || null,
-        preview: Array.isArray(data.preview) ? data.preview : [],
-      });
-    } catch (error) {
-      clearTimeout(timeoutId); // Hata durumunda da timeout'u temizle
-
-      console.error("RSS önizleme hatası:", error);
-
-      // Hatayı ayrıştır ve daha kullanıcı dostu hata mesajları göster
-      let errorMsg = error.message;
-
-      if (
-        errorMsg.includes("kaynağına erişilemedi") ||
-        errorMsg.includes("not found") ||
-        errorMsg.includes("access")
-      ) {
-        errorMsg =
-          t("feeds.cannotAccessFeed") ||
-          "Bu RSS kaynağına erişilemiyor. URL'yi kontrol edin veya site CORS kısıtlamaları olabilir.";
-      } else if (
-        errorMsg.includes("ayrıştırılamadı") ||
-        errorMsg.includes("parse")
-      ) {
-        errorMsg =
-          t("feeds.invalidRssFeed") || "Geçersiz RSS beslemesi formatı.";
-      } else if (
-        errorMsg.includes("timeout") ||
-        errorMsg.includes("zaman aşımı")
-      ) {
-        errorMsg =
-          t("feeds.timeoutError") ||
-          "İstek zaman aşımına uğradı. Lütfen tekrar deneyin.";
-      }
-
-      setError(errorMsg);
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  // Handle YouTube search
-  const handleYoutubeSearch = async () => {
-    if (!youtubeUrl || searching) return;
-
-    setSearching(true);
-    setYoutubeChannel(null);
-    setError(null);
-
-    try {
-      const isUrl =
-        youtubeUrl.includes("youtube.com") ||
-        youtubeUrl.includes("youtu.be") ||
-        youtubeUrl.startsWith("http");
-
-      if (isUrl) {
-        // YouTube URL'ini önce RSS URL'ine dönüştür
-        try {
-          const rssUrl = await youtubeService.getYoutubeRssUrl(youtubeUrl);
-          if (rssUrl) {
-            // URL'den YouTube ID'yi çıkarmak için düzenli ifade
-            const channelIdMatch = rssUrl.match(/channel_id=([^&]+)/);
-            if (channelIdMatch && channelIdMatch[1]) {
-              const channelId = channelIdMatch[1];
-
-              // Kanal bilgilerini önbellekten veya API'den al
-              const channelInfo = await youtubeService.getChannelInfo(
-                channelId
-              );
-
-              setYoutubeChannel({
-                id: channelId,
-                title: channelInfo.title || "",
-                description: channelInfo.description || "",
-                thumbnail: channelInfo.thumbnail || "",
-                subscribers: channelInfo.statistics?.subscriberCount || "0",
-                subscribersFormatted: channelInfo.statistics?.subscriberCount
-                  ? formatNumber(channelInfo.statistics.subscriberCount)
-                  : "Bilinmiyor",
-                videoCount: channelInfo.statistics?.videoCount || "0",
-                videoCountFormatted: channelInfo.statistics?.videoCount
-                  ? formatNumber(channelInfo.statistics.videoCount)
-                  : "0",
-                url: `https://www.youtube.com/channel/${channelId}`,
-              });
-
-              return;
-            }
-          }
-        } catch (error) {
-          console.error("YouTube servis hatası:", error);
-        }
-      }
-
-      const payload = isUrl ? { query: youtubeUrl } : { keyword: youtubeUrl };
-
-      console.log("Sending request to YouTube API with payload:", payload);
-
-      // Try using fetch with more options and detailed error handling
-      const response = await fetch("/api/youtube/channel-search", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(payload),
-        cache: "no-cache",
-      });
-
-      console.log("API response status:", response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API error response:", errorText);
-
-        throw new Error(
-          `API request failed with status ${response.status}: ${
-            response.statusText || errorText || "Unknown error"
-          }`
-        );
-      }
-
-      const data = await response.json();
-      console.log("API response data:", data);
-
-      // Thumbnail URL'sini özellikle kontrol edelim
-      console.log("Thumbnail URL:", data.channel?.thumbnail);
-
-      if (data.channel && data.channel.id) {
-        // Bulunan kanalı önbelleğe kaydet
-        if (data.channel.id) {
-          try {
-            await cacheChannelInfo(data.channel.id, {
-              title: data.channel.title || "Bilinmeyen Kanal",
-              thumbnail: data.channel.thumbnail || "",
-              description: data.channel.description || "",
-              channel_title: data.channel.title || "Bilinmeyen Kanal",
-              rss_url: `https://www.youtube.com/feeds/videos.xml?channel_id=${data.channel.id}`,
-            });
-          } catch (cacheError) {
-            console.error("Önbellekleme hatası:", cacheError);
-            // Önbellekleme hatası olsa bile işleme devam et
-          }
-        }
-
-        // UI'da kullanılacak verileri hazırla
-        const channelThumbnail = data.channel.thumbnail || "";
-        console.log("Setting thumbnail:", channelThumbnail);
-
-        setYoutubeChannel({
-          id: data.channel.id,
-          title: data.channel.title || "Untitled Channel",
-          description: data.channel.description || "",
-          thumbnail: channelThumbnail,
-          subscribers: data.channel.subscribers || "0",
-          subscribersFormatted:
-            data.channel.subscribersFormatted ||
-            formatNumber(data.channel.subscribers) ||
-            "Bilinmiyor",
-          videoCount: data.channel.videoCount || "0",
-          videoCountFormatted:
-            data.channel.videoCountFormatted ||
-            formatNumber(data.channel.videoCount) ||
-            "0",
-          url: data.channel.url || youtubeUrl,
+  // YouTube search logic
+  const handleYoutubePreviewOrSearch = async () => {
+    setPreview(null);
+    setPreviewError("");
+    setShowAdvanced(false);
+    setYtSearchResults([]);
+    setYtSearchError("");
+    if (!youtubeUrl) return;
+    if (isYoutubeUrl(youtubeUrl)) {
+      // Direct preview for URL
+      setPreviewLoading(true);
+      try {
+        const res = await fetch("/api/youtube/channel-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: youtubeUrl }),
         });
-      } else {
-        setError(t("feeds.youtubeChannelNotFound"));
+        const data = await res.json();
+        if (!res.ok || !data || (!data.title && !data.channelTitle)) {
+          throw new Error(data.error || t("feeds.addFeed.invalidUrl"));
+        }
+        setPreview(data);
+        setTitle(data.title || data.channelTitle || "");
+        setShowAdvanced(true);
+      } catch (err) {
+        setPreviewError(err.message || t("feeds.addFeed.invalidUrl"));
+      } finally {
+        setPreviewLoading(false);
       }
-    } catch (error) {
-      console.error("Error searching YouTube channel:", error);
-      setError(`${error.message}`);
-    } finally {
-      setSearching(false);
+    } else {
+      // Search by keyword
+      setYtSearchLoading(true);
+      try {
+        const res = await fetch("/api/youtube/channel-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keyword: youtubeUrl }),
+        });
+        const data = await res.json();
+        if (
+          !res.ok ||
+          !Array.isArray(data.results) ||
+          data.results.length === 0
+        ) {
+          throw new Error(data.error || t("feeds.addFeed.noResults"));
+        }
+        setYtSearchResults(data.results);
+      } catch (err) {
+        setYtSearchError(err.message || t("feeds.addFeed.noResults"));
+      } finally {
+        setYtSearchLoading(false);
+      }
     }
   };
 
-  // YouTube URL'lerini RSS beslemesine dönüştürür
-  const convertYoutubeToRss = async (url) => {
-    try {
-      if (!url) {
-        throw new Error(t("feeds.urlRequired"));
+  // When user selects a channel from search results
+  const handleSelectYtChannel = (channel) => {
+    setPreview({
+      ...channel,
+      title: channel.title,
+      description: channel.description,
+      thumbnail: channel.thumbnail,
+      subscribersFormatted: channel.subscribersFormatted,
+    });
+    setTitle(channel.title || "");
+    setShowAdvanced(true);
+    setYtSearchResults([]);
+    setPreviewError("");
+  };
+
+  // Preview fetch logic
+  const handlePreview = async () => {
+    if (activeTab === "youtube") {
+      await handleYoutubePreviewOrSearch();
+    } else {
+      // RSS preview as before
+      setPreview(null);
+      setPreviewError("");
+      setPreviewLoading(true);
+      try {
+        const res = await fetch("/api/rss-preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: rssUrl }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data || !data.title) {
+          throw new Error(data.error || t("feeds.addFeed.invalidUrl"));
+        }
+        setPreview(data);
+        setTitle(data.title || "");
+        setShowAdvanced(true);
+      } catch (err) {
+        setPreviewError(err.message || t("feeds.addFeed.invalidUrl"));
+        setPreview(null);
+        setShowAdvanced(false);
+      } finally {
+        setPreviewLoading(false);
       }
+    }
+  };
 
-      // Zaten RSS URL'i ise direkt kullan
-      if (url.includes("youtube.com/feeds/videos.xml")) {
-        return url;
-      }
-
-      console.log("Converting YouTube URL to RSS:", url);
-
-      // YouTube servisini kullanarak RSS URL'ini al
-      const rssUrl = await youtubeService.getYoutubeRssUrl(url);
-
-      if (!rssUrl) {
-        throw new Error(t("feeds.addFeed.youtubeConversionFailed"));
-      }
-
-      console.log("Converted to RSS URL:", rssUrl);
-      return rssUrl;
-    } catch (error) {
-      console.error("YouTube URL dönüştürme hatası:", error);
-
-      // Daha açıklayıcı ve kullanıcı dostu hata mesajları
-      if (
-        error.message.includes("not found") ||
-        error.message.includes("bulunamadı")
-      ) {
-        throw new Error(t("feeds.addFeed.youtubeChannelNotFound"));
-      } else if (
-        error.message.includes("network") ||
-        error.message.includes("ağ")
-      ) {
-        throw new Error(t("feeds.addFeed.networkError"));
-      } else if (
-        error.message.includes("CORS") ||
-        error.message.includes("access")
-      ) {
-        throw new Error(t("feeds.addFeed.corsError"));
-      } else if (
-        error.message.includes("invalid") ||
-        error.message.includes("geçersiz")
-      ) {
-        throw new Error(t("feeds.addFeed.invalidYoutubeUrl"));
-      }
-
-      // Genel hata mesajı
-      throw new Error(
-        `${t("feeds.addFeed.youtubeConversionFailed")}: ${error.message}`
-      );
+  // Submit logic
+  const handleAddFeed = async (e) => {
+    e.preventDefault();
+    if (!preview) return;
+    const extraData = { title, category, fetch_full_content: fetchFullContent };
+    const success = await addFeed(
+      activeTab === "youtube" ? youtubeUrl : rssUrl,
+      activeTab,
+      extraData
+    );
+    if (success) {
+      toast({
+        title: t("feeds.addFeed.success"),
+        description: t("feeds.addFeed.successDescription", { title }),
+      });
+      closeAddFeedDialog();
+      onOpenChange(false);
     }
   };
 
@@ -485,198 +362,327 @@ export function AddFeedDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col p-0 border border-border/60 bg-gradient-to-b from-background to-background/95 backdrop-blur-md shadow-2xl rounded-2xl">
-        <DialogHeader className="px-8 pt-8 pb-0 border-b-0">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <DialogTitle className="flex items-center gap-2 text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                <Plus className="h-5 w-5 text-primary" />
-                {t("feeds.addFeed.title")}
-              </DialogTitle>
-              <DialogDescription className="mt-2 text-muted-foreground text-base">
-                {t("feeds.addFeed.description")}
-              </DialogDescription>
-            </div>
-          </div>
+      <DialogContent className="max-w-2xl w-full p-0 rounded-3xl overflow-hidden shadow-2xl border border-border/70 bg-gradient-to-br from-background to-background/80 backdrop-blur-xl">
+        <DialogHeader className="px-8 pt-8 pb-0">
+          <DialogTitle className="flex items-center gap-2 text-3xl font-extrabold tracking-tight drop-shadow-lg bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+            <Plus className="h-7 w-7 text-primary drop-shadow" />
+            {t("feeds.addFeed.title")}
+          </DialogTitle>
+          <DialogDescription className="mt-3 text-muted-foreground text-lg">
+            {t("feeds.addFeed.description")}
+          </DialogDescription>
         </DialogHeader>
-        <div className="px-8 py-6 flex-1 overflow-y-auto">
+        <div className="px-8 py-8 flex flex-col gap-8">
           <Tabs
-            defaultValue="youtube"
             value={activeTab}
             onValueChange={handleTabChange}
             className="w-full"
           >
-            <TabsList className="grid grid-cols-2 w-full mb-8 bg-muted/40 rounded-lg">
-              <TabsTrigger value="youtube" className="flex items-center gap-2">
-                <Youtube className="h-4 w-4 text-red-500" />
-                <span>YouTube</span>
+            <TabsList className="grid grid-cols-2 w-full mb-6 bg-muted/40 rounded-xl p-1 gap-2">
+              <TabsTrigger
+                value="youtube"
+                className="flex items-center gap-2 text-lg py-4 rounded-xl transition-all font-semibold shadow-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              >
+                <Youtube className="h-5 w-5 text-red-500" /> YouTube
               </TabsTrigger>
-              <TabsTrigger value="rss" className="flex items-center gap-2">
-                <Rss className="h-4 w-4 text-blue-500" />
-                <span>RSS Feed</span>
+              <TabsTrigger
+                value="rss"
+                className="flex items-center gap-2 text-lg py-4 rounded-xl transition-all font-semibold shadow-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-lg"
+              >
+                <Rss className="h-5 w-5 text-blue-500" /> RSS
               </TabsTrigger>
             </TabsList>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(handleSubmit)}
-                className="space-y-6 mt-2"
-              >
-                {/* YouTube tab content */}
-                <TabsContent value="youtube">
-                  <FormField
-                    control={form.control}
-                    name="url"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {t("feeds.addFeed.youtubeChannelUrl")}
-                        </FormLabel>
-                        <FormControl>
+            <TabsContent value={activeTab} className="space-y-2">
+              <form onSubmit={handleAddFeed} className="flex flex-col gap-8">
+                {activeTab === "youtube" && (
+                  <>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex gap-3 items-end">
+                        <div className="flex-1">
+                          <Label
+                            htmlFor="yt-url"
+                            className="text-lg font-semibold mb-1 block"
+                          >
+                            {t("feeds.addFeed.youtubeChannelUrl")}
+                          </Label>
                           <Input
-                            placeholder="https://www.youtube.com/c/channelname"
-                            {...field}
+                            id="yt-url"
+                            type="text"
+                            className="h-14 text-lg bg-muted/60 border border-border/50 focus:ring-2 focus:ring-primary/30 rounded-xl px-6"
+                            placeholder={
+                              t("feeds.addFeed.youtubeUrlOrKeyword") ||
+                              "YouTube URL or channel name"
+                            }
+                            value={youtubeUrl}
+                            onChange={(e) => {
+                              setYoutubeUrl(e.target.value);
+                              setPreview(null);
+                              setPreviewError("");
+                              setShowAdvanced(false);
+                              setTitle("");
+                              setCategory("general");
+                              setFetchFullContent(false);
+                              setYtSearchResults([]);
+                              setYtSearchError("");
+                            }}
+                            disabled={
+                              previewLoading || isLoading || ytSearchLoading
+                            }
+                            required
                           />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {t("feeds.addFeed.youtubeUrlHelp")}
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </TabsContent>
-                {/* RSS tab content */}
-                <TabsContent value="rss">
-                  <FormField
-                    control={form.control}
-                    name="url"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("feeds.addFeed.rssUrl")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://example.com/feed.xml"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="mt-4">
-                    <FormLabel className="mb-1 block text-sm font-medium">
-                      {t("feeds.addFeed.contentOptions")}
-                    </FormLabel>
-                    <FormField
-                      control={form.control}
-                      name="fetch_full_content"
-                      render={({ field }) => (
-                        <RadioGroup
-                          defaultValue={field.value?.toString()}
-                          onValueChange={(value) =>
-                            field.onChange(value === "true")
+                        </div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="ml-2 h-14 px-6 text-lg rounded-xl shadow-md"
+                          onClick={handlePreview}
+                          disabled={
+                            !youtubeUrl ||
+                            previewLoading ||
+                            isLoading ||
+                            ytSearchLoading
                           }
-                          className="flex flex-row gap-6 mt-1"
                         >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="false" id="summary" />
-                            <Label htmlFor="summary">
-                              {t("feeds.addFeed.useSummary")}
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="true" id="full" />
-                            <Label htmlFor="full">
-                              {t("feeds.addFeed.useFullContent")}
-                            </Label>
-                          </div>
-                        </RadioGroup>
+                          {previewLoading || ytSearchLoading ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Search className="h-5 w-5" />
+                          )}
+                          <span className="ml-2 font-semibold">
+                            {t("feeds.addFeed.previewOrSearch") ||
+                              "Preview/Search"}
+                          </span>
+                        </Button>
+                      </div>
+                      {ytSearchError && (
+                        <div className="rounded-xl border border-red-400 bg-red-900/10 text-red-400 flex items-center gap-2 text-base mt-3 px-4 py-3">
+                          <XCircle className="h-5 w-5" />
+                          {ytSearchError}
+                        </div>
                       )}
-                    />
-                  </div>
-                </TabsContent>
-                {/* Common fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("feeds.addFeed.customTitle")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t(
-                              "feeds.addFeed.leaveBlankForAutoTitle"
-                            )}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("feeds.addFeed.category")}</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue
-                                placeholder={t("feeds.addFeed.selectCategory")}
+                      {ytSearchResults.length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                          {ytSearchResults.map((ch) => (
+                            <button
+                              type="button"
+                              key={ch.id}
+                              className="flex items-center gap-4 p-4 rounded-2xl border bg-gradient-to-br from-background/80 to-muted/60 hover:from-blue-900/10 hover:to-primary/10 transition shadow-lg"
+                              onClick={() => handleSelectYtChannel(ch)}
+                            >
+                              <img
+                                src={ch.thumbnail || "/images/feedtunelogo.png"}
+                                alt={ch.title}
+                                className="w-16 h-16 rounded-full object-cover border shadow"
                               />
-                            </SelectTrigger>
-                          </FormControl>
+                              <div className="flex-1 min-w-0 text-left">
+                                <div className="font-bold truncate text-lg">
+                                  {ch.title}
+                                </div>
+                                <div className="text-sm text-muted-foreground truncate">
+                                  {ch.description}
+                                </div>
+                                {ch.subscribersFormatted && (
+                                  <div className="text-xs text-blue-400 mt-1">
+                                    {ch.subscribersFormatted} subscribers
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+                {activeTab === "rss" && (
+                  <div className="flex gap-3 items-end">
+                    <div className="flex-1">
+                      <Label
+                        htmlFor="rss-url"
+                        className="text-lg font-semibold mb-1 block"
+                      >
+                        {t("feeds.addFeed.rssUrl")}
+                      </Label>
+                      <Input
+                        id="rss-url"
+                        type="url"
+                        className="h-14 text-lg bg-muted/60 border border-border/50 focus:ring-2 focus:ring-primary/30 rounded-xl px-6"
+                        placeholder="https://example.com/feed.xml"
+                        value={rssUrl}
+                        onChange={(e) => {
+                          setRssUrl(e.target.value);
+                          setPreview(null);
+                          setPreviewError("");
+                          setShowAdvanced(false);
+                          setTitle("");
+                          setCategory("general");
+                          setFetchFullContent(false);
+                        }}
+                        disabled={previewLoading || isLoading}
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="ml-2 h-14 px-6 text-lg rounded-xl shadow-md"
+                      onClick={handlePreview}
+                      disabled={!rssUrl || previewLoading || isLoading}
+                    >
+                      {previewLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Search className="h-5 w-5" />
+                      )}
+                      <span className="ml-2 font-semibold">
+                        {t("feeds.addFeed.preview")}
+                      </span>
+                    </Button>
+                  </div>
+                )}
+                {previewError && (
+                  <div className="rounded-xl border border-red-400 bg-red-900/10 text-red-400 flex items-center gap-2 text-base mt-3 px-4 py-3">
+                    <XCircle className="h-5 w-5" />
+                    {previewError}
+                  </div>
+                )}
+                {preview && (
+                  <div className="rounded-2xl border bg-gradient-to-br from-background/90 to-muted/60 p-6 flex items-center gap-6 mt-4 shadow-xl">
+                    {activeTab === "youtube" ? (
+                      <img
+                        src={preview.thumbnail || "/images/feedtunelogo.png"}
+                        alt={preview.title || "YouTube Channel"}
+                        className="w-20 h-20 rounded-full object-cover border shadow-lg"
+                      />
+                    ) : (
+                      <img
+                        src={preview.image || "/images/feedtunelogo.png"}
+                        alt={preview.title || "Feed"}
+                        className="w-20 h-20 rounded object-cover border shadow-lg"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-2xl truncate">
+                        {preview.title || preview.channelTitle}
+                      </div>
+                      <div className="text-base text-muted-foreground truncate mt-1">
+                        {preview.description || preview.channelDescription}
+                      </div>
+                      {activeTab === "youtube" &&
+                        preview.subscribersFormatted && (
+                          <div className="text-xs text-blue-400 mt-2">
+                            {preview.subscribersFormatted} subscribers
+                          </div>
+                        )}
+                    </div>
+                    <CheckCircle2 className="h-8 w-8 text-green-500 drop-shadow" />
+                  </div>
+                )}
+                {showAdvanced && preview && (
+                  <div className="flex flex-col gap-6 mt-4 bg-gradient-to-br from-muted/60 to-background/80 rounded-2xl p-6 border border-border/40 shadow-md">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <Label
+                          htmlFor="feed-title"
+                          className="text-lg font-semibold mb-1 block"
+                        >
+                          {t("feeds.addFeed.customTitle")}
+                        </Label>
+                        <Input
+                          id="feed-title"
+                          className="h-12 text-lg bg-muted/60 border border-border/50 focus:ring-2 focus:ring-primary/30 rounded-xl px-4"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder={t(
+                            "feeds.addFeed.leaveBlankForAutoTitle"
+                          )}
+                        />
+                      </div>
+                      <div>
+                        <Label
+                          htmlFor="feed-category"
+                          className="text-lg font-semibold mb-1 block"
+                        >
+                          {t("feeds.addFeed.category")}
+                        </Label>
+                        <Select value={category} onValueChange={setCategory}>
+                          <SelectTrigger
+                            id="feed-category"
+                            className="h-12 text-lg rounded-xl px-4"
+                          >
+                            <SelectValue
+                              placeholder={t("feeds.addFeed.selectCategory")}
+                            />
+                          </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="general">
-                              {t("feeds.addFeed.categories.general")}
-                            </SelectItem>
-                            <SelectItem value="tech">
-                              {t("feeds.addFeed.categories.tech")}
-                            </SelectItem>
-                            <SelectItem value="news">
-                              {t("feeds.addFeed.categories.news")}
-                            </SelectItem>
-                            <SelectItem value="entertainment">
-                              {t("feeds.addFeed.categories.entertainment")}
-                            </SelectItem>
-                            <SelectItem value="other">
-                              {t("feeds.addFeed.categories.other")}
-                            </SelectItem>
+                            {categories.map((cat) => (
+                              <SelectItem
+                                key={cat.value}
+                                value={cat.value}
+                                className="text-lg"
+                              >
+                                {t(`feeds.addFeed.categories.${cat.value}`) ||
+                                  cat.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
-                        <FormMessage />
-                      </FormItem>
+                      </div>
+                    </div>
+                    {activeTab === "rss" && (
+                      <div className="flex gap-4 items-center mt-2">
+                        <Label className="mr-2 text-lg font-semibold">
+                          {t("feeds.addFeed.contentOptions")}
+                        </Label>
+                        <Button
+                          type="button"
+                          size="lg"
+                          variant={fetchFullContent ? "default" : "outline"}
+                          onClick={() => setFetchFullContent(true)}
+                          className="rounded-xl px-4"
+                        >
+                          {t("feeds.addFeed.useFullContent")}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="lg"
+                          variant={!fetchFullContent ? "default" : "outline"}
+                          onClick={() => setFetchFullContent(false)}
+                          className="rounded-xl px-4"
+                        >
+                          {t("feeds.addFeed.useSummary")}
+                        </Button>
+                      </div>
                     )}
-                  />
-                </div>
-                <DialogFooter className="mt-8 gap-2 flex flex-row justify-end">
+                  </div>
+                )}
+                <DialogFooter className="mt-10 flex flex-row justify-end gap-4">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => onOpenChange(false)}
-                    disabled={isLoading}
+                    disabled={isLoading || previewLoading || ytSearchLoading}
+                    className="px-8 py-3 text-lg rounded-xl font-semibold shadow"
                   >
                     {t("common.cancel")}
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isLoading}
-                    className="font-semibold"
+                    disabled={
+                      !preview || isLoading || previewLoading || ytSearchLoading
+                    }
+                    className="font-bold px-8 py-3 text-lg rounded-xl bg-gradient-to-r from-primary to-blue-500 text-white shadow-lg hover:from-blue-500 hover:to-primary transition"
                   >
-                    {isLoading && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    ) : (
+                      <Plus className="mr-2 h-5 w-5" />
                     )}
                     {t("feeds.addFeed.add")}
                   </Button>
                 </DialogFooter>
               </form>
-            </Form>
+            </TabsContent>
           </Tabs>
         </div>
       </DialogContent>

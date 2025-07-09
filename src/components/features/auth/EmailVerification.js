@@ -18,7 +18,12 @@ const safeTranslate = (t, key, defaultText) => {
 /**
  * Email verification screen component
  */
-export function EmailVerification({ email, onLoginClick, onResendEmail }) {
+export function EmailVerification({
+  email,
+  onLoginClick,
+  onResendEmail,
+  isResend = false,
+}) {
   const { t } = useTranslation();
   const [isResending, setIsResending] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -52,11 +57,17 @@ export function EmailVerification({ email, onLoginClick, onResendEmail }) {
           {safeTranslate(t, "auth.verification.title", "Verify Your Email")}
         </h2>
         <p className="text-muted-foreground mb-4">
-          {safeTranslate(
-            t,
-            "auth.verification.description",
-            "Please verify your email address before you can start using your account"
-          )}
+          {isResend
+            ? safeTranslate(
+                t,
+                "auth.verification.resendDescription",
+                "A new verification email has been sent. Please check your inbox."
+              )
+            : safeTranslate(
+                t,
+                "auth.verification.description",
+                "Please verify your email address before you can start using your account"
+              )}
         </p>
 
         {/* Email sent message */}
