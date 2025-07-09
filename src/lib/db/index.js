@@ -1,25 +1,25 @@
 /**
- * Merkezi Veritabanı İstemci Modülü
+ * Central Database Client Module
  *
- * Tüm veritabanı bağlantıları ve istekleri için tek bir merkezi nokta sağlar.
- * Bağlantı havuzlaması, önbellek yönetimi ve performans optimizasyonları içerir.
+ * Provides a single central point for all database connections and requests.
+ * Includes connection pooling, cache management, and performance optimizations.
  */
 
 import { createBrowserClient } from "@supabase/ssr";
 
 /**
- * Performans ayarlarını içeren yapılandırma nesnesi
+ * Configuration object containing performance settings
  */
 const CONFIG = {
-  CACHE_TTL: 5 * 60 * 1000, // 5 dakika (milisaniye cinsinden)
-  BATCH_SIZE: 50, // Toplu işlem boyutu
-  CONNECTION_TIMEOUT: 30000, // 30 saniye
-  QUERY_TIMEOUT: 20000, // 20 saniye
-  MAX_CONNECTIONS: 10, // Maksimum bağlantı sayısı
+  CACHE_TTL: 5 * 60 * 1000, // 5 minutes (in milliseconds)
+  BATCH_SIZE: 50, // Batch size
+  CONNECTION_TIMEOUT: 30000, // 30 seconds
+  QUERY_TIMEOUT: 20000, // 20 seconds
+  MAX_CONNECTIONS: 10, // Maximum number of connections
 };
 
 /**
- * Sorgu sonuçlarını önbelleğe alır
+ * Caches query results
  */
 class QueryCache {
   constructor() {
@@ -28,9 +28,9 @@ class QueryCache {
   }
 
   /**
-   * Önbellekten değer alır
-   * @param {string} key - Önbellek anahtarı
-   * @returns {any|null} - Önbellekteki değer veya null
+   * Gets a value from cache
+   * @param {string} key - Cache key
+   * @returns {any|null} - Cached value or null
    */
   get(key) {
     if (!key) return null;
@@ -48,10 +48,10 @@ class QueryCache {
   }
 
   /**
-   * Önbelleğe değer ekler
-   * @param {string} key - Önbellek anahtarı
-   * @param {any} value - Saklanacak değer
-   * @param {number} [customTtl] - Özel TTL değeri (ms cinsinden)
+   * Adds a value to cache
+   * @param {string} key - Cache key
+   * @param {any} value - Value to store
+   * @param {number} [customTtl] - Custom TTL value (in ms)
    */
   set(key, value, customTtl) {
     if (!key || value === undefined) return;
@@ -63,8 +63,8 @@ class QueryCache {
   }
 
   /**
-   * Belirtilen anahtarı önbellekten kaldırır
-   * @param {string} key - Önbellek anahtarı
+   * Removes the specified key from cache
+   * @param {string} key - Cache key
    */
   invalidate(key) {
     if (!key) return;
@@ -72,8 +72,8 @@ class QueryCache {
   }
 
   /**
-   * Belirli bir desene uyan tüm anahtarları önbellekten kaldırır
-   * @param {RegExp} pattern - Anahtar deseni
+   * Removes all keys matching a pattern from cache
+   * @param {RegExp} pattern - Key pattern
    */
   invalidatePattern(pattern) {
     if (!pattern) return;
@@ -86,7 +86,7 @@ class QueryCache {
   }
 
   /**
-   * Tüm önbelleği temizler
+   * Clears the entire cache
    */
   clear() {
     this.cache.clear();
@@ -101,20 +101,20 @@ export class DbClient {
   }
 
   /**
-   * Supabase bağlantısını döndürür
-   * @returns {Object} - Supabase istemcisi
+   * Returns the Supabase connection
+   * @returns {Object} - Supabase client
    */
   getClient() {
     if (this._client) return this._client;
 
     try {
-      // Client tarafı bağlantısı kullan - artık server tarafı desteği kaldırıldı
+      // Use client-side connection - server-side support has been removed
       this._client = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       );
     } catch (error) {
-      console.error("Supabase bağlantısı oluşturulamadı:", error);
+      console.error("Failed to create Supabase connection:", error);
       throw error;
     }
 
@@ -122,27 +122,36 @@ export class DbClient {
   }
 
   /**
-   * Sorgu sonucu için önbellek anahtarı oluşturur
-   * @param {string} table - Tablo adı
-   * @param {Object} query - Sorgu parametreleri
-   * @returns {string} - Önbellek anahtarı
+   * Creates a cache key for query results
+   * @param {string} table - Table name
+   * @param {Object} query - Query parameters
+   * @returns {string} - Cache key
    */
   createCacheKey(table, query = {}) {
     return `${table}:${JSON.stringify(query)}`;
   }
 
   /**
-   * Belirlenen tablodan veri sorgular, önbellek desteği ile
-   * @param {string} table - Tablo adı
-   * @param {Object} query - Sorgu parametreleri
-   * @param {boolean} useCache - Önbellek kullanılsın mı?
-   * @param {number} cacheTtl - Özel önbellek TTL değeri
-   * @returns {Promise<Object>} - Sorgu sonucu
+   * Queries data from the specified table with cache support
+   * @param {string} table - Table name
+   * @param {Object} query - Query parameters
+   * @param {boolean} useCache - Whether to use cache
+   * @param {number} cacheTtl - Custom cache TTL value
+   * @returns {Promise<Object>} - Query result
    */
   async query(table, query = {}, options = {}) {
-    const { single = false } = options;
+    const { single = false, useCache = true, cacheTtl } = options;
     if (!table) {
-      throw new Error("Tablo adı gerekli");
+      throw new Error("Table name is required");
+    }
+
+    // Check cache if enabled
+    if (useCache) {
+      const cacheKey = this.createCacheKey(table, query);
+      const cachedResult = this.queryCache.get(cacheKey);
+      if (cachedResult) {
+        return cachedResult;
+      }
     }
 
     const supabase = this.getClient();
@@ -150,13 +159,14 @@ export class DbClient {
     try {
       let queryBuilder = supabase.from(table).select(query.select || "*");
 
-      // Eşitlik şartları
+      // Equality conditions
       if (query.eq) {
         for (const [field, value] of Object.entries(query.eq)) {
           queryBuilder = queryBuilder.eq(field, value);
         }
       }
-      // Doğru in operatörü kullanımı
+      
+      // IN operator
       if (query.in) {
         for (const [field, values] of Object.entries(query.in)) {
           if (Array.isArray(values) && values.length > 0) {
@@ -164,42 +174,83 @@ export class DbClient {
           }
         }
       }
+      
+      // IS operator
       if (query.is) {
         for (const [field, value] of Object.entries(query.is)) {
           queryBuilder = queryBuilder.is(field, value);
         }
       }
+      
+      // Greater than
       if (query.gt) {
         for (const [field, value] of Object.entries(query.gt)) {
           queryBuilder = queryBuilder.gt(field, value);
         }
       }
+      
+      // Less than
       if (query.lt) {
         for (const [field, value] of Object.entries(query.lt)) {
           queryBuilder = queryBuilder.lt(field, value);
         }
       }
+      
+      // Greater than or equal
       if (query.gte) {
         for (const [field, value] of Object.entries(query.gte)) {
           queryBuilder = queryBuilder.gte(field, value);
         }
       }
+      
+      // Less than or equal
       if (query.lte) {
         for (const [field, value] of Object.entries(query.lte)) {
           queryBuilder = queryBuilder.lte(field, value);
         }
       }
+      
+      // Not equal
       if (query.neq) {
         for (const [field, value] of Object.entries(query.neq)) {
           queryBuilder = queryBuilder.neq(field, value);
         }
       }
+      
+      // LIKE operator
       if (query.like) {
         for (const [field, value] of Object.entries(query.like)) {
           queryBuilder = queryBuilder.like(field, value);
         }
       }
-      // Sıralama
+      
+      // NOT operator
+      if (query.not) {
+        for (const [field, condition] of Object.entries(query.not)) {
+          if (condition.in && Array.isArray(condition.in) && condition.in.length > 0) {
+            queryBuilder = queryBuilder.not(field, 'in', condition.in);
+          } else if (condition.eq !== undefined) {
+            queryBuilder = queryBuilder.not(field, 'eq', condition.eq);
+          }
+        }
+      }
+      
+      // OR conditions
+      if (query.or) {
+        const orConditions = Array.isArray(query.or) ? query.or : [query.or];
+        const orString = orConditions
+          .map(cond => {
+            const key = Object.keys(cond)[0];
+            return `${key}.eq.${cond[key]}`;
+          })
+          .join(',');
+        
+        if (orString) {
+          queryBuilder = queryBuilder.or(orString);
+        }
+      }
+      
+      // Sorting
       if (query.order && typeof query.order === "object") {
         for (const [key, value] of Object.entries(query.order)) {
           queryBuilder = queryBuilder.order(key, {
@@ -207,21 +258,35 @@ export class DbClient {
           });
         }
       }
+      
+      // Limit
       if (query.limit && typeof query.limit === "number") {
         queryBuilder = queryBuilder.limit(query.limit);
       }
+      
       // Offset
       if (query.offset && typeof query.offset === "number") {
-        const start = query.offset;
-        const end = query.offset + (query.limit || 10) - 1;
-        queryBuilder = queryBuilder.range(start, end);
+        queryBuilder = queryBuilder.range(
+          query.offset,
+          query.offset + (query.limit || 10) - 1
+        );
       }
-      // Tek sonuç mu dönecek?
+      
+      // Single result?
       if (single) {
         queryBuilder = queryBuilder.single();
       }
-      const { data, error } = await queryBuilder;
-      return { data, error };
+      
+      const { data, error, count } = await queryBuilder;
+      const result = { data, error, count };
+      
+      // Cache the result if caching is enabled
+      if (useCache) {
+        const cacheKey = this.createCacheKey(table, query);
+        this.queryCache.set(cacheKey, result, cacheTtl);
+      }
+      
+      return result;
     } catch (error) {
       console.error(`Error querying ${table}:`, error);
       throw error;
@@ -229,15 +294,62 @@ export class DbClient {
   }
 
   /**
-   * Veri ekler
-   * @param {string} table - Tablo adı
-   * @param {Object|Array} data - Eklenecek veri
-   * @param {Array} invalidatePatterns - İptal edilecek önbellek desenleri
-   * @returns {Promise<Object>} - Ekleme sonucu
+   * Counts records in a table based on query conditions
+   * @param {string} table - Table name
+   * @param {Object} query - Query conditions
+   * @returns {Promise<number>} - Count of records
+   */
+  async count(table, query = {}) {
+    if (!table) {
+      throw new Error("Table name is required");
+    }
+
+    const supabase = this.getClient();
+
+    try {
+      let queryBuilder = supabase.from(table).select('*', { count: 'exact', head: true });
+
+      // Apply the same conditions as in the query method
+      if (query.eq) {
+        for (const [field, value] of Object.entries(query.eq)) {
+          queryBuilder = queryBuilder.eq(field, value);
+        }
+      }
+      
+      if (query.in) {
+        for (const [field, values] of Object.entries(query.in)) {
+          if (Array.isArray(values) && values.length > 0) {
+            queryBuilder = queryBuilder.in(field, values);
+          }
+        }
+      }
+      
+      // Add other conditions as needed...
+
+      const { count, error } = await queryBuilder;
+      
+      if (error) {
+        console.error(`Error counting records in ${table}:`, error);
+        return 0;
+      }
+      
+      return count || 0;
+    } catch (error) {
+      console.error(`Error counting records in ${table}:`, error);
+      return 0;
+    }
+  }
+
+  /**
+   * Inserts data
+   * @param {string} table - Table name
+   * @param {Object|Array} data - Data to insert
+   * @param {Array} invalidatePatterns - Cache patterns to invalidate
+   * @returns {Promise<Object>} - Insert result
    */
   async insert(table, data, invalidatePatterns = []) {
     if (!table || !data) {
-      throw new Error("Tablo adı ve veri gerekli");
+      throw new Error("Table name and data are required");
     }
 
     const supabase = this.getClient();
@@ -248,15 +360,10 @@ export class DbClient {
         .insert(data)
         .select();
 
-      if (error) {
-        console.error(`Insert error for ${table}:`, error);
-        throw error;
-      }
-
-      // İlgili önbellekleri temizle
+      // Invalidate cache patterns
       this._invalidateCachePatterns(invalidatePatterns);
 
-      return { data: result };
+      return { data: result, error };
     } catch (error) {
       console.error(`Error inserting into ${table}:`, error);
       throw error;
@@ -264,69 +371,16 @@ export class DbClient {
   }
 
   /**
-   * Toplu veri ekler (chunk'lar halinde)
-   * @param {string} table - Tablo adı
-   * @param {Array} items - Eklenecek öğeler dizisi
-   * @param {Array} invalidatePatterns - İptal edilecek önbellek desenleri
-   * @returns {Promise<Object>} - Ekleme sonucu
-   */
-  async batchInsert(table, items, invalidatePatterns = []) {
-    if (!table || !items || !Array.isArray(items) || items.length === 0) {
-      throw new Error("Tablo adı ve veri dizisi gerekli");
-    }
-
-    const supabase = this.getClient();
-    const batchSize = CONFIG.BATCH_SIZE;
-    const results = [];
-    const errors = [];
-
-    try {
-      // Veriyi daha küçük parçalara böl
-      for (let i = 0; i < items.length; i += batchSize) {
-        const chunk = items.slice(i, i + batchSize);
-
-        const { data, error } = await supabase
-          .from(table)
-          .insert(chunk)
-          .select();
-
-        if (error) {
-          console.error(
-            `Batch insert error for ${table} (chunk ${i}/${items.length}):`,
-            error
-          );
-          errors.push(error);
-        } else if (data) {
-          results.push(...data);
-        }
-      }
-
-      // İlgili önbellekleri temizle
-      this._invalidateCachePatterns(invalidatePatterns);
-
-      return {
-        data: results,
-        errors: errors.length > 0 ? errors : null,
-        success: errors.length === 0,
-        totalInserted: results.length,
-      };
-    } catch (error) {
-      console.error(`Error in batch insert for ${table}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Veri günceller
-   * @param {string} table - Tablo adı
-   * @param {Object} query - Güncelleme koşulları
-   * @param {Object} updates - Güncellenecek veriler
-   * @param {Array} invalidatePatterns - İptal edilecek önbellek desenleri
-   * @returns {Promise<Object>} - Güncelleme sonucu
+   * Updates data
+   * @param {string} table - Table name
+   * @param {Object} query - Update conditions
+   * @param {Object} updates - Data to update
+   * @param {Array} invalidatePatterns - Cache patterns to invalidate
+   * @returns {Promise<Object>} - Update result
    */
   async update(table, query, updates, invalidatePatterns = []) {
     if (!table || !query || !updates) {
-      throw new Error("Tablo adı, sorgu ve güncellemeler gerekli");
+      throw new Error("Table name, query, and updates are required");
     }
 
     const supabase = this.getClient();
@@ -334,14 +388,14 @@ export class DbClient {
     try {
       let queryBuilder = supabase.from(table).update(updates);
 
-      // Sorgu parametrelerini uygula
+      // Apply query parameters
       if (query.eq) {
         Object.entries(query.eq).forEach(([field, value]) => {
           queryBuilder = queryBuilder.eq(field, value);
         });
       }
 
-      // Sorguyu çalıştır ve sonucu al
+      // Execute and get the result
       const { data, error } = await queryBuilder.select();
 
       if (error) {
@@ -349,7 +403,7 @@ export class DbClient {
         throw error;
       }
 
-      // İlgili önbellekleri temizle
+      // Invalidate cache patterns
       this._invalidateCachePatterns(invalidatePatterns);
 
       return { data };
@@ -360,15 +414,15 @@ export class DbClient {
   }
 
   /**
-   * Veri siler
-   * @param {string} table - Tablo adı
-   * @param {Object} query - Silme koşulları
-   * @param {Array} invalidatePatterns - İptal edilecek önbellek desenleri
-   * @returns {Promise<Object>} - Silme sonucu
+   * Deletes data
+   * @param {string} table - Table name
+   * @param {Object} query - Delete conditions
+   * @param {Array} invalidatePatterns - Cache patterns to invalidate
+   * @returns {Promise<Object>} - Delete result
    */
   async delete(table, query, invalidatePatterns = []) {
     if (!table || !query) {
-      throw new Error("Tablo adı ve sorgu gerekli");
+      throw new Error("Table name and query are required");
     }
 
     const supabase = this.getClient();
@@ -376,14 +430,14 @@ export class DbClient {
     try {
       let queryBuilder = supabase.from(table).delete();
 
-      // Sorgu parametrelerini uygula
+      // Apply query parameters
       if (query.eq) {
         Object.entries(query.eq).forEach(([field, value]) => {
           queryBuilder = queryBuilder.eq(field, value);
         });
       }
 
-      // Sorguyu çalıştır
+      // Execute
       const { data, error } = await queryBuilder.select();
 
       if (error) {
@@ -391,7 +445,7 @@ export class DbClient {
         throw error;
       }
 
-      // İlgili önbellekleri temizle
+      // Invalidate cache patterns
       this._invalidateCachePatterns(invalidatePatterns);
 
       return { data };
@@ -402,19 +456,19 @@ export class DbClient {
   }
 
   /**
-   * Tek bir işlemde birden fazla tabloyu günceller (transactional)
-   * @param {Function} operations - İşlem fonksiyonu
-   * @param {Array} invalidatePatterns - İptal edilecek önbellek desenleri
-   * @returns {Promise<Object>} - İşlem sonucu
+   * Performs multiple updates in a single transaction (transactional)
+   * @param {Function} operations - Operation function
+   * @param {Array} invalidatePatterns - Cache patterns to invalidate
+   * @returns {Promise<Object>} - Transaction result
    */
   async transaction(operations, invalidatePatterns = []) {
     const supabase = this.getClient();
 
     try {
-      // Fonksiyonu çağır ve supabase istemcisini ver
+      // Call the function and pass the supabase client
       const result = await operations(supabase);
 
-      // İlgili önbellekleri temizle
+      // Invalidate cache patterns
       this._invalidateCachePatterns(invalidatePatterns);
 
       return result;
@@ -425,22 +479,22 @@ export class DbClient {
   }
 
   /**
-   * RPC (Remote Procedure Call) işlevini çağırır
-   * @param {string} functionName - Fonksiyon adı
-   * @param {Object} params - Fonksiyon parametreleri
-   * @param {boolean} useCache - Önbellek kullanılsın mı?
-   * @param {number} cacheTtl - Özel önbellek TTL değeri
-   * @returns {Promise<Object>} - RPC sonucu
+   * Calls an RPC (Remote Procedure Call) function
+   * @param {string} functionName - Function name
+   * @param {Object} params - Function parameters
+   * @param {boolean} useCache - Whether to use cache
+   * @param {number} cacheTtl - Custom cache TTL value
+   * @returns {Promise<Object>} - RPC result
    */
   async rpc(functionName, params = {}, useCache = false, cacheTtl) {
     if (!functionName) {
-      throw new Error("Fonksiyon adı gerekli");
+      throw new Error("Function name is required");
     }
 
     const supabase = this.getClient();
     const cacheKey = `rpc:${functionName}:${JSON.stringify(params)}`;
 
-    // Eğer önbellek kullanılabilirse ve sonuç önbellekte varsa
+    // If caching is enabled and the result is in cache
     if (useCache) {
       const cachedResult = this.queryCache.get(cacheKey);
       if (cachedResult) {
@@ -456,7 +510,7 @@ export class DbClient {
         throw error;
       }
 
-      // Sonucu önbelleğe al
+      // Cache the result
       if (useCache && data) {
         this.queryCache.set(cacheKey, data, cacheTtl);
       }
@@ -469,13 +523,13 @@ export class DbClient {
   }
 
   /**
-   * Join sorgusu yapar
-   * @param {string} mainTable - Ana tablo
-   * @param {Array} joins - Join tanımları
-   * @param {Object} filters - Filtreler
-   * @param {Object} options - Sorgu seçenekleri
-   * @param {boolean} useCache - Önbellek kullanılsın mı?
-   * @returns {Promise<Object>} - Sorgu sonucu
+   * Performs a join query
+   * @param {string} mainTable - Main table
+   * @param {Array} joins - Join definitions
+   * @param {Object} filters - Filters
+   * @param {Object} options - Query options
+   * @param {boolean} useCache - Whether to use cache
+   * @returns {Promise<Object>} - Query result
    */
   async joinQuery(
     mainTable,
@@ -485,7 +539,7 @@ export class DbClient {
     useCache = true
   ) {
     if (!mainTable) {
-      throw new Error("Ana tablo adı gerekli");
+      throw new Error("Main table name is required");
     }
 
     const supabase = this.getClient();
@@ -493,7 +547,7 @@ export class DbClient {
       joins
     )}:${JSON.stringify(filters)}:${JSON.stringify(options)}`;
 
-    // Eğer önbellek kullanılabilirse ve sonuç önbellekte varsa
+    // If caching is enabled and the result is in cache
     if (useCache) {
       const cachedResult = this.queryCache.get(cacheKey);
       if (cachedResult) {
@@ -502,7 +556,7 @@ export class DbClient {
     }
 
     try {
-      // Select sorgusunu oluştur
+      // Construct the select query
       let selectQuery = "";
       if (options.select && options.select.length > 0) {
         selectQuery = options.select.join(", ");
@@ -510,7 +564,7 @@ export class DbClient {
         selectQuery = "*";
       }
 
-      // Join sorgularını oluştur
+      // Construct join queries
       for (const join of joins) {
         if (join.fields && join.fields.length > 0) {
           selectQuery += `, ${join.table}(${join.fields.join(", ")})`;
@@ -519,10 +573,10 @@ export class DbClient {
         }
       }
 
-      // Sorgu oluşturucu
+      // Construct the query builder
       let queryBuilder = supabase.from(mainTable).select(selectQuery);
 
-      // Filtreleri uygula
+      // Apply filters
       if (filters.eq) {
         Object.entries(filters.eq).forEach(([field, value]) => {
           queryBuilder = queryBuilder.eq(field, value);
@@ -535,7 +589,7 @@ export class DbClient {
         });
       }
 
-      // Sıralama
+      // Sorting
       if (options.order) {
         Object.entries(options.order).forEach(([field, direction]) => {
           queryBuilder = queryBuilder.order(field, {
@@ -544,11 +598,11 @@ export class DbClient {
         });
       }
 
-      // Sayfalama
+      // Pagination
       if (options.limit) queryBuilder = queryBuilder.limit(options.limit);
       if (options.offset) queryBuilder = queryBuilder.offset(options.offset);
 
-      // Sorguyu çalıştır
+      // Execute
       const { data, error } = await queryBuilder;
 
       if (error) {
@@ -556,7 +610,7 @@ export class DbClient {
         throw error;
       }
 
-      // Sonucu önbelleğe al
+      // Cache the result
       if (useCache && data) {
         this.queryCache.set(cacheKey, data);
       }
@@ -569,8 +623,8 @@ export class DbClient {
   }
 
   /**
-   * Sağlanan desen listesine göre önbelleği temizler
-   * @param {Array} patterns - Desen dizisi
+   * Clears cache based on the provided pattern list
+   * @param {Array} patterns - Pattern array
    * @private
    */
   _invalidateCachePatterns(patterns) {
@@ -586,13 +640,13 @@ export class DbClient {
   }
 
   /**
-   * Önbelleği tamamen temizler
+   * Clears the entire cache
    */
   clearCache() {
     this.queryCache.clear();
   }
 }
 
-// Servis singleton örneği
+// Service singleton instance
 const dbClient = new DbClient();
 export default dbClient;

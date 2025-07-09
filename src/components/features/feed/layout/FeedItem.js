@@ -20,6 +20,7 @@ import { tr, enUS } from "date-fns/locale";
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { NavigationButtons } from "./NavigationButtons";
 
 export const FeedItem = memo(
   forwardRef(function FeedItem(
@@ -140,9 +141,12 @@ export const FeedItem = memo(
 
     // İçerik tipi gösterimini belirle (YouTube, RSS, vs)
     const renderContentTypeBadge = () => {
-      if (!item.feed_type) return null;
+      if (!item.feed_type && !item.type) return null;
 
-      switch (item.feed_type.toLowerCase()) {
+      const contentType =
+        item.feed_type?.toLowerCase() || item.type?.toLowerCase();
+
+      switch (contentType) {
         case "youtube":
           return (
             <Badge
@@ -163,6 +167,14 @@ export const FeedItem = memo(
           );
         default:
           return null;
+      }
+    };
+
+    // Handle item click
+    const handleItemClick = (e) => {
+      e.preventDefault();
+      if (onClick) {
+        onClick(item.url, item);
       }
     };
 
@@ -190,7 +202,10 @@ export const FeedItem = memo(
           >
             <div className="relative">
               {item.thumbnail ? (
-                <div className="aspect-video overflow-hidden bg-muted relative">
+                <div
+                  className="aspect-video overflow-hidden bg-muted relative cursor-pointer"
+                  onClick={handleItemClick}
+                >
                   {(() => {
                     // Thumbnail URL'sini güvenli bir şekilde al ve doğrula
                     let thumbnailUrl = getValidThumbnail(item.thumbnail);
@@ -248,7 +263,10 @@ export const FeedItem = memo(
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
               ) : (
-                <div className="aspect-video bg-muted flex items-center justify-center">
+                <div
+                  className="aspect-video bg-muted flex items-center justify-center cursor-pointer"
+                  onClick={handleItemClick}
+                >
                   <div className="text-muted-foreground/40 text-3xl font-medium">
                     {item.feed_title?.charAt(0) || ""}
                   </div>
@@ -287,7 +305,7 @@ export const FeedItem = memo(
                   item.is_read ? "text-muted-foreground" : "text-foreground",
                   isHovered && !item.is_read && "text-primary"
                 )}
-                onClick={() => onClick?.(item.url, item)}
+                onClick={handleItemClick}
               >
                 {item.title}
               </h3>
@@ -319,70 +337,13 @@ export const FeedItem = memo(
             </CardContent>
 
             <CardFooter className="px-4 py-3 border-t border-border/30 justify-between">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-8 w-8 rounded-full",
-                  item.is_favorite
-                    ? "text-yellow-500 bg-yellow-500/10"
-                    : "text-muted-foreground hover:text-yellow-500"
-                )}
-                onClick={() => onFavorite?.(item.id, !item.is_favorite)}
-                aria-label={
-                  item.is_favorite
-                    ? t("feeds.removeFavorite")
-                    : t("feeds.addFavorite")
-                }
-              >
-                <Bookmark
-                  className={cn("h-4 w-4", item.is_favorite && "fill-current")}
-                />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-8 w-8 rounded-full",
-                  item.is_read_later
-                    ? "text-blue-500 bg-blue-500/10"
-                    : "text-muted-foreground hover:text-blue-500"
-                )}
-                onClick={() => onReadLater?.(item.id, !item.is_read_later)}
-                aria-label={
-                  item.is_read_later
-                    ? t("feeds.removeReadLater")
-                    : t("feeds.addReadLater")
-                }
-              >
-                <Clock
-                  className={cn(
-                    "h-4 w-4",
-                    item.is_read_later && "fill-current"
-                  )}
-                />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary"
-                onClick={() => onShare?.(item)}
-                aria-label={t("feeds.shareItem")}
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary"
-                onClick={() => onClick?.(item.url, item)}
-                aria-label={t("feeds.openItem")}
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
+              <NavigationButtons
+                item={item}
+                onClick={onClick}
+                onFavorite={onFavorite}
+                onReadLater={onReadLater}
+                onShare={onShare}
+              />
             </CardFooter>
           </Card>
         </motion.div>
@@ -412,7 +373,10 @@ export const FeedItem = memo(
         >
           <div className="flex flex-col sm:flex-row">
             {item.thumbnail && (
-              <div className="sm:w-48 md:w-56 aspect-video sm:aspect-[4/3] overflow-hidden bg-muted relative">
+              <div
+                className="sm:w-48 md:w-56 aspect-video sm:aspect-[4/3] overflow-hidden bg-muted relative cursor-pointer"
+                onClick={handleItemClick}
+              >
                 {(() => {
                   // Thumbnail URL'sini güvenli bir şekilde al ve doğrula
                   let thumbnailUrl = getValidThumbnail(item.thumbnail);
@@ -471,27 +435,25 @@ export const FeedItem = memo(
               </div>
             )}
 
-            <div className="flex-1 flex flex-col p-4">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  {renderContentTypeBadge()}
+            <div className="flex-1 p-4 sm:p-5 flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                {renderContentTypeBadge()}
 
-                  {/* Display feed source */}
-                  {item.feed_title && (
-                    <p className="text-xs text-muted-foreground truncate">
-                      {item.feed_title}
-                    </p>
-                  )}
-                </div>
+                {/* Display feed source */}
+                {item.feed_title && (
+                  <p className="text-xs text-muted-foreground truncate">
+                    {item.feed_title}
+                  </p>
+                )}
 
                 {/* Read status indicator */}
-                <div>
+                <div className="ml-auto">
                   {item.is_read ? (
-                    <div className="bg-muted p-1 rounded-full">
+                    <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full">
                       <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                   ) : (
-                    <div className="bg-primary/10 p-1 rounded-full">
+                    <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full">
                       <Eye className="h-3.5 w-3.5 text-primary" />
                     </div>
                   )}
@@ -504,7 +466,7 @@ export const FeedItem = memo(
                   item.is_read ? "text-muted-foreground" : "text-foreground",
                   isHovered && !item.is_read && "text-primary"
                 )}
-                onClick={() => onClick?.(item.url, item)}
+                onClick={handleItemClick}
               >
                 {item.title}
               </h3>
@@ -515,7 +477,7 @@ export const FeedItem = memo(
                 </p>
               )}
 
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-y-3">
+              <div className="flex items-center justify-between mt-3">
                 {/* Meta info */}
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   {item.published_at && (
@@ -535,75 +497,15 @@ export const FeedItem = memo(
                   )}
                 </div>
 
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 rounded-full",
-                      item.is_favorite
-                        ? "text-yellow-500 bg-yellow-500/10"
-                        : "text-muted-foreground hover:text-yellow-500"
-                    )}
-                    onClick={() => onFavorite?.(item.id, !item.is_favorite)}
-                    aria-label={
-                      item.is_favorite
-                        ? t("feeds.removeFavorite")
-                        : t("feeds.addFavorite")
-                    }
-                  >
-                    <Bookmark
-                      className={cn(
-                        "h-4 w-4",
-                        item.is_favorite && "fill-current"
-                      )}
-                    />
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 rounded-full",
-                      item.is_read_later
-                        ? "text-blue-500 bg-blue-500/10"
-                        : "text-muted-foreground hover:text-blue-500"
-                    )}
-                    onClick={() => onReadLater?.(item.id, !item.is_read_later)}
-                    aria-label={
-                      item.is_read_later
-                        ? t("feeds.removeReadLater")
-                        : t("feeds.addReadLater")
-                    }
-                  >
-                    <Clock
-                      className={cn(
-                        "h-4 w-4",
-                        item.is_read_later && "fill-current"
-                      )}
-                    />
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary"
-                    onClick={() => onShare?.(item)}
-                    aria-label={t("feeds.shareItem")}
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary"
-                    onClick={() => onClick?.(item.url, item)}
-                    aria-label={t("feeds.openItem")}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                </div>
+                {/* Action buttons */}
+                <NavigationButtons
+                  item={item}
+                  onClick={onClick}
+                  onFavorite={onFavorite}
+                  onReadLater={onReadLater}
+                  onShare={onShare}
+                  size="small"
+                />
               </div>
             </div>
           </div>

@@ -1,22 +1,19 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Toast } from "../core/ui/toast";
 import { useSession } from "@/hooks/auth/useSession";
 import { useFeedService } from "@/hooks/features/useFeedService";
-import { HomeStats } from "@/components/home/HomeStats";
-import { HomeFeedManagement } from "@/components/home/HomeFeedManagement";
-import { HomeRecentContent } from "@/components/home/HomeRecentContent";
 import HomeHero from "@/components/public-home/HomeHero";
 import { HomeAbout } from "@/components/public-home/HomeAbout";
 import { HomeTechnology } from "@/components/public-home/HomeTechnology";
 import { HomeShowcase } from "@/components/public-home/HomeShowcase";
 import { HomeCommunity } from "@/components/public-home/HomeCommunity";
 import { HomeModals } from "@/components/home/HomeModals";
-import { EmptyState } from "@/components/core/states/EmptyState";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAddFeed } from "@/hooks/features/feed-screen/useAddFeed";
 import { useRouter } from "next/navigation";
+import { Skeleton } from "@/components/core/ui/skeleton";
+import Link from "next/link";
 
 export function HomeContent({
   initialSession,
@@ -26,7 +23,6 @@ export function HomeContent({
 }) {
   const { user, isLoading: isSessionLoading } = useSession();
   const router = useRouter();
-
   const { t } = useLanguage();
 
   // Modal states
@@ -103,13 +99,24 @@ export function HomeContent({
       feeds === null
     ) {
       return (
-        <div className="flex justify-center items-center h-96">
-          <span className="animate-pulse text-lg text-muted-foreground">
-            {t("common.loading")}
-          </span>
+        <div className="w-full max-w-6xl mx-auto px-4 py-8">
+          <div className="grid gap-8">
+            <Skeleton className="h-32 w-full" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-28 w-full" />
+              ))}
+            </div>
+          </div>
         </div>
       );
     }
+
     if (!user) {
       return (
         <>
@@ -123,169 +130,196 @@ export function HomeContent({
     }
 
     return (
-      <div className="w-full max-w-6xl mx-auto px-2 md:px-6 py-10 flex flex-col gap-10 relative z-10">
-        <div className="flex flex-col md:flex-row gap-6 items-center md:items-stretch">
-          <div className="flex-1 flex items-center gap-6 p-8 bg-white dark:bg-[#181C2A] backdrop-blur-md shadow-lg rounded-2xl border-none">
-            {/* Avatar and profile */}
-            <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center shadow-lg">
-              {/* Optionally use user.avatar_url if available */}
-              <span className="text-3xl font-bold text-gray-500 dark:text-gray-400">
-                {user.email?.[0]?.toUpperCase() || "U"}
-              </span>
+      <div className="w-full max-w-6xl mx-auto px-4 md:px-6 py-8 flex flex-col gap-8">
+        {/* Welcome Card */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="flex flex-col md:flex-row">
+            {/* User Profile Section */}
+            <div className="flex-1 p-6 md:p-8">
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shadow-md">
+                  {user.email?.[0]?.toUpperCase() || "U"}
+                </div>
+                <div>
+                  <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                    {t("dashboard.welcome", { email: user.email })}
+                  </h1>
+                  <p className="text-gray-500 dark:text-gray-300 mt-1">
+                    {t("dashboard.subtitle")}
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200">
+                      {t("dashboard.plan.free")}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 flex flex-col gap-2">
-              <div className="text-3xl font-bold text-gray-800 dark:text-gray-100">
-                {t("dashboard.welcome", { email: user.email })}
-              </div>
-              <div className="text-base text-blue-400 dark:text-blue-100">
-                {t("dashboard.subtitle")}
-              </div>
-              <div className="flex gap-2 mt-2 items-center">
-                <span className="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-xs text-blue-700 dark:text-blue-200">
-                  {t("dashboard.plan.free")}
-                </span>
-              </div>
-            </div>
-            {/* Theme/language controls can be added here if needed */}
-          </div>
-          {/* Stats bar */}
-          <div className="flex flex-row items-center gap-6 px-8 py-6 bg-white dark:bg-[#181C2A] backdrop-blur-md shadow-lg rounded-2xl border-none min-w-[320px]">
-            <div className="flex flex-col items-center flex-1">
-              <div className="text-2xl mb-1 text-blue-400/70">📥</div>
-              <div className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                {stats.feeds || 0}
-              </div>
-              <div className="text-xs text-blue-200 mt-1">Feeds</div>
-            </div>
-            <div className="flex flex-col items-center flex-1">
-              <div className="text-2xl mb-1 text-yellow-400/70">⭐</div>
-              <div className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                {stats.favorites || 0}
-              </div>
-              <div className="text-xs text-blue-200 mt-1">Favorites</div>
-            </div>
-            <div className="flex flex-col items-center flex-1">
-              <div className="text-2xl mb-1 text-green-400/70">📖</div>
-              <div className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                {stats.readLater || 0}
-              </div>
-              <div className="text-xs text-blue-200 mt-1">Read Later</div>
-            </div>
-            <div className="flex flex-col items-center flex-1">
-              <div className="text-2xl mb-1 text-pink-400/70">📥</div>
-              <div className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                {stats.unread || 0}
-              </div>
-              <div className="text-xs text-blue-200 mt-1">Unread</div>
+
+            {/* Stats Overview */}
+            <div className="bg-gray-50 dark:bg-gray-900/50 p-6 md:p-8 flex flex-row md:w-auto w-full justify-between gap-8 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-700">
+              <StatCard
+                icon="📊"
+                value={stats.feeds || 0}
+                label="Feeds"
+                color="blue"
+              />
+              <StatCard
+                icon="⭐"
+                value={stats.favorites || 0}
+                label="Favorites"
+                color="amber"
+              />
+              <StatCard
+                icon="📖"
+                value={stats.readLater || 0}
+                label="Read Later"
+                color="emerald"
+              />
+              <StatCard
+                icon="📬"
+                value={stats.unread || 0}
+                label="Unread"
+                color="rose"
+              />
             </div>
           </div>
         </div>
-        {/* Quick actions */}
-        <div className="flex flex-row gap-4 justify-center">
-          <button
-            className="flex gap-2 items-center px-6 py-3 rounded-full text-base font-semibold shadow-lg bg-blue-600 text-white hover:scale-105 transition-transform"
+
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-3 justify-start">
+          <QuickActionButton
+            icon="+"
+            label="Add Feed"
             onClick={openAddFeedDialog}
-          >
-            + Add Feed
-          </button>
-          <button
-            className="flex gap-2 items-center px-6 py-3 rounded-full text-base font-semibold shadow-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+            variant="primary"
+          />
+          <QuickActionButton
+            icon="⟳"
+            label="Sync All"
             onClick={() => window.location.reload()}
-          >
-            ⟳ Sync All
-          </button>
-          <button
-            className="flex gap-2 items-center px-6 py-3 rounded-full text-base font-semibold shadow-lg bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200"
+            variant="secondary"
+          />
+          <QuickActionButton
+            icon="⭐"
+            label="Favorites"
             onClick={() => {}}
-          >
-            ⭐ Show Favorites
-          </button>
-          <button
-            className="flex gap-2 items-center px-6 py-3 rounded-full text-base font-semibold shadow-lg bg-red-500 text-white"
+            variant="amber"
+          />
+          <QuickActionButton
+            icon="🗑️"
+            label="Clear Unread"
             onClick={() => {}}
-          >
-            🗑️ Clear Unread
-          </button>
+            variant="rose"
+          />
         </div>
-        {/* Feed list */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {feeds.map((feed) => (
-            <div
-              key={feed.id}
-              className="flex items-center gap-6 p-6 bg-white dark:bg-[#181C2A] backdrop-blur-md rounded-2xl shadow-lg hover:shadow-xl transition-shadow group"
-            >
-              <div className="w-16 h-16 flex items-center justify-center rounded-full bg-blue-800/80 shadow-md">
-                <img
-                  src={feed.icon || "/images/feedtunelogo.png"}
-                  alt={feed.title}
-                  className="w-10 h-10 object-contain"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-gray-800 dark:text-gray-100 text-lg truncate">
-                  {feed.title}
-                </div>
-                <div className="text-xs text-blue-200 flex gap-2 items-center mt-1">
-                  <span className="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-xs text-blue-700 dark:text-blue-200 capitalize">
-                    {feed.type}
-                  </span>
-                  <span>
-                    Last updated:{" "}
-                    {feed.last_updated
-                      ? new Date(feed.last_updated).toLocaleDateString()
-                      : "-"}
-                  </span>
-                </div>
-              </div>
-              <div className="flex gap-2">
+
+        {/* Feed List */}
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Your Feeds
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {feeds.length === 0 ? (
+              <div className="col-span-2 bg-white dark:bg-gray-800 rounded-xl p-8 text-center border border-gray-100 dark:border-gray-700">
+                <div className="text-4xl mb-3">📭</div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  No feeds yet
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-4">
+                  Add your first feed to get started
+                </p>
                 <button
-                  className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-                  onClick={() => {}}
-                  title="Edit"
+                  className="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                  onClick={openAddFeedDialog}
                 >
-                  <span role="img" aria-label="edit">
-                    ✏️
-                  </span>
-                </button>
-                <button
-                  className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900"
-                  onClick={() => handleDeleteFeed(feed.id)}
-                  title="Delete"
-                >
-                  <span role="img" aria-label="delete">
-                    🗑️
-                  </span>
+                  + Add Feed
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
-        {/* Recent activity */}
-        <div className="p-8 bg-white dark:bg-[#181C2A] backdrop-blur-md rounded-2xl shadow-lg animate-fade-in mt-8">
-          <div className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">
-            Recent Activity
-          </div>
-          <div className="flex flex-col gap-4">
-            {recentItems.length === 0 ? (
-              <div className="text-blue-300">No recent activity</div>
             ) : (
-              recentItems.map((item) => (
+              feeds.map((feed) => (
                 <div
-                  key={item.id}
-                  className="flex items-center gap-4 group cursor-pointer relative"
+                  key={feed.id}
+                  className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
                 >
-                  <div className="w-3 h-3 rounded-full bg-blue-400 group-hover:bg-blue-200 transition-colors" />
-                  <div className="flex-1 min-w-0 ml-2">
-                    <div className="font-medium text-gray-800 dark:text-gray-100 truncate">
-                      {item.title}
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center p-2.5 border border-gray-100 dark:border-gray-700">
+                      <img
+                        src={feed.icon || "/images/feedtunelogo.png"}
+                        alt={feed.title}
+                        className="w-full h-full object-contain"
+                      />
                     </div>
-                    <div className="text-xs text-blue-200 flex gap-2 items-center">
-                      <span>{item.feed_title || item.type}</span>
-                      <span>
-                        {item.published_at
-                          ? new Date(item.published_at).toLocaleDateString()
-                          : "-"}
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 dark:text-white text-base truncate">
+                        {feed.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 capitalize">
+                          {feed.type}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            ></path>
+                          </svg>
+                          {feed.last_updated
+                            ? new Date(feed.last_updated).toLocaleDateString()
+                            : "Never"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        className="p-2 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => {}}
+                        title="Edit"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          ></path>
+                        </svg>
+                      </button>
+                      <button
+                        className="p-2 rounded-md text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        onClick={() => handleDeleteFeed(feed.id)}
+                        title="Delete"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          ></path>
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -293,33 +327,109 @@ export function HomeContent({
             )}
           </div>
         </div>
+
+        {/* Recent Activity */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-100 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Recent Activity
+          </h2>
+          {recentItems.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-4xl mb-3">🔍</div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No recent activity
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                Your recent feed activity will appear here
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentItems.map((item) => (
+                <Link
+                  key={item.id}
+                  href="#"
+                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+                >
+                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 group-hover:scale-125 transition-transform" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
+                      {item.title}
+                    </h4>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+                          ></path>
+                        </svg>
+                        {item.feed_title || item.type}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          ></path>
+                        </svg>
+                        {item.published_at
+                          ? new Date(item.published_at).toLocaleDateString()
+                          : "-"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 5l7 7-7 7"
+                      ></path>
+                    </svg>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
 
   return (
-    <section className="py-6 lg:py-8 relative">
-      <div className="absolute inset-0 overflow-hidden -z-10">
-        <div
-          className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "10s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "12s" }}
-        ></div>
-        <div
-          className="absolute top-1/2 left-2/3 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "14s" }}
-        ></div>
-        <div
-          className="absolute top-1/3 left-1/4 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "16s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "18s" }}
-        ></div>
+    <section className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 lg:py-8 relative">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-blue-500/5 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-indigo-500/5 to-transparent" />
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-2/3 w-64 h-64 bg-violet-500/5 rounded-full blur-3xl" />
+        </div>
       </div>
       <div className="container relative z-10">
         {renderContent()}
@@ -338,5 +448,53 @@ export function HomeContent({
         />
       </div>
     </section>
+  );
+}
+
+// Stat Card Component
+function StatCard({ icon, value, label, color }) {
+  const colorClasses = {
+    blue: "text-blue-600 dark:text-blue-400",
+    amber: "text-amber-600 dark:text-amber-400",
+    emerald: "text-emerald-600 dark:text-emerald-400",
+    rose: "text-rose-600 dark:text-rose-400",
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      <div
+        className={`text-2xl mb-1 ${colorClasses[color] || colorClasses.blue}`}
+      >
+        {icon}
+      </div>
+      <div className="text-2xl font-bold text-gray-900 dark:text-white">
+        {value}
+      </div>
+      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+// Quick Action Button Component
+function QuickActionButton({ icon, label, onClick, variant = "primary" }) {
+  const variantClasses = {
+    primary: "bg-blue-600 hover:bg-blue-700 text-white",
+    secondary:
+      "bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200",
+    amber:
+      "bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:hover:bg-amber-800/40 text-amber-800 dark:text-amber-300",
+    rose: "bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/30 dark:hover:bg-rose-800/40 text-rose-800 dark:text-rose-300",
+  };
+
+  return (
+    <button
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors ${variantClasses[variant]}`}
+      onClick={onClick}
+    >
+      <span>{icon}</span>
+      <span>{label}</span>
+    </button>
   );
 }

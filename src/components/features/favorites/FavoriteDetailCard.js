@@ -1,83 +1,128 @@
-import React from "react";
-import { Heart, Bookmark } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Heart, Bookmark, ExternalLink } from "lucide-react";
+import { NavigationButtons } from "../feed/layout/NavigationButtons";
+import { Card, CardContent, CardFooter } from "@/components/core/ui/card";
+import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export function FavoriteDetailCard({
   video,
   onToggleFavorite,
   onToggleReadLater,
+  onShare,
+  onClick,
 }) {
+  const [isHovered, setIsHovered] = useState(false);
+
   if (!video) return null;
 
+  // Handle item click
+  const handleItemClick = (e) => {
+    e.preventDefault();
+    if (onClick) {
+      onClick(video.url, video);
+    } else if (video.url) {
+      window.open(video.url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
-    <div className="bg-white dark:bg-[#181C2A] rounded-lg overflow-hidden shadow-lg flex flex-col text-gray-900 dark:text-white transition-transform duration-200 ease-in-out w-full max-w-full sm:max-w-sm mx-auto mb-6">
-      {/* Video Thumbnail Container */}
+    <Card
+      className={cn(
+        "overflow-hidden border-border/40 hover:border-primary/40 transition-all duration-300 h-full flex flex-col",
+        video.is_read ? "bg-card/60" : "bg-card/90 shadow-sm",
+        isHovered && "shadow-md"
+      )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Thumbnail Container */}
       <div
-        className="relative w-full bg-gray-100 dark:bg-gray-900"
-        style={{ paddingTop: "56.25%" }}
+        className="relative w-full aspect-video bg-muted cursor-pointer"
+        onClick={handleItemClick}
       >
-        <img
-          src={video.thumbnail || "/images/placeholder.webp"}
-          alt={video.title}
-          className="absolute top-0 left-0 w-full h-full object-cover"
-        />
+        {video.thumbnail ? (
+          <Image
+            src={video.thumbnail}
+            alt={video.title}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className={cn(
+              "object-cover transition-transform duration-500",
+              isHovered && "scale-105"
+            )}
+            priority={false}
+            onError={(e) => {
+              const parent = e.currentTarget.parentElement;
+              if (parent) {
+                while (parent.firstChild) {
+                  parent.removeChild(parent.firstChild);
+                }
+                const fallbackDiv = document.createElement("div");
+                fallbackDiv.className =
+                  "w-full h-full flex items-center justify-center";
+                fallbackDiv.innerHTML = `<div class="text-muted-foreground/40 text-3xl font-medium">${
+                  video.feed_title?.charAt(0) || "?"
+                }</div>`;
+                parent.appendChild(fallbackDiv);
+              }
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-muted-foreground/40 text-3xl font-medium">
+              {video.feed_title?.charAt(0) || "?"}
+            </div>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
+
       {/* Content */}
-      <div className="p-3 sm:p-4 flex flex-col flex-grow">
-        <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 text-gray-900 dark:text-white leading-tight line-clamp-1 sm:line-clamp-2">
+      <CardContent className="p-4 pb-2 flex-1 flex flex-col">
+        <div className="flex items-center gap-2 mb-2">
+          {video.feed_type && (
+            <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+              {video.feed_type}
+            </span>
+          )}
+
+          {video.feed_title && (
+            <p className="text-xs text-muted-foreground truncate">
+              {video.feed_title}
+            </p>
+          )}
+        </div>
+
+        <h3
+          className={cn(
+            "font-medium mb-2 line-clamp-2 leading-snug transition-colors duration-200 cursor-pointer",
+            video.is_read ? "text-muted-foreground" : "text-foreground",
+            isHovered && !video.is_read && "text-primary"
+          )}
+          onClick={handleItemClick}
+        >
           {video.title}
         </h3>
-        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-2 sm:mb-4 flex-grow line-clamp-2 sm:line-clamp-3">
-          {video.description || "No description available."}
-        </p>
-        <div className="flex items-center justify-between mt-auto pt-2 sm:pt-3 border-t border-gray-200 dark:border-white/10">
-          {/* Channel Info */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-1">
-            <img
-              src={video.channelLogo || "/images/placeholder.webp"}
-              alt={video.channelName || "Channel"}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover"
-            />
-            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 truncate">
-              {video.channelName || "Unknown Channel"}
-            </span>
-          </div>
-          {/* Video Actions */}
-          <div className="flex gap-2 ml-2 sm:ml-4">
-            <button
-              className={`flex items-center justify-center bg-transparent border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-white cursor-pointer w-9 h-9 rounded text-base transition-colors duration-200 hover:bg-blue-50 dark:hover:bg-white/10 hover:text-blue-600 dark:hover:text-blue-400 ${
-                video.is_read_later
-                  ? "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/10"
-                  : ""
-              }`}
-              onClick={() => onToggleReadLater && onToggleReadLater(video)}
-              aria-label="Read Later"
-              title="Read Later"
-            >
-              <Bookmark
-                className="w-5 h-5"
-                fill={video.is_read_later ? "currentColor" : "none"}
-                stroke="currentColor"
-              />
-            </button>
-            <button
-              className={`flex items-center justify-center bg-transparent border-none text-gray-700 dark:text-white cursor-pointer w-9 h-9 rounded-full text-xl transition-colors duration-200 hover:bg-red-50 dark:hover:bg-white/10 hover:text-red-600 dark:hover:text-red-400 ${
-                video.is_favorite
-                  ? "text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-500/10"
-                  : ""
-              }`}
-              onClick={() => onToggleFavorite && onToggleFavorite(video)}
-              aria-label="Favorite"
-              title="Favorite"
-            >
-              <Heart
-                className="w-5 h-5"
-                fill={video.is_favorite ? "currentColor" : "none"}
-                stroke="currentColor"
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+
+        {video.description && (
+          <p className="text-xs text-muted-foreground/80 line-clamp-2 mb-auto">
+            {video.description}
+          </p>
+        )}
+      </CardContent>
+
+      <CardFooter className="px-4 py-3 border-t border-border/30 justify-between">
+        <NavigationButtons
+          item={video}
+          onClick={onClick || handleItemClick}
+          onFavorite={onToggleFavorite}
+          onReadLater={onToggleReadLater}
+          onShare={onShare}
+        />
+      </CardFooter>
+    </Card>
   );
 }

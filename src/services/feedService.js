@@ -8,8 +8,8 @@ import { parseURL } from "@/utils/feedParser";
 import { toUTCTimestamp } from "@/utils/dateUtils";
 
 /**
- * Feed işlemlerini yöneten servis katmanı.
- * Bu katman repository ile UI arasında aracılık yapar ve iş mantığını içerir.
+ * Feed service layer that manages feed operations.
+ * This layer mediates between repository and UI and contains business logic.
  */
 export class FeedService {
   constructor() {
@@ -22,8 +22,8 @@ export class FeedService {
   }
 
   /**
-   * Kullanıcı oturumunu alır
-   * @returns {Promise<Object|null>} Kullanıcı oturumu
+   * Gets the user session
+   * @returns {Promise<Object|null>} User session
    * @private
    */
   async _getSession() {
@@ -34,18 +34,18 @@ export class FeedService {
   }
 
   /**
-   * URL'yi temizler ve normalize eder
-   * @param {string} url - Normalize edilecek URL
-   * @returns {string} Normalize edilmiş URL
+   * Cleans and normalizes the URL
+   * @param {string} url - URL to normalize
+   * @returns {string} Normalized URL
    */
   normalizeUrl(url) {
     try {
       if (!url) return "";
 
-      // URL'yi temizle
+      // Clean URL
       let normalizedUrl = url.trim();
 
-      // URL protokolü yoksa ekle
+      // Add protocol if missing
       if (
         !normalizedUrl.startsWith("http://") &&
         !normalizedUrl.startsWith("https://")
@@ -53,10 +53,10 @@ export class FeedService {
         normalizedUrl = "https://" + normalizedUrl;
       }
 
-      // URL objesine dönüştürerek standartlaştır
+      // Convert to URL object to standardize
       const urlObj = new URL(normalizedUrl);
 
-      // Sondaki eğik çizgi varsa kaldır (isteğe bağlı)
+      // Remove trailing slash (optional)
       let finalUrl = urlObj.toString();
       if (finalUrl.endsWith("/") && !urlObj.pathname.endsWith("//")) {
         finalUrl = finalUrl.slice(0, -1);
@@ -64,16 +64,16 @@ export class FeedService {
 
       return finalUrl;
     } catch (error) {
-      console.warn("URL normalleştirme hatası:", error);
-      // Hata olursa orjinal URL'yi döndür
+      console.warn("URL normalization error:", error);
+      // Return original URL if error
       return url;
     }
   }
 
   /**
-   * Kullanıcının feedlerini getirir
-   * @param {string} userId Kullanıcı ID'si
-   * @returns {Promise<Array>} Kullanıcının feedleri
+   * Gets user feeds
+   * @param {string} userId User ID
+   * @returns {Promise<Array>} User feeds
    */
   async getFeeds(userId) {
     try {
@@ -100,11 +100,11 @@ export class FeedService {
   }
 
   /**
-   * Feed içeriklerini getirir
-   * @param {Array} feedIds Feed ID'leri
-   * @param {number} limit Kayıt limiti
-   * @param {string} userId Kullanıcı ID'si
-   * @returns {Promise<Array>} Feed öğeleri
+   * Gets feed items
+   * @param {Array} feedIds Feed IDs
+   * @param {number} limit Record limit
+   * @param {string} userId User ID
+   * @returns {Promise<Array>} Feed items
    */
   async getFeedItems(feedIds, limit = 10, userId = null) {
     try {
@@ -119,10 +119,10 @@ export class FeedService {
   }
 
   /**
-   * Kullanıcının favori öğelerini getirir
-   * @param {string} userId Kullanıcı ID'si
-   * @param {string} [feedType='rss']
-   * @returns {Promise<Array>} Favori öğeler
+   * Gets user's favorite items
+   * @param {string} userId User ID
+   * @param {string} [feedType='rss'] Feed type
+   * @returns {Promise<Array>} Favorite items
    */
   async getFavorites(userId, feedType = "rss") {
     try {
@@ -139,10 +139,10 @@ export class FeedService {
   }
 
   /**
-   * Kullanıcının daha sonra okuma listesindeki öğeleri getirir
-   * @param {string} userId Kullanıcı ID'si
-   * @param {string} [feedType='rss']
-   * @returns {Promise<Array>} Daha sonra okunacak öğeler
+   * Gets user's read later items
+   * @param {string} userId User ID
+   * @param {string} [feedType='rss'] Feed type
+   * @returns {Promise<Array>} Read later items
    */
   async getReadLaterItems(userId, feedType = "rss") {
     try {
@@ -159,12 +159,12 @@ export class FeedService {
   }
 
   /**
-   * Öğe okundu/okunmadı durumunu değiştirir
-   * @param {string} userId Kullanıcı ID'si
-   * @param {string} itemId Öğre ID'si
-   * @param {boolean} isRead Okundu durumu
-   * @param {string} [feedType='rss']
-   * @returns {Promise<object>} Güncellenen veri
+   * Toggles item read status
+   * @param {string} userId User ID
+   * @param {string} itemId Item ID
+   * @param {boolean} isRead Read status
+   * @param {string} [feedType='rss'] Feed type
+   * @returns {Promise<object>} Updated data
    */
   async toggleItemReadStatus(userId, itemId, isRead, feedType = "rss") {
     try {
@@ -188,24 +188,25 @@ export class FeedService {
   }
 
   /**
-   * Öğe favori durumunu değiştirir
-   * @param {string} userId Kullanıcı ID'si
-   * @param {string} itemId Öğre ID'si
-   * @param {boolean} isFavorite Favori durumu
-   * @param {string} [feedType='rss']
-   * @returns {Promise<object>} Güncellenen veri
+   * Toggles item favorite status
+   * @param {string} userId User ID
+   * @param {string} itemId Item ID
+   * @param {boolean} isFavorite Favorite status
+   * @param {string} [feedType='rss'] Feed type
+   * @returns {Promise<object>} Updated data
    */
   async toggleItemFavoriteStatus(userId, itemId, isFavorite, feedType = "rss") {
     try {
       if (!userId) throw new Error("User ID is required");
       if (!itemId) throw new Error("Item ID is required");
+      const updates = {
+        is_favorite: isFavorite,
+      };
       return await this.feedRepository.updateItemInteraction(
         userId,
         itemId,
         feedType,
-        {
-          is_favorite: isFavorite,
-        }
+        updates
       );
     } catch (error) {
       console.error("Error updating favorite status:", error);
@@ -215,12 +216,12 @@ export class FeedService {
   }
 
   /**
-   * Öğe daha sonra oku durumunu değiştirir
-   * @param {string} userId Kullanıcı ID'si
-   * @param {string} itemId Öğre ID'si
-   * @param {boolean} isReadLater Daha sonra oku durumu
-   * @param {string} [feedType='rss']
-   * @returns {Promise<object>} Güncellenen veri
+   * Toggles item read later status
+   * @param {string} userId User ID
+   * @param {string} itemId Item ID
+   * @param {boolean} isReadLater Read later status
+   * @param {string} [feedType='rss'] Feed type
+   * @returns {Promise<object>} Updated data
    */
   async toggleItemReadLaterStatus(
     userId,
@@ -231,13 +232,14 @@ export class FeedService {
     try {
       if (!userId) throw new Error("User ID is required");
       if (!itemId) throw new Error("Item ID is required");
+      const updates = {
+        is_read_later: isReadLater,
+      };
       return await this.feedRepository.updateItemInteraction(
         userId,
         itemId,
         feedType,
-        {
-          is_read_later: isReadLater,
-        }
+        updates
       );
     } catch (error) {
       console.error("Error updating read later status:", error);
@@ -247,16 +249,16 @@ export class FeedService {
   }
 
   /**
-   * Yeni besleme ekler
-   * @param {string} url Besleme URL'si
-   * @param {string} type Besleme türü ('rss', 'atom' veya 'youtube')
-   * @param {string} userId Kullanıcı ID'si
-   * @param {Object} extraData Ek veriler
-   * @returns {Promise<Object>} Eklenen besleme bilgileri
+   * Adds a new feed
+   * @param {string} url Feed URL
+   * @param {string} type Feed type ('rss', 'atom' or 'youtube')
+   * @param {string} userId User ID
+   * @param {Object} extraData Extra data
+   * @returns {Promise<Object>} Added feed information
    */
   async addFeed(url, type = "rss", userId, extraData = {}) {
     try {
-      // URL ve kullanıcı ID kontrolü
+      // URL and user ID checks
       if (!url) {
         throw new Error("Feed URL is required");
       }
@@ -265,26 +267,26 @@ export class FeedService {
         throw new Error("User ID is required");
       }
 
-      // Feed türü kontrolü
+      // Feed type check
       if (!type || !["rss", "atom", "youtube"].includes(type)) {
         throw new Error("Valid feed type is required (rss, atom, youtube)");
       }
 
-      // URL normalizasyonu
+      // URL normalization
       const normalizedUrl = this.normalizeUrl(url);
 
-      // YouTube RSS beslemesi kontrolü
+      // YouTube RSS feed check
       let feedType = type;
       if (normalizedUrl.includes("youtube.com/feeds/videos.xml")) {
-        // YouTube RSS'leri için özel durum - URL'de YouTube RSS var ama type olarak "rss" geçilmiş olabilir
+        // Special case for YouTube RSS - URL might contain YouTube RSS but type is passed as "rss"
         feedType = "youtube";
       }
 
-      // Feed meta verilerini al
+      // Get feed metadata
       let feedInfo = {};
 
       if (feedType === "rss" || feedType === "atom") {
-        // RSS besleme bilgilerini çek
+        // Parse RSS feed
         try {
           feedInfo = await this.feedParser.parseRssFeed(normalizedUrl);
         } catch (error) {
@@ -292,10 +294,10 @@ export class FeedService {
           throw new Error(`Failed to parse RSS feed: ${error.message}`);
         }
       } else if (feedType === "youtube") {
-        // YouTube besleme bilgilerini çek
+        // Parse YouTube feed
         try {
           feedInfo = await this.feedParser.parseYoutubeFeed(normalizedUrl);
-          // YouTube besleme başlığını iyileştir
+          // Improve YouTube feed title
           if (!extraData.title && feedInfo.title) {
             feedInfo.title = feedInfo.title.replace("YouTube", "").trim();
           }
@@ -307,7 +309,7 @@ export class FeedService {
         throw new Error(`Unsupported feed type: ${feedType}`);
       }
 
-      // Feed verisini hazırla
+      // Prepare feed data
       const feedData = {
         url: normalizedUrl,
         user_id: userId,
@@ -318,10 +320,10 @@ export class FeedService {
         category_id: extraData.category_id || null,
       };
 
-      // Feed'i ekle
+      // Add feed
       const result = await this.feedRepository.addFeed(feedData);
 
-      // Eğer feed yeniyse, içerikleri çek
+      // If feed is new, fetch content
       if (result && result.feed && result.feed.id) {
         try {
           await this.syncFeedItems(result.feed.id, userId, feedType);
@@ -329,7 +331,7 @@ export class FeedService {
           console.error(
             `Error synchronizing feed contents: ${syncError.message}`
           );
-          // Bu hata feed ekleme işlemini etkilememeli
+          // This error should not affect feed addition
         }
       }
 
@@ -341,7 +343,7 @@ export class FeedService {
   }
 
   /**
-   * Delete a feed (soft delete)
+   * Deletes a feed (soft delete)
    * @param {string} feedId Feed ID to delete
    * @param {string} userId User ID
    * @returns {Promise<boolean>} Operation result
@@ -370,12 +372,12 @@ export class FeedService {
   }
 
   /**
-   * Eski içerikleri temizler
-   * @param {string} userId Kullanıcı ID'si
-   * @param {number} olderThanDays Belirtilen günden daha eski öğeleri siler (varsayılan: 30 gün)
-   * @param {boolean} keepFavorites Favorileri korur (varsayılan: true)
-   * @param {boolean} keepReadLater "Sonra Oku" olarak işaretlenmiş öğeleri korur (varsayılan: true)
-   * @returns {Promise<{deleted: number, error: any}>} Silinen öğe sayısı ve varsa hata bilgisi
+   * Cleans up old items
+   * @param {string} userId User ID
+   * @param {number} olderThanDays Delete items older than this many days (default: 30 days)
+   * @param {boolean} keepFavorites Keep favorites (default: true)
+   * @param {boolean} keepReadLater Keep items marked for later reading (default: true)
+   * @returns {Promise<{deleted: number, error: any}>} Number of deleted items and error if any
    */
   async cleanUpOldItems(
     userId,
@@ -405,11 +407,11 @@ export class FeedService {
   }
 
   /**
-   * Her feed için öğe sayısını sınırlar
-   * @param {Array} feeds Feed'ler
-   * @param {Array} items Öğeler
-   * @param {number} limit Her feed başına maksimum öğe sayısı
-   * @returns {Array} Sınırlandırılmış öğeler
+   * Limits items per feed
+   * @param {Array} feeds Feeds
+   * @param {Array} items Items
+   * @param {number} limit Maximum items per feed
+   * @returns {Array} Limited items
    */
   limitItemsPerFeed(feeds, items, limit = 12) {
     if (!feeds || !items) return { feeds: [], items: [] };
@@ -431,12 +433,12 @@ export class FeedService {
   }
 
   /**
-   * Sayfalı olarak feed öğelerini getirir
-   * @param {string} userId Kullanıcı ID'si
-   * @param {number} page Sayfa numarası
-   * @param {number} pageSize Sayfa başına öğe sayısı
-   * @param {Object} filters Filtre parametreleri
-   * @returns {Promise<Object>} Sayfalı feed öğeleri
+   * Gets paginated feed items
+   * @param {string} userId User ID
+   * @param {number} page Page number
+   * @param {number} pageSize Items per page
+   * @param {Object} filters Filter parameters
+   * @returns {Promise<Object>} Paginated feed items
    */
   async getPaginatedFeedItems(userId, page = 1, pageSize = 12, filters = {}) {
     try {
@@ -445,7 +447,7 @@ export class FeedService {
         return { data: [], total: 0, hasMore: false };
       }
 
-      // Get the user's feeds first
+      // Get user's feeds first
       const feeds = await this.getFeeds(userId);
       console.log("User feeds:", feeds?.length || 0);
 
@@ -501,7 +503,7 @@ export class FeedService {
         filters
       );
 
-      // Kullanıcı etkileşimlerini ekle
+      // Add user interactions
       if (result.data && result.data.length > 0) {
         const itemIds = result.data.map((item) => item.id);
         const interactions = await this.feedRepository.getUserInteractions(
@@ -535,81 +537,122 @@ export class FeedService {
   }
 
   /**
-   * Toggles the read status of an item
+   * Toggles item read status
    * @param {string} itemId Item ID
    * @param {boolean} isRead Read status
-   * @returns {Promise<object>} Updated data
+   * @returns {Promise<Object>} Update result
    */
   async toggleRead(itemId, isRead) {
     try {
+      const session = await this._getSession();
+      if (!session || !session.user) {
+        throw new Error("User not authenticated");
+      }
+
+      const userId = session.user.id;
       if (!itemId) throw new Error("Item ID is required");
 
-      // Get the user ID from auth
-      const {
-        data: { user },
-      } = await this.supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // Determine if it's a YouTube or RSS item
+      const itemType = this._determineItemType(itemId);
 
-      return await this.toggleItemReadStatus(user.id, itemId, isRead);
+      return await this.toggleItemReadStatus(userId, itemId, isRead, itemType);
     } catch (error) {
       console.error("Error toggling read status:", error);
+      toast.error("An error occurred while updating read status.");
       throw error;
     }
   }
 
   /**
-   * Toggles the favorite status of an item
+   * Toggles item favorite status
    * @param {string} itemId Item ID
    * @param {boolean} isFavorite Favorite status
-   * @returns {Promise<object>} Updated data
+   * @returns {Promise<Object>} Update result
    */
   async toggleFavorite(itemId, isFavorite) {
     try {
+      const session = await this._getSession();
+      if (!session || !session.user) {
+        throw new Error("User not authenticated");
+      }
+
+      const userId = session.user.id;
       if (!itemId) throw new Error("Item ID is required");
 
-      // Get the user ID from auth
-      const {
-        data: { user },
-      } = await this.supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // Determine if it's a YouTube or RSS item
+      const itemType = this._determineItemType(itemId);
 
-      return await this.toggleItemFavoriteStatus(user.id, itemId, isFavorite);
+      return await this.toggleItemFavoriteStatus(
+        userId,
+        itemId,
+        isFavorite,
+        itemType
+      );
     } catch (error) {
       console.error("Error toggling favorite status:", error);
+      toast.error("An error occurred while updating favorite status.");
       throw error;
     }
   }
 
   /**
-   * Toggles the read later status of an item
+   * Toggles item read later status
    * @param {string} itemId Item ID
    * @param {boolean} isReadLater Read later status
-   * @returns {Promise<object>} Updated data
+   * @returns {Promise<Object>} Update result
    */
   async toggleReadLater(itemId, isReadLater) {
     try {
+      const session = await this._getSession();
+      if (!session || !session.user) {
+        throw new Error("User not authenticated");
+      }
+
+      const userId = session.user.id;
       if (!itemId) throw new Error("Item ID is required");
 
-      // Get the user ID from auth
-      const {
-        data: { user },
-      } = await this.supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // Determine if it's a YouTube or RSS item
+      const itemType = this._determineItemType(itemId);
 
-      return await this.toggleItemReadLaterStatus(user.id, itemId, isReadLater);
+      return await this.toggleItemReadLaterStatus(
+        userId,
+        itemId,
+        isReadLater,
+        itemType
+      );
     } catch (error) {
       console.error("Error toggling read later status:", error);
+      toast.error("An error occurred while updating read later status.");
       throw error;
     }
   }
 
   /**
-   * Kategori ekler
-   * @param {string} name Kategori adı
-   * @param {string} userId Kullanıcı ID'si
-   * @param {string} color Renk kodu (opsiyonel)
-   * @param {string} icon İkon (opsiyonel)
-   * @returns {Promise<object>} Eklenen kategori
+   * Determines item type based on ID or other properties
+   * @param {string} itemId Item ID
+   * @returns {string} 'rss' or 'youtube'
+   * @private
+   */
+  _determineItemType(itemId) {
+    // This is a simplified implementation
+    // In a real application, you might query the database or use a more sophisticated method
+
+    // For now, let's assume we can determine by ID format or prefix
+    // This should be replaced with proper logic based on your ID structure
+    if (typeof itemId === "string" && itemId.startsWith("yt_")) {
+      return "youtube";
+    }
+
+    return "rss";
+  }
+
+  /**
+   * Adds a category
+   * @param {string} name Category name
+   * @param {string} userId User ID
+   * @param {string} color Color code (optional)
+   * @param {string} icon Icon (optional)
+   * @returns {Promise<object>} Added category
    */
   async addCategory(name, userId, color = null, icon = null) {
     try {
@@ -651,9 +694,9 @@ export class FeedService {
   }
 
   /**
-   * Kullanıcının kategorilerini getirir
-   * @param {string} userId Kullanıcı ID'si
-   * @returns {Promise<Array>} Kategoriler
+   * Gets user categories
+   * @param {string} userId User ID
+   * @returns {Promise<Array>} Categories
    */
   async getCategories(userId) {
     try {
@@ -677,13 +720,13 @@ export class FeedService {
   }
 
   /**
-   * Feed içeriklerini senkronize eder
-   * @param {string} feedId - Feed kimliği
-   * @param {string} userId - Kullanıcı kimliği
-   * @param {string} feedType - Feed türü
-   * @param {Object} options - Ek seçenekler
-   * @param {boolean} options.skipCache - Önbelleği atla (varsayılan: false)
-   * @returns {Promise<Object>} - Senkronizasyon sonucu
+   * Synchronizes feed items
+   * @param {string} feedId - Feed ID
+   * @param {string} userId - User ID
+   * @param {string} feedType - Feed type
+   * @param {Object} options - Extra options
+   * @param {boolean} options.skipCache - Skip cache (default: false)
+   * @returns {Promise<Object>} - Synchronization result
    */
   async syncFeedItems(feedId, userId, feedType, options = {}) {
     const { skipCache = false } = options;
@@ -697,7 +740,7 @@ export class FeedService {
         throw new Error("User ID is required");
       }
 
-      // Repository üzerinden feed bilgilerini al
+      // Get feed information from repository
       const repositoryResult = await this.feedRepository.syncFeedItems(
         feedId,
         userId,
@@ -708,7 +751,7 @@ export class FeedService {
         throw new Error(`Failed to get feed data: ${repositoryResult.error}`);
       }
 
-      // Eğer feed son 1 dakika içinde güncellendiyse, işlemi atla
+      // If feed was updated in the last 1 minute, skip the process
       if (
         repositoryResult.message &&
         repositoryResult.message.includes("updated") &&
@@ -721,18 +764,18 @@ export class FeedService {
       const feedUrl = repositoryResult.feedUrl;
       const actualFeedType = repositoryResult.feedType || feedType;
 
-      // Feed türüne göre içerikleri çek
+      // Fetch content based on feed type
       let items = [];
       let feedData = null;
-      const MAX_ITEMS = 20; // Her durumda maksimum 20 öğe
+      const MAX_ITEMS = 20; // Maximum 20 items in all cases
 
       if (actualFeedType === "rss" || actualFeedType === "atom") {
         try {
-          // Basitleştirilmiş RSS çekme
+          // Simplified RSS fetching
           feedData = await this.feedParser.parseRssFeed(feedUrl, { skipCache });
           items = feedData.items || [];
 
-          // Her zaman maksimum 20 öğe ile sınırlandır
+          // Always limit to maximum 20 items
           if (items.length > MAX_ITEMS) {
             items = items.slice(0, MAX_ITEMS);
           }
@@ -742,14 +785,14 @@ export class FeedService {
         }
       } else if (actualFeedType === "youtube") {
         try {
-          // Basitleştirilmiş YouTube içerik çekme
+          // Simplified YouTube content fetching
           feedData = await this.feedParser.parseYoutubeFeed(feedUrl, {
             skipCache,
-            maxItems: MAX_ITEMS, // Maksimum 20 öğe ile sınırlandır
+            maxItems: MAX_ITEMS, // Limit to maximum 20 items
           });
           items = feedData.items || [];
 
-          // Ekstra kontrol - yine de 20'den fazla gelirse sınırlandır
+          // Extra check - if more than 20 items still come, limit
           if (items.length > MAX_ITEMS) {
             items = items.slice(0, MAX_ITEMS);
           }
@@ -763,7 +806,7 @@ export class FeedService {
       }
 
       if (items.length === 0) {
-        // Feed'i güncelle (son kontrol zamanını)
+        // Update feed (last updated time)
         await this.feedRepository.updateFeedLastUpdated(feedId);
 
         return {
@@ -774,7 +817,7 @@ export class FeedService {
         };
       }
 
-      // İçerikleri veritabanına ekle - feed türüne göre
+      // Add items to database - based on feed type
       let insertedItems = 0;
       if (actualFeedType === "rss" || actualFeedType === "atom") {
         try {
@@ -792,7 +835,7 @@ export class FeedService {
         }
       }
 
-      // Feed son güncelleme zamanını güncelle
+      // Update feed last updated time
       await this.feedRepository.updateFeedLastUpdated(feedId);
 
       return {
@@ -808,50 +851,50 @@ export class FeedService {
   }
 
   /**
-   * Feed'deki öğeleri yeniler
-   * @param {string} feedId Feed ID'si
-   * @param {boolean} skipCache Önbelleği atla
-   * @returns {Promise<Object>} Yenileme sonucu
+   * Refreshes feed items
+   * @param {string} feedId Feed ID
+   * @param {boolean} skipCache Skip cache
+   * @returns {Promise<Object>} Refresh result
    */
   async refreshFeed(feedId, skipCache = false) {
     try {
       if (!feedId) {
-        throw new Error("Feed ID'si gerekli");
+        throw new Error("Feed ID is required");
       }
 
-      // Feed türünü bul
+      // Get feed type
       const feedType = await this.feedRepository.getFeedType(feedId);
       if (!feedType || !feedType.type) {
-        throw new Error(`Feed türü bulunamadı: ${feedId}`);
+        throw new Error(`Feed type not found: ${feedId}`);
       }
 
-      // Oturum kontrolü
+      // Session check
       const { session } = await this._getSession();
       if (!session || !session.user) {
-        throw new Error("Oturum bulunamadı");
+        throw new Error("Session not found");
       }
 
       const userId = session.user.id;
 
       console.log(
-        `Feed yenileniyor: feedId=${feedId}, type=${feedType.type}, userId=${userId}, skipCache=${skipCache}`
+        `Feed refreshing: feedId=${feedId}, type=${feedType.type}, userId=${userId}, skipCache=${skipCache}`
       );
 
-      // Feed öğelerini yenile
+      // Refresh feed items
       return await this.syncFeedItems(feedId, userId, feedType.type, {
         skipCache,
       });
     } catch (error) {
       console.error(`refreshFeed error for feedId=${feedId}:`, error);
-      throw new Error(`Feed yenilenirken hata oluştu: ${error.message}`);
+      throw new Error(`Error refreshing feed: ${error.message}`);
     }
   }
 
   /**
-   * RSS içeriklerini ekler
+   * Adds RSS items
    * @param {string} feedId - Feed ID
-   * @param {Array} items - RSS İçerikleri
-   * @returns {Promise<number>} - Eklenen öğe sayısı
+   * @param {Array} items - RSS Items
+   * @returns {Promise<number>} - Number of added items
    */
   async insertRssItems(feedId, items) {
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -859,14 +902,14 @@ export class FeedService {
     }
 
     try {
-      // Maksimum öğe sayısını 100 ile sınırla
+      // Limit maximum items to 100
       let itemsToInsert = items;
       if (items.length > 100) {
         itemsToInsert = items.slice(0, 100);
       }
 
       let insertedCount = 0;
-      // Her öğeyi ayrı ayrı ekle
+      // Add each item individually
       for (const item of itemsToInsert) {
         try {
           const rssItemData = {
@@ -884,16 +927,16 @@ export class FeedService {
             author: item.author || null,
           };
 
-          // Repository'nin addRssItem fonksiyonunu kullan
+          // Use repository's addRssItem function
           const result = await this.feedRepository.addRssItem(rssItemData);
 
-          // Başarıyla eklendiyse sayacı artır
+          // Increment count if successful
           if (result && !result.error) {
             insertedCount++;
           }
         } catch (itemError) {
           console.error(`Error adding RSS item:`, itemError);
-          // Tek bir öğe hatası diğerlerini etkilemesin, devam et
+          // Do not let one item error affect others, continue
         }
       }
 
@@ -905,10 +948,10 @@ export class FeedService {
   }
 
   /**
-   * YouTube içeriklerini ekler
+   * Adds YouTube items
    * @param {string} feedId - Feed ID
-   * @param {Array} items - YouTube İçerikleri
-   * @returns {Promise<number>} - Eklenen öğe sayısı
+   * @param {Array} items - YouTube Items
+   * @returns {Promise<number>} - Number of added items
    */
   async insertYoutubeItems(feedId, items) {
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -916,13 +959,13 @@ export class FeedService {
     }
 
     try {
-      // Her zaman en fazla 20 öğe işle
+      // Always process up to 20 items
       const MAX_ITEMS = 20;
       let itemsToInsert = items.slice(0, MAX_ITEMS);
 
       let insertedCount = 0;
 
-      // Her öğeyi tek tek ekleyelim
+      // Add each item individually
       for (const item of itemsToInsert) {
         try {
           if (!item.videoId) {
@@ -930,34 +973,34 @@ export class FeedService {
             continue;
           }
 
-          // Basitleştirilmiş YouTube öğesi verisi
+          // Simplified YouTube item data
           const youtubeItemData = {
             feed_id: feedId,
             video_id: item.videoId,
             title: item.title || "Untitled Video",
             description: item.description
               ? item.description.substring(0, 500)
-              : null, // Açıklamayı sınırlandır
+              : null, // Limit description
             thumbnail: item.thumbnail || null,
             published_at: item.pubDate || new Date().toISOString(),
             channel_title: item.channelTitle || null,
             url: `https://youtube.com/watch?v=${item.videoId}`,
-            is_short: item.isShort || false, // Shorts videosu mu?
-            content_type: item.type || "video", // İçerik tipi (shorts/video)
-            duration: item.duration || null, // Video süresi (varsa)
+            is_short: item.isShort || false, // Is it a short video?
+            content_type: item.type || "video", // Content type (shorts/video)
+            duration: item.duration || null, // Video duration (if available)
           };
 
-          // Veritabanına ekle
+          // Add to database
           const result = await this.feedRepository.addYoutubeItem(
             youtubeItemData
           );
 
-          // Başarıyla eklendiyse sayacı artır
+          // Increment count if successful
           if (result) {
             insertedCount++;
           }
         } catch (itemError) {
-          // Hata çıksa bile diğer öğeleri eklemeye devam et
+          // Even if an error occurs, continue adding other items
           console.error(`Error adding YouTube item:`, itemError);
         }
       }
@@ -970,5 +1013,5 @@ export class FeedService {
   }
 }
 
-// Sınıfın bir örneğini oluşturup export ediyoruz
+// Create an instance of the class and export it
 export const feedService = new FeedService();

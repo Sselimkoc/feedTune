@@ -1,8 +1,8 @@
 import { DbClient } from "./index.js";
 
 /**
- * Feed veritabanı işlemleri için repository sınıfı
- * Bu sınıf, feed ile ilgili tüm veritabanı işlemlerini soyutlar
+ * Feed database operations repository class
+ * This class abstracts all database operations related to feeds
  */
 export class FeedRepository {
   constructor() {
@@ -10,9 +10,9 @@ export class FeedRepository {
   }
 
   /**
-   * Kullanıcının feedlerini getirir
-   * @param {string} userId - Kullanıcı ID'si
-   * @returns {Promise<Array>} - Feed listesi
+   * Get user feeds
+   * @param {string} userId - User ID
+   * @returns {Promise<Array>} - Feed list
    */
   async getFeeds(userId) {
     try {
@@ -28,20 +28,50 @@ export class FeedRepository {
   }
 
   /**
-   * Feed öğelerini getirir
-   * @param {Array} feedIds - Feed ID'leri
+   * Get feed items
+   * @param {Array} feedIds - Feed IDs
    * @param {number} limit - Limit
-   * @param {string} userId - Kullanıcı ID'si
-   * @returns {Promise<Array>} - Feed öğeleri
+   * @param {string} userId - User ID
+   * @returns {Promise<Array>} - Feed items
    */
   async getFeedItems(feedIds, limit = 10, userId = null) {
     try {
-      const result = await this.db.query("feed_items", {
+      // Get RSS items
+      const rssResult = await this.db.query("rss_items", {
         in: { feed_id: feedIds },
         order: { published_at: "desc" },
         limit: limit,
       });
-      return result.data || [];
+
+      // Get YouTube items
+      const ytResult = await this.db.query("youtube_items", {
+        in: { feed_id: feedIds },
+        order: { published_at: "desc" },
+        limit: limit,
+      });
+
+      // Combine and sort results
+      const combinedItems = [
+        ...(rssResult.data || []).map((item) => ({
+          ...item,
+          type: "rss",
+        })),
+        ...(ytResult.data || []).map((item) => ({
+          ...item,
+          type: "youtube",
+          url: `https://www.youtube.com/watch?v=${item.video_id}`,
+        })),
+      ];
+
+      // Sort by published date
+      combinedItems.sort((a, b) => {
+        const dateA = new Date(a.published_at || 0);
+        const dateB = new Date(b.published_at || 0);
+        return dateB - dateA;
+      });
+
+      // Limit results
+      return combinedItems.slice(0, limit);
     } catch (error) {
       console.error("Error getting feed items:", error);
       return [];
@@ -49,17 +79,36 @@ export class FeedRepository {
   }
 
   /**
-   * Kullanıcının favori öğelerini getirir
-   * @param {string} userId - Kullanıcı ID'si
-   * @returns {Promise<Array>} - Favori öğeler
+   * Get user's favorite items
+   * @param {string} userId - User ID
+   * @param {string} feedType - Feed type (rss or youtube)
+   * @returns {Promise<Array>} - Favorite items
    */
-  async getFavoriteItems(userId) {
+  async getFavoriteItems(userId, feedType = "rss") {
     try {
-      const result = await this.db.query("rss_interactions", {
+      const interactionTable =
+        feedType === "youtube" ? "youtube_interactions" : "rss_interactions";
+      const itemsTable = feedType === "youtube" ? "youtube_items" : "rss_items";
+
+      // Get interactions with is_favorite = true
+      const result = await this.db.query(interactionTable, {
         eq: { user_id: userId, is_favorite: true },
         order: { created_at: "desc" },
       });
-      return result.data || [];
+
+      if (!result.data || result.data.length === 0) {
+        return [];
+      }
+
+      // Get item IDs from interactions
+      const itemIds = result.data.map((interaction) => interaction.item_id);
+
+      // Get actual items
+      const itemsResult = await this.db.query(itemsTable, {
+        in: { id: itemIds },
+      });
+
+      return itemsResult.data || [];
     } catch (error) {
       console.error("Error getting favorite items:", error);
       return [];
@@ -67,17 +116,36 @@ export class FeedRepository {
   }
 
   /**
-   * Kullanıcının daha sonra okuma listesindeki öğeleri getirir
-   * @param {string} userId - Kullanıcı ID'si
-   * @returns {Promise<Array>} - Daha sonra okunacak öğeler
+   * Get user's read later items
+   * @param {string} userId - User ID
+   * @param {string} feedType - Feed type (rss or youtube)
+   * @returns {Promise<Array>} - Read later items
    */
-  async getReadLaterItems(userId) {
+  async getReadLaterItems(userId, feedType = "rss") {
     try {
-      const result = await this.db.query("rss_interactions", {
+      const interactionTable =
+        feedType === "youtube" ? "youtube_interactions" : "rss_interactions";
+      const itemsTable = feedType === "youtube" ? "youtube_items" : "rss_items";
+
+      // Get interactions with is_read_later = true
+      const result = await this.db.query(interactionTable, {
         eq: { user_id: userId, is_read_later: true },
         order: { created_at: "desc" },
       });
-      return result.data || [];
+
+      if (!result.data || result.data.length === 0) {
+        return [];
+      }
+
+      // Get item IDs from interactions
+      const itemIds = result.data.map((interaction) => interaction.item_id);
+
+      // Get actual items
+      const itemsResult = await this.db.query(itemsTable, {
+        in: { id: itemIds },
+      });
+
+      return itemsResult.data || [];
     } catch (error) {
       console.error("Error getting read later items:", error);
       return [];
@@ -85,12 +153,12 @@ export class FeedRepository {
   }
 
   /**
-   * Öğe etkileşimini günceller
-   * @param {string} userId - Kullanıcı ID'si
-   * @param {string} itemId - Öğe ID'si
-   * @param {string} feedType - Feed tipi
-   * @param {Object} updates - Güncellenecek alanlar
-   * @returns {Promise<Object>} - Güncelleme sonucu
+   * Update item interaction
+   * @param {string} userId - User ID
+   * @param {string} itemId - Item ID
+   * @param {string} feedType - Feed type
+   * @param {Object} updates - Fields to update
+   * @returns {Promise<Object>} - Update result
    */
   async updateItemInteraction(userId, itemId, feedType, updates) {
     const table =
@@ -109,9 +177,9 @@ export class FeedRepository {
   }
 
   /**
-   * Yeni feed ekler
-   * @param {Object} feedData - Feed verisi
-   * @returns {Promise<Object>} - Eklenen feed
+   * Add new feed
+   * @param {Object} feedData - Feed data
+   * @returns {Promise<Object>} - Added feed
    */
   async addFeed(feedData) {
     try {
@@ -124,10 +192,10 @@ export class FeedRepository {
   }
 
   /**
-   * Feed siler
-   * @param {string} feedId - Feed ID'si
-   * @param {string} userId - Kullanıcı ID'si
-   * @returns {Promise<Object>} - Silme sonucu
+   * Delete feed
+   * @param {string} feedId - Feed ID
+   * @param {string} userId - User ID
+   * @returns {Promise<Object>} - Delete result
    */
   async deleteFeed(feedId, userId) {
     try {
@@ -142,12 +210,12 @@ export class FeedRepository {
   }
 
   /**
-   * Eski öğeleri temizler
-   * @param {string} userId - Kullanıcı ID'si
-   * @param {number} olderThanDays - Kaç günden eski
-   * @param {boolean} keepFavorites - Favorileri koru
-   * @param {boolean} keepReadLater - Daha sonra okunacakları koru
-   * @returns {Promise<Object>} - Temizleme sonucu
+   * Clean up old items
+   * @param {string} userId - User ID
+   * @param {number} olderThanDays - How many days old
+   * @param {boolean} keepFavorites - Keep favorites
+   * @param {boolean} keepReadLater - Keep read later items
+   * @returns {Promise<Object>} - Cleanup result
    */
   async cleanUpOldItems(
     userId,
@@ -159,10 +227,30 @@ export class FeedRepository {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-      const result = await this.db.delete("feed_items", {
-        lt: { published_at: cutoffDate.toISOString() },
-      });
-      return result.data;
+      // Handle RSS items
+      const rssResult = await this.cleanupItemsByType(
+        "rss_items",
+        "rss_interactions",
+        userId,
+        cutoffDate,
+        keepFavorites,
+        keepReadLater
+      );
+
+      // Handle YouTube items
+      const ytResult = await this.cleanupItemsByType(
+        "youtube_items",
+        "youtube_interactions",
+        userId,
+        cutoffDate,
+        keepFavorites,
+        keepReadLater
+      );
+
+      return {
+        rss: rssResult,
+        youtube: ytResult,
+      };
     } catch (error) {
       console.error("Error cleaning up old items:", error);
       throw error;
@@ -170,37 +258,131 @@ export class FeedRepository {
   }
 
   /**
-   * Sayfalanmış feed öğelerini getirir
-   * @param {string} userId - Kullanıcı ID'si
-   * @param {number} page - Sayfa numarası
-   * @param {number} pageSize - Sayfa boyutu
-   * @param {Object} filters - Filtreler
-   * @returns {Promise<Object>} - Sayfalanmış sonuçlar
+   * Helper method to clean up items by type
+   * @private
+   */
+  async cleanupItemsByType(
+    itemsTable,
+    interactionsTable,
+    userId,
+    cutoffDate,
+    keepFavorites,
+    keepReadLater
+  ) {
+    // Get items to exclude (favorites and read later)
+    let excludeItemIds = [];
+
+    if (keepFavorites || keepReadLater) {
+      const conditions = [];
+      if (keepFavorites) conditions.push({ is_favorite: true });
+      if (keepReadLater) conditions.push({ is_read_later: true });
+
+      const { data: interactions } = await this.db.query(interactionsTable, {
+        eq: { user_id: userId },
+        or: conditions,
+      });
+
+      if (interactions && interactions.length > 0) {
+        excludeItemIds = interactions.map((i) => i.item_id);
+      }
+    }
+
+    // Delete old items except excluded ones
+    const result = await this.db.delete(itemsTable, {
+      lt: { published_at: cutoffDate.toISOString() },
+      not:
+        excludeItemIds.length > 0 ? { id: { in: excludeItemIds } } : undefined,
+    });
+
+    return result.data;
+  }
+
+  /**
+   * Get paginated feed items
+   * @param {string} userId - User ID
+   * @param {number} page - Page number
+   * @param {number} pageSize - Page size
+   * @param {Object} filters - Filters
+   * @returns {Promise<Object>} - Paginated results
    */
   async getPaginatedFeedItems(userId, page = 1, pageSize = 12, filters = {}) {
     try {
       const offset = (page - 1) * pageSize;
-      const result = await this.db.query("feed_items", {
+
+      // Apply filters
+      const queryConditions = {};
+
+      if (filters.feedIds && filters.feedIds.length > 0) {
+        queryConditions.in = { feed_id: filters.feedIds };
+      }
+
+      // Get RSS items
+      const rssResult = await this.db.query("rss_items", {
+        ...queryConditions,
         order: { published_at: "desc" },
         limit: pageSize,
         offset: offset,
       });
-      return result.data || [];
+
+      // Get YouTube items
+      const ytResult = await this.db.query("youtube_items", {
+        ...queryConditions,
+        order: { published_at: "desc" },
+        limit: pageSize,
+        offset: offset,
+      });
+
+      // Combine and sort results
+      const combinedItems = [
+        ...(rssResult.data || []).map((item) => ({
+          ...item,
+          type: "rss",
+        })),
+        ...(ytResult.data || []).map((item) => ({
+          ...item,
+          type: "youtube",
+          url: `https://www.youtube.com/watch?v=${item.video_id}`,
+        })),
+      ];
+
+      // Sort by published date
+      combinedItems.sort((a, b) => {
+        const dateA = new Date(a.published_at || 0);
+        const dateB = new Date(b.published_at || 0);
+        return dateB - dateA;
+      });
+
+      // Get total count for pagination
+      const rssCount = await this.db.count("rss_items", queryConditions);
+      const ytCount = await this.db.count("youtube_items", queryConditions);
+
+      return {
+        items: combinedItems.slice(0, pageSize),
+        total: (rssCount || 0) + (ytCount || 0),
+        page,
+        pageSize,
+      };
     } catch (error) {
       console.error("Error getting paginated feed items:", error);
-      return [];
+      return {
+        items: [],
+        total: 0,
+        page,
+        pageSize,
+      };
     }
   }
 
   /**
-   * Kullanıcı etkileşimlerini getirir
-   * @param {string} userId - Kullanıcı ID'si
-   * @param {Array} itemIds - Öğe ID'leri
-   * @returns {Promise<Array>} - Etkileşimler
+   * Get user interactions
+   * @param {string} userId - User ID
+   * @param {Array} itemIds - Item IDs
+   * @param {string} feedType - Feed type (rss or youtube)
+   * @returns {Promise<Array>} - Interactions
    */
-  async getUserInteractions(userId, itemIds, type = "rss") {
+  async getUserInteractions(userId, itemIds, feedType = "rss") {
     const table =
-      type === "youtube" ? "youtube_interactions" : "rss_interactions";
+      feedType === "youtube" ? "youtube_interactions" : "rss_interactions";
     try {
       const result = await this.db.query(table, {
         eq: { user_id: userId },
@@ -214,17 +396,17 @@ export class FeedRepository {
   }
 
   /**
-   * Feed öğelerini senkronize eder
-   * @param {string} feedId - Feed ID'si
-   * @param {string} userId - Kullanıcı ID'si
-   * @param {string} feedType - Feed tipi
-   * @param {Object} options - Seçenekler
-   * @returns {Promise<Object>} - Senkronizasyon sonucu
+   * Feed items to sync
+   * @param {string} feedId - Feed ID
+   * @param {string} userId - User ID
+   * @param {string} feedType - Feed type
+   * @param {Object} options - Options
+   * @returns {Promise<Object>} - Sync result
    */
   async syncFeedItems(feedId, userId, feedType, options = {}) {
     try {
-      // Bu metod feed senkronizasyonu için kullanılır
-      // Şimdilik basit bir implementasyon
+      // This method is for feed synchronization
+      // For now, a simple implementation
       return { success: true, items: [] };
     } catch (error) {
       console.error("Error syncing feed items:", error);
@@ -233,9 +415,9 @@ export class FeedRepository {
   }
 
   /**
-   * Feed'in son güncelleme zamanını günceller
-   * @param {string} feedId - Feed ID'si
-   * @returns {Promise<Object>} - Güncelleme sonucu
+   * Update feed last updated
+   * @param {string} feedId - Feed ID
+   * @returns {Promise<Object>} - Update result
    */
   async updateFeedLastUpdated(feedId) {
     try {
@@ -252,9 +434,9 @@ export class FeedRepository {
   }
 
   /**
-   * Feed tipini getirir
-   * @param {string} feedId - Feed ID'si
-   * @returns {Promise<string>} - Feed tipi
+   * Get feed type
+   * @param {string} feedId - Feed ID
+   * @returns {Promise<string>} - Feed type
    */
   async getFeedType(feedId) {
     try {
@@ -274,13 +456,13 @@ export class FeedRepository {
   }
 
   /**
-   * RSS öğesi ekler
-   * @param {Object} rssItemData - RSS öğe verisi
-   * @returns {Promise<Object>} - Eklenen öğe
+   * Add RSS item
+   * @param {Object} rssItemData - RSS item data
+   * @returns {Promise<Object>} - Added item
    */
   async addRssItem(rssItemData) {
     try {
-      const result = await this.db.insert("feed_items", rssItemData);
+      const result = await this.db.insert("rss_items", rssItemData);
       return result.data;
     } catch (error) {
       console.error("Error adding RSS item:", error);
@@ -289,9 +471,9 @@ export class FeedRepository {
   }
 
   /**
-   * YouTube öğesi ekler
-   * @param {Object} youtubeItemData - YouTube öğe verisi
-   * @returns {Promise<Object>} - Eklenen öğe
+   * Add YouTube item
+   * @param {Object} youtubeItemData - YouTube item data
+   * @returns {Promise<Object>} - Added item
    */
   async addYoutubeItem(youtubeItemData) {
     try {

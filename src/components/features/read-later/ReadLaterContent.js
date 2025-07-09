@@ -6,6 +6,8 @@ import { Button } from "@/components/core/ui/button";
 import Link from "next/link";
 import { FavoriteDetailCard } from "../favorites/FavoriteDetailCard";
 import { useFeedService } from "@/hooks/features/useFeedService";
+import { toast } from "@/components/core/ui/use-toast";
+import { useCallback } from "react";
 
 export function ReadLaterContent() {
   const { t } = useTranslation();
@@ -16,6 +18,49 @@ export function ReadLaterContent() {
     toggleReadLater,
     toggleFavorite,
   } = useFeedService();
+
+  // Handle item click
+  const handleItemClick = useCallback(
+    (url, item) => {
+      if (!url) {
+        toast({
+          title: t("common.error"),
+          description: t("errors.invalidUrl"),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      window.open(url, "_blank", "noopener,noreferrer");
+    },
+    [t]
+  );
+
+  // Handle share
+  const handleShare = useCallback(
+    (item) => {
+      if (navigator.share && item.url) {
+        navigator
+          .share({
+            title: item.title,
+            text: item.description,
+            url: item.url,
+          })
+          .catch((error) => console.error("Error sharing:", error));
+      } else if (item.url) {
+        navigator.clipboard
+          .writeText(item.url)
+          .then(() =>
+            toast({
+              title: t("common.copied"),
+              description: t("common.urlCopied"),
+            })
+          )
+          .catch((error) => console.error("Error copying:", error));
+      }
+    },
+    [t]
+  );
 
   if (isLoading) {
     return (
@@ -52,7 +97,7 @@ export function ReadLaterContent() {
       <div className="flex flex-col items-center justify-center h-96 text-center">
         <img
           src="/images/placeholder.webp"
-          alt="Boş"
+          alt="Empty"
           className="w-32 h-32 opacity-60 mb-4"
         />
         <span className="text-lg font-semibold mb-2">
@@ -112,6 +157,15 @@ export function ReadLaterContent() {
               </p>
             </div>
           </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+              size="sm"
+            >
+              {t("common.refresh")}
+            </Button>
+          </div>
         </header>
         {/* Main Content */}
         <main className="flex-1 w-full max-w-screen-2xl mx-auto px-2 md:px-6">
@@ -123,6 +177,8 @@ export function ReadLaterContent() {
                   video={item}
                   onToggleFavorite={toggleFavorite}
                   onToggleReadLater={toggleReadLater}
+                  onShare={handleShare}
+                  onClick={handleItemClick}
                 />
               ))}
             </div>

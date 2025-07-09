@@ -8,7 +8,7 @@ import { KeyboardShortcutsDialog } from "@/components/features/feed/dialogs/Keyb
 import { useFeedScreen } from "@/hooks/features/useFeedScreen";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Badge } from "@/components/core/ui/badge";
-import { toast } from "sonner";
+import { toast } from "@/components/core/ui/use-toast";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Newspaper, RssIcon, Youtube } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -112,7 +112,10 @@ export function FeedScreen() {
     (item) => {
       // İşlem yapmadan önce öğenin URL'sini kontrol et
       if (!item || !item.url) {
-        toast.error(t("errors.invalidUrl"));
+        toast({
+          title: t("errors.invalidUrl"),
+          variant: "destructive",
+        });
         return;
       }
 
@@ -136,15 +139,12 @@ export function FeedScreen() {
       toggleFavorite(item.id, newState);
 
       // Toast kullanarak geri bildirim
-      toast.success(
-        newState
+      toast({
+        title: newState
           ? t("feeds.addedToFavorites")
           : t("feeds.removedFromFavorites"),
-        {
-          position: "bottom-right",
-          duration: 2000,
-        }
-      );
+        variant: "success",
+      });
     },
     [toggleFavorite, t]
   );
@@ -158,15 +158,12 @@ export function FeedScreen() {
       toggleReadLater(item.id, newState);
 
       // Toast kullanarak geri bildirim
-      toast.success(
-        newState
+      toast({
+        title: newState
           ? t("feeds.addedToReadLater")
           : t("feeds.removedFromReadLater"),
-        {
-          position: "bottom-right",
-          duration: 2000,
-        }
-      );
+        variant: "success",
+      });
     },
     [toggleReadLater, t]
   );
@@ -180,9 +177,15 @@ export function FeedScreen() {
         await refreshAll();
       }
 
-      toast.success(t("feeds.refreshSuccess"));
+      toast({
+        title: t("feeds.refreshSuccess"),
+        variant: "success",
+      });
     } catch (error) {
-      toast.error(t("feeds.refreshError"));
+      toast({
+        title: t("feeds.refreshError"),
+        variant: "destructive",
+      });
       console.error("Yenileme hatası:", error);
     }
   }, [selectedFeed, refreshFeed, refreshAll, t]);

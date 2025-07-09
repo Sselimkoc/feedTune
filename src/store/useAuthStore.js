@@ -190,9 +190,9 @@ export const useAuthStore = create(
                 emailRedirectTo: `${window.location.origin}/auth/callback`,
                 // Disable auto confirmation
                 data: {
-                  confirmed_at: null
-                }
-              }
+                  confirmed_at: null,
+                },
+              },
             });
 
             if (error) throw error;
