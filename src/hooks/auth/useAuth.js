@@ -64,11 +64,14 @@ export function useAuthActions() {
 
   const handleSignUp = async (credentials) => {
     try {
-      const { success, error } = await signUp({
+      const { success, error, status } = await signUp({
         ...credentials,
         toastSuccess,
         toastError,
       });
+
+      // Artık yönlendirme yapmıyoruz, sadece sonucu döndürüyoruz
+      return { success, error, status };
     } catch (error) {
       console.error("Sign up error:", error);
       toast({

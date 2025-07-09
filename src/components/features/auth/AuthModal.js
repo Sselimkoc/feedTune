@@ -105,6 +105,9 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: registeredEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
 
       if (error) throw error;

@@ -188,7 +188,11 @@ export const useAuthStore = create(
               options: {
                 // Force email verification even if email confirmations are disabled in Supabase
                 emailRedirectTo: `${window.location.origin}/auth/callback`,
-              },
+                // Disable auto confirmation
+                data: {
+                  confirmed_at: null
+                }
+              }
             });
 
             if (error) throw error;
@@ -200,7 +204,9 @@ export const useAuthStore = create(
             }
 
             set({ isLoading: false });
-            toastSuccess?.(AUTH_MESSAGES.VERIFICATION_EMAIL_SENT);
+            toastSuccess?.("auth.verification.emailSent");
+
+            // Return success with new_signup status
             return { success: true, status: "new_signup" };
           } catch (error) {
             return handleAuthError(error, toastError);
