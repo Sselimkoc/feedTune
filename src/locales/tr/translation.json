@@ -72,6 +72,24 @@
     "removeSuccess": "Etkileşim başarıyla kaldırıldı",
     "removeError": "Etkileşim kaldırılamadı"
   },
+  "cleanup": {
+    "title": "Veri Temizleme",
+    "description": "Performansı optimize etmek için eski besleme verilerini temizle",
+    "success": "{{count}} öğe başarıyla {{action}}",
+    "error": "Temizleme işi çalıştırılamadı",
+    "statsError": "Temizleme istatistikleri alınamadı",
+    "deleted": "silindi",
+    "wouldDelete": "silinecekti",
+    "orphanedPreview": "{{count}} yetim etkileşim temizlenecekti",
+    "orphanedSuccess": "{{count}} yetim etkileşim başarıyla temizlendi",
+    "orphanedError": "Yetim etkileşimler temizlenemedi",
+    "olderThanDays": "{{days}} günden eski öğeleri sil",
+    "keepFavorites": "Favori öğeleri koru",
+    "keepReadLater": "Daha sonra oku öğelerini koru",
+    "dryRun": "Sadece önizleme (silme)",
+    "runCleanup": "Temizleme Çalıştır",
+    "previewCleanup": "Temizleme Önizle"
+  },
   "home": {
     "hero": {
       "subtitle": "Modern besleme okuyucunuz. Tüm içerikleriniz tek yerde.",

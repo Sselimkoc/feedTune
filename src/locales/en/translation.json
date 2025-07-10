@@ -72,6 +72,24 @@
     "removeSuccess": "Interaction removed successfully",
     "removeError": "Failed to remove interaction"
   },
+  "cleanup": {
+    "title": "Data Cleanup",
+    "description": "Clean up old feed data to optimize performance",
+    "success": "{{count}} items {{action}} successfully",
+    "error": "Failed to run cleanup job",
+    "statsError": "Failed to get cleanup statistics",
+    "deleted": "deleted",
+    "wouldDelete": "would be deleted",
+    "orphanedPreview": "{{count}} orphaned interactions would be cleaned",
+    "orphanedSuccess": "{{count}} orphaned interactions cleaned successfully",
+    "orphanedError": "Failed to clean orphaned interactions",
+    "olderThanDays": "Delete items older than {{days}} days",
+    "keepFavorites": "Keep favorite items",
+    "keepReadLater": "Keep read later items",
+    "dryRun": "Preview only (don't delete)",
+    "runCleanup": "Run Cleanup",
+    "previewCleanup": "Preview Cleanup"
+  },
   "home": {
     "hero": {
       "subtitle": "Your modern feed reader. All your content, one place.",
