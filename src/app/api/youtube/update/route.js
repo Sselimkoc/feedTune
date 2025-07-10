@@ -1,14 +1,58 @@
 import { NextResponse } from "next/server";
-import { updateYoutubeChannel } from "@/lib/youtube-service";
+import { youtubeService } from "@/lib/youtube/service";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
+import { supabase } from "@/lib/supabase";
+
+// Helper function to insert YouTube items
+async function insertYoutubeItems(feedId, items) {
+  try {
+    let insertedCount = 0;
+
+    for (const item of items) {
+      try {
+        const videoId = item.videoId || item.video_id;
+        if (!videoId) continue;
+
+        const { error } = await supabase.from("youtube_items").insert({
+          feed_id: feedId,
+          video_id: videoId,
+          title: item.title || "Untitled Video",
+          description: item.description
+            ? item.description.substring(0, 500)
+            : null,
+          thumbnail: item.thumbnail || item.image || null,
+          published_at:
+            item.pubDate || item.publishedAt || new Date().toISOString(),
+          channel_title: item.author || item.channelTitle || null,
+          url: item.link || `https://youtube.com/watch?v=${videoId}`,
+          created_at: new Date().toISOString(),
+        });
+
+        if (!error) {
+          insertedCount++;
+        } else if (error.code !== "23505") {
+          // Ignore duplicate key errors
+          console.error("Error inserting YouTube item:", error);
+        }
+      } catch (itemError) {
+        console.error("Error processing YouTube item:", itemError);
+      }
+    }
+
+    return insertedCount;
+  } catch (error) {
+    console.error("Error inserting YouTube items:", error);
+    throw error;
+  }
+}
 
 /**
- * YouTube kanal güncelleme endpoint'i
+ * YouTube channel update endpoint
  *
- * PUT isteği ile gelen feedId parametresi ile kanal bilgilerini günceller
+ * Updates a YouTube channel using the feedId parameter from the POST request.
  */
-export async function PUT(request) {
+export async function POST(request) {
   try {
     const cookieStore = await cookies();
     const supabase = createServerSupabaseClient();
@@ -24,9 +68,8 @@ export async function PUT(request) {
       );
     }
 
-    // İstek parametrelerini al
-    const { searchParams } = new URL(request.url);
-    const feedId = searchParams.get("feedId");
+    const body = await request.json();
+    const feedId = body.feedId;
 
     if (!feedId) {
       return NextResponse.json(
@@ -35,37 +78,22 @@ export async function PUT(request) {
       );
     }
 
-    // Check if the user has this feed
-    const { data: feed, error: feedError } = await supabase
-      .from("feeds")
-      .select("*")
-      .eq("id", feedId)
-      .eq("user_id", session.user.id)
-      .single();
-
-    if (feedError || !feed) {
-      return NextResponse.json(
-        {
-          error:
-            "You don't have permission to update this feed or the feed was not found",
-        },
-        { status: 403 }
-      );
-    }
-
-    // Update the YouTube channel
-    const result = await updateYoutubeChannel(feedId);
+    const result = await youtubeService.updateYoutubeChannel(
+      feedId,
+      session.user.id,
+      insertYoutubeItems
+    );
 
     return NextResponse.json({
       success: true,
       message: "YouTube channel updated successfully",
-      result: result,
+      feed: result,
     });
   } catch (error) {
     console.error("YouTube channel update error:", error);
 
     return NextResponse.json(
-      { error: error.message || "YouTube channel update failed" },
+      { error: error.message || "YouTube channel update error" },
       { status: 500 }
     );
   }

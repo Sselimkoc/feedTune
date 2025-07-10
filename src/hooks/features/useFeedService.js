@@ -19,6 +19,7 @@ async function fetchUserFeedIds(userId) {
   const { data, error } = await supabase
     .from("feeds")
     .select("id")
+    .eq("deleted_at", null)
     .eq("user_id", userId);
   if (error) throw error;
   return (data || []).map((feed) => feed.id);
@@ -123,6 +124,279 @@ async function fetchAllItemsWithInteractions(userId) {
   );
 }
 
+// Fetch feed data with delta update (only new items)
+async function fetchFeedDataWithDelta(feed) {
+  try {
+    const { id: feedId, url, type, last_updated } = feed;
+
+    console.log(`Fetching data for feed ${feedId} (${type}): ${url}`);
+
+    // Calculate time threshold for delta update (only fetch items newer than last update)
+    const deltaThreshold = last_updated
+      ? new Date(last_updated)
+      : new Date(Date.now() - 24 * 60 * 60 * 1000); // Default: last 24 hours
+
+    let newItems = [];
+    let feedMetadata = null;
+
+    // Fetch based on feed type
+    if (type === "rss" || type === "atom") {
+      const response = await fetch("/api/rss-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, skipCache: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`RSS fetch failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      feedMetadata = data.feed;
+
+      // Filter items newer than delta threshold
+      newItems = (data.items || []).filter((item) => {
+        const itemDate = new Date(item.pubDate || item.publishedAt);
+        return itemDate > deltaThreshold;
+      });
+    } else if (type === "youtube") {
+      // For YouTube feeds, use the RSS format
+      const rssUrl = url.includes("youtube.com/feeds/videos.xml")
+        ? url
+        : `https://www.youtube.com/feeds/videos.xml?channel_id=${extractChannelId(
+            url
+          )}`;
+
+      const response = await fetch("/api/rss-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: rssUrl, skipCache: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`YouTube RSS fetch failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      feedMetadata = data.feed;
+
+      // Filter items newer than delta threshold
+      newItems = (data.items || []).filter((item) => {
+        const itemDate = new Date(item.pubDate || item.publishedAt);
+        return itemDate > deltaThreshold;
+      });
+    }
+
+    console.log(`Found ${newItems.length} new items for feed ${feedId}`);
+
+    if (newItems.length === 0) {
+      // Update last_updated even if no new items
+      await updateFeedLastUpdated(feedId);
+      return { feedId, updatedItems: 0 };
+    }
+
+    // Insert new items into database
+    const insertedCount = await insertFeedItems(feedId, newItems, type);
+
+    // Update feed last_updated timestamp
+    await updateFeedLastUpdated(feedId);
+
+    return {
+      feedId,
+      updatedItems: insertedCount,
+      totalNewItems: newItems.length,
+    };
+  } catch (error) {
+    console.error(`Error fetching data for feed ${feed.id}:`, error);
+    throw error;
+  }
+}
+
+// Insert feed items into appropriate table
+async function insertFeedItems(feedId, items, feedType) {
+  try {
+    let insertedCount = 0;
+
+    if (feedType === "rss" || feedType === "atom") {
+      // Insert RSS items
+      for (const item of items) {
+        try {
+          const { error } = await supabase.from("rss_items").insert({
+            feed_id: feedId,
+            title: item.title || "Untitled",
+            description: item.description || item.summary || null,
+            content: item.content || null,
+            link: item.link || null,
+            published_at:
+              item.pubDate || item.publishedAt || new Date().toISOString(),
+            guid:
+              item.guid ||
+              item.link ||
+              `${feedId}-${Date.now()}-${Math.random()}`,
+            thumbnail: item.thumbnail || item.image || null,
+            author: item.author || null,
+            created_at: new Date().toISOString(),
+          });
+
+          if (!error) {
+            insertedCount++;
+          } else if (error.code !== "23505") {
+            // Ignore duplicate key errors
+            console.error("Error inserting RSS item:", error);
+          }
+        } catch (itemError) {
+          console.error("Error processing RSS item:", itemError);
+        }
+      }
+    } else if (feedType === "youtube") {
+      // Insert YouTube items
+      for (const item of items) {
+        try {
+          const videoId = extractVideoId(item.link);
+          if (!videoId) continue;
+
+          const { error } = await supabase.from("youtube_items").insert({
+            feed_id: feedId,
+            video_id: videoId,
+            title: item.title || "Untitled Video",
+            description: item.description
+              ? item.description.substring(0, 500)
+              : null,
+            thumbnail: item.thumbnail || item.image || null,
+            published_at:
+              item.pubDate || item.publishedAt || new Date().toISOString(),
+            channel_title: item.author || null,
+            url: item.link || `https://youtube.com/watch?v=${videoId}`,
+            created_at: new Date().toISOString(),
+          });
+
+          if (!error) {
+            insertedCount++;
+          } else if (error.code !== "23505") {
+            // Ignore duplicate key errors
+            console.error("Error inserting YouTube item:", error);
+          }
+        } catch (itemError) {
+          console.error("Error processing YouTube item:", itemError);
+        }
+      }
+    }
+
+    return insertedCount;
+  } catch (error) {
+    console.error("Error inserting feed items:", error);
+    throw error;
+  }
+}
+
+// Update feed last_updated timestamp
+async function updateFeedLastUpdated(feedId) {
+  try {
+    const { error } = await supabase
+      .from("feeds")
+      .update({ last_updated: new Date().toISOString() })
+      .eq("id", feedId);
+
+    if (error) {
+      console.error("Error updating feed last_updated:", error);
+    }
+  } catch (error) {
+    console.error("Error in updateFeedLastUpdated:", error);
+  }
+}
+
+// Helper function to extract YouTube channel ID from URL
+function extractChannelId(url) {
+  const patterns = [
+    /youtube\.com\/channel\/([a-zA-Z0-9_-]+)/,
+    /youtube\.com\/c\/([a-zA-Z0-9_-]+)/,
+    /youtube\.com\/user\/([a-zA-Z0-9_-]+)/,
+    /youtube\.com\/@([a-zA-Z0-9_-]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+
+  return null;
+}
+
+// Helper function to extract YouTube video ID from URL
+function extractVideoId(url) {
+  const patterns = [
+    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/,
+    /youtu\.be\/([a-zA-Z0-9_-]+)/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+
+  return null;
+}
+
+// URL normalization utility function
+function normalizeUrl(url) {
+  try {
+    if (!url) return "";
+
+    // Clean URL
+    let normalizedUrl = url.trim();
+
+    // Add protocol if missing
+    if (
+      !normalizedUrl.startsWith("http://") &&
+      !normalizedUrl.startsWith("https://")
+    ) {
+      normalizedUrl = "https://" + normalizedUrl;
+    }
+
+    // Convert to URL object to standardize
+    const urlObj = new URL(normalizedUrl);
+
+    // Remove trailing slash (optional)
+    let finalUrl = urlObj.toString();
+    if (finalUrl.endsWith("/") && !urlObj.pathname.endsWith("//")) {
+      finalUrl = finalUrl.slice(0, -1);
+    }
+
+    return finalUrl;
+  } catch (error) {
+    console.warn("URL normalization error:", error);
+    // Return original URL if error
+    return url;
+  }
+}
+
+// Parse feed metadata using API
+async function parseFeedMetadata(url, type) {
+  try {
+    const response = await fetch("/api/rss-preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, skipCache: true }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Feed parsing failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+      title: data.feed?.title || "",
+      description: data.feed?.description || "",
+      icon: data.feed?.icon || data.feed?.image || null,
+      items: data.items || [],
+    };
+  } catch (error) {
+    console.error("Feed parsing error:", error);
+    throw error;
+  }
+}
+
 export function useFeedService() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -145,6 +419,7 @@ export function useFeedService() {
           `
           )
           .eq("user_id", user.id)
+          .eq("deleted_at", null)
           .order("created_at", { ascending: false });
 
         if (feedsError) {
@@ -161,6 +436,95 @@ export function useFeedService() {
     },
     enabled: !!user,
   });
+
+  // Function to fetch new feed data using existing feeds data
+  const fetchNewFeedData = useCallback(async () => {
+    try {
+      if (!user) {
+        console.warn("fetchNewFeedData: user is required");
+        return;
+      }
+
+      const feeds = feedsQuery.data;
+      if (!feeds || feeds.length === 0) {
+        console.log("No feeds available for update");
+        return;
+      }
+
+      console.log(`Updating ${feeds.length} feeds for user ${user.id}`);
+
+      // Filter only active feeds and prepare for delta update
+      const activeFeeds = feeds.filter((feed) => !feed.deleted_at);
+
+      if (activeFeeds.length === 0) {
+        console.log("No active feeds to update");
+        return;
+      }
+
+      // Fetch new data for each feed with delta update
+      const fetchPromises = activeFeeds.map((feed) =>
+        fetchFeedDataWithDelta(feed)
+      );
+
+      const results = await Promise.allSettled(fetchPromises);
+
+      // Process results
+      let totalUpdated = 0;
+      let totalErrors = 0;
+
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          totalUpdated += result.value.updatedItems || 0;
+          console.log(
+            `Feed ${activeFeeds[index].id}: ${result.value.updatedItems} items updated`
+          );
+        } else {
+          totalErrors++;
+          console.error(`Feed ${activeFeeds[index].id} failed:`, result.reason);
+        }
+      });
+
+      console.log(
+        `Feed update completed: ${totalUpdated} items updated, ${totalErrors} errors`
+      );
+
+      // Invalidate queries to refresh UI with new data
+      if (totalUpdated > 0) {
+        await queryClient.invalidateQueries(["items", user.id]);
+        await queryClient.invalidateQueries(["favorites", user.id]);
+        await queryClient.invalidateQueries(["read_later", user.id]);
+      }
+
+      return {
+        success: true,
+        totalUpdated,
+        totalErrors,
+        feedsProcessed: activeFeeds.length,
+      };
+    } catch (error) {
+      console.error("Error fetching new feed data:", error);
+      throw error;
+    }
+  }, [user, feedsQuery.data, queryClient]);
+
+  // Auto-fetch new feed data when user logs in and feeds are loaded
+  useEffect(() => {
+    if (
+      user &&
+      feedsQuery.data &&
+      feedsQuery.data.length > 0 &&
+      !feedsQuery.isLoading
+    ) {
+      fetchNewFeedData().catch((error) => {
+        console.error("Error in auto-fetch:", error);
+        toast({
+          title: t("common.error"),
+          description: t("feeds.fetchError"),
+          variant: "destructive",
+        });
+      });
+    }
+  }, [user, feedsQuery.data, feedsQuery.isLoading, fetchNewFeedData, toast, t]);
 
   // Fetch all items (rss + youtube)
   const itemsQuery = useQuery({
@@ -357,25 +721,79 @@ export function useFeedService() {
     }
   };
 
-  // Add feed mutation
+  // Enhanced Add feed mutation with full business logic
   const addFeedMutation = useMutation({
-    mutationFn: async (feedData) => {
+    mutationFn: async ({ url, type = "rss", extraData = {} }) => {
       if (!user) throw new Error("User not authenticated");
 
-      const { data, error } = await supabase
+      // Validation
+      if (!url) throw new Error("Feed URL is required");
+      if (!type || !["rss", "atom", "youtube"].includes(type)) {
+        throw new Error("Valid feed type is required (rss, atom, youtube)");
+      }
+
+      // URL normalization
+      const normalizedUrl = normalizeUrl(url);
+
+      // YouTube RSS feed check
+      let feedType = type;
+      if (normalizedUrl.includes("youtube.com/feeds/videos.xml")) {
+        feedType = "youtube";
+      }
+
+      // Get feed metadata
+      let feedInfo = {};
+      try {
+        feedInfo = await parseFeedMetadata(normalizedUrl, feedType);
+
+        // Improve YouTube feed title
+        if (feedType === "youtube" && !extraData.title && feedInfo.title) {
+          feedInfo.title = feedInfo.title.replace("YouTube", "").trim();
+        }
+      } catch (error) {
+        console.error("Feed parsing error:", error);
+        throw new Error(`Failed to parse ${feedType} feed: ${error.message}`);
+      }
+
+      // Prepare feed data
+      const feedData = {
+        url: normalizedUrl,
+        user_id: user.id,
+        type: feedType,
+        title: extraData.title || feedInfo.title || normalizedUrl,
+        description: extraData.description || feedInfo.description || "",
+        icon: extraData.icon || feedInfo.icon || null,
+        category_id: extraData.category_id || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Add feed to database
+      const { data: newFeed, error } = await supabase
         .from("feeds")
-        .insert({
-          ...feedData,
-          user_id: user.id,
-        })
+        .insert(feedData)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+
+      // If feed is new and has items, sync initial content
+      if (newFeed && feedInfo.items && feedInfo.items.length > 0) {
+        try {
+          // Take only first 10 items for initial sync
+          const initialItems = feedInfo.items.slice(0, 10);
+          await insertFeedItems(newFeed.id, initialItems, feedType);
+        } catch (syncError) {
+          console.error("Error syncing initial feed content:", syncError);
+          // Don't throw error - feed creation should still succeed
+        }
+      }
+
+      return newFeed;
     },
-    onSuccess: () => {
+    onSuccess: (newFeed) => {
       queryClient.invalidateQueries(["feeds", user.id]);
+      queryClient.invalidateQueries(["items", user.id]);
       toast({
         title: t("common.success"),
         description: t("feeds.addSuccess"),
@@ -385,7 +803,7 @@ export function useFeedService() {
       console.error("Error adding feed:", error);
       toast({
         title: t("common.error"),
-        description: t("feeds.addError"),
+        description: error.message || t("feeds.addError"),
         variant: "destructive",
       });
     },
@@ -495,6 +913,12 @@ export function useFeedService() {
     // Actions
     refreshAllFeeds,
     syncFeed,
+    fetchNewFeedData, // Add the new feed data fetching function
+
+    // Utility functions for external use
+    insertYoutubeItems: (feedId, items) =>
+      insertFeedItems(feedId, items, "youtube"),
+    insertRssItems: (feedId, items) => insertFeedItems(feedId, items, "rss"),
 
     // Invalidate queries
     invalidateFeedsQuery: () =>

@@ -14,7 +14,6 @@ import { Input } from "@/components/core/ui/input";
 import { Label } from "@/components/core/ui/label";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuthStore } from "@/store/useAuthStore";
-import { feedService } from "@/services/feedService";
 import { Card, CardContent } from "@/components/core/ui/card";
 import {
   Rss,

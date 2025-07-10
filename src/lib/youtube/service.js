@@ -7,7 +7,7 @@
  */
 import { supabase } from "@/lib/supabase";
 import axios from "axios";
-import { feedService } from "@/services/feedService";
+// Note: insertYoutubeItems will be passed as parameter to avoid circular dependency
 import Parser from "rss-parser";
 
 // Import utilities
@@ -373,7 +373,7 @@ class YouTubeService {
    * @param {string} userId - User ID
    * @returns {Promise<{success: boolean, count: number, error?: string}>}
    */
-  async syncVideos(feedId, channelId, userId) {
+  async syncVideos(feedId, channelId, userId, insertYoutubeItems) {
     if (!feedId || !channelId) {
       console.error("Invalid feedId or channelId:", { feedId, channelId });
       return { success: false, error: "Invalid feedId or channelId" };
@@ -462,10 +462,10 @@ class YouTubeService {
 
         // Add to database
         console.log(`Adding ${formattedItems.length} videos`);
-        const result = await feedService.insertYoutubeItems(
-          feedId,
-          formattedItems
-        );
+        if (!insertYoutubeItems) {
+          throw new Error("insertYoutubeItems function is required");
+        }
+        const result = await insertYoutubeItems(feedId, formattedItems);
 
         console.log("YouTube video sync result:", result);
         return result;
@@ -794,7 +794,7 @@ class YouTubeService {
    * @returns {Promise<object>} - The newly created feed
    * @throws {YouTubeError} - If channel cannot be added
    */
-  async addYoutubeChannel(channelId, userId) {
+  async addYoutubeChannel(channelId, userId, insertYoutubeItems) {
     if (!channelId) {
       throw new YouTubeError(
         "Channel ID or URL is required",
@@ -863,7 +863,9 @@ class YouTubeService {
       }
 
       // Sync videos after adding the channel
-      await this.syncVideos(feed.id, channelId, userId);
+      if (insertYoutubeItems) {
+        await this.syncVideos(feed.id, channelId, userId, insertYoutubeItems);
+      }
 
       return feed;
     } catch (error) {
@@ -890,7 +892,7 @@ class YouTubeService {
    * @returns {Promise<object>} - The updated feed
    * @throws {YouTubeError} - If channel cannot be updated
    */
-  async updateYoutubeChannel(feedId, userId) {
+  async updateYoutubeChannel(feedId, userId, insertYoutubeItems) {
     if (!feedId) {
       throw new YouTubeError("Feed ID is required", "MISSING_PARAMETER");
     }
@@ -913,7 +915,14 @@ class YouTubeService {
       }
 
       // Sync videos
-      await this.syncVideos(feedId, feed.channel_id, userId);
+      if (insertYoutubeItems) {
+        await this.syncVideos(
+          feedId,
+          feed.channel_id,
+          userId,
+          insertYoutubeItems
+        );
+      }
 
       return feed;
     } catch (error) {
