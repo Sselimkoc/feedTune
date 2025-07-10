@@ -27,6 +27,8 @@
     "readLater": "Read Later",
     "deleteSuccess": "Feed deleted successfully",
     "deleteError": "Failed to delete feed",
+    "updateSuccess": "{{updated}} new items fetched, {{skipped}} duplicates skipped",
+    "fetchError": "Failed to fetch new feed data",
     "empty": {
       "title": "No Feeds Yet",
       "description": "Add your first feed to get started"

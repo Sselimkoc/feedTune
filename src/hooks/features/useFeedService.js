@@ -124,17 +124,27 @@ async function fetchAllItemsWithInteractions(userId) {
   );
 }
 
-// Fetch feed data with delta update (only new items)
+// Enhanced delta update with content fingerprinting and duplicate detection
 async function fetchFeedDataWithDelta(feed) {
   try {
     const { id: feedId, url, type, last_updated } = feed;
 
-    console.log(`Fetching data for feed ${feedId} (${type}): ${url}`);
+    console.log(`[Delta Update] Processing feed ${feedId} (${type}): ${url}`);
 
-    // Calculate time threshold for delta update (only fetch items newer than last update)
-    const deltaThreshold = last_updated
-      ? new Date(last_updated)
-      : new Date(Date.now() - 24 * 60 * 60 * 1000); // Default: last 24 hours
+    // Get existing items for duplicate detection
+    const existingItems = await getExistingFeedItems(feedId, type);
+    const existingGuids = new Set(
+      existingItems.map((item) => item.guid || item.video_id)
+    );
+    const existingTitles = new Set(
+      existingItems.map((item) => item.title?.toLowerCase())
+    );
+
+    // Calculate time threshold for delta update
+    const deltaThreshold = calculateDeltaThreshold(last_updated);
+
+    console.log(`[Delta Update] Threshold: ${deltaThreshold.toISOString()}`);
+    console.log(`[Delta Update] Existing items: ${existingItems.length}`);
 
     let newItems = [];
     let feedMetadata = null;
@@ -154,10 +164,9 @@ async function fetchFeedDataWithDelta(feed) {
       const data = await response.json();
       feedMetadata = data.feed;
 
-      // Filter items newer than delta threshold
+      // Enhanced filtering with multiple criteria
       newItems = (data.items || []).filter((item) => {
-        const itemDate = new Date(item.pubDate || item.publishedAt);
-        return itemDate > deltaThreshold;
+        return isNewItem(item, existingGuids, existingTitles, deltaThreshold);
       });
     } else if (type === "youtube") {
       // For YouTube feeds, use the RSS format
@@ -180,129 +189,388 @@ async function fetchFeedDataWithDelta(feed) {
       const data = await response.json();
       feedMetadata = data.feed;
 
-      // Filter items newer than delta threshold
+      // Enhanced filtering for YouTube items
       newItems = (data.items || []).filter((item) => {
-        const itemDate = new Date(item.pubDate || item.publishedAt);
-        return itemDate > deltaThreshold;
+        const videoId = extractVideoId(item.link);
+        return (
+          videoId &&
+          isNewYouTubeItem(
+            item,
+            videoId,
+            existingGuids,
+            existingTitles,
+            deltaThreshold
+          )
+        );
       });
     }
 
-    console.log(`Found ${newItems.length} new items for feed ${feedId}`);
+    console.log(
+      `[Delta Update] Found ${newItems.length} new items after filtering`
+    );
 
     if (newItems.length === 0) {
       // Update last_updated even if no new items
       await updateFeedLastUpdated(feedId);
-      return { feedId, updatedItems: 0 };
+      return { feedId, updatedItems: 0, skippedDuplicates: 0 };
     }
 
-    // Insert new items into database
-    const insertedCount = await insertFeedItems(feedId, newItems, type);
+    // Insert new items with enhanced duplicate detection
+    const insertResult = await insertFeedItemsWithDuplicateDetection(
+      feedId,
+      newItems,
+      type
+    );
 
-    // Update feed last_updated timestamp
-    await updateFeedLastUpdated(feedId);
+    // Update feed last_updated timestamp and metadata
+    await updateFeedMetadata(feedId, feedMetadata);
 
     return {
       feedId,
-      updatedItems: insertedCount,
+      updatedItems: insertResult.inserted,
+      skippedDuplicates: insertResult.skipped,
       totalNewItems: newItems.length,
     };
   } catch (error) {
-    console.error(`Error fetching data for feed ${feed.id}:`, error);
+    console.error(`[Delta Update] Error processing feed ${feed.id}:`, error);
     throw error;
   }
 }
 
-// Insert feed items into appropriate table
-async function insertFeedItems(feedId, items, feedType) {
+// Get existing items for duplicate detection
+async function getExistingFeedItems(feedId, feedType) {
+  try {
+    const table = feedType === "youtube" ? "youtube_items" : "rss_items";
+    const { data, error } = await supabase
+      .from(table)
+      .select("id, title, guid, video_id, published_at, created_at")
+      .eq("feed_id", feedId)
+      .order("published_at", { ascending: false })
+      .limit(100); // Limit to recent items for performance
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching existing items:", error);
+    return [];
+  }
+}
+
+// Calculate smart delta threshold
+function calculateDeltaThreshold(lastUpdated) {
+  if (!lastUpdated) {
+    // If never updated, get items from last 7 days
+    return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  }
+
+  const lastUpdateDate = new Date(lastUpdated);
+  const now = new Date();
+  const timeSinceLastUpdate = now - lastUpdateDate;
+
+  // If last update was recent (< 1 hour), use last update time
+  if (timeSinceLastUpdate < 60 * 60 * 1000) {
+    return lastUpdateDate;
+  }
+
+  // If last update was long ago (> 24 hours), get items from last 24 hours
+  if (timeSinceLastUpdate > 24 * 60 * 60 * 1000) {
+    return new Date(Date.now() - 24 * 60 * 60 * 1000);
+  }
+
+  // Otherwise, use last update time
+  return lastUpdateDate;
+}
+
+// Enhanced item filtering with multiple criteria
+function isNewItem(item, existingGuids, existingTitles, deltaThreshold) {
+  // Check publish date
+  const itemDate = new Date(item.pubDate || item.publishedAt || Date.now());
+  const isRecent = itemDate > deltaThreshold;
+
+  // Check GUID/ID for exact duplicates
+  const guid = item.guid || item.link || item.id;
+  const hasUniqueGuid = guid ? !existingGuids.has(guid) : true;
+
+  // Check title for near-duplicates
+  const title = item.title?.toLowerCase();
+  const hasUniqueTitle = title ? !existingTitles.has(title) : true;
+
+  // Content fingerprinting for better duplicate detection
+  const contentFingerprint = createContentFingerprint(item);
+  const hasUniqueContent = !existingTitles.has(contentFingerprint);
+
+  return isRecent && hasUniqueGuid && hasUniqueTitle && hasUniqueContent;
+}
+
+// Enhanced YouTube item filtering
+function isNewYouTubeItem(
+  item,
+  videoId,
+  existingGuids,
+  existingTitles,
+  deltaThreshold
+) {
+  // Check if video ID already exists
+  if (existingGuids.has(videoId)) {
+    return false;
+  }
+
+  // Use general item filtering
+  return isNewItem(item, existingGuids, existingTitles, deltaThreshold);
+}
+
+// Create content fingerprint for better duplicate detection
+function createContentFingerprint(item) {
+  const title = item.title
+    ?.toLowerCase()
+    .replace(/[^\w\s]/g, "")
+    .trim();
+  const description = item.description?.toLowerCase().substring(0, 100);
+  return `${title}-${description}`.substring(0, 100);
+}
+
+// Enhanced item insertion with batch processing and duplicate detection
+async function insertFeedItemsWithDuplicateDetection(feedId, items, feedType) {
   try {
     let insertedCount = 0;
+    let skippedCount = 0;
 
-    if (feedType === "rss" || feedType === "atom") {
-      // Insert RSS items
-      for (const item of items) {
-        try {
-          const { error } = await supabase.from("rss_items").insert({
-            feed_id: feedId,
-            title: item.title || "Untitled",
-            description: item.description || item.summary || null,
-            content: item.content || null,
-            link: item.link || null,
-            published_at:
-              item.pubDate || item.publishedAt || new Date().toISOString(),
-            guid:
-              item.guid ||
-              item.link ||
-              `${feedId}-${Date.now()}-${Math.random()}`,
-            thumbnail: item.thumbnail || item.image || null,
-            author: item.author || null,
-            created_at: new Date().toISOString(),
-          });
+    // Process items in batches for better performance
+    const BATCH_SIZE = 10;
 
-          if (!error) {
-            insertedCount++;
-          } else if (error.code !== "23505") {
-            // Ignore duplicate key errors
-            console.error("Error inserting RSS item:", error);
-          }
-        } catch (itemError) {
-          console.error("Error processing RSS item:", itemError);
-        }
-      }
-    } else if (feedType === "youtube") {
-      // Insert YouTube items
-      for (const item of items) {
-        try {
-          const videoId = extractVideoId(item.link);
-          if (!videoId) continue;
+    for (let i = 0; i < items.length; i += BATCH_SIZE) {
+      const batch = items.slice(i, i + BATCH_SIZE);
 
-          const { error } = await supabase.from("youtube_items").insert({
-            feed_id: feedId,
-            video_id: videoId,
-            title: item.title || "Untitled Video",
-            description: item.description
-              ? item.description.substring(0, 500)
-              : null,
-            thumbnail: item.thumbnail || item.image || null,
-            published_at:
-              item.pubDate || item.publishedAt || new Date().toISOString(),
-            channel_title: item.author || null,
-            url: item.link || `https://youtube.com/watch?v=${videoId}`,
-            created_at: new Date().toISOString(),
-          });
-
-          if (!error) {
-            insertedCount++;
-          } else if (error.code !== "23505") {
-            // Ignore duplicate key errors
-            console.error("Error inserting YouTube item:", error);
-          }
-        } catch (itemError) {
-          console.error("Error processing YouTube item:", itemError);
-        }
+      if (feedType === "rss" || feedType === "atom") {
+        // Process RSS items batch
+        const result = await processBatchRssItems(feedId, batch);
+        insertedCount += result.inserted;
+        skippedCount += result.skipped;
+      } else if (feedType === "youtube") {
+        // Process YouTube items batch
+        const result = await processBatchYouTubeItems(feedId, batch);
+        insertedCount += result.inserted;
+        skippedCount += result.skipped;
       }
     }
 
-    return insertedCount;
+    console.log(
+      `[Delta Update] Inserted: ${insertedCount}, Skipped: ${skippedCount}`
+    );
+    return { inserted: insertedCount, skipped: skippedCount };
   } catch (error) {
     console.error("Error inserting feed items:", error);
     throw error;
   }
 }
 
-// Update feed last_updated timestamp
-async function updateFeedLastUpdated(feedId) {
+// Process RSS items in batch
+async function processBatchRssItems(feedId, items) {
+  let insertedCount = 0;
+  let skippedCount = 0;
+
+  // Prepare batch data
+  const batchData = [];
+  const guids = items.map(
+    (item) =>
+      item.guid || item.link || `${feedId}-${Date.now()}-${Math.random()}`
+  );
+
+  // Check for existing items in batch
+  const { data: existingItems } = await supabase
+    .from("rss_items")
+    .select("guid")
+    .eq("feed_id", feedId)
+    .in("guid", guids);
+
+  const existingGuids = new Set(existingItems?.map((item) => item.guid) || []);
+
+  // Prepare items for insertion
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const guid = guids[i];
+
+    if (existingGuids.has(guid)) {
+      skippedCount++;
+      continue;
+    }
+
+    batchData.push({
+      feed_id: feedId,
+      title: item.title || "Untitled",
+      description: item.description || item.summary || null,
+      content: item.content || null,
+      link: item.link || null,
+      published_at:
+        item.pubDate || item.publishedAt || new Date().toISOString(),
+      guid: guid,
+      thumbnail: item.thumbnail || item.image || null,
+      author: item.author || null,
+      created_at: new Date().toISOString(),
+    });
+  }
+
+  // Batch insert
+  if (batchData.length > 0) {
+    const { data, error } = await supabase
+      .from("rss_items")
+      .insert(batchData)
+      .select("id");
+
+    if (error) {
+      console.error("Batch insert error:", error);
+      // Fallback to individual inserts
+      for (const itemData of batchData) {
+        try {
+          const { error: individualError } = await supabase
+            .from("rss_items")
+            .insert(itemData);
+
+          if (!individualError) {
+            insertedCount++;
+          } else if (individualError.code === "23505") {
+            skippedCount++;
+          }
+        } catch (individualErr) {
+          console.error("Individual insert error:", individualErr);
+        }
+      }
+    } else {
+      insertedCount += data?.length || 0;
+    }
+  }
+
+  return { inserted: insertedCount, skipped: skippedCount };
+}
+
+// Process YouTube items in batch
+async function processBatchYouTubeItems(feedId, items) {
+  let insertedCount = 0;
+  let skippedCount = 0;
+
+  // Prepare batch data
+  const batchData = [];
+  const videoIds = items
+    .map((item) => extractVideoId(item.link))
+    .filter(Boolean);
+
+  // Check for existing items in batch
+  const { data: existingItems } = await supabase
+    .from("youtube_items")
+    .select("video_id")
+    .eq("feed_id", feedId)
+    .in("video_id", videoIds);
+
+  const existingVideoIds = new Set(
+    existingItems?.map((item) => item.video_id) || []
+  );
+
+  // Prepare items for insertion
+  for (const item of items) {
+    const videoId = extractVideoId(item.link);
+    if (!videoId) {
+      skippedCount++;
+      continue;
+    }
+
+    if (existingVideoIds.has(videoId)) {
+      skippedCount++;
+      continue;
+    }
+
+    batchData.push({
+      feed_id: feedId,
+      video_id: videoId,
+      title: item.title || "Untitled Video",
+      description: item.description ? item.description.substring(0, 500) : null,
+      thumbnail: item.thumbnail || item.image || null,
+      published_at:
+        item.pubDate || item.publishedAt || new Date().toISOString(),
+      channel_title: item.author || null,
+      url: item.link || `https://youtube.com/watch?v=${videoId}`,
+      created_at: new Date().toISOString(),
+    });
+  }
+
+  // Batch insert
+  if (batchData.length > 0) {
+    const { data, error } = await supabase
+      .from("youtube_items")
+      .insert(batchData)
+      .select("id");
+
+    if (error) {
+      console.error("Batch insert error:", error);
+      // Fallback to individual inserts
+      for (const itemData of batchData) {
+        try {
+          const { error: individualError } = await supabase
+            .from("youtube_items")
+            .insert(itemData);
+
+          if (!individualError) {
+            insertedCount++;
+          } else if (individualError.code === "23505") {
+            skippedCount++;
+          }
+        } catch (individualErr) {
+          console.error("Individual insert error:", individualErr);
+        }
+      }
+    } else {
+      insertedCount += data?.length || 0;
+    }
+  }
+
+  return { inserted: insertedCount, skipped: skippedCount };
+}
+
+// Update feed metadata and last_updated timestamp
+async function updateFeedMetadata(feedId, feedMetadata) {
   try {
+    const updateData = {
+      last_updated: new Date().toISOString(),
+    };
+
+    // Update feed metadata if available
+    if (feedMetadata) {
+      if (feedMetadata.title) {
+        updateData.title = feedMetadata.title;
+      }
+      if (feedMetadata.description) {
+        updateData.description = feedMetadata.description;
+      }
+      if (feedMetadata.icon || feedMetadata.image) {
+        updateData.icon = feedMetadata.icon || feedMetadata.image;
+      }
+    }
+
     const { error } = await supabase
       .from("feeds")
-      .update({ last_updated: new Date().toISOString() })
+      .update(updateData)
       .eq("id", feedId);
 
     if (error) {
-      console.error("Error updating feed last_updated:", error);
+      console.error("Error updating feed metadata:", error);
     }
   } catch (error) {
-    console.error("Error in updateFeedLastUpdated:", error);
+    console.error("Error in updateFeedMetadata:", error);
   }
+}
+
+// Legacy insertFeedItems function - now uses enhanced version
+async function insertFeedItems(feedId, items, feedType) {
+  const result = await insertFeedItemsWithDuplicateDetection(
+    feedId,
+    items,
+    feedType
+  );
+  return result.inserted;
+}
+
+// Legacy updateFeedLastUpdated function - now uses enhanced version
+async function updateFeedLastUpdated(feedId) {
+  await updateFeedMetadata(feedId, null);
 }
 
 // Helper function to extract YouTube channel ID from URL
@@ -468,24 +736,30 @@ export function useFeedService() {
 
       const results = await Promise.allSettled(fetchPromises);
 
-      // Process results
+      // Process results with enhanced reporting
       let totalUpdated = 0;
+      let totalSkipped = 0;
       let totalErrors = 0;
 
       results.forEach((result, index) => {
         if (result.status === "fulfilled") {
-          totalUpdated += result.value.updatedItems || 0;
+          const { updatedItems, skippedDuplicates } = result.value;
+          totalUpdated += updatedItems || 0;
+          totalSkipped += skippedDuplicates || 0;
           console.log(
-            `Feed ${activeFeeds[index].id}: ${result.value.updatedItems} items updated`
+            `[Delta Update] Feed ${activeFeeds[index].id}: ${updatedItems} new items, ${skippedDuplicates} duplicates skipped`
           );
         } else {
           totalErrors++;
-          console.error(`Feed ${activeFeeds[index].id} failed:`, result.reason);
+          console.error(
+            `[Delta Update] Feed ${activeFeeds[index].id} failed:`,
+            result.reason
+          );
         }
       });
 
       console.log(
-        `Feed update completed: ${totalUpdated} items updated, ${totalErrors} errors`
+        `[Delta Update] Completed: ${totalUpdated} new items, ${totalSkipped} duplicates skipped, ${totalErrors} errors`
       );
 
       // Invalidate queries to refresh UI with new data
@@ -493,11 +767,21 @@ export function useFeedService() {
         await queryClient.invalidateQueries(["items", user.id]);
         await queryClient.invalidateQueries(["favorites", user.id]);
         await queryClient.invalidateQueries(["read_later", user.id]);
+
+        // Show success toast
+        toast({
+          title: t("common.success"),
+          description: t("feeds.updateSuccess", {
+            updated: totalUpdated,
+            skipped: totalSkipped,
+          }),
+        });
       }
 
       return {
         success: true,
         totalUpdated,
+        totalSkipped,
         totalErrors,
         feedsProcessed: activeFeeds.length,
       };

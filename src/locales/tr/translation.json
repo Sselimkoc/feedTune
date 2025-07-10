@@ -27,6 +27,8 @@
     "readLater": "Daha Sonra Oku",
     "deleteSuccess": "Besleme başarıyla silindi",
     "deleteError": "Besleme silinemedi",
+    "updateSuccess": "{{updated}} yeni içerik alındı, {{skipped}} tekrar atlandi",
+    "fetchError": "Yeni besleme verisi alınamadı",
     "empty": {
       "title": "Henüz Besleme Yok",
       "description": "Başlamak için ilk beslemenizi ekleyin"
