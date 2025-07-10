@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { parseYoutubeChannel } from "@/lib/youtube-service";
+import { parseYoutubeChannel } from "@/lib/youtube/service";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 

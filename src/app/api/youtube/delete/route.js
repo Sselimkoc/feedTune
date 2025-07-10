@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteYoutubeChannel } from "@/lib/youtube-service";
+import { deleteYoutubeChannel } from "@/lib/youtube/service";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 
