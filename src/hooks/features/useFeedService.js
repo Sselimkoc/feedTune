@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/auth/useAuth";
@@ -19,7 +19,7 @@ async function fetchUserFeedIds(userId) {
   const { data, error } = await supabase
     .from("feeds")
     .select("id")
-    .eq("deleted_at", null)
+    .is("deleted_at", null)
     .eq("user_id", userId);
   if (error) throw error;
   return (data || []).map((feed) => feed.id);
@@ -133,11 +133,19 @@ async function fetchFeedDataWithDelta(feed) {
 
     // Get existing items for duplicate detection
     const existingItems = await getExistingFeedItems(feedId, type);
+
+    // Create sets for duplicate detection based on feed type
     const existingGuids = new Set(
-      existingItems.map((item) => item.guid || item.video_id)
+      existingItems
+        .map((item) => (type === "youtube" ? item.video_id : item.guid))
+        .filter(Boolean) // Remove any null/undefined values
     );
     const existingTitles = new Set(
-      existingItems.map((item) => item.title?.toLowerCase())
+      existingItems.map((item) => item.title?.toLowerCase()).filter(Boolean)
+    );
+
+    console.log(
+      `[Delta Update] Feed type: ${type}, Existing items: ${existingItems.length}, Existing IDs: ${existingGuids.size}`
     );
 
     // Calculate time threshold for delta update
@@ -162,10 +170,19 @@ async function fetchFeedDataWithDelta(feed) {
       }
 
       const data = await response.json();
+
+      // Add validation for the response data
+      if (!data || typeof data !== "object") {
+        console.error("[Delta Update] Invalid response data:", data);
+        throw new Error("Invalid response data from RSS API");
+      }
+
       feedMetadata = data.feed;
 
       // Enhanced filtering with multiple criteria
-      newItems = (data.items || []).filter((item) => {
+      // Ensure data.items is an array before filtering
+      const items = Array.isArray(data.items) ? data.items : [];
+      newItems = items.filter((item) => {
         return isNewItem(item, existingGuids, existingTitles, deltaThreshold);
       });
     } else if (type === "youtube") {
@@ -187,10 +204,19 @@ async function fetchFeedDataWithDelta(feed) {
       }
 
       const data = await response.json();
+
+      // Add validation for the response data
+      if (!data || typeof data !== "object") {
+        console.error("[Delta Update] Invalid YouTube response data:", data);
+        throw new Error("Invalid response data from YouTube RSS API");
+      }
+
       feedMetadata = data.feed;
 
       // Enhanced filtering for YouTube items
-      newItems = (data.items || []).filter((item) => {
+      // Ensure data.items is an array before filtering
+      const items = Array.isArray(data.items) ? data.items : [];
+      newItems = items.filter((item) => {
         const videoId = extractVideoId(item.link);
         return (
           videoId &&
@@ -241,9 +267,16 @@ async function fetchFeedDataWithDelta(feed) {
 async function getExistingFeedItems(feedId, feedType) {
   try {
     const table = feedType === "youtube" ? "youtube_items" : "rss_items";
+
+    // Select appropriate columns based on feed type
+    const selectColumns =
+      feedType === "youtube"
+        ? "id, title, video_id, published_at, created_at"
+        : "id, title, guid, published_at, created_at";
+
     const { data, error } = await supabase
       .from(table)
-      .select("id, title, guid, video_id, published_at, created_at")
+      .select(selectColumns)
       .eq("feed_id", feedId)
       .order("published_at", { ascending: false })
       .limit(100); // Limit to recent items for performance
@@ -665,11 +698,40 @@ async function parseFeedMetadata(url, type) {
   }
 }
 
+// Auto-sync feeds using the API endpoint
+async function autoSyncFeeds(userId) {
+  try {
+    console.log("[Auto Sync] Starting automatic feed synchronization");
+
+    const response = await fetch("/api/feeds/auto-sync", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Auto-sync failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("[Auto Sync] Result:", result);
+
+    return result;
+  } catch (error) {
+    console.error("[Auto Sync] Error:", error);
+    throw error;
+  }
+}
+
 export function useFeedService() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
+
+  // Auto-sync trigger state
+  const [hasAutoSynced, setHasAutoSynced] = useState(false);
 
   // Fetch feeds with their categories
   const feedsQuery = useQuery({
@@ -687,7 +749,7 @@ export function useFeedService() {
           `
           )
           .eq("user_id", user.id)
-          .eq("deleted_at", null)
+          .is("deleted_at", null)
           .order("created_at", { ascending: false });
 
         if (feedsError) {
@@ -809,6 +871,47 @@ export function useFeedService() {
       });
     }
   }, [user, feedsQuery.data, feedsQuery.isLoading, fetchNewFeedData, toast, t]);
+
+  // Auto-sync feeds when user logs in and feeds are loaded
+  useEffect(() => {
+    if (
+      user &&
+      feedsQuery.data &&
+      feedsQuery.data.length > 0 &&
+      !hasAutoSynced
+    ) {
+      setHasAutoSynced(true);
+
+      // Run auto-sync in background
+      autoSyncFeeds(user.id)
+        .then((result) => {
+          if (result.synced > 0) {
+            console.log(
+              `[Auto Sync] Successfully synced ${result.synced} feeds`
+            );
+            // Refetch items after sync to show new content
+            queryClient.invalidateQueries(["feed-items", user.id]);
+
+            // Show a subtle notification [[memory:2852054]]
+            toast({
+              title: t("feeds.autoSyncComplete"),
+              description: t("feeds.autoSyncDescription", {
+                count: result.synced,
+              }),
+              duration: 3000,
+            });
+          }
+        })
+        .catch((error) => {
+          console.error("[Auto Sync] Error during auto-sync:", error);
+        });
+    }
+  }, [user, feedsQuery.data, hasAutoSynced, queryClient, toast, t]);
+
+  // Reset auto-sync flag when user changes
+  useEffect(() => {
+    setHasAutoSynced(false);
+  }, [user?.id]);
 
   // Fetch all items (rss + youtube)
   const itemsQuery = useQuery({

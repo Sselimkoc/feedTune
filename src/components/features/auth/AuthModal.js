@@ -62,18 +62,24 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
       const result = await handleSignUp({ email, password });
 
       if (result?.success) {
-        // Handle different signup scenarios
-        if (result.status === "verification_resent") {
-          // Email exists but is not verified, show verification screen
-          setRegisteredEmail(email);
-          setVerifyingEmail(true);
-          setIsResend(true);
-        } else if (result.status === "new_signup") {
-          // New signup, show verification screen
-          setRegisteredEmail(email);
-          setVerifyingEmail(true);
-          setIsResend(false);
+        // TEMPORARILY MODIFIED - Handle direct signup without email verification
+        if (result.status === "direct_signup") {
+          // Direct signup successful, close modal
+          onOpenChange?.(false);
         }
+        // TEMPORARILY COMMENTED OUT - Email verification flows disabled
+        // // Handle different signup scenarios
+        // if (result.status === "verification_resent") {
+        //   // Email exists but is not verified, show verification screen
+        //   setRegisteredEmail(email);
+        //   setVerifyingEmail(true);
+        //   setIsResend(true);
+        // } else if (result.status === "new_signup") {
+        //   // New signup, show verification screen
+        //   setRegisteredEmail(email);
+        //   setVerifyingEmail(true);
+        //   setIsResend(false);
+        // }
       } else if (result?.status === "email_exists") {
         // Email already exists and is verified, suggest login instead
         setMode("login");
@@ -87,12 +93,14 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
 
       if (result?.success) {
         onOpenChange?.(false);
-      } else if (result?.status === "email_not_verified") {
-        // Email exists but is not verified, show verification screen
-        setRegisteredEmail(result.email || email);
-        setVerifyingEmail(true);
-        setIsResend(true);
       }
+      // TEMPORARILY COMMENTED OUT - Email verification handling disabled
+      // else if (result?.status === "email_not_verified") {
+      //   // Email exists but is not verified, show verification screen
+      //   setRegisteredEmail(result.email || email);
+      //   setVerifyingEmail(true);
+      //   setIsResend(true);
+      // }
     }
   };
 

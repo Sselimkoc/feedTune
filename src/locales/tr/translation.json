@@ -64,7 +64,9 @@
       "useFullContent": "Tam İçerik",
       "useSummary": "Sadece Özet",
       "add": "Besleme Ekle"
-    }
+    },
+    "autoSyncComplete": "Beslemeler Güncellendi",
+    "autoSyncDescription": "{{count}} besleme yeni içerikle yenilendi"
   },
   "interactions": {
     "addSuccess": "Etkileşim başarıyla eklendi",
@@ -343,7 +345,7 @@
     "logoutError": "Çıkış başarısız. Lütfen tekrar deneyin.",
     "loginSuccess": "Giriş başarılı! Hoş geldiniz.",
     "loginError": "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.",
-    "registerSuccess": "Kayıt başarılı! Lütfen e-postanızı kontrol edin.",
+    "registerSuccess": "Kayıt başarılı! Giriş yapabilirsiniz.",
     "registerError": "Kayıt başarısız. Lütfen tekrar deneyin.",
     "emailAlreadyExists": "Bu e-posta zaten kayıtlı. Lütfen giriş yapın.",
     "emailVerificationRequired": "Giriş yapmadan önce lütfen e-postanızı doğrulayın.",

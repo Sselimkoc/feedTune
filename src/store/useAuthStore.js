@@ -1,5 +1,12 @@
 "use client";
 
+// TEMPORARY MODIFICATION: Email verification has been temporarily disabled
+// Users can now register and login directly without email verification
+// To re-enable email verification:
+// 1. Set enable_confirmations = true in supabase/config.toml
+// 2. Uncomment the email verification logic in this file
+// 3. Uncomment the email verification handling in AuthModal.js
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createBrowserClient } from "@supabase/ssr";
@@ -49,11 +56,12 @@ export const useAuthStore = create(
           return { success: false, error };
         }
 
-        // Email verification errors
-        if (error.message?.includes("email not confirmed")) {
-          toastError?.("auth.emailVerificationRequired");
-          return { success: false, error, status: "email_not_verified" };
-        }
+        // TEMPORARILY COMMENTED OUT - Email verification errors disabled
+        // // Email verification errors
+        // if (error.message?.includes("email not confirmed")) {
+        //   toastError?.("auth.emailVerificationRequired");
+        //   return { success: false, error, status: "email_not_verified" };
+        // }
 
         // Email already exists errors
         if (error.message?.includes("already registered")) {
@@ -139,75 +147,86 @@ export const useAuthStore = create(
         },
 
         // Sign up - accepts toast functions as arguments
+        // TEMPORARILY MODIFIED - Email verification disabled, direct registration allowed
         signUp: async ({ email, password, toastSuccess, toastError }) => {
           try {
             set({ isLoading: true, error: null });
 
-            // First check if the email exists
-            const checkResponse = await fetch("/api/auth/check-email", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email }),
-            });
+            // TEMPORARILY COMMENTED OUT - Email verification check disabled
+            // // First check if the email exists
+            // const checkResponse = await fetch("/api/auth/check-email", {
+            //   method: "POST",
+            //   headers: { "Content-Type": "application/json" },
+            //   body: JSON.stringify({ email }),
+            // });
 
-            if (!checkResponse.ok) {
-              throw new Error("Failed to check email");
-            }
+            // if (!checkResponse.ok) {
+            //   throw new Error("Failed to check email");
+            // }
 
-            const { exists, verified } = await checkResponse.json();
+            // const { exists, verified } = await checkResponse.json();
 
-            // If email exists and is verified, show error and prevent signup
-            if (exists && verified) {
-              set({ isLoading: false });
-              toastError?.("auth.emailAlreadyExists");
-              return {
-                success: false,
-                error: "Email already exists",
-                status: "email_exists",
-              };
-            }
+            // // If email exists and is verified, show error and prevent signup
+            // if (exists && verified) {
+            //   set({ isLoading: false });
+            //   toastError?.("auth.emailAlreadyExists");
+            //   return {
+            //     success: false,
+            //     error: "Email already exists",
+            //     status: "email_exists",
+            //   };
+            // }
 
-            // If email exists but not verified, resend verification email
-            if (exists && !verified) {
-              const { error: resendError } = await supabase.auth.resend({
-                type: "signup",
-                email,
-              });
+            // // If email exists but not verified, resend verification email
+            // if (exists && !verified) {
+            //   const { error: resendError } = await supabase.auth.resend({
+            //     type: "signup",
+            //     email,
+            //   });
 
-              if (resendError) throw resendError;
+            //   if (resendError) throw resendError;
 
-              set({ isLoading: false });
-              toastSuccess?.("auth.verification.emailResent");
-              return { success: true, status: "verification_resent" };
-            }
+            //   set({ isLoading: false });
+            //   toastSuccess?.("auth.verification.emailResent");
+            //   return { success: true, status: "verification_resent" };
+            // }
 
-            // Email doesn't exist, proceed with signup
+            // Proceed with direct signup (no email verification required)
             const { data, error } = await supabase.auth.signUp({
               email,
               password,
-              options: {
-                // Force email verification even if email confirmations are disabled in Supabase
-                emailRedirectTo: `${window.location.origin}/auth/callback`,
-                // Disable auto confirmation
-                data: {
-                  confirmed_at: null,
-                },
-              },
+              // TEMPORARILY REMOVED - Email verification options disabled
+              // options: {
+              //   // Force email verification even if email confirmations are disabled in Supabase
+              //   emailRedirectTo: `${window.location.origin}/auth/callback`,
+              //   // Disable auto confirmation
+              //   data: {
+              //     confirmed_at: null,
+              //   },
+              // },
             });
 
             if (error) throw error;
 
-            // Clear any session that might have been created
-            // This prevents auto-login for new signups
-            if (data?.session) {
-              await supabase.auth.signOut();
+            // TEMPORARILY COMMENTED OUT - Allow auto-login for new signups
+            // // Clear any session that might have been created
+            // // This prevents auto-login for new signups
+            // if (data?.session) {
+            //   await supabase.auth.signOut();
+            // }
+
+            // Set user and session if signup was successful
+            if (data?.user && data?.session) {
+              set({ user: data.user, session: data.session, isLoading: false });
+              toastSuccess?.("auth.registerSuccess");
+              return { success: true, status: "direct_signup" };
             }
 
             set({ isLoading: false });
-            toastSuccess?.("auth.verification.emailSent");
+            toastSuccess?.("auth.registerSuccess");
 
-            // Return success with new_signup status
-            return { success: true, status: "new_signup" };
+            // Return success with direct signup status
+            return { success: true, status: "direct_signup" };
           } catch (error) {
             return handleAuthError(error, toastError);
           } finally {

@@ -64,7 +64,9 @@
       "useFullContent": "Full Content",
       "useSummary": "Summary Only",
       "add": "Add Feed"
-    }
+    },
+    "autoSyncComplete": "Feeds Updated",
+    "autoSyncDescription": "{{count}} feeds have been refreshed with new content"
   },
   "interactions": {
     "addSuccess": "Interaction added successfully",
@@ -343,7 +345,7 @@
     "logoutError": "Logout failed. Please try again.",
     "loginSuccess": "Login successful! Welcome back.",
     "loginError": "Login failed. Please check your credentials.",
-    "registerSuccess": "Registration successful! Please check your email.",
+    "registerSuccess": "Registration successful! You can now log in.",
     "registerError": "Registration failed. Please try again.",
     "emailAlreadyExists": "This email is already registered. Please log in instead.",
     "emailVerificationRequired": "Please verify your email before logging in.",

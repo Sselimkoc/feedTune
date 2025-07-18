@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 /**
- * Cron job endpoint for cleaning up old feed data
- * This endpoint should be called weekly to clean up old items
+ * User-accessible cleanup endpoint
+ * This endpoint can be called by authenticated users from the settings page
  *
  * Query parameters:
  * - olderThanDays: Delete items older than this many days (default: 30)
@@ -13,22 +13,21 @@ import { supabase } from "@/lib/supabase";
  */
 export async function POST(request) {
   try {
-    // Verify cron job authorization
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
+    // Create Supabase client
+    const supabase = createServerSupabaseClient();
 
-    if (!cronSecret) {
-      console.error("CRON_SECRET environment variable not set");
-      return NextResponse.json(
-        { error: "Cron job not configured" },
-        { status: 500 }
-      );
-    }
+    // Get the current user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      console.error("Unauthorized cron job attempt");
+    if (userError || !user) {
+      console.error("User verification error:", userError);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const userId = user.id;
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -37,7 +36,7 @@ export async function POST(request) {
     const keepReadLater = searchParams.get("keepReadLater") !== "false";
     const dryRun = searchParams.get("dryRun") === "true";
 
-    console.log(`[Cleanup Cron] Starting cleanup job`, {
+    console.log(`[User Cleanup] Starting cleanup for user ${userId}`, {
       olderThanDays,
       keepFavorites,
       keepReadLater,
@@ -56,9 +55,10 @@ export async function POST(request) {
       errors: [],
     };
 
-    // Clean up RSS items
+    // Clean up RSS items for this user only
     try {
-      const rssResult = await cleanupRssItems(
+      const rssResult = await cleanupUserRssItems(
+        userId,
         cutoffIsoString,
         keepFavorites,
         keepReadLater,
@@ -67,18 +67,19 @@ export async function POST(request) {
       results.rssItems = rssResult;
       totalDeleted += rssResult;
       console.log(
-        `[Cleanup Cron] RSS items: ${rssResult} ${
+        `[User Cleanup] RSS items: ${rssResult} ${
           dryRun ? "would be" : ""
-        } deleted`
+        } deleted for user ${userId}`
       );
     } catch (error) {
-      console.error("[Cleanup Cron] Error cleaning RSS items:", error);
+      console.error("[User Cleanup] Error cleaning RSS items:", error);
       results.errors.push(`RSS cleanup error: ${error.message}`);
     }
 
-    // Clean up YouTube items
+    // Clean up YouTube items for this user only
     try {
-      const youtubeResult = await cleanupYoutubeItems(
+      const youtubeResult = await cleanupUserYoutubeItems(
+        userId,
         cutoffIsoString,
         keepFavorites,
         keepReadLater,
@@ -87,34 +88,37 @@ export async function POST(request) {
       results.youtubeItems = youtubeResult;
       totalDeleted += youtubeResult;
       console.log(
-        `[Cleanup Cron] YouTube items: ${youtubeResult} ${
+        `[User Cleanup] YouTube items: ${youtubeResult} ${
           dryRun ? "would be" : ""
-        } deleted`
+        } deleted for user ${userId}`
       );
     } catch (error) {
-      console.error("[Cleanup Cron] Error cleaning YouTube items:", error);
+      console.error("[User Cleanup] Error cleaning YouTube items:", error);
       results.errors.push(`YouTube cleanup error: ${error.message}`);
     }
 
-    // Clean up orphaned interactions
+    // Clean up orphaned interactions for this user only
     try {
-      const interactionsResult = await cleanupOrphanedInteractions(dryRun);
+      const interactionsResult = await cleanupUserOrphanedInteractions(
+        userId,
+        dryRun
+      );
       results.orphanedInteractions = interactionsResult;
       console.log(
-        `[Cleanup Cron] Orphaned interactions: ${interactionsResult} ${
+        `[User Cleanup] Orphaned interactions: ${interactionsResult} ${
           dryRun ? "would be" : ""
-        } deleted`
+        } deleted for user ${userId}`
       );
     } catch (error) {
       console.error(
-        "[Cleanup Cron] Error cleaning orphaned interactions:",
+        "[User Cleanup] Error cleaning orphaned interactions:",
         error
       );
       results.errors.push(`Interactions cleanup error: ${error.message}`);
     }
 
     console.log(
-      `[Cleanup Cron] Completed: ${totalDeleted} total items ${
+      `[User Cleanup] Completed for user ${userId}: ${totalDeleted} total items ${
         dryRun ? "would be" : ""
       } deleted`
     );
@@ -127,9 +131,10 @@ export async function POST(request) {
       details: results,
       cutoffDate: cutoffIsoString,
       dryRun,
+      userId,
     });
   } catch (error) {
-    console.error("[Cleanup Cron] Unexpected error:", error);
+    console.error("[User Cleanup] Unexpected error:", error);
     return NextResponse.json(
       {
         error: "Cleanup job failed",
@@ -141,27 +146,47 @@ export async function POST(request) {
 }
 
 /**
- * Clean up old RSS items
+ * Clean up old RSS items for a specific user
  */
-async function cleanupRssItems(
+async function cleanupUserRssItems(
+  userId,
   cutoffDate,
   keepFavorites,
   keepReadLater,
   dryRun
 ) {
+  const supabase = createServerSupabaseClient();
+
+  // Get RSS feeds for this user
+  const { data: userFeeds, error: feedsError } = await supabase
+    .from("feeds")
+    .select("id")
+    .eq("user_id", userId)
+    .in("type", ["rss", "atom"]);
+
+  if (feedsError) throw feedsError;
+
+  if (!userFeeds || userFeeds.length === 0) {
+    return 0;
+  }
+
+  const feedIds = userFeeds.map((feed) => feed.id);
+
   let query = supabase
     .from("rss_items")
     .select("id")
-    .lt("published_at", cutoffDate);
+    .in("feed_id", feedIds)
+    .lt("pub_date", cutoffDate);
 
   // Build exclusion conditions
   const exclusions = [];
 
   if (keepFavorites) {
-    // Exclude items that are favorited by any user
+    // Exclude items that are favorited by this user
     const { data: favoritedItems } = await supabase
       .from("rss_interactions")
       .select("item_id")
+      .eq("user_id", userId)
       .eq("is_favorite", true);
 
     if (favoritedItems && favoritedItems.length > 0) {
@@ -171,10 +196,11 @@ async function cleanupRssItems(
   }
 
   if (keepReadLater) {
-    // Exclude items that are marked for read later by any user
+    // Exclude items that are marked for read later by this user
     const { data: readLaterItems } = await supabase
       .from("rss_interactions")
       .select("item_id")
+      .eq("user_id", userId)
       .eq("is_read_later", true);
 
     if (readLaterItems && readLaterItems.length > 0) {
@@ -214,27 +240,47 @@ async function cleanupRssItems(
 }
 
 /**
- * Clean up old YouTube items
+ * Clean up old YouTube items for a specific user
  */
-async function cleanupYoutubeItems(
+async function cleanupUserYoutubeItems(
+  userId,
   cutoffDate,
   keepFavorites,
   keepReadLater,
   dryRun
 ) {
+  const supabase = createServerSupabaseClient();
+
+  // Get YouTube feeds for this user
+  const { data: userFeeds, error: feedsError } = await supabase
+    .from("feeds")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("type", "youtube");
+
+  if (feedsError) throw feedsError;
+
+  if (!userFeeds || userFeeds.length === 0) {
+    return 0;
+  }
+
+  const feedIds = userFeeds.map((feed) => feed.id);
+
   let query = supabase
     .from("youtube_items")
     .select("id")
+    .in("feed_id", feedIds)
     .lt("published_at", cutoffDate);
 
   // Build exclusion conditions
   const exclusions = [];
 
   if (keepFavorites) {
-    // Exclude items that are favorited by any user
+    // Exclude items that are favorited by this user
     const { data: favoritedItems } = await supabase
       .from("youtube_interactions")
       .select("item_id")
+      .eq("user_id", userId)
       .eq("is_favorite", true);
 
     if (favoritedItems && favoritedItems.length > 0) {
@@ -244,10 +290,11 @@ async function cleanupYoutubeItems(
   }
 
   if (keepReadLater) {
-    // Exclude items that are marked for read later by any user
+    // Exclude items that are marked for read later by this user
     const { data: readLaterItems } = await supabase
       .from("youtube_interactions")
       .select("item_id")
+      .eq("user_id", userId)
       .eq("is_read_later", true);
 
     if (readLaterItems && readLaterItems.length > 0) {
@@ -287,51 +334,114 @@ async function cleanupYoutubeItems(
 }
 
 /**
- * Clean up orphaned interactions (interactions for deleted items)
+ * Clean up orphaned interactions for a specific user
  */
-async function cleanupOrphanedInteractions(dryRun) {
+async function cleanupUserOrphanedInteractions(userId, dryRun) {
+  const supabase = createServerSupabaseClient();
   let totalCleaned = 0;
 
-  // Clean RSS interactions
-  const rssOrphansQuery = `
-    DELETE FROM rss_interactions 
-    WHERE item_id NOT IN (SELECT id FROM rss_items)
-  `;
+  try {
+    // Get user's feeds first
+    const { data: userFeeds, error: feedsError } = await supabase
+      .from("feeds")
+      .select("id")
+      .eq("user_id", userId);
 
-  // Clean YouTube interactions
-  const youtubeOrphansQuery = `
-    DELETE FROM youtube_interactions 
-    WHERE item_id NOT IN (SELECT id FROM youtube_items)
-  `;
+    if (feedsError) throw feedsError;
 
-  if (dryRun) {
-    // Count orphaned RSS interactions
-    const { data: rssOrphans } = await supabase.rpc(
-      "count_orphaned_rss_interactions"
-    );
+    if (!userFeeds || userFeeds.length === 0) {
+      return 0;
+    }
 
-    // Count orphaned YouTube interactions
-    const { data: youtubeOrphans } = await supabase.rpc(
-      "count_orphaned_youtube_interactions"
-    );
+    const feedIds = userFeeds.map((feed) => feed.id);
 
-    totalCleaned = (rssOrphans || 0) + (youtubeOrphans || 0);
-  } else {
-    // Execute cleanup
-    const { error: rssError } = await supabase.rpc(
-      "cleanup_orphaned_rss_interactions"
-    );
+    // Get all valid RSS item IDs for this user
+    const { data: validRssItems, error: rssItemsError } = await supabase
+      .from("rss_items")
+      .select("id")
+      .in("feed_id", feedIds);
 
-    const { error: youtubeError } = await supabase.rpc(
-      "cleanup_orphaned_youtube_interactions"
-    );
+    if (rssItemsError) throw rssItemsError;
 
-    if (rssError) console.error("RSS interactions cleanup error:", rssError);
-    if (youtubeError)
-      console.error("YouTube interactions cleanup error:", youtubeError);
+    const validRssItemIds = validRssItems
+      ? validRssItems.map((item) => item.id)
+      : [];
 
-    // Note: We can't get exact count from RPC, so we return 0 for now
-    totalCleaned = 0;
+    // Find orphaned RSS interactions
+    const { data: rssInteractions, error: rssInteractionsError } =
+      await supabase
+        .from("rss_interactions")
+        .select("id, item_id")
+        .eq("user_id", userId);
+
+    if (rssInteractionsError) throw rssInteractionsError;
+
+    if (rssInteractions && rssInteractions.length > 0) {
+      const orphanedRssInteractions = rssInteractions.filter(
+        (interaction) => !validRssItemIds.includes(interaction.item_id)
+      );
+
+      if (orphanedRssInteractions.length > 0) {
+        if (!dryRun) {
+          const { error: deleteError } = await supabase
+            .from("rss_interactions")
+            .delete()
+            .in(
+              "id",
+              orphanedRssInteractions.map((item) => item.id)
+            );
+
+          if (deleteError) throw deleteError;
+        }
+        totalCleaned += orphanedRssInteractions.length;
+      }
+    }
+
+    // Get all valid YouTube item IDs for this user
+    const { data: validYoutubeItems, error: youtubeItemsError } = await supabase
+      .from("youtube_items")
+      .select("id")
+      .in("feed_id", feedIds);
+
+    if (youtubeItemsError) throw youtubeItemsError;
+
+    const validYoutubeItemIds = validYoutubeItems
+      ? validYoutubeItems.map((item) => item.id)
+      : [];
+
+    // Find orphaned YouTube interactions
+    const { data: youtubeInteractions, error: youtubeInteractionsError } =
+      await supabase
+        .from("youtube_interactions")
+        .select("id, item_id")
+        .eq("user_id", userId);
+
+    if (youtubeInteractionsError) throw youtubeInteractionsError;
+
+    if (youtubeInteractions && youtubeInteractions.length > 0) {
+      const orphanedYoutubeInteractions = youtubeInteractions.filter(
+        (interaction) => !validYoutubeItemIds.includes(interaction.item_id)
+      );
+
+      if (orphanedYoutubeInteractions.length > 0) {
+        if (!dryRun) {
+          const { error: deleteError } = await supabase
+            .from("youtube_interactions")
+            .delete()
+            .in(
+              "id",
+              orphanedYoutubeInteractions.map((item) => item.id)
+            );
+
+          if (deleteError) throw deleteError;
+        }
+        totalCleaned += orphanedYoutubeInteractions.length;
+      }
+    }
+  } catch (error) {
+    console.error("Error in orphaned interactions cleanup:", error);
+    // Return 0 instead of throwing to not break the entire cleanup process
+    return 0;
   }
 
   return totalCleaned;

@@ -68,14 +68,10 @@ export function useCleanupService() {
           dryRun: dryRun.toString(),
         });
 
-        const response = await fetch(`/api/cron/cleanup?${params}`, {
+        const response = await fetch(`/api/cleanup?${params}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Note: In production, this would be called by a cron service with proper auth
-            Authorization: `Bearer ${
-              process.env.NEXT_PUBLIC_CRON_SECRET || "dev-secret"
-            }`,
           },
         });
 
