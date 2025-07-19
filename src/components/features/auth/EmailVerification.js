@@ -44,19 +44,19 @@ export function EmailVerification({
 
   return (
     <div className="w-full">
-      <div className="relative p-6 text-center">
+      <div className="relative p-4 sm:p-6 text-center">
         {/* Icon */}
-        <div className="mx-auto mb-6">
-          <div className="w-24 h-24 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-            <Mail className="h-12 w-12 text-primary" />
+        <div className="mx-auto mb-4 sm:mb-6">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+            <Mail className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
           </div>
         </div>
 
         {/* Title and description */}
-        <h2 className="text-2xl font-bold mb-2">
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">
           {safeTranslate(t, "auth.verification.title", "Verify Your Email")}
         </h2>
-        <p className="text-muted-foreground mb-4">
+        <p className="text-sm sm:text-base text-muted-foreground mb-4 leading-relaxed">
           {isResend
             ? safeTranslate(
                 t,
@@ -71,15 +71,15 @@ export function EmailVerification({
         </p>
 
         {/* Email sent message */}
-        <div className="mb-6">
-          <p className="font-medium mb-1">
+        <div className="mb-4 sm:mb-6">
+          <p className="font-medium mb-1 text-sm sm:text-base">
             {safeTranslate(
               t,
               "auth.verification.checkInbox",
               "Please check your inbox"
             )}
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground break-words">
             {safeTranslate(
               t,
               "auth.verification.emailSentTo",
@@ -90,13 +90,13 @@ export function EmailVerification({
         </div>
 
         {/* Steps */}
-        <div className="p-4 rounded-lg bg-muted mb-6">
-          <div className="text-left space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Check className="h-4 w-4 text-primary" />
+        <div className="p-3 sm:p-4 rounded-lg bg-muted mb-4 sm:mb-6">
+          <div className="text-left space-y-2 sm:space-y-3">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
               </div>
-              <div className="text-sm">
+              <div className="text-xs sm:text-sm leading-relaxed">
                 {safeTranslate(
                   t,
                   "auth.verification.step1",
@@ -104,11 +104,11 @@ export function EmailVerification({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Check className="h-4 w-4 text-primary" />
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
               </div>
-              <div className="text-sm">
+              <div className="text-xs sm:text-sm leading-relaxed">
                 {safeTranslate(
                   t,
                   "auth.verification.step2",
@@ -116,11 +116,11 @@ export function EmailVerification({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Check className="h-4 w-4 text-primary" />
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
               </div>
-              <div className="text-sm">
+              <div className="text-xs sm:text-sm leading-relaxed">
                 {safeTranslate(
                   t,
                   "auth.verification.step3",
@@ -133,7 +133,11 @@ export function EmailVerification({
 
         {/* Action buttons */}
         <div className="space-y-3">
-          <Button variant="default" className="w-full" onClick={onLoginClick}>
+          <Button
+            variant="default"
+            className="w-full h-11 sm:h-10 text-sm sm:text-base font-medium"
+            onClick={onLoginClick}
+          >
             {safeTranslate(
               t,
               "auth.verification.goToLogin",
@@ -144,7 +148,7 @@ export function EmailVerification({
 
           <Button
             variant="outline"
-            className="w-full"
+            className="w-full h-11 sm:h-10 text-sm sm:text-base font-medium"
             onClick={handleResendEmail}
             disabled={isResending}
           >
@@ -171,8 +175,8 @@ export function EmailVerification({
         {showConfirmation && (
           <div className="absolute bottom-4 left-0 right-0 mx-auto w-5/6 bg-blue-500 text-white py-2 px-4 rounded-lg">
             <div className="flex items-center">
-              <Check className="h-5 w-5 mr-2" />
-              <span>
+              <Check className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+              <span className="text-xs sm:text-sm">
                 {safeTranslate(
                   t,
                   "auth.verification.emailResent",

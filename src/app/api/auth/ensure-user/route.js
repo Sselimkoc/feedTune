@@ -3,12 +3,12 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 /**
- * Kullanıcının veritabanı kaydını yapan API
- * Bu API, oturum açmış kullanıcıların veritabanında kaydı yoksa oluşturur
+ * API to create user database record
+ * This API creates a database record for authenticated users if they don't exist
  */
 export async function POST() {
   try {
-    // Oturum kontrolü
+    // Session check
     const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -32,86 +32,83 @@ export async function POST() {
       data: { session },
     } = await supabase.auth.getSession();
 
-    // Oturum yoksa hata döndür
+    // Return error if no session
     if (!session) {
       return NextResponse.json(
-        { error: "Oturum açmanız gerekiyor" },
+        { error: "Authentication required" },
         { status: 401 }
       );
     }
 
     const userId = session.user.id;
 
-    // Kullanıcı zaten var mı kontrol et
+    // Check if user already exists
     const { data: existingUser, error: checkError } = await supabase
       .from("users")
       .select("id")
       .eq("id", userId)
       .single();
 
-    // Hata kontrolü - kayıt bulunamadı hatası değilse
+    // Error check - if not a "record not found" error
     if (checkError && checkError.code !== "PGRST116") {
-      console.error("Kullanıcı kontrolü sırasında hata:", checkError);
+      console.error("Error during user check:", checkError);
       return NextResponse.json(
-        { error: "Kullanıcı kontrolü sırasında hata oluştu" },
+        { error: "Error occurred during user check" },
         { status: 500 }
       );
     }
 
-    // Kullanıcı zaten varsa, başarılı yanıt döndür
+    // If user already exists, return success response
     if (existingUser) {
       return NextResponse.json({
         success: true,
-        message: "Kullanıcı zaten mevcut",
+        message: "User already exists",
         user: { id: existingUser.id },
       });
     }
 
-    // Kullanıcı yoksa, oluştur
-    const { data: newUser, error: insertError } = await supabase
+    // Create new user record
+    const { data: newUser, error: createError } = await supabase
       .from("users")
-      .insert({
-        id: userId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select("id")
+      .insert([
+        {
+          id: userId,
+          email: session.user.email,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
+      .select()
       .single();
 
-    // Ekleme hatası kontrolü
-    if (insertError) {
-      console.error("Kullanıcı oluşturma hatası:", insertError);
+    if (createError) {
+      console.error("Error creating user:", createError);
       return NextResponse.json(
-        {
-          error: "Kullanıcı oluşturulamadı",
-          details: insertError.message,
-          code: insertError.code,
-        },
+        { error: "Failed to create user record" },
         { status: 500 }
       );
     }
 
-    // Başarılı yanıt
     return NextResponse.json({
       success: true,
-      message: "Kullanıcı başarıyla oluşturuldu",
+      message: "User created successfully",
       user: newUser,
     });
   } catch (error) {
-    console.error("Kullanıcı oluşturma API hatası:", error);
+    console.error("Unexpected error in ensure-user API:", error);
     return NextResponse.json(
-      { error: "İşlem sırasında hata oluştu", details: error.message },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
 
 /**
- * API durumunu kontrol etmek için GET metodu
+ * API status check
  */
 export async function GET() {
   return NextResponse.json({
     status: "available",
-    message: "Kullanıcı kayıt servisi çalışıyor",
+    message: "User registration service is running",
   });
 }

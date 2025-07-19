@@ -70,7 +70,7 @@ export function useAuthActions() {
         toastError,
       });
 
-      // Artık yönlendirme yapmıyoruz, sadece sonucu döndürüyoruz
+      // Return result without automatic redirection
       return { success, error, status };
     } catch (error) {
       console.error("Sign up error:", error);

@@ -11,6 +11,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createBrowserClient } from "@supabase/ssr";
 import { useFeedStore } from "@/store/useFeedStore";
+
 // Auth messages
 const AUTH_MESSAGES = {
   VERIFICATION_EMAIL_SENT: "auth.verificationEmailSent",
@@ -23,17 +24,35 @@ const AUTH_MESSAGES = {
   NETWORK_ERROR: "auth.networkError",
 };
 
-// Rate limit throttle
-const throttle = {
-  lastAttempt: 0,
-  minInterval: 2000,
-  isThrottled() {
+// Simple rate limiting with exponential backoff
+const rateLimiter = {
+  lastRequestTime: 0,
+  minInterval: 1000, // 1 second minimum between requests
+  retryCount: 0,
+  maxRetries: 3,
+
+  canMakeRequest() {
     const now = Date.now();
-    if (now - this.lastAttempt < this.minInterval) {
-      return true;
+    if (now - this.lastRequestTime < this.minInterval) {
+      return false;
     }
-    this.lastAttempt = now;
-    return false;
+    this.lastRequestTime = now;
+    return true;
+  },
+
+  reset() {
+    this.retryCount = 0;
+    this.minInterval = 1000;
+  },
+
+  increaseBackoff() {
+    this.retryCount++;
+    this.minInterval = Math.min(1000 * Math.pow(2, this.retryCount), 8000);
+    return this.minInterval;
+  },
+
+  canRetry() {
+    return this.retryCount < this.maxRetries;
   },
 };
 
@@ -50,18 +69,27 @@ export const useAuthStore = create(
         console.error("Auth error:", error);
         set({ isLoading: false, error });
 
-        // Rate limit errors
-        if (error.message?.includes("rate limit")) {
-          toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
-          return { success: false, error };
-        }
+        // Rate limit errors with retry logic
+        if (error.message?.includes("rate limit") || error.status === 429) {
+          if (rateLimiter.canRetry()) {
+            const backoffTime = rateLimiter.increaseBackoff();
+            console.log(
+              `Rate limited, retrying in ${backoffTime}ms (attempt ${rateLimiter.retryCount}/${rateLimiter.maxRetries})`
+            );
 
-        // TEMPORARILY COMMENTED OUT - Email verification errors disabled
-        // // Email verification errors
-        // if (error.message?.includes("email not confirmed")) {
-        //   toastError?.("auth.emailVerificationRequired");
-        //   return { success: false, error, status: "email_not_verified" };
-        // }
+            return {
+              success: false,
+              error,
+              status: "rate_limited_retry",
+              retryAfter: backoffTime,
+              retryCount: rateLimiter.retryCount,
+            };
+          } else {
+            rateLimiter.reset();
+            toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
+            return { success: false, error, status: "rate_limited_max" };
+          }
+        }
 
         // Email already exists errors
         if (error.message?.includes("already registered")) {
@@ -127,6 +155,12 @@ export const useAuthStore = create(
         // Sign in - accepts toast functions as arguments
         signIn: async ({ email, password, toastSuccess, toastError }) => {
           try {
+            // Check rate limiting
+            if (!rateLimiter.canMakeRequest()) {
+              toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
+              return { success: false, error: "Rate limited", status: "rate_limited" };
+            }
+
             set({ isLoading: true, error: null });
 
             const { data, error } = await supabase.auth.signInWithPassword({
@@ -136,99 +170,93 @@ export const useAuthStore = create(
 
             if (error) throw error;
 
+            // Reset rate limiter on success
+            rateLimiter.reset();
             set({ user: data.user, session: data.session, isLoading: false });
             toastSuccess?.(AUTH_MESSAGES.LOGIN_SUCCESS);
+
             return { success: true };
           } catch (error) {
-            return handleAuthError(error, toastError);
+            const result = handleAuthError(error, toastError);
+
+            // Handle retry logic for rate limits
+            if (result.status === "rate_limited_retry") {
+              return new Promise((resolve) => {
+                setTimeout(() => {
+                  resolve(
+                    get().signIn({
+                      email,
+                      password,
+                      toastSuccess,
+                      toastError,
+                    })
+                  );
+                }, result.retryAfter);
+              });
+            }
+
+            return result;
           } finally {
             set({ isLoading: false });
           }
         },
 
         // Sign up - accepts toast functions as arguments
-        // TEMPORARILY MODIFIED - Email verification disabled, direct registration allowed
         signUp: async ({ email, password, toastSuccess, toastError }) => {
           try {
+            // Check rate limiting
+            if (!rateLimiter.canMakeRequest()) {
+              toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
+              return { success: false, error: "Rate limited", status: "rate_limited" };
+            }
+
             set({ isLoading: true, error: null });
-
-            // TEMPORARILY COMMENTED OUT - Email verification check disabled
-            // // First check if the email exists
-            // const checkResponse = await fetch("/api/auth/check-email", {
-            //   method: "POST",
-            //   headers: { "Content-Type": "application/json" },
-            //   body: JSON.stringify({ email }),
-            // });
-
-            // if (!checkResponse.ok) {
-            //   throw new Error("Failed to check email");
-            // }
-
-            // const { exists, verified } = await checkResponse.json();
-
-            // // If email exists and is verified, show error and prevent signup
-            // if (exists && verified) {
-            //   set({ isLoading: false });
-            //   toastError?.("auth.emailAlreadyExists");
-            //   return {
-            //     success: false,
-            //     error: "Email already exists",
-            //     status: "email_exists",
-            //   };
-            // }
-
-            // // If email exists but not verified, resend verification email
-            // if (exists && !verified) {
-            //   const { error: resendError } = await supabase.auth.resend({
-            //     type: "signup",
-            //     email,
-            //   });
-
-            //   if (resendError) throw resendError;
-
-            //   set({ isLoading: false });
-            //   toastSuccess?.("auth.verification.emailResent");
-            //   return { success: true, status: "verification_resent" };
-            // }
 
             // Proceed with direct signup (no email verification required)
             const { data, error } = await supabase.auth.signUp({
               email,
               password,
-              // TEMPORARILY REMOVED - Email verification options disabled
-              // options: {
-              //   // Force email verification even if email confirmations are disabled in Supabase
-              //   emailRedirectTo: `${window.location.origin}/auth/callback`,
-              //   // Disable auto confirmation
-              //   data: {
-              //     confirmed_at: null,
-              //   },
-              // },
             });
 
             if (error) throw error;
 
-            // TEMPORARILY COMMENTED OUT - Allow auto-login for new signups
-            // // Clear any session that might have been created
-            // // This prevents auto-login for new signups
-            // if (data?.session) {
-            //   await supabase.auth.signOut();
-            // }
+            // Reset rate limiter on success
+            rateLimiter.reset();
 
             // Set user and session if signup was successful
             if (data?.user && data?.session) {
-              set({ user: data.user, session: data.session, isLoading: false });
+              set({
+                user: data.user,
+                session: data.session,
+                isLoading: false,
+              });
               toastSuccess?.("auth.registerSuccess");
               return { success: true, status: "direct_signup" };
             }
 
             set({ isLoading: false });
             toastSuccess?.("auth.registerSuccess");
-
-            // Return success with direct signup status
             return { success: true, status: "direct_signup" };
           } catch (error) {
-            return handleAuthError(error, toastError);
+            const result = handleAuthError(error, toastError);
+
+            // Handle retry logic for rate limits
+            if (result.status === "rate_limited_retry") {
+              return new Promise((resolve) => {
+                setTimeout(() => {
+                  resolve(
+                    get().signUp({
+                      email,
+                      password,
+                      toastSuccess,
+                      toastError,
+                    })
+                  );
+                }, result.retryAfter);
+              });
+            }
+
+            return result;
           } finally {
             set({ isLoading: false });
           }

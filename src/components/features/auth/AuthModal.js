@@ -32,9 +32,16 @@ import {
   EyeOff,
   Sparkles,
   Rss,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  validateAuthForm,
+  getPasswordStrengthText,
+  getPasswordStrengthColor,
+} from "@/utils/authValidation";
+import { LoadingSpinner } from "@/components/core/ui/loading-spinner";
 
 export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
   const [mode, setMode] = useState(defaultTab);
@@ -44,6 +51,10 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
   const [isResend, setIsResend] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [passwordStrength, setPasswordStrength] = useState(0);
+
   const { t } = useTranslation();
   const { isLoading } = useAuth();
   const { handleSignIn, handleSignUp } = useAuthActions();
@@ -55,52 +66,64 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
     }
   }, [open, defaultTab, verifyingEmail]);
 
+  // Real-time validation
+  useEffect(() => {
+    if (email || password) {
+      const validation = validateAuthForm(
+        { email, password },
+        mode === "signup"
+      );
+      setValidationErrors(validation.errors);
+      setPasswordStrength(validation.strength);
+    } else {
+      setValidationErrors({});
+      setPasswordStrength(0);
+    }
+  }, [email, password, mode]);
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    if (mode === "signup") {
-      const result = await handleSignUp({ email, password });
+    if (isSubmitting) return;
 
-      if (result?.success) {
-        // TEMPORARILY MODIFIED - Handle direct signup without email verification
-        if (result.status === "direct_signup") {
-          // Direct signup successful, close modal
+    // Validate form before submission
+    const validation = validateAuthForm({ email, password }, mode === "signup");
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (mode === "signup") {
+        const result = await handleSignUp({ email, password });
+
+        if (result?.success) {
+          // Handle direct signup without email verification
+          if (result.status === "direct_signup") {
+            // Direct signup successful, close modal
+            onOpenChange?.(false);
+          }
+        } else if (result?.status === "email_exists") {
+          // Email already exists and is verified, suggest login instead
+          setMode("login");
+          // Pre-fill the email field but clear password
+          setEmail(email);
+          setPassword("");
+        }
+        // For other failure cases, error toasts are already shown by the auth store
+      } else {
+        const result = await handleSignIn({ email, password });
+
+        if (result?.success) {
           onOpenChange?.(false);
         }
-        // TEMPORARILY COMMENTED OUT - Email verification flows disabled
-        // // Handle different signup scenarios
-        // if (result.status === "verification_resent") {
-        //   // Email exists but is not verified, show verification screen
-        //   setRegisteredEmail(email);
-        //   setVerifyingEmail(true);
-        //   setIsResend(true);
-        // } else if (result.status === "new_signup") {
-        //   // New signup, show verification screen
-        //   setRegisteredEmail(email);
-        //   setVerifyingEmail(true);
-        //   setIsResend(false);
-        // }
-      } else if (result?.status === "email_exists") {
-        // Email already exists and is verified, suggest login instead
-        setMode("login");
-        // Pre-fill the email field but clear password
-        setEmail(email);
-        setPassword("");
       }
-      // For other failure cases, error toasts are already shown by the auth store
-    } else {
-      const result = await handleSignIn({ email, password });
-
-      if (result?.success) {
-        onOpenChange?.(false);
-      }
-      // TEMPORARILY COMMENTED OUT - Email verification handling disabled
-      // else if (result?.status === "email_not_verified") {
-      //   // Email exists but is not verified, show verification screen
-      //   setRegisteredEmail(result.email || email);
-      //   setVerifyingEmail(true);
-      //   setIsResend(true);
-      // }
+    } catch (error) {
+      console.error("Form submission error:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -153,6 +176,9 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
         }
         setShowPassword(false);
         setIsResend(false);
+        setIsSubmitting(false);
+        setValidationErrors({});
+        setPasswordStrength(0);
       }, 300);
     }
     onOpenChange?.(open);
@@ -160,6 +186,21 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+  };
+
+  const handleModeChange = (newMode) => {
+    setMode(newMode);
+    setPassword(""); // Clear password when switching modes
+    setValidationErrors({}); // Clear validation errors
+    setPasswordStrength(0);
   };
 
   // Particle animation
@@ -197,11 +238,11 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md w-[95vw] max-h-[90vh] p-0 gap-0 overflow-hidden mx-auto">
         <DialogTitle className="sr-only">
           {mode === "login" ? t("auth.login") : t("auth.register")}
         </DialogTitle>
-        <div className="bg-gradient-to-br from-primary/10 via-background to-background pb-6">
+        <div className="bg-gradient-to-br from-primary/10 via-background to-background pb-6 max-h-[90vh] overflow-y-auto">
           {verifyingEmail ? (
             <EmailVerification
               email={registeredEmail}
@@ -210,9 +251,9 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
               isResend={isResend}
             />
           ) : (
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {/* Logo and title area */}
-              <div className="relative flex flex-col items-center mb-8 mt-2">
+              <div className="relative flex flex-col items-center mb-6 sm:mb-8 mt-2">
                 <div className="relative">
                   <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
@@ -223,7 +264,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
                       stiffness: 260,
                       damping: 20,
                     }}
-                    className="w-20 h-20 rounded-full flex items-center justify-center relative z-10 p-2"
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center relative z-10 p-2"
                   >
                     <Image
                       src="/images/feedtunelogo.png"
@@ -237,7 +278,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
                 </div>
 
                 <motion.h1
-                  className="text-2xl font-bold mt-4 tracking-tight"
+                  className="text-xl sm:text-2xl font-bold mt-3 sm:mt-4 tracking-tight text-center"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
@@ -246,7 +287,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
                 </motion.h1>
 
                 <motion.div
-                  className="text-sm text-muted-foreground mt-1 flex items-center gap-1"
+                  className="text-xs sm:text-sm text-muted-foreground mt-1 flex items-center gap-1 text-center"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4, duration: 0.5 }}
@@ -261,68 +302,77 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
               <Tabs
                 defaultValue={mode}
                 value={mode}
-                onValueChange={setMode}
+                onValueChange={handleModeChange}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-2 mb-8 rounded-full p-1">
+                <TabsList className="grid w-full grid-cols-2 mb-6 sm:mb-8 rounded-full p-1">
                   <TabsTrigger
                     value="login"
-                    className="rounded-full text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    className="rounded-full text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 sm:py-3"
                   >
-                    <LogIn className="h-4 w-4 mr-2" />
+                    <LogIn className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     {t("auth.login")}
                   </TabsTrigger>
                   <TabsTrigger
                     value="signup"
-                    className="rounded-full text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    className="rounded-full text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 sm:py-3"
                   >
-                    <UserPlus className="h-4 w-4 mr-2" />
+                    <UserPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     {t("auth.register")}
                   </TabsTrigger>
                 </TabsList>
 
                 <form onSubmit={handleFormSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">{t("auth.email")}</Label>
+                    <Label htmlFor="email" className="text-sm sm:text-base">{t("auth.email")}</Label>
                     <div className="relative">
                       <Input
                         id="email"
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={handleEmailChange}
                         placeholder={t("auth.emailPlaceholder")}
                         required
-                        className="pl-10"
+                        className={`pl-10 h-11 sm:h-10 ${validationErrors.email ? 'border-red-500 focus:border-red-500' : ''}`}
                         autoComplete="email"
+                        disabled={isSubmitting}
                       />
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     </div>
+                    {validationErrors.email && (
+                      <div className="flex items-center gap-1 text-xs sm:text-sm text-red-500">
+                        <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                        <span className="break-words">{validationErrors.email}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password">{t("auth.password")}</Label>
+                    <Label htmlFor="password" className="text-sm sm:text-base">{t("auth.password")}</Label>
                     <div className="relative">
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={handlePasswordChange}
                         placeholder={t("auth.passwordPlaceholder")}
                         required
-                        className="pl-10 pr-10"
+                        className={`pl-10 pr-10 h-11 sm:h-10 ${validationErrors.password ? 'border-red-500 focus:border-red-500' : ''}`}
                         autoComplete={
                           mode === "signup"
                             ? "new-password"
                             : "current-password"
                         }
+                        disabled={isSubmitting}
                       />
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent touch-manipulation"
                         onClick={togglePasswordVisibility}
+                        disabled={isSubmitting}
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -331,19 +381,26 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
                         )}
                       </Button>
                     </div>
+                    {validationErrors.password && (
+                      <div className="flex items-center gap-1 text-xs sm:text-sm text-red-500">
+                        <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                        <span className="break-words">{validationErrors.password}</span>
+                      </div>
+                    )}
+                    {mode === "signup" && password && (
+                      <div className={`text-xs sm:text-sm ${getPasswordStrengthColor(passwordStrength)}`}>
+                        Password strength: {getPasswordStrengthText(passwordStrength)}
+                      </div>
+                    )}
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full rounded-full"
-                    disabled={isLoading}
+                    className="w-full rounded-full h-11 sm:h-10 text-sm sm:text-base font-medium"
+                    disabled={isLoading || isSubmitting || Object.keys(validationErrors).some(key => validationErrors[key])}
                   >
-                    {isLoading ? (
-                      <motion.div
-                        className="h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                      />
+                    {isLoading || isSubmitting ? (
+                      <LoadingSpinner size="md" color="white" />
                     ) : (
                       <>
                         {mode === "login" ? (
@@ -361,17 +418,17 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
                     )}
                   </Button>
 
-                  <div className="text-center text-sm text-muted-foreground">
+                  <div className="text-center text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     <span>{t("auth.termsText")}</span>{" "}
                     <Button
                       variant="link"
-                      className="h-auto p-0 text-primary"
+                      className="h-auto p-0 text-primary text-xs sm:text-sm"
                       asChild
                     >
                       <Link
                         href="/terms"
                         target="_blank"
-                        className="inline-flex items-center hover:underline"
+                        className="inline-flex items-center hover:underline touch-manipulation"
                       >
                         {t("auth.termsLink")}
                         <ExternalLink className="ml-1 h-3 w-3" />

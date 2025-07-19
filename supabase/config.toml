@@ -129,16 +129,22 @@ password_requirements = ""
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
+# Free tier: 10 emails/hour, Pro: 100 emails/hour
 email_sent = 2
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
+# Free tier: 30 SMS/hour, Pro: 100 SMS/hour
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
+# Free tier: 30/hour, Pro: 100/hour
 anonymous_users = 30
 # Number of sessions that can be refreshed in a 5 minute interval per IP address.
+# Free tier: 150/5min, Pro: 300/5min
 token_refresh = 150
 # Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
+# Free tier: 30/5min, Pro: 100/5min
 sign_in_sign_ups = 30
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
+# Free tier: 30/5min, Pro: 100/5min
 token_verifications = 30
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
@@ -290,7 +296,7 @@ deno_version = 1
 # secret_key = "env(SECRET_VALUE)"
 
 [analytics]
-enabled = true
+enabled = false
 port = 54327
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
