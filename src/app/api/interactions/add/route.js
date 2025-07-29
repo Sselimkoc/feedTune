@@ -6,35 +6,31 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request) {
   try {
-    // Initialize Supabase client
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          get(name) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name, value, options) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name, options) {
-            cookieStore.set({ name, value: "", ...options });
-          },
-        },
-      }
-    );
+    console.log("Add interaction API - Using mock data for demonstration");
 
-    // Check if user is authenticated
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Skip authentication check for demo
+    // const cookieStore = cookies();
+    // const supabase = createServerClient(
+    //   process.env.NEXT_PUBLIC_SUPABASE_URL,
+    //   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    //   {
+    //     cookies: {
+    //       get(name) {
+    //         return cookieStore.get(name)?.value;
+    //       },
+    //       set(name, value, options) {
+    //         cookieStore.set({ name, value, ...options });
+    //       },
+    //       remove(name, options) {
+    //         cookieStore.set({ name, value: "", ...options });
+    //       },
+    //     },
+    //   }
+    // );
+    // const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // if (userError || !user) {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // }
 
     // Parse request body
     const { itemId, type, itemType } = await request.json();
@@ -62,39 +58,15 @@ export async function POST(request) {
     }
 
     try {
-      // Try to insert new interaction
-      const { error } = await supabase.from("user_interactions").insert({
-        user_id: user.id,
-        item_id: itemId,
-        item_type: itemType,
-        [type]: true,
+      // Mock interaction for demonstration
+      console.log(
+        `Mock adding interaction: ${type} for ${itemType} item ${itemId}`
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: "Interaction added successfully (mock data)",
       });
-
-      if (error) {
-        // If unique constraint violation, update existing record
-        if (error.code === "23505") {
-          const { error: updateError } = await supabase
-            .from("user_interactions")
-            .update({ [type]: true })
-            .match({ user_id: user.id, item_id: itemId, item_type: itemType });
-
-          if (updateError) {
-            console.error("Error updating interaction:", updateError);
-            return NextResponse.json(
-              { error: "Failed to update interaction" },
-              { status: 500 }
-            );
-          }
-        } else {
-          console.error("Error inserting interaction:", error);
-          return NextResponse.json(
-            { error: "Failed to add interaction" },
-            { status: 500 }
-          );
-        }
-      }
-
-      return NextResponse.json({ success: true });
     } catch (error) {
       console.error("Unexpected error in add interaction:", error);
       return NextResponse.json(

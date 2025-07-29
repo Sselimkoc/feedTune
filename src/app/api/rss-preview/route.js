@@ -1,6 +1,31 @@
 import { NextResponse } from "next/server";
 import { isValidUrl } from "@/lib/utils";
 
+// Mock RSS feed data for demonstration
+const mockRssFeeds = {
+  "https://techcrunch.com/feed/": {
+    title: "TechCrunch",
+    description: "Latest technology news and startup information",
+    link: "https://techcrunch.com",
+    icon: "https://techcrunch.com/wp-content/uploads/2015/02/cropped-cropped-favicon-gradient.png",
+    url: "https://techcrunch.com/feed/",
+  },
+  "https://www.theverge.com/rss/index.xml": {
+    title: "The Verge",
+    description: "Technology, science, art, and culture",
+    link: "https://www.theverge.com",
+    icon: "https://cdn.vox-cdn.com/uploads/chorus_asset/file/7395359/favicon-32x32.0.png",
+    url: "https://www.theverge.com/rss/index.xml",
+  },
+  "https://feeds.arstechnica.com/arstechnica/index": {
+    title: "Ars Technica",
+    description: "Technology news and analysis",
+    link: "https://arstechnica.com",
+    icon: "https://cdn.arstechnica.net/wp-content/uploads/2016/02/ars-logo-2016.png",
+    url: "https://feeds.arstechnica.com/arstechnica/index",
+  },
+};
+
 /**
  * RSS Feed Preview API
  * Parses RSS feeds and returns metadata
@@ -96,7 +121,18 @@ export async function POST(request) {
       );
     }
 
-    // Parse the RSS feed
+    // Check if we have mock data for this URL
+    if (mockRssFeeds[url]) {
+      console.log("Using mock RSS feed data for:", url);
+      const feedData = mockRssFeeds[url];
+
+      return NextResponse.json({
+        success: true,
+        data: feedData,
+      });
+    }
+
+    // Parse the RSS feed (fallback for non-mock URLs)
     const feedData = await parseRssFeed(url);
 
     return NextResponse.json({

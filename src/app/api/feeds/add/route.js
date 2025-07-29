@@ -1,23 +1,19 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
+import { mockFeeds } from "@/lib/mockData";
 
 export async function POST(request) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerSupabaseClient();
+    console.log("Feed add API - Using mock data for demonstration");
 
-    // Check authentication
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
-    }
+    // Skip authentication check for demo
+    // const cookieStore = await cookies();
+    // const supabase = createServerSupabaseClient();
+    // const { data: { session } } = await supabase.auth.getSession();
+    // if (!session) {
+    //   return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    // }
 
     const { url, type, extraData = {} } = await request.json();
 
@@ -80,24 +76,24 @@ export async function POST(request) {
       updated_at: new Date().toISOString(),
     };
 
-    // Add feed to database
-    const { data: newFeed, error } = await supabase
-      .from("feeds")
-      .insert(feedData)
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === "23505") {
-        throw new Error("This feed is already in your collection");
-      }
-      throw error;
-    }
+    // Create mock feed for demonstration
+    const mockFeed = {
+      id: `mock-${Date.now()}`,
+      url: normalizedUrl,
+      user_id: "demo-user",
+      type: feedType,
+      title: extraData.title || feedInfo.feed?.title || normalizedUrl,
+      description: extraData.description || feedInfo.feed?.description || "",
+      icon: extraData.icon || feedInfo.feed?.icon || null,
+      category_id: extraData.category_id || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
 
     return NextResponse.json({
       success: true,
-      feed: newFeed,
-      message: "Feed added successfully",
+      feed: mockFeed,
+      message: "Feed added successfully (mock data)",
     });
   } catch (error) {
     console.error("Error adding feed:", error);
