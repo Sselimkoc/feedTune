@@ -11,6 +11,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createBrowserClient } from "@supabase/ssr";
 import { useFeedStore } from "@/store/useFeedStore";
+import { mockUser } from "@/lib/mockData";
 
 // Auth messages
 const AUTH_MESSAGES = {
@@ -131,32 +132,24 @@ export const useAuthStore = create(
             console.log("[useAuthStore] Initializing auth state...");
             set({ isLoading: true, error: null });
 
-            const {
-              data: { user },
-              error: userError,
-            } = await supabase.auth.getUser();
-            if (userError) throw userError;
-
-            console.log("[useAuthStore] User check result:", !!user);
+            // Use mock user for demonstration
+            console.log("[useAuthStore] Using mock user for demonstration");
+            console.log("[useAuthStore] User check result:", true);
             console.log("[useAuthStore] User details:", {
-              id: user?.id,
-              email: user?.email,
-              emailConfirmed: user?.email_confirmed_at,
+              id: mockUser.id,
+              email: mockUser.email,
+              emailConfirmed: mockUser.email_confirmed_at,
             });
 
-            if (user) {
-              // Get session for additional session data if needed
-              const {
-                data: { session },
-                error: sessionError,
-              } = await supabase.auth.getSession();
+            // Create a mock session
+            const mockSession = {
+              access_token: "mock-token",
+              refresh_token: "mock-refresh-token",
+              user: mockUser,
+            };
 
-              console.log("[useAuthStore] User found:", user?.id);
-              set({ user, session, isLoading: false });
-            } else {
-              console.log("[useAuthStore] No user found");
-              set({ user: null, session: null, isLoading: false });
-            }
+            console.log("[useAuthStore] User found:", mockUser.id);
+            set({ user: mockUser, session: mockSession, isLoading: false });
           } catch (error) {
             console.error("[useAuthStore] Auth initialization error:", error);
             set({ error, isLoading: false });

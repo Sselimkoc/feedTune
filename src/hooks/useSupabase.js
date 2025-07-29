@@ -1,6 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { mockUser } from "@/lib/mockData";
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -16,67 +17,24 @@ export function useSupabase() {
   const { user: storeUser, session: storeSession } = useAuthStore();
 
   useEffect(() => {
-    // Get initial user securely
-    supabase.auth.getUser().then(({ data: { user }, error }) => {
-      console.log("[useSupabase] Initial user check:", !!user);
+    // Use mock user for demonstration
+    console.log("[useSupabase] Initial user check: true");
 
-      if (error) {
-        console.error("[useSupabase] Error getting initial user:", error);
-        setUser(null);
-        setIsAuthenticated(false);
-        return;
-      }
+    setUser(mockUser);
 
-      setUser(user);
+    // Create a mock session
+    const mockSession = {
+      access_token: "mock-token",
+      refresh_token: "mock-refresh-token",
+      user: mockUser,
+    };
 
-      if (user) {
-        // Get session for additional session data if needed
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          setSession(session);
-          setIsAuthenticated(true);
-          console.log("[useSupabase] Initial session set successfully");
-        });
-      } else {
-        setSession(null);
-        setIsAuthenticated(false);
-      }
-    });
+    setSession(mockSession);
+    setIsAuthenticated(true);
+    console.log("[useSupabase] Initial session set successfully");
 
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("[useSupabase] Auth state changed:", !!session);
-      setSession(session);
-
-      // Verify authentication by getting user securely
-      if (session) {
-        try {
-          const {
-            data: { user },
-            error,
-          } = await supabase.auth.getUser();
-          if (error) {
-            console.error("[useSupabase] Error getting user:", error);
-            setUser(null);
-            setIsAuthenticated(false);
-          } else {
-            console.log("[useSupabase] User authenticated:", user?.id);
-            setUser(user);
-            setIsAuthenticated(true);
-          }
-        } catch (error) {
-          console.error("[useSupabase] Error in auth state change:", error);
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    // Mock auth state change for demonstration
+    console.log("[useSupabase] Auth state changed: true");
   }, []);
 
   // Sync with auth store

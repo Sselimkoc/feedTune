@@ -603,7 +603,12 @@ export function useFeedService() {
 
       try {
         console.log("[feedsQuery] Fetching feeds from API...");
-        const response = await fetch("/api/feeds");
+        const response = await fetch("/api/feeds", {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -636,7 +641,12 @@ export function useFeedService() {
       console.log("[itemsQuery] Fetching items from API...");
 
       try {
-        const response = await fetch("/api/feeds");
+        const response = await fetch("/api/feeds", {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -668,14 +678,18 @@ export function useFeedService() {
       if (!user || !isAuthenticated) return [];
 
       try {
-        const response = await fetch("/api/feeds");
+        const response = await fetch("/api/favorites", {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        const items = data.recentItems || [];
-        return items.filter((item) => item.is_favorite);
+        return data.items || [];
       } catch (error) {
         console.error("[favoritesQuery] Error fetching favorites:", error);
         return [];
@@ -693,14 +707,18 @@ export function useFeedService() {
       if (!user || !isAuthenticated) return [];
 
       try {
-        const response = await fetch("/api/feeds");
+        const response = await fetch("/api/read-later", {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        const items = data.recentItems || [];
-        return items.filter((item) => item.is_read_later);
+        return data.items || [];
       } catch (error) {
         console.error(
           "[readLaterQuery] Error fetching read later items:",
