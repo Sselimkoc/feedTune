@@ -1,143 +1,114 @@
 import { NextResponse } from "next/server";
-import Parser from "rss-parser";
+import { isValidUrl } from "@/lib/utils";
 
 /**
- * RSS Önizleme API
- * Verilen URL'deki RSS beslemesini çekip önizleme bilgilerini döndürür
- * Endpoint: POST /api/rss-preview
+ * RSS Feed Preview API
+ * Parses RSS feeds and returns metadata
+ */
+
+/**
+ * Parse RSS feed and extract metadata
+ * @param {string} url - RSS feed URL
+ * @returns {Promise<object>} - Feed metadata
+ */
+async function parseRssFeed(url) {
+  try {
+    // Fetch the RSS feed
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; FeedTune/1.0)",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch RSS feed: ${response.status}`);
+    }
+
+    const xmlText = await response.text();
+
+    // Basic XML parsing (in a real app, you'd use a proper XML parser)
+    const titleMatch = xmlText.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const descriptionMatch = xmlText.match(
+      /<description[^>]*>([^<]+)<\/description>/i
+    );
+    const linkMatch = xmlText.match(/<link[^>]*>([^<]+)<\/link>/i);
+    const imageMatch = xmlText.match(
+      /<image[^>]*>.*?<url[^>]*>([^<]+)<\/url>/is
+    );
+
+    const title = titleMatch ? titleMatch[1].trim() : "Unknown Feed";
+    const description = descriptionMatch ? descriptionMatch[1].trim() : "";
+    const link = linkMatch ? linkMatch[1].trim() : url;
+    const icon = imageMatch ? imageMatch[1].trim() : null;
+
+    return {
+      title,
+      description,
+      link,
+      icon,
+      url,
+    };
+  } catch (error) {
+    console.error("Error parsing RSS feed:", error);
+    throw new Error(`Failed to parse RSS feed: ${error.message}`);
+  }
+}
+
+/**
+ * RSS feed preview endpoint
+ *
+ * POST /api/rss-preview
+ * Body:
+ * - url: RSS feed URL
  */
 export async function POST(request) {
+  console.log("RSS preview API POST called");
+
   try {
-    const { url } = await request.json();
+    const body = await request.json().catch((e) => {
+      console.error("JSON parsing error:", e);
+      return {};
+    });
+
+    console.log("Request body:", body);
+
+    const { url } = body;
 
     if (!url) {
+      console.error("RSS preview requires URL parameter");
       return NextResponse.json(
-        { success: false, error: "URL parametresi gerekli" },
+        {
+          success: false,
+          error: "URL parameter is required",
+        },
         { status: 400 }
       );
     }
 
-    console.log(`RSS Önizleme: ${url} çekiliyor`);
-
-    const parser = new Parser({
-      customFields: {
-        item: [
-          ["media:content", "media"],
-          ["media:thumbnail", "mediaThumbnail"],
-          ["enclosure", "enclosure"],
-          ["content:encoded", "contentEncoded"],
-          ["dc:creator", "creator"],
-        ],
-      },
-    });
-
-    let response;
-    try {
-      response = await fetch(url, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-          Accept:
-            "application/rss+xml, application/xml, text/xml, application/atom+xml, text/html, */*",
-        },
-        timeout: 10000, // 10 saniye timeout
-      });
-    } catch (fetchError) {
-      console.error("Fetch hatası:", fetchError);
+    if (!isValidUrl(url)) {
+      console.error("Invalid URL provided:", url);
       return NextResponse.json(
         {
           success: false,
-          error: `RSS kaynağına erişilemedi: ${fetchError.message}`,
+          error: "Please provide a valid URL",
         },
-        { status: 502 }
+        { status: 400 }
       );
     }
 
-    if (!response.ok) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `RSS kaynağına erişilemedi: ${response.status} ${response.statusText}`,
-        },
-        { status: response.status }
-      );
-    }
+    // Parse the RSS feed
+    const feedData = await parseRssFeed(url);
 
-    const content = await response.text();
-
-    if (!content || content.trim() === "") {
-      return NextResponse.json(
-        { success: false, error: "RSS beslemesi boş içerik döndürdü" },
-        { status: 404 }
-      );
-    }
-
-    let feed;
-    try {
-      feed = await parser.parseString(content);
-    } catch (parseError) {
-      console.error("RSS ayrıştırma hatası:", parseError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: `RSS beslemesi ayrıştırılamadı: ${parseError.message}`,
-        },
-        { status: 422 }
-      );
-    }
-
-    if (!feed) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "RSS beslemesi bulunamadı veya ayrıştırılamadı",
-        },
-        { status: 404 }
-      );
-    }
-
-    // Öğe sayısını kontrol et ve logla
-    let originalItemCount = 0;
-    if (feed.items && Array.isArray(feed.items)) {
-      originalItemCount = feed.items.length;
-      
-      // Çok fazla öğe varsa sınırla (önizleme için 50 yeterli)
-      if (originalItemCount > 50) {
-        console.log(`RSS Önizleme: Öğe sayısı sınırlandırılıyor: ${originalItemCount} -> 50`);
-        feed.items = feed.items.slice(0, 50);
-      }
-      
-      console.log(`RSS Önizleme: ${feed.items.length} öğe (orijinal: ${originalItemCount})`);
-    }
-
-    const preview = Array.isArray(feed.items)
-      ? feed.items.slice(0, 3).map((item) => ({
-          title: item.title || "Başlıksız",
-          link: item.link || "",
-          date: item.pubDate || item.isoDate || new Date().toISOString(),
-          summary: item.contentSnippet || item.summary || "",
-        }))
-      : [];
-
-    const feedData = {
+    return NextResponse.json({
       success: true,
-      title: feed.title || "Başlıksız Besleme",
-      description: feed.description || "",
-      items: originalItemCount || feed.items?.length || 0,
-      image: feed.image?.url || feed.favicon || null,
-      language: feed.language || null,
-      lastUpdated: feed.lastBuildDate || null,
-      preview: preview,
-      url: url,
-    };
-
-    return NextResponse.json(feedData, { status: 200 });
+      feed: feedData,
+    });
   } catch (error) {
-    console.error("RSS önizleme hatası:", error);
+    console.error("RSS preview error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: `RSS önizleme hatası: ${error.message}`,
+        error: `RSS preview failed: ${error.message}`,
       },
       { status: 500 }
     );
@@ -145,12 +116,30 @@ export async function POST(request) {
 }
 
 /**
- * RSS önizleme durum kontrolü
+ * GET method support
  */
-export async function GET() {
+export async function GET(request) {
+  console.log("RSS preview service GET called");
+
+  const { searchParams } = new URL(request.url);
+  const url = searchParams.get("url");
+
+  if (url) {
+    console.log("GET request with URL parameter detected, processing...");
+    return POST(
+      new Request(request.url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+      })
+    );
+  }
+
   return NextResponse.json({
-    success: true,
-    status: "available",
-    message: "RSS preview service is running",
+    status: "RSS preview service is running",
+    time: new Date().toISOString(),
+    note: "Add url parameter to preview an RSS feed",
   });
 }

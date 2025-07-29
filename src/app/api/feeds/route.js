@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request) {
   try {
-    // Initialize Supabase client
+    // Initialize Supabase client first
     const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -26,20 +26,24 @@ export async function GET(request) {
       }
     );
 
-    // Check if user is authenticated
+    // Check if user is authenticated using the same client
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (userError || !user) {
+      console.error("Authentication error:", userError);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user feeds
+    console.log("API: User authenticated:", user.id);
+
+    // Get user feeds using the same authenticated client
     const { data: feeds, error: feedsError } = await supabase
       .from("feeds")
       .select("*")
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (feedsError) {
@@ -95,38 +99,67 @@ export async function GET(request) {
       console.error("Error fetching YouTube items:", ytError);
     }
 
-    // Combine and format items
+    // Get user interactions for all items
+    const { data: userInteractions, error: interactionsError } = await supabase
+      .from("user_interactions")
+      .select("*")
+      .eq("user_id", user.id);
+
+    if (interactionsError) {
+      console.error("Error fetching user interactions:", interactionsError);
+    }
+
+    // Create a map of interactions for quick lookup
+    const interactionsMap = new Map();
+    userInteractions?.forEach((interaction) => {
+      const key = `${interaction.item_type}_${interaction.item_id}`;
+      interactionsMap.set(key, interaction);
+    });
+
+    // Combine and format items with interactions
     let recentItems = [];
 
     if (rssItems && rssItems.length > 0) {
       recentItems.push(
-        ...rssItems.map((item) => ({
-          id: item.id,
-          title: item.title,
-          description: item.description,
-          published_at: item.published_at,
-          feed_id: item.feed_id,
-          feed_title: item.feed_title,
-          type: "rss",
-          url: item.url,
-          thumbnail: item.thumbnail,
-        }))
+        ...rssItems.map((item) => {
+          const interaction = interactionsMap.get(`rss_${item.id}`);
+          return {
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            published_at: item.published_at,
+            feed_id: item.feed_id,
+            feed_title: item.feed_title,
+            type: "rss",
+            url: item.url,
+            thumbnail: item.thumbnail,
+            is_read: interaction?.is_read || false,
+            is_favorite: interaction?.is_favorite || false,
+            is_read_later: interaction?.is_read_later || false,
+          };
+        })
       );
     }
 
     if (youtubeItems && youtubeItems.length > 0) {
       recentItems.push(
-        ...youtubeItems.map((item) => ({
-          id: item.id,
-          title: item.title,
-          description: item.description,
-          published_at: item.published_at,
-          feed_id: item.feed_id,
-          feed_title: item.channel_title,
-          type: "youtube",
-          url: `https://www.youtube.com/watch?v=${item.video_id}`,
-          thumbnail: item.thumbnail,
-        }))
+        ...youtubeItems.map((item) => {
+          const interaction = interactionsMap.get(`youtube_${item.id}`);
+          return {
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            published_at: item.published_at,
+            feed_id: item.feed_id,
+            feed_title: item.channel_title,
+            type: "youtube",
+            url: `https://www.youtube.com/watch?v=${item.video_id}`,
+            thumbnail: item.thumbnail,
+            is_read: interaction?.is_read || false,
+            is_favorite: interaction?.is_favorite || false,
+            is_read_later: interaction?.is_read_later || false,
+          };
+        })
       );
     }
 
@@ -140,64 +173,47 @@ export async function GET(request) {
     // Limit to 10 most recent
     recentItems = recentItems.slice(0, 10);
 
-    // Get favorites count from rss_interactions
-    const { count: rssFavoritesCount, error: rssFavError } = await supabase
-      .from("rss_interactions")
+    // Get favorites count from user_interactions
+    const { count: favoritesCount, error: favError } = await supabase
+      .from("user_interactions")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .eq("is_favorite", true);
 
-    if (rssFavError) {
-      console.error("Error fetching RSS favorites count:", rssFavError);
+    if (favError) {
+      console.error("Error fetching favorites count:", favError);
     }
 
-    // Get favorites count from youtube_interactions
-    const { count: ytFavoritesCount, error: ytFavError } = await supabase
-      .from("youtube_interactions")
+    // Get read later count from user_interactions
+    const { count: readLaterCount, error: rlError } = await supabase
+      .from("user_interactions")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", session.user.id)
-      .eq("is_favorite", true);
-
-    if (ytFavError) {
-      console.error("Error fetching YouTube favorites count:", ytFavError);
-    }
-
-    // Get read later count from rss_interactions
-    const { count: rssReadLaterCount, error: rssRlError } = await supabase
-      .from("rss_interactions")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .eq("is_read_later", true);
 
-    if (rssRlError) {
-      console.error("Error fetching RSS read later count:", rssRlError);
+    if (rlError) {
+      console.error("Error fetching read later count:", rlError);
     }
 
-    // Get read later count from youtube_interactions
-    const { count: ytReadLaterCount, error: ytRlError } = await supabase
-      .from("youtube_interactions")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", session.user.id)
-      .eq("is_read_later", true);
-
-    if (ytRlError) {
-      console.error("Error fetching YouTube read later count:", ytRlError);
-    }
-
-    // Get unread count - combine RSS and YouTube items
-    // For RSS items
     let rssUnreadCount = 0;
     let ytUnreadCount = 0;
 
     try {
-      // First get all read RSS item IDs
-      const { data: readRssItemIds } = await supabase
-        .from("rss_interactions")
-        .select("item_id")
-        .eq("user_id", session.user.id)
+      // First get all read item IDs from user_interactions
+      const { data: readItemIds } = await supabase
+        .from("user_interactions")
+        .select("item_id, item_type")
+        .eq("user_id", user.id)
         .eq("is_read", true);
 
-      const readRssIds = readRssItemIds?.map((item) => item.item_id) || [];
+      const readRssIds =
+        readItemIds
+          ?.filter((item) => item.item_type === "rss")
+          .map((item) => item.item_id) || [];
+      const readYtIds =
+        readItemIds
+          ?.filter((item) => item.item_type === "youtube")
+          .map((item) => item.item_id) || [];
 
       // Then count all RSS items that are not in the read items
       if (feedIds.length > 0) {
@@ -223,19 +239,6 @@ export async function GET(request) {
           }
         }
       }
-    } catch (rssUnreadError) {
-      console.error("Error calculating RSS unread count:", rssUnreadError);
-    }
-
-    try {
-      // First get all read YouTube item IDs
-      const { data: readYtItemIds } = await supabase
-        .from("youtube_interactions")
-        .select("item_id")
-        .eq("user_id", session.user.id)
-        .eq("is_read", true);
-
-      const readYtIds = readYtItemIds?.map((item) => item.item_id) || [];
 
       // Then count all YouTube items that are not in the read items
       if (feedIds.length > 0) {
@@ -261,17 +264,19 @@ export async function GET(request) {
           }
         }
       }
-    } catch (ytUnreadError) {
-      console.error("Error calculating YouTube unread count:", ytUnreadError);
+    } catch (unreadError) {
+      console.error("Error calculating unread count:", unreadError);
     }
 
     // Calculate stats
     const stats = {
       feeds: feeds.length,
-      favorites: (rssFavoritesCount || 0) + (ytFavoritesCount || 0),
-      readLater: (rssReadLaterCount || 0) + (ytReadLaterCount || 0),
+      favorites: favoritesCount || 0,
+      readLater: readLaterCount || 0,
       unread: rssUnreadCount + ytUnreadCount,
     };
+
+    console.log("API: Successfully returning data for user:", user.id);
 
     return NextResponse.json({
       feeds,

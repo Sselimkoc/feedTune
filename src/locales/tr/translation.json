@@ -11,7 +11,8 @@
     "loading": "Yükleniyor...",
     "pleaseWait" : "Lütfen bekleyin...",
     "refresh": "Yenile",
-    "cancel": "İptal"
+    "cancel": "İptal",
+    "add": "Ekle"
   },
   "feeds": {
     "title": "Beslemeler",
@@ -63,7 +64,11 @@
       "contentOptions": "İçerik Seçenekleri",
       "useFullContent": "Tam İçerik",
       "useSummary": "Sadece Özet",
-      "add": "Besleme Ekle"
+      "add": "Besleme Ekle",
+      "searchResults": "Arama Sonuçları",
+      "feedPreview": "Besleme Önizlemesi",
+      "back": "Geri",
+      "fullContentDescription": "Tam makale içeriğini getir (daha yavaş olabilir)"
     },
     "autoSyncComplete": "Beslemeler Güncellendi",
     "autoSyncDescription": "{{count}} besleme yeni içerikle yenilendi"
@@ -91,6 +96,26 @@
     "dryRun": "Sadece önizleme (silme)",
     "runCleanup": "Temizleme Çalıştır",
     "previewCleanup": "Temizleme Önizle"
+  },
+  "demo": {
+    "modeEntered": "Demo Modu Etkinleştirildi",
+    "modeEnteredDescription": "Artık demo modundasınız. Uygulamayı sınırlı işlevsellikle deneyin.",
+    "modeExited": "Demo Modu Devre Dışı",
+    "modeExitedDescription": "Demo modundan çıktınız. Tüm özelliklere erişmek için kayıt olun.",
+    "feedLimitReached": "Besleme Limiti Ulaşıldı",
+    "feedLimitDescription": "Demo modu 2 besleme ile sınırlıdır. Sınırsız besleme için kayıt olun.",
+    "feedAdded": "Demo Beslemesi Eklendi",
+    "feedAddedDescription": "Besleme demo moduna eklendi. Beslemelerinizi kalıcı olarak kaydetmek için kayıt olun.",
+    "feedRemoved": "Demo Beslemesi Kaldırıldı",
+    "feedRemovedDescription": "Besleme demo modundan kaldırıldı.",
+    "featureNotAvailable": "Özellik Kullanılamıyor",
+    "favoritesNotAvailable": "Favoriler demo modunda kullanılamıyor. Bu özelliği kullanmak için kayıt olun.",
+    "readLaterNotAvailable": "Daha Sonra Oku demo modunda kullanılamıyor. Bu özelliği kullanmak için kayıt olun.",
+    "tryDemo": "Demo Dene",
+    "exitDemo": "Demo'dan Çık",
+    "demoMode": "Demo Modu",
+    "demoDescription": "Uygulamayı sınırlı işlevsellikle deneyin",
+    "signUpToUnlock": "Tüm özellikleri açmak için kayıt olun"
   },
   "home": {
     "hero": {

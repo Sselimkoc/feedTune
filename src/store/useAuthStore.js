@@ -128,27 +128,38 @@ export const useAuthStore = create(
         // Initialize auth state (no toast here)
         initialize: async () => {
           try {
+            console.log("[useAuthStore] Initializing auth state...");
             set({ isLoading: true, error: null });
 
             const {
-              data: { session },
-              error: sessionError,
-            } = await supabase.auth.getSession();
-            if (sessionError) throw sessionError;
+              data: { user },
+              error: userError,
+            } = await supabase.auth.getUser();
+            if (userError) throw userError;
 
-            if (session) {
+            console.log("[useAuthStore] User check result:", !!user);
+            console.log("[useAuthStore] User details:", {
+              id: user?.id,
+              email: user?.email,
+              emailConfirmed: user?.email_confirmed_at,
+            });
+
+            if (user) {
+              // Get session for additional session data if needed
               const {
-                data: { user },
-                error: userError,
-              } = await supabase.auth.getUser();
-              if (userError) throw userError;
+                data: { session },
+                error: sessionError,
+              } = await supabase.auth.getSession();
+
+              console.log("[useAuthStore] User found:", user?.id);
               set({ user, session, isLoading: false });
             } else {
+              console.log("[useAuthStore] No user found");
               set({ user: null, session: null, isLoading: false });
             }
           } catch (error) {
+            console.error("[useAuthStore] Auth initialization error:", error);
             set({ error, isLoading: false });
-            console.error("Auth initialization error:", error);
           }
         },
 
@@ -158,7 +169,11 @@ export const useAuthStore = create(
             // Check rate limiting
             if (!rateLimiter.canMakeRequest()) {
               toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
-              return { success: false, error: "Rate limited", status: "rate_limited" };
+              return {
+                success: false,
+                error: "Rate limited",
+                status: "rate_limited",
+              };
             }
 
             set({ isLoading: true, error: null });
@@ -207,7 +222,11 @@ export const useAuthStore = create(
             // Check rate limiting
             if (!rateLimiter.canMakeRequest()) {
               toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
-              return { success: false, error: "Rate limited", status: "rate_limited" };
+              return {
+                success: false,
+                error: "Rate limited",
+                status: "rate_limited",
+              };
             }
 
             set({ isLoading: true, error: null });

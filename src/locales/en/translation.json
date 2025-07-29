@@ -11,7 +11,8 @@
     "loading": "Loading...",
     "pleaseWait" : "Please wait...",
     "refresh": "Refresh",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "add": "Add"
   },
   "feeds": {
     "title": "Feeds",
@@ -55,7 +56,7 @@
       "selectCategory": "Select category",
       "categories": {
         "general": "General",
-        "tech": "Tech",
+        "tech": "Technology",
         "news": "News",
         "entertainment": "Entertainment",
         "other": "Other"
@@ -63,7 +64,11 @@
       "contentOptions": "Content Options",
       "useFullContent": "Full Content",
       "useSummary": "Summary Only",
-      "add": "Add Feed"
+      "add": "Add Feed",
+      "searchResults": "Search Results",
+      "feedPreview": "Feed Preview",
+      "back": "Back",
+      "fullContentDescription": "Fetch full article content (may be slower)"
     },
     "autoSyncComplete": "Feeds Updated",
     "autoSyncDescription": "{{count}} feeds have been refreshed with new content"
@@ -91,6 +96,26 @@
     "dryRun": "Preview only (don't delete)",
     "runCleanup": "Run Cleanup",
     "previewCleanup": "Preview Cleanup"
+  },
+  "demo": {
+    "modeEntered": "Demo Mode Activated",
+    "modeEnteredDescription": "You're now in demo mode. Try the app with limited functionality.",
+    "modeExited": "Demo Mode Deactivated",
+    "modeExitedDescription": "You've exited demo mode. Sign up to access full features.",
+    "feedLimitReached": "Feed Limit Reached",
+    "feedLimitDescription": "Demo mode is limited to 2 feeds. Sign up for unlimited feeds.",
+    "feedAdded": "Demo Feed Added",
+    "feedAddedDescription": "Feed added to demo mode. Sign up to save your feeds permanently.",
+    "feedRemoved": "Demo Feed Removed",
+    "feedRemovedDescription": "Feed removed from demo mode.",
+    "featureNotAvailable": "Feature Not Available",
+    "favoritesNotAvailable": "Favorites are not available in demo mode. Sign up to use this feature.",
+    "readLaterNotAvailable": "Read Later is not available in demo mode. Sign up to use this feature.",
+    "tryDemo": "Try Demo",
+    "exitDemo": "Exit Demo",
+    "demoMode": "Demo Mode",
+    "demoDescription": "Try the app with limited functionality",
+    "signUpToUnlock": "Sign up to unlock all features"
   },
   "home": {
     "hero": {
