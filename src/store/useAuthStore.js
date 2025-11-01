@@ -91,13 +91,20 @@ export const useAuthStore = create(
           console.error("[useAuthStore] signIn error:", error);
           const errorMessage = error.message || "Login failed";
           set({ isLoading: false, error: errorMessage });
-          
+
           // Check if error is due to rate limit
-          if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
+          if (
+            errorMessage.includes("rate limit") ||
+            errorMessage.includes("429")
+          ) {
             if (toastError) toastError("auth.rateLimitError");
-            return { success: false, error: errorMessage, status: "rate_limit" };
+            return {
+              success: false,
+              error: errorMessage,
+              status: "rate_limit",
+            };
           }
-          
+
           if (toastError) toastError("auth.loginError");
           return { success: false, error: errorMessage };
         }
@@ -106,7 +113,13 @@ export const useAuthStore = create(
       /**
        * Sign up with email and password
        */
-      signUp: async ({ email, password, displayName, toastSuccess, toastError }) => {
+      signUp: async ({
+        email,
+        password,
+        displayName,
+        toastSuccess,
+        toastError,
+      }) => {
         try {
           set({ isLoading: true, error: null });
 
@@ -128,26 +141,42 @@ export const useAuthStore = create(
             success: true,
             error: null,
             needsVerification: !data.session,
-            status: data.session ? "direct_signup" : "email_verification_needed",
+            status: data.session
+              ? "direct_signup"
+              : "email_verification_needed",
           };
         } catch (error) {
           console.error("[useAuthStore] signUp error:", error);
           const errorMessage = error.message || "Sign up failed";
-          
+
           set({ isLoading: false, error: errorMessage });
-          
+
           // Check if error is due to rate limit
-          if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
+          if (
+            errorMessage.includes("rate limit") ||
+            errorMessage.includes("429")
+          ) {
             if (toastError) toastError("auth.rateLimitError");
-            return { success: false, error: errorMessage, status: "rate_limit" };
+            return {
+              success: false,
+              error: errorMessage,
+              status: "rate_limit",
+            };
           }
-          
+
           // Check if error is due to email already existing
-          if (errorMessage.includes("already registered") || errorMessage.includes("User already exists")) {
+          if (
+            errorMessage.includes("already registered") ||
+            errorMessage.includes("User already exists")
+          ) {
             if (toastError) toastError("auth.emailAlreadyExists");
-            return { success: false, error: errorMessage, status: "email_exists" };
+            return {
+              success: false,
+              error: errorMessage,
+              status: "email_exists",
+            };
           }
-          
+
           if (toastError) toastError("auth.registerError");
           return { success: false, error: errorMessage };
         }

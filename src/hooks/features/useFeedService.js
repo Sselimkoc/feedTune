@@ -9,10 +9,18 @@ import { useToast } from "@/components/core/ui/use-toast";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useSupabase } from "../useSupabase";
+import { feedApi } from "@/lib/api/feedApi";
+import {
+  getFeedsQueryConfig,
+  getItemsQueryConfig,
+  getFavoritesQueryConfig,
+  getReadLaterQueryConfig,
+  queryConstants,
+} from "./feed-screen/useQueryConfig";
 
 // Constants
-const STALE_TIME = 1000 * 60 * 5; // 5 minutes
-const CACHE_TIME = 1000 * 60 * 30; // 30 minutes
+const STALE_TIME = queryConstants.STALE_TIME;
+const CACHE_TIME = queryConstants.CACHE_TIME;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
@@ -561,164 +569,65 @@ export function useFeedService() {
   // Auto-sync trigger state
   const [hasAutoSynced, setHasAutoSynced] = useState(false);
 
-  // Debug session state
-  useEffect(() => {
-    console.log("[useFeedService] Session state:", {
-      hasSession: !!session,
-      hasAccessToken: !!session?.access_token,
-      userId: user?.id,
-      isAuthenticated,
-    });
-  }, [session, user, isAuthenticated]);
-
-  // Set session on Supabase client when available
-  useEffect(() => {
-    if (session && supabase) {
-      console.log("[useFeedService] Setting session on Supabase client");
-      supabase.auth.setSession(session).then(({ data, error }) => {
-        if (error) {
-          console.error("[useFeedService] Error setting session:", error);
-        } else {
-          console.log("[useFeedService] Session set successfully on client");
-        }
-      });
-    }
-  }, [session, supabase]);
-
   // ============================================================================
   // QUERIES
   // ============================================================================
 
   // Fetch feeds with their categories
   const feedsQuery = useQuery({
-    queryKey: ["feeds", user?.id],
+    ...getFeedsQueryConfig(user?.id, isAuthenticated),
     queryFn: async () => {
-      console.log("[feedsQuery] Starting query for user:", user?.id);
-      if (!user || !isAuthenticated) {
-        console.log(
-          "[feedsQuery] No user or not authenticated, returning empty array"
-        );
-        return [];
-      }
-
+      console.log("[feedsQuery] Fetching feeds for user:", user?.id);
       try {
-        console.log("[feedsQuery] Fetching feeds from API...");
-        const response = await fetch("/api/feeds", {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const feeds = data.feeds || [];
-
+        const feeds = await feedApi.fetchFeeds();
         console.log("[feedsQuery] Successfully fetched feeds:", feeds.length);
         return feeds;
       } catch (error) {
-        console.error("[feedsQuery] Error in feeds query:", error);
+        console.error("[feedsQuery] Error fetching feeds:", error);
         return [];
       }
     },
-    enabled: !!user && isAuthenticated,
   });
 
   // Fetch all items with interactions
   const itemsQuery = useQuery({
-    queryKey: ["items", user?.id],
+    ...getItemsQueryConfig(user?.id, isAuthenticated),
     queryFn: async () => {
-      console.log("[itemsQuery] Starting query for user:", user?.id);
-      if (!user || !isAuthenticated) {
-        console.log(
-          "[itemsQuery] No user or not authenticated, returning empty array"
-        );
-        return [];
-      }
-      console.log("[itemsQuery] Fetching items from API...");
-
+      console.log("[itemsQuery] Fetching items for user:", user?.id);
       try {
-        const response = await fetch("/api/feeds", {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const items = data.recentItems || [];
-
-        console.log(
-          "[itemsQuery] Query completed, returning",
-          items.length,
-          "items"
-        );
+        const items = await feedApi.fetchItems();
+        console.log("[itemsQuery] Successfully fetched items:", items.length);
         return items;
       } catch (error) {
         console.error("[itemsQuery] Error fetching items:", error);
         return [];
       }
     },
-    enabled: !!user && isAuthenticated,
-    staleTime: STALE_TIME,
-    gcTime: CACHE_TIME,
   });
 
   // Fetch favorites
   const favoritesQuery = useQuery({
-    queryKey: ["favorites", user?.id],
+    ...getFavoritesQueryConfig(user?.id, isAuthenticated),
     queryFn: async () => {
-      if (!user || !isAuthenticated) return [];
-
+      console.log("[favoritesQuery] Fetching favorites for user:", user?.id);
       try {
-        const response = await fetch("/api/favorites", {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return data.items || [];
+        const items = await feedApi.fetchFavorites();
+        return items;
       } catch (error) {
         console.error("[favoritesQuery] Error fetching favorites:", error);
         return [];
       }
     },
-    enabled: !!user && isAuthenticated,
-    staleTime: STALE_TIME,
-    gcTime: CACHE_TIME,
   });
 
   // Fetch read later items
   const readLaterQuery = useQuery({
-    queryKey: ["read_later", user?.id],
+    ...getReadLaterQueryConfig(user?.id, isAuthenticated),
     queryFn: async () => {
-      if (!user || !isAuthenticated) return [];
-
+      console.log("[readLaterQuery] Fetching read later for user:", user?.id);
       try {
-        const response = await fetch("/api/read-later", {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return data.items || [];
+        const items = await feedApi.fetchReadLater();
+        return items;
       } catch (error) {
         console.error(
           "[readLaterQuery] Error fetching read later items:",
@@ -727,9 +636,6 @@ export function useFeedService() {
         return [];
       }
     },
-    enabled: !!user && isAuthenticated,
-    staleTime: STALE_TIME,
-    gcTime: CACHE_TIME,
   });
 
   // ============================================================================
