@@ -82,8 +82,8 @@ export async function middleware(request) {
     }
   );
 
-  // Refresh session if expired - required for Server Components
-  await supabase.auth.getSession();
+  // Refresh user session securely - required for Server Components
+  await supabase.auth.getUser();
 
   return response;
 }

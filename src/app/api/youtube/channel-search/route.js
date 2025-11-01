@@ -3,6 +3,40 @@ import { isValidUrl } from "@/lib/utils";
 import { youtubeService } from "@/lib/youtube/service";
 import { searchChannels, getChannelById } from "@/lib/youtube/fetch-client";
 
+// Mock YouTube channel data for demonstration
+const mockChannels = {
+  mkbhd: {
+    id: "UCBJycsmduvYEL83R_U4JriQ",
+    title: "Marques Brownlee",
+    description: "Tech reviews and gadget analysis",
+    thumbnail:
+      "https://yt3.googleusercontent.com/ytc/AIf8zZQJhQxqJhQxqJhQxqJhQxqJhQxqJhQxqJhQxqJhQxq=s176-c-k-c0x00ffffff-no-rj",
+    subscriberCount: "17.2M",
+    videoCount: "1,234",
+    url: "https://www.youtube.com/@mkbhd",
+  },
+  linus: {
+    id: "UCXuqSBlHAE6Xw-yeJA0Tunw",
+    title: "Linus Tech Tips",
+    description: "Computer hardware reviews and tech tips",
+    thumbnail:
+      "https://yt3.googleusercontent.com/lkH37D712tiyphnu0Id0D5MwwQ7IRuwgQLVD05iMXlDpN3moO7NCHZjzL8I6uQbJ9uJhQxqJhQxq=s176-c-k-c0x00ffffff-no-rj",
+    subscriberCount: "15.8M",
+    videoCount: "5,678",
+    url: "https://www.youtube.com/@LinusTechTips",
+  },
+  techcrunch: {
+    id: "UCVHFUqWqXsIyHToK6iCVeiQ",
+    title: "TechCrunch",
+    description: "Latest technology news and startup information",
+    thumbnail:
+      "https://yt3.googleusercontent.com/ytc/AIf8zZQJhQxqJhQxqJhQxqJhQxqJhQxqJhQxqJhQxqJhQxq=s176-c-k-c0x00ffffff-no-rj",
+    subscriberCount: "2.1M",
+    videoCount: "3,456",
+    url: "https://www.youtube.com/@TechCrunch",
+  },
+};
+
 /**
  * YouTube Channel Search API
  * Bu endpoint, tüm YouTube kanal arama işlevlerini tek bir yerde toplar.
@@ -66,6 +100,17 @@ export async function POST(request) {
         },
         { status: 400 }
       );
+    }
+
+    // Check for mock data first
+    const mockChannel = mockChannels[searchQuery.toLowerCase()];
+    if (mockChannel) {
+      console.log("Using mock YouTube channel data for:", searchQuery);
+      return NextResponse.json({
+        success: true,
+        source: "mock_data",
+        channel: mockChannel,
+      });
     }
 
     // URL verilmiş ve geçerli bir URL ise, önce kanal ID'yi çıkarmaya çalış

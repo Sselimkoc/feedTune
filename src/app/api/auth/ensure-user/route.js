@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getSecureUser } from "@/lib/auth/serverAuth";
 
 /**
  * API to create user database record
@@ -8,7 +9,20 @@ import { cookies } from "next/headers";
  */
 export async function POST() {
   try {
-    // Session check
+    // Secure user check
+    const user = await getSecureUser();
+
+    // Return error if no user
+    if (!user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.id;
+
+    // Initialize Supabase client for database operations
     const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -27,20 +41,6 @@ export async function POST() {
         },
       }
     );
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    // Return error if no session
-    if (!session) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
-    }
-
-    const userId = session.user.id;
 
     // Check if user already exists
     const { data: existingUser, error: checkError } = await supabase
@@ -73,7 +73,7 @@ export async function POST() {
       .insert([
         {
           id: userId,
-          email: session.user.email,
+          email: user.email,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },

@@ -20,6 +20,13 @@ export function FeedPage() {
     removeInteraction,
     user,
   } = useFeedService();
+
+  // Debug logging
+  console.log("[FeedPage] User:", user);
+  console.log("[FeedPage] Feeds:", feeds);
+  console.log("[FeedPage] Items:", items);
+  console.log("[FeedPage] Loading:", isLoading);
+  console.log("[FeedPage] Error:", error);
   const [selectedFeedIds, setSelectedFeedIds] = useState([]);
   const { t } = useTranslation();
   const queryClient = useQueryClient();

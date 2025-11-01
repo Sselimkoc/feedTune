@@ -7,9 +7,6 @@ import { DeleteFeedDialog } from "../features/feed/dialogs/DeleteFeedDialog";
 export function HomeModals({
   showAuthModal,
   setShowAuthModal,
-  isDialogOpen,
-  openAddFeedDialog,
-  closeAddFeedDialog,
   showDeleteDialog,
   setShowDeleteDialog,
   onDeleteFeed,
@@ -23,12 +20,6 @@ export function HomeModals({
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
         defaultTab="login"
-      />
-
-      <AddFeedDialog
-        isOpen={isDialogOpen}
-        onOpenChange={closeAddFeedDialog}
-        onSuccess={onFeedAdded}
       />
 
       <DeleteFeedDialog

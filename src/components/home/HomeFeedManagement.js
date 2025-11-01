@@ -23,11 +23,10 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AddFeedButton } from "@/components/features/feed/buttons/AddFeedButton";
 import { AddFeedDialog } from "@/components/features/feed/dialogs/AddFeedDialog";
-import { useAddFeed } from "@/hooks/features/feed-screen/useAddFeed";
 
 export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
   const { t } = useTranslation();
-  const { isDialogOpen, openAddFeedDialog, closeAddFeedDialog } = useAddFeed();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
     <section className="py-6 lg:py-8">
@@ -113,116 +112,47 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
                           {t("home.feedManagement.viewContent")}
                         </Link>
                       </Button>
-
-                      <div className="flex items-center">
-                        {feed.url && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-primary"
-                            asChild
-                          >
-                            <Link
-                              href={feed.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title={t("home.feedManagement.websiteLink")}
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </Link>
-                          </Button>
-                        )}
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                          onClick={() => onDeleteFeed(feed.id)}
-                          title={t("common.delete")}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => onDeleteFeed?.(feed.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
-
-            {/* Add Feed Card */}
-            {feeds.length < 6 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: feeds.length * 0.1 }}
-              >
-                <Card
-                  className={cn(
-                    "overflow-hidden h-full border-dashed border border-primary/20 bg-transparent",
-                    "flex items-center justify-center cursor-pointer hover:border-primary/40 transition-all",
-                    "hover:shadow-md hover:translate-y-[-2px]"
-                  )}
-                  onClick={openAddFeedDialog}
-                >
-                  <CardContent className="flex flex-col items-center justify-center p-4 text-center h-full">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                      <PlusCircle className="h-5 w-5 text-primary" />
-                    </div>
-                    <h3 className="text-sm font-medium mb-1">
-                      {t("home.feedManagement.addFeed")}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {t("home.feedManagement.addFeedDescription")}
-                    </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
           </div>
         ) : (
           <motion.div
+            className="text-center py-8"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <Card className="text-center p-6 bg-card/50 backdrop-blur-sm border-primary/10">
-              <CardContent className="pt-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                  <Rss className="h-6 w-6 text-primary/60" />
-                </div>
-                <h3 className="text-lg font-medium mb-1">
-                  {t("home.feedManagement.noFeedsTitle")}
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {t("home.feedManagement.noFeeds")}
-                </p>
-                <AddFeedButton onAddFeed={openAddFeedDialog} />
-              </CardContent>
-            </Card>
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                <Rss className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">
+                {t("home.feedManagement.noFeeds.title")}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {t("home.feedManagement.noFeeds.description")}
+              </p>
+              <AddFeedButton onClick={() => setIsDialogOpen(true)} />
+            </div>
           </motion.div>
         )}
 
-        {feeds && feeds.length > 6 && (
-          <motion.div
-            className="flex justify-center mt-4"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-          >
-            <Button variant="outline" size="sm" className="group" asChild>
-              <Link href="/feeds">
-                {t("home.feedManagement.viewAllFeeds")}
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-            </Button>
-          </motion.div>
-        )}
         <AddFeedDialog
           isOpen={isDialogOpen}
-          onOpenChange={closeAddFeedDialog}
+          onClose={() => setIsDialogOpen(false)}
+          onSubmit={onAddFeed}
         />
       </div>
     </section>

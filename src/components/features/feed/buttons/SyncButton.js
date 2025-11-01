@@ -24,7 +24,7 @@ export function SyncButton({
   const { t } = useLanguage();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-  const { syncYoutubeFeed } = useFeedService();
+  const { syncFeed } = useFeedService();
 
   const isYoutube = feedType === "youtube";
 
@@ -35,7 +35,7 @@ export function SyncButton({
     setIsProcessing(true);
     try {
       if (isYoutube) {
-        await syncYoutubeFeed(feedId);
+        await syncFeed(feedId);
         toast({
           title: t("common.success"),
           description: t("feeds.syncYoutubeSuccess"),

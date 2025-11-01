@@ -6,19 +6,19 @@
 import { supabase } from "@/lib/supabase";
 
 /**
- * Checks the current session
+ * Checks the current session securely using getUser()
  * @returns {Promise<Object|null>} Session information or null
  */
 export async function checkSession() {
   try {
-    const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await supabase.auth.getUser();
 
     if (error) {
       console.error("Error during session check:", error);
       return null;
     }
 
-    return data.session;
+    return data.user ? { user: data.user } : null;
   } catch (error) {
     console.error("Error during session check:", error);
     return null;
@@ -26,7 +26,7 @@ export async function checkSession() {
 }
 
 /**
- * Returns the ID of the logged-in user
+ * Returns the ID of the logged-in user securely
  * @returns {Promise<string|null>} User ID or null
  */
 export async function getCurrentUserId() {

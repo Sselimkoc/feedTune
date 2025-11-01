@@ -1,18 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { HomeContent } from "@/components/home/HomeContent";
+import { getSecureUser } from "@/lib/auth/serverAuth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-async function getSession(supabase) {
+async function getSecureSession() {
   try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    return session;
+    const user = await getSecureUser();
+    return user ? { user } : null;
   } catch (error) {
-    console.error("Error fetching session:", error);
+    console.error("Error fetching secure session:", error);
     return null;
   }
 }
@@ -92,26 +91,7 @@ async function getFeedsData(session) {
 }
 
 export default async function HomePage() {
-  const cookieStore = cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name, value, options) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name, options) {
-          cookieStore.set({ name, value: "", ...options });
-        },
-      },
-    }
-  );
-
-  const session = await getSession(supabase);
+  const session = await getSecureSession();
   const { feeds, stats, recentItems } = await getFeedsData(session);
 
   return (

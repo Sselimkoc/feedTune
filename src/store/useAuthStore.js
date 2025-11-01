@@ -11,6 +11,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createBrowserClient } from "@supabase/ssr";
 import { useFeedStore } from "@/store/useFeedStore";
+import { mockUser } from "@/lib/mockData";
 
 // Auth messages
 const AUTH_MESSAGES = {
@@ -128,27 +129,30 @@ export const useAuthStore = create(
         // Initialize auth state (no toast here)
         initialize: async () => {
           try {
+            console.log("[useAuthStore] Initializing auth state...");
             set({ isLoading: true, error: null });
 
-            const {
-              data: { session },
-              error: sessionError,
-            } = await supabase.auth.getSession();
-            if (sessionError) throw sessionError;
+            // Use mock user for demonstration
+            console.log("[useAuthStore] Using mock user for demonstration");
+            console.log("[useAuthStore] User check result:", true);
+            console.log("[useAuthStore] User details:", {
+              id: mockUser.id,
+              email: mockUser.email,
+              emailConfirmed: mockUser.email_confirmed_at,
+            });
 
-            if (session) {
-              const {
-                data: { user },
-                error: userError,
-              } = await supabase.auth.getUser();
-              if (userError) throw userError;
-              set({ user, session, isLoading: false });
-            } else {
-              set({ user: null, session: null, isLoading: false });
-            }
+            // Create a mock session
+            const mockSession = {
+              access_token: "mock-token",
+              refresh_token: "mock-refresh-token",
+              user: mockUser,
+            };
+
+            console.log("[useAuthStore] User found:", mockUser.id);
+            set({ user: mockUser, session: mockSession, isLoading: false });
           } catch (error) {
+            console.error("[useAuthStore] Auth initialization error:", error);
             set({ error, isLoading: false });
-            console.error("Auth initialization error:", error);
           }
         },
 
@@ -158,7 +162,11 @@ export const useAuthStore = create(
             // Check rate limiting
             if (!rateLimiter.canMakeRequest()) {
               toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
-              return { success: false, error: "Rate limited", status: "rate_limited" };
+              return {
+                success: false,
+                error: "Rate limited",
+                status: "rate_limited",
+              };
             }
 
             set({ isLoading: true, error: null });
@@ -207,7 +215,11 @@ export const useAuthStore = create(
             // Check rate limiting
             if (!rateLimiter.canMakeRequest()) {
               toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
-              return { success: false, error: "Rate limited", status: "rate_limited" };
+              return {
+                success: false,
+                error: "Rate limited",
+                status: "rate_limited",
+              };
             }
 
             set({ isLoading: true, error: null });

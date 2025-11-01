@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/core/ui/button";
 import { ScrollArea } from "@/components/core/ui/scroll-area";
 import { Badge } from "@/components/core/ui/badge";
@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import { AddFeedDialog } from "@/components/features/feed/dialogs/AddFeedDialog";
 import { AddFeedButton } from "@/components/features/feed/buttons/AddFeedButton";
-import { useAddFeed } from "@/hooks/features/feed-screen/useAddFeed";
 import Link from "next/link";
 
 /**
@@ -39,11 +38,11 @@ export function FeedSidebar({
   onToggleFilter = () => {},
   onSearchChange = () => {},
   onClearFilters = () => {},
+  onAddFeed = () => {},
 }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
-
-  const { isDialogOpen, openAddFeedDialog, closeAddFeedDialog } = useAddFeed();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Aramalı ve filtrelenmiş feed listesi
   const filteredFeeds = useMemo(() => {
@@ -78,15 +77,16 @@ export function FeedSidebar({
   const handleAddFeed = useCallback(
     async (feedData) => {
       try {
+        await onAddFeed(feedData);
         await onSelectFeed([feedData.id]);
-        closeAddFeedDialog();
+        setIsDialogOpen(false);
         return true;
       } catch (error) {
         console.error("Feed eklenirken hata oluştu:", error);
         return false;
       }
     },
-    [onSelectFeed, closeAddFeedDialog]
+    [onAddFeed, onSelectFeed]
   );
 
   // Feed senkronizasyon işleyicisi
@@ -168,7 +168,7 @@ export function FeedSidebar({
 
       {/* Add Feed Button */}
       <div className="mb-4">
-        <AddFeedButton onAddFeed={openAddFeedDialog} />
+        <AddFeedButton onAddFeed={() => setIsDialogOpen(true)} />
       </div>
 
       <Separator className="mb-4" />
@@ -265,7 +265,11 @@ export function FeedSidebar({
               <p className="text-sm text-muted-foreground mb-2">
                 {searchQuery ? t("feeds.noSearchResults") : t("feeds.noFeeds")}
               </p>
-              <Button variant="outline" size="sm" onClick={openAddFeedDialog}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDialogOpen(true)}
+              >
                 <PlusCircle className="mr-1 h-4 w-4" />
                 {t("feeds.addFeed")}
               </Button>
@@ -275,7 +279,7 @@ export function FeedSidebar({
       </ScrollArea>
 
       {/* Feed ekleme diyaloğu */}
-      <AddFeedDialog isOpen={isDialogOpen} onOpenChange={closeAddFeedDialog} />
+      <AddFeedDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} />
     </div>
   );
 }
