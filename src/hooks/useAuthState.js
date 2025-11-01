@@ -66,7 +66,7 @@ export function useAuthState() {
       setAuthState((prev) => {
         // Only sign out if currently logged in
         if (!prev.user) return prev;
-        
+
         console.log("[useAuthState] Signed out");
         return {
           user: null,

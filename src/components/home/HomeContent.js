@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSession } from "@/hooks/auth/useSession";
 import { useFeedService } from "@/hooks/features/useFeedService";
+import { useFeedsSummary } from "@/hooks/features/useFeedsQuery";
 import HomeHero from "@/components/public-home/HomeHero";
 import { HomeAbout } from "@/components/public-home/HomeAbout";
 import { HomeTechnology } from "@/components/public-home/HomeTechnology";
@@ -13,43 +14,15 @@ import { useRouter } from "next/navigation";
 import { DashboardLoadingState } from "@/components/home/states/DashboardLoadingState";
 import DashboardContent from "@/components/home/DashboardContent";
 
-export function HomeContent({
-  feeds: initialFeeds = [],
-  stats: initialStats = {},
-  recentItems: initialRecentItems = [],
-}) {
+export function HomeContent() {
   const { user, isLoading: isSessionLoading } = useSession();
   const router = useRouter();
   const { deleteFeed } = useFeedService();
 
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [feeds, setFeeds] = useState(initialFeeds);
-  const [stats, setStats] = useState(initialStats);
-  const [recentItems, setRecentItems] = useState(initialRecentItems);
-  const [isDataLoading, setIsDataLoading] = useState(false);
+  // Use React Query for caching - only fetches when user is authenticated
+  const { data: stats = {}, isLoading: isDataLoading } = useFeedsSummary();
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!user) return;
-      setIsDataLoading(true);
-      try {
-        const resFeeds = await fetch("/api/feeds");
-        const feedsData = await resFeeds.json();
-        setFeeds(feedsData.feeds || []);
-        setStats(feedsData.stats || {});
-        setRecentItems(feedsData.recentItems || []);
-      } catch (error) {
-        setFeeds([]);
-        setStats({});
-        setRecentItems([]);
-      } finally {
-        setIsDataLoading(false);
-      }
-    }
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     if (!isSessionLoading && !user) {
@@ -90,9 +63,7 @@ export function HomeContent({
 
     return (
       <DashboardContent
-        feeds={feeds}
         stats={stats}
-        recentItems={recentItems}
         isLoading={isDataLoading}
         onDeleteFeed={handleDeleteFeed}
       />
