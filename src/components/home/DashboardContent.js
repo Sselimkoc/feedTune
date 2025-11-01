@@ -84,29 +84,6 @@ export default function DashboardContent() {
   // Get recent items
   const recentItems = items?.slice(0, 5) || [];
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Welcome to FeedTune
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-              Your personal feed aggregator and content curator
-            </p>
-            <Button
-              onClick={() => router.push("/auth")}
-              className="bg-primary hover:bg-primary/90"
-            >
-              Get Started
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (isLoading || isLoadingFeeds) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">

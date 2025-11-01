@@ -1,375 +1,215 @@
 "use client";
 
-// TEMPORARY MODIFICATION: Email verification has been temporarily disabled
-// Users can now register and login directly without email verification
-// To re-enable email verification:
-// 1. Set enable_confirmations = true in supabase/config.toml
-// 2. Uncomment the email verification logic in this file
-// 3. Uncomment the email verification handling in AuthModal.js
+/**
+ * Simplified Auth Store
+ * Client-side auth state management using Zustand
+ *
+ * Minimal state: user, session, isLoading, error
+ * Direct Supabase integration - no mock users
+ * Email verification enabled
+ */
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createBrowserClient } from "@supabase/ssr";
-import { useFeedStore } from "@/store/useFeedStore";
-import { mockUser } from "@/lib/mockData";
-
-// Auth messages
-const AUTH_MESSAGES = {
-  VERIFICATION_EMAIL_SENT: "auth.verificationEmailSent",
-  LOGIN_SUCCESS: "auth.loginSuccess",
-  LOGOUT_SUCCESS: "auth.logoutSuccess",
-  AUTHENTICATION_ERROR: "auth.authenticationError",
-  PROFILE_UPDATED: "auth.profileUpdated",
-  RATE_LIMIT_ERROR: "auth.rateLimitError",
-  SESSION_EXPIRED: "auth.sessionExpired",
-  NETWORK_ERROR: "auth.networkError",
-};
-
-// Simple rate limiting with exponential backoff
-const rateLimiter = {
-  lastRequestTime: 0,
-  minInterval: 1000, // 1 second minimum between requests
-  retryCount: 0,
-  maxRetries: 3,
-
-  canMakeRequest() {
-    const now = Date.now();
-    if (now - this.lastRequestTime < this.minInterval) {
-      return false;
-    }
-    this.lastRequestTime = now;
-    return true;
-  },
-
-  reset() {
-    this.retryCount = 0;
-    this.minInterval = 1000;
-  },
-
-  increaseBackoff() {
-    this.retryCount++;
-    this.minInterval = Math.min(1000 * Math.pow(2, this.retryCount), 8000);
-    return this.minInterval;
-  },
-
-  canRetry() {
-    return this.retryCount < this.maxRetries;
-  },
-};
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+/**
+ * Auth Store - Minimal and clean
+ * Only essential state for app functionality
+ */
 export const useAuthStore = create(
   persist(
-    (set, get) => {
-      // Handle auth errors with appropriate messages and actions
-      const handleAuthError = (error, toastError) => {
-        console.error("Auth error:", error);
-        set({ isLoading: false, error });
+    (set) => ({
+      user: null,
+      session: null,
+      isLoading: true,
+      error: null,
 
-        // Rate limit errors with retry logic
-        if (error.message?.includes("rate limit") || error.status === 429) {
-          if (rateLimiter.canRetry()) {
-            const backoffTime = rateLimiter.increaseBackoff();
-            console.log(
-              `Rate limited, retrying in ${backoffTime}ms (attempt ${rateLimiter.retryCount}/${rateLimiter.maxRetries})`
-            );
+      /**
+       * Initialize auth - check for existing session
+       */
+      initialize: async () => {
+        try {
+          set({ isLoading: true, error: null });
 
-            return {
-              success: false,
-              error,
-              status: "rate_limited_retry",
-              retryAfter: backoffTime,
-              retryCount: rateLimiter.retryCount,
-            };
-          } else {
-            rateLimiter.reset();
-            toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
-            return { success: false, error, status: "rate_limited_max" };
+          // Check if user has existing session
+          const { data, error } = await supabase.auth.getSession();
+
+          if (error) {
+            console.error("[useAuthStore] Init error:", error);
+            set({ user: null, session: null, isLoading: false, error });
+            return;
           }
-        }
 
-        // Email already exists errors
-        if (error.message?.includes("already registered")) {
-          toastError?.("auth.emailAlreadyExists");
-          return { success: false, error, status: "email_exists" };
-        }
-
-        // Session/token errors
-        if (error.status === 401 || error.message?.includes("token")) {
-          set({ user: null, session: null });
-          if (window.location.pathname !== "/") {
-            window.location.href = "/";
-          }
-          toastError?.(AUTH_MESSAGES.SESSION_EXPIRED);
-          return { success: false, error };
-        }
-
-        // Network errors
-        if (error.message?.includes("network")) {
-          toastError?.(AUTH_MESSAGES.NETWORK_ERROR);
-          return { success: false, error };
-        }
-
-        // Other errors
-        toastError?.(error.message || AUTH_MESSAGES.AUTHENTICATION_ERROR);
-        return { success: false, error };
-      };
-
-      return {
-        user: null,
-        session: null,
-        isLoading: true,
-        error: null,
-        isLoggingOut: false,
-
-        // Initialize auth state (no toast here)
-        initialize: async () => {
-          try {
-            console.log("[useAuthStore] Initializing auth state...");
-            set({ isLoading: true, error: null });
-
-            // Use mock user for demonstration
-            console.log("[useAuthStore] Using mock user for demonstration");
-            console.log("[useAuthStore] User check result:", true);
-            console.log("[useAuthStore] User details:", {
-              id: mockUser.id,
-              email: mockUser.email,
-              emailConfirmed: mockUser.email_confirmed_at,
-            });
-
-            // Create a mock session
-            const mockSession = {
-              access_token: "mock-token",
-              refresh_token: "mock-refresh-token",
-              user: mockUser,
-            };
-
-            console.log("[useAuthStore] User found:", mockUser.id);
-            set({ user: mockUser, session: mockSession, isLoading: false });
-          } catch (error) {
-            console.error("[useAuthStore] Auth initialization error:", error);
-            set({ error, isLoading: false });
-          }
-        },
-
-        // Sign in - accepts toast functions as arguments
-        signIn: async ({ email, password, toastSuccess, toastError }) => {
-          try {
-            // Check rate limiting
-            if (!rateLimiter.canMakeRequest()) {
-              toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
-              return {
-                success: false,
-                error: "Rate limited",
-                status: "rate_limited",
-              };
-            }
-
-            set({ isLoading: true, error: null });
-
-            const { data, error } = await supabase.auth.signInWithPassword({
-              email,
-              password,
-            });
-
-            if (error) throw error;
-
-            // Reset rate limiter on success
-            rateLimiter.reset();
-            set({ user: data.user, session: data.session, isLoading: false });
-            toastSuccess?.(AUTH_MESSAGES.LOGIN_SUCCESS);
-
-            return { success: true };
-          } catch (error) {
-            const result = handleAuthError(error, toastError);
-
-            // Handle retry logic for rate limits
-            if (result.status === "rate_limited_retry") {
-              return new Promise((resolve) => {
-                setTimeout(() => {
-                  resolve(
-                    get().signIn({
-                      email,
-                      password,
-                      toastSuccess,
-                      toastError,
-                    })
-                  );
-                }, result.retryAfter);
-              });
-            }
-
-            return result;
-          } finally {
-            set({ isLoading: false });
-          }
-        },
-
-        // Sign up - accepts toast functions as arguments
-        signUp: async ({ email, password, toastSuccess, toastError }) => {
-          try {
-            // Check rate limiting
-            if (!rateLimiter.canMakeRequest()) {
-              toastError?.(AUTH_MESSAGES.RATE_LIMIT_ERROR);
-              return {
-                success: false,
-                error: "Rate limited",
-                status: "rate_limited",
-              };
-            }
-
-            set({ isLoading: true, error: null });
-
-            // Proceed with direct signup (no email verification required)
-            const { data, error } = await supabase.auth.signUp({
-              email,
-              password,
-            });
-
-            if (error) throw error;
-
-            // Reset rate limiter on success
-            rateLimiter.reset();
-
-            // Set user and session if signup was successful
-            if (data?.user && data?.session) {
-              set({
-                user: data.user,
-                session: data.session,
-                isLoading: false,
-              });
-              toastSuccess?.("auth.registerSuccess");
-              return { success: true, status: "direct_signup" };
-            }
-
-            set({ isLoading: false });
-            toastSuccess?.("auth.registerSuccess");
-            return { success: true, status: "direct_signup" };
-          } catch (error) {
-            const result = handleAuthError(error, toastError);
-
-            // Handle retry logic for rate limits
-            if (result.status === "rate_limited_retry") {
-              return new Promise((resolve) => {
-                setTimeout(() => {
-                  resolve(
-                    get().signUp({
-                      email,
-                      password,
-                      toastSuccess,
-                      toastError,
-                    })
-                  );
-                }, result.retryAfter);
-              });
-            }
-
-            return result;
-          } finally {
-            set({ isLoading: false });
-          }
-        },
-
-        // Sign out - accepts toast functions as arguments
-        signOut: async ({ toastSuccess, toastError }) => {
-          try {
-            set({ isLoading: true, isLoggingOut: true, error: null });
-            console.log("Attempting to sign out...");
-
-            // Sign out from Supabase first
-            const { error } = await supabase.auth.signOut();
-            if (error) {
-              console.error("Supabase signOut error:", error);
-              throw error;
-            }
-
-            console.log("Supabase signOut successful.");
-
-            // Clear all state at once
+          // If session exists, set user and session
+          if (data?.session) {
             set({
-              user: null,
-              session: null,
+              user: data.session.user,
+              session: data.session,
               isLoading: false,
-              isLoggingOut: false,
               error: null,
             });
-            // Clear feed store as well
-            useFeedStore.getState().clearStore();
-
-            toastSuccess?.(AUTH_MESSAGES.LOGOUT_SUCCESS);
-            return { success: true, isLoggingOut: false };
-          } catch (error) {
-            console.error("Sign out failed:", error);
-            set({ isLoggingOut: false, isLoading: false });
-            return handleAuthError(error, toastError);
+          } else {
+            set({ user: null, session: null, isLoading: false, error: null });
           }
-        },
+        } catch (error) {
+          console.error("[useAuthStore] Initialize error:", error);
+          set({ user: null, session: null, isLoading: false, error });
+        }
+      },
 
-        // Update session - accepts toastError as argument for errors
-        setSession: async (session, toastError) => {
-          try {
-            if (!session) {
-              set({ user: null, session: null });
-              console.log("Session cleared in store.");
-              return { success: true };
-            }
+      /**
+       * Sign in with email and password
+       */
+      signIn: async (email, password) => {
+        try {
+          set({ isLoading: true, error: null });
 
-            const {
-              data: { user },
-              error: userError,
-            } = await supabase.auth.getUser();
-            if (userError) throw userError;
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
 
-            set({ user, session });
-            return { success: true };
-          } catch (error) {
-            console.error("Error setting session:", error);
-            return handleAuthError(error, toastError);
-          }
-        },
+          if (error) throw error;
 
-        // Update profile - accepts toast functions as arguments
-        updateProfile: async (updates, { toastSuccess, toastError }) => {
-          try {
-            set({ isLoading: true });
-            const { user } = get();
+          set({
+            user: data.user,
+            session: data.session,
+            isLoading: false,
+            error: null,
+          });
 
-            if (!user) throw new Error("User not authenticated");
+          return { success: true, error: null };
+        } catch (error) {
+          console.error("[useAuthStore] signIn error:", error);
+          const errorMessage = error.message || "Login failed";
+          set({ isLoading: false, error: errorMessage });
+          return { success: false, error: errorMessage };
+        }
+      },
 
-            const { data, error } = await supabase.auth.updateUser({
-              data: updates,
-            });
+      /**
+       * Sign up with email and password
+       */
+      signUp: async (email, password, displayName) => {
+        try {
+          set({ isLoading: true, error: null });
 
-            if (error) throw error;
-
-            set({
-              user: {
-                ...user,
-                user_metadata: { ...user.user_metadata, ...updates },
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                display_name: displayName || email.split("@")[0],
               },
-            });
-            toastSuccess?.(AUTH_MESSAGES.PROFILE_UPDATED);
-            return { success: true };
-          } catch (error) {
-            return handleAuthError(error, toastError);
-          } finally {
-            set({ isLoading: false });
-          }
-        },
-      };
-    },
+            },
+          });
+
+          if (error) throw error;
+
+          set({
+            user: data.user,
+            session: data.session,
+            isLoading: false,
+            error: null,
+          });
+
+          return {
+            success: true,
+            error: null,
+            needsVerification: !data.session,
+          };
+        } catch (error) {
+          console.error("[useAuthStore] signUp error:", error);
+          const errorMessage = error.message || "Sign up failed";
+          set({ isLoading: false, error: errorMessage });
+          return { success: false, error: errorMessage };
+        }
+      },
+
+      /**
+       * Sign out
+       */
+      signOut: async () => {
+        try {
+          set({ isLoading: true });
+
+          const { error } = await supabase.auth.signOut();
+
+          if (error) throw error;
+
+          set({
+            user: null,
+            session: null,
+            isLoading: false,
+            error: null,
+          });
+
+          return { success: true, error: null };
+        } catch (error) {
+          console.error("[useAuthStore] signOut error:", error);
+          set({ isLoading: false, error });
+          return { success: false, error };
+        }
+      },
+
+      /**
+       * Update session from auth state listener
+       */
+      setSession: (user, session) => {
+        set({ user, session, isLoading: false });
+      },
+
+      /**
+       * Clear error state
+       */
+      clearError: () => {
+        set({ error: null });
+      },
+    }),
     {
-      name: "auth-storage",
+      name: "auth-store",
+      // Only persist user and session
       partialize: (state) => ({
         user: state.user,
         session: state.session,
-        isLoading: state.isLoading,
-        error: state.error,
       }),
     }
   )
 );
+
+/**
+ * useAuth Hook
+ * Access current user and auth state
+ */
+export function useAuth() {
+  const { user, session, isLoading } = useAuthStore();
+
+  return {
+    user,
+    session,
+    isLoading,
+    isAuthenticated: !!session,
+  };
+}
+
+/**
+ * useAuthActions Hook
+ * Access auth action methods
+ */
+export function useAuthActions() {
+  const { signIn, signUp, signOut, initialize, clearError } = useAuthStore();
+
+  return {
+    signIn,
+    signUp,
+    signOut,
+    initialize,
+    clearError,
+  };
+}

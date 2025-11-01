@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
-import { createBrowserClient } from "@supabase/ssr";
 
 /**
- * Session management custom hook
- * Provides authentication state and user information
+ * useSession Hook
+ * Get current session and authentication state
  *
- * @returns {Object} Object containing session and user information
+ * @returns {Object} { user, session, isLoading, isAuthenticated }
  */
 export function useSession() {
   const { user, session, isLoading } = useAuthStore();
+
   return {
     user,
     session,

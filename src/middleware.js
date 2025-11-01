@@ -1,8 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 
-// Public routes that don't require authentication
-const publicRoutes = [
+// Public routes - no auth required
+const PUBLIC_ROUTES = [
   "/",
   "/home",
   "/about",
@@ -10,30 +10,24 @@ const publicRoutes = [
   "/privacy",
   "/terms",
   "/api/auth/callback",
-  "/api/webhooks",
 ];
 
-// Public API routes that don't require authentication
+// Public API routes - no auth required
 const PUBLIC_API_ROUTES = ["/api/youtube/public-search"];
 
-// Check if a route is public
-const isPublicRoute = (pathname) => {
+/**
+ * Check if route is public
+ */
+function isPublicRoute(pathname) {
   return (
-    publicRoutes.some((route) => pathname.startsWith(route)) ||
+    PUBLIC_ROUTES.some((route) => pathname.startsWith(route)) ||
     PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))
   );
-};
-
-// Check if a route is an API route
-const isApiRoute = (pathname) => {
-  return pathname.startsWith("/api/");
-};
+}
 
 export async function middleware(request) {
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+    request: { headers: request.headers },
   });
 
   const supabase = createServerClient(
@@ -51,9 +45,7 @@ export async function middleware(request) {
             ...options,
           });
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request: { headers: request.headers },
           });
           response.cookies.set({
             name,
@@ -68,9 +60,7 @@ export async function middleware(request) {
             ...options,
           });
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request: { headers: request.headers },
           });
           response.cookies.set({
             name,
@@ -82,8 +72,29 @@ export async function middleware(request) {
     }
   );
 
-  // Refresh user session securely - required for Server Components
-  await supabase.auth.getUser();
+  const { pathname } = request.nextUrl;
+
+  // Skip auth check for public routes
+  if (isPublicRoute(pathname)) {
+    return response;
+  }
+
+  // Refresh session for protected routes
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // User not authenticated - redirect to home
+    if (!user) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    // Refresh session token
+    await supabase.auth.refreshSession();
+  } catch (error) {
+    // Auth error - redirect to home
+    console.debug("[middleware] Auth error:", error?.message);
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
   return response;
 }

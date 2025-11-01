@@ -1,17 +1,23 @@
 /**
- * Server-side authentication utilities
- * This module provides secure authentication functions for server-side operations
+ * Session Service
+ * Server-side authentication and session management
+ *
+ * Handles:
+ * - Session validation
+ * - User retrieval
+ * - Token management
  */
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 /**
- * Creates a secure server-side Supabase client
- * @returns {Object} Supabase client instance
+ * Create server-side Supabase client
+ * New instance per request to handle cookie updates
  */
-export function createSecureServerClient() {
+function createSupabaseServerClient() {
   const cookieStore = cookies();
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -21,10 +27,21 @@ export function createSecureServerClient() {
           return cookieStore.get(name)?.value;
         },
         set(name, value, options) {
-          cookieStore.set({ name, value, ...options });
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            console.debug("[sessionService] Cookie set error:", error?.message);
+          }
         },
         remove(name, options) {
-          cookieStore.set({ name, value: "", ...options });
+          try {
+            cookieStore.set({ name, value: "", ...options });
+          } catch (error) {
+            console.debug(
+              "[sessionService] Cookie remove error:",
+              error?.message
+            );
+          }
         },
       },
     }
@@ -32,28 +49,32 @@ export function createSecureServerClient() {
 }
 
 /**
- * Securely checks the current user session using getUser()
- * @returns {Promise<Object|null>} User information or null
+ * Get current authenticated user
+ * @returns {Promise<Object|null>} User object or null if not authenticated
  */
 export async function getSecureUser() {
   try {
-    const supabase = createSecureServerClient();
+    const supabase = createSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser();
 
     if (error) {
-      console.error("Error during secure user check:", error);
-      return null;
+      // Status 400 means no active session - this is normal
+      if (error.status === 400) {
+        console.debug("[sessionService] No active session");
+        return null;
+      }
+      throw error;
     }
 
-    return data.user;
+    return data?.user || null;
   } catch (error) {
-    console.error("Error during secure user check:", error);
+    console.error("[sessionService] getSecureUser error:", error);
     return null;
   }
 }
 
 /**
- * Securely gets the current user ID
+ * Get current user ID
  * @returns {Promise<string|null>} User ID or null
  */
 export async function getSecureUserId() {
@@ -61,13 +82,13 @@ export async function getSecureUserId() {
     const user = await getSecureUser();
     return user?.id || null;
   } catch (error) {
-    console.error("Could not get secure user ID:", error);
+    console.error("[sessionService] getSecureUserId error:", error);
     return null;
   }
 }
 
 /**
- * Securely checks if user is authenticated
+ * Check if user is authenticated
  * @returns {Promise<boolean>} True if user is authenticated
  */
 export async function isAuthenticated() {
@@ -75,14 +96,14 @@ export async function isAuthenticated() {
     const user = await getSecureUser();
     return !!user;
   } catch (error) {
-    console.error("Error checking authentication:", error);
+    console.error("[sessionService] isAuthenticated error:", error);
     return false;
   }
 }
 
 /**
- * Securely validates user session and returns user data
- * @returns {Promise<Object>} Object with user and error properties
+ * Validate user session and return user data
+ * @returns {Promise<Object>} { user, error }
  */
 export async function validateUserSession() {
   try {
@@ -100,10 +121,10 @@ export async function validateUserSession() {
       error: null,
     };
   } catch (error) {
-    console.error("Error validating user session:", error);
+    console.error("[sessionService] validateUserSession error:", error);
     return {
       user: null,
-      error: error.message || "Authentication error",
+      error: error.message,
     };
   }
 }
