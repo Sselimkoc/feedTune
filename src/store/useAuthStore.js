@@ -66,7 +66,7 @@ export const useAuthStore = create(
       /**
        * Sign in with email and password
        */
-      signIn: async (email, password) => {
+      signIn: async ({ email, password, toastSuccess, toastError }) => {
         try {
           set({ isLoading: true, error: null });
 
@@ -84,11 +84,21 @@ export const useAuthStore = create(
             error: null,
           });
 
+          if (toastSuccess) toastSuccess("auth.loginSuccess");
+
           return { success: true, error: null };
         } catch (error) {
           console.error("[useAuthStore] signIn error:", error);
           const errorMessage = error.message || "Login failed";
           set({ isLoading: false, error: errorMessage });
+          
+          // Check if error is due to rate limit
+          if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
+            if (toastError) toastError("auth.rateLimitError");
+            return { success: false, error: errorMessage, status: "rate_limit" };
+          }
+          
+          if (toastError) toastError("auth.loginError");
           return { success: false, error: errorMessage };
         }
       },
@@ -96,7 +106,7 @@ export const useAuthStore = create(
       /**
        * Sign up with email and password
        */
-      signUp: async (email, password, displayName) => {
+      signUp: async ({ email, password, displayName, toastSuccess, toastError }) => {
         try {
           set({ isLoading: true, error: null });
 
@@ -112,22 +122,33 @@ export const useAuthStore = create(
 
           if (error) throw error;
 
-          set({
-            user: data.user,
-            session: data.session,
-            isLoading: false,
-            error: null,
-          });
+          if (toastSuccess) toastSuccess("auth.registerSuccess");
 
           return {
             success: true,
             error: null,
             needsVerification: !data.session,
+            status: data.session ? "direct_signup" : "email_verification_needed",
           };
         } catch (error) {
           console.error("[useAuthStore] signUp error:", error);
           const errorMessage = error.message || "Sign up failed";
+          
           set({ isLoading: false, error: errorMessage });
+          
+          // Check if error is due to rate limit
+          if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
+            if (toastError) toastError("auth.rateLimitError");
+            return { success: false, error: errorMessage, status: "rate_limit" };
+          }
+          
+          // Check if error is due to email already existing
+          if (errorMessage.includes("already registered") || errorMessage.includes("User already exists")) {
+            if (toastError) toastError("auth.emailAlreadyExists");
+            return { success: false, error: errorMessage, status: "email_exists" };
+          }
+          
+          if (toastError) toastError("auth.registerError");
           return { success: false, error: errorMessage };
         }
       },
@@ -135,7 +156,7 @@ export const useAuthStore = create(
       /**
        * Sign out
        */
-      signOut: async () => {
+      signOut: async ({ toastSuccess, toastError } = {}) => {
         try {
           set({ isLoading: true });
 
@@ -150,10 +171,13 @@ export const useAuthStore = create(
             error: null,
           });
 
+          if (toastSuccess) toastSuccess("auth.logoutSuccess");
+
           return { success: true, error: null };
         } catch (error) {
           console.error("[useAuthStore] signOut error:", error);
           set({ isLoading: false, error });
+          if (toastError) toastError("auth.logoutError");
           return { success: false, error };
         }
       },

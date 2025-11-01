@@ -102,10 +102,7 @@ export function HomeContent({
   return (
     <>
       {renderContent()}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-      />
+      <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
     </>
   );
 }
