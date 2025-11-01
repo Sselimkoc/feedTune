@@ -1,7 +1,6 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
 import {
   BookOpen,
   RefreshCw,
@@ -12,6 +11,7 @@ import {
   Globe2,
   Shield,
 } from "lucide-react";
+import { SectionHeader, FeatureCard } from "./shared";
 
 export function HomeAbout() {
   const { t } = useTranslation();
@@ -62,37 +62,20 @@ export function HomeAbout() {
   return (
     <section className="py-16 bg-muted/30" id="about">
       <div className="container mx-auto px-4">
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="text-3xl font-bold mb-4">{t("home.about.title")}</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t("home.about.subtitle")}
-          </p>
-        </motion.div>
+        <SectionHeader
+          title={t("home.about.title")}
+          subtitle={t("home.about.subtitle")}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {details.map((detail, index) => (
-            <motion.div
+            <FeatureCard
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-background rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300"
-            >
-              <div className="bg-muted/50 rounded-lg w-12 h-12 flex items-center justify-center mb-4">
-                {detail.icon}
-              </div>
-              <h3 className="text-lg font-semibold mb-2">{detail.title}</h3>
-              <p className="text-muted-foreground text-sm">
-                {detail.description}
-              </p>
-            </motion.div>
+              icon={detail.icon}
+              title={detail.title}
+              description={detail.description}
+              index={index}
+            />
           ))}
         </div>
       </div>

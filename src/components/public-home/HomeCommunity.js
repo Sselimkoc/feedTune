@@ -1,14 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/core/ui/avatar";
 import { Button } from "@/components/core/ui/button";
-import { Card, CardContent } from "@/components/core/ui/card";
 import {
   TwitterIcon,
   GithubIcon,
@@ -18,6 +11,7 @@ import {
   StarIcon,
 } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { SectionHeader, StatCard, TestimonialCard, AnimatedSection } from "./shared";
 
 export function HomeCommunity() {
   const { t } = useTranslation();
@@ -71,93 +65,36 @@ export function HomeCommunity() {
   return (
     <section className="py-8 md:py-16 bg-gradient-to-b from-background to-muted/30">
       <div className="container mx-auto px-4">
-        <motion.div
-          className="text-center mb-8 md:mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="text-2xl md:text-3xl font-bold mb-3 md:mb-4">
-            {t("home.community.title")}
-          </h2>
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t("home.community.subtitle")}
-          </p>
-        </motion.div>
+        <SectionHeader
+          title={t("home.community.title")}
+          subtitle={t("home.community.subtitle")}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-8 md:mb-16">
           {stats.map((stat, index) => (
-            <motion.div
+            <StatCard
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="text-center p-4 md:p-6 rounded-lg bg-card/50 backdrop-blur-sm"
-            >
-              <div className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 text-primary mb-3 md:mb-4">
-                {stat.icon}
-              </div>
-              <h3 className="text-xl md:text-2xl font-bold mb-1 md:mb-2">
-                {stat.value}
-              </h3>
-              <p className="text-sm md:text-base text-muted-foreground">
-                {stat.label}
-              </p>
-            </motion.div>
+              icon={stat.icon}
+              value={stat.value}
+              label={stat.label}
+              index={index}
+            />
           ))}
         </div>
 
         {!isMobile && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {testimonials.map((testimonial, index) => (
-              <motion.div
+              <TestimonialCard
                 key={testimonial.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                      <Avatar>
-                        <AvatarImage src={testimonial.avatar} />
-                        <AvatarFallback>{testimonial.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h4 className="font-semibold">{testimonial.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {testimonial.role}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-muted-foreground mb-4">
-                      {testimonial.content}
-                    </p>
-                    <div className="flex gap-1">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <StarIcon
-                          key={i}
-                          className="w-4 h-4 fill-primary text-primary"
-                        />
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                testimonial={testimonial}
+                index={index}
+              />
             ))}
           </div>
         )}
 
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
+        <AnimatedSection className="text-center">
           <h3 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">
             {t("home.community.join.title")}
           </h3>
@@ -187,7 +124,7 @@ export function HomeCommunity() {
               {t("home.community.join.support")}
             </Button>
           </div>
-        </motion.div>
+        </AnimatedSection>
       </div>
     </section>
   );
