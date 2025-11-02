@@ -105,31 +105,6 @@ export function FeedAdvancedOptions({ form }) {
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="fetch_full_content"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center space-x-2">
-                <FormControl>
-                  <input
-                    type="checkbox"
-                    checked={field.value}
-                    onChange={field.onChange}
-                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  />
-                </FormControl>
-                <FormLabel className="text-sm font-medium cursor-pointer">
-                  {t("feeds.addFeed.useFullContent")}
-                </FormLabel>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {t("feeds.addFeed.fullContentDescription")}
-              </p>
-            </FormItem>
-          )}
-        />
       </div>
     </Form>
   );

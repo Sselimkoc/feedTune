@@ -54,7 +54,7 @@ export function FeedSearchResults({ results, onSelectResult, onBack }) {
                   </p>
                   {result.subscribersFormatted && (
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {result.subscribersFormatted}
+                      {result.subscribersFormatted} {t("feeds.addFeed.subscribers")}
                     </div>
                   )}
                 </div>

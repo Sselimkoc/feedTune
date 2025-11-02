@@ -20,6 +20,13 @@ import { motion } from "framer-motion";
 export function FeedInputStep({ form, activeTab, isLoading, error, onSearch }) {
   const { t } = useTranslation();
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      onSearch();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -52,6 +59,7 @@ export function FeedInputStep({ form, activeTab, isLoading, error, onSearch }) {
                           : "https://example.com/feed.xml"
                       }
                       disabled={isLoading}
+                      onKeyDown={handleKeyDown}
                     />
                     <Button
                       type="button"

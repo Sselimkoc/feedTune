@@ -5,17 +5,19 @@ import {
   normalizeFeedData,
   normalizeChannelResults,
 } from "@/services/feedService";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export const useYoutubeSearch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const { language } = useLanguage();
 
   const handlePreview = useCallback(async (url) => {
     setIsLoading(true);
     setError("");
 
     try {
-      const response = await searchYoutubeChannel(url);
+      const response = await searchYoutubeChannel(url, language);
 
       if (response.success && response.channel) {
         const normalizedData = normalizeFeedData(response.channel, "youtube");
@@ -30,14 +32,14 @@ export const useYoutubeSearch = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [language]);
 
   const handleSearch = useCallback(async (keyword) => {
     setIsLoading(true);
     setError("");
 
     try {
-      const response = await searchYoutubeChannel(keyword);
+      const response = await searchYoutubeChannel(keyword, language);
 
       if (!response.success || !response.channels?.length) {
         throw new Error(response.error || "No channels found");
@@ -52,7 +54,7 @@ export const useYoutubeSearch = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [language]);
 
   const processYoutubeInput = useCallback(
     async (input) => {
