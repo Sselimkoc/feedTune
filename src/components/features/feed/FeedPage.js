@@ -156,8 +156,29 @@ export function FeedPage() {
                   : "bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-blue-100"
               )}
             >
-              {feed.icon && (
-                <img src={feed.icon} alt="" className="w-5 h-5 rounded-full" />
+              {feed.icon ? (
+                <img
+                  src={feed.icon}
+                  alt=""
+                  className="w-5 h-5 rounded-full"
+                  onError={(e) => {
+                    // Fallback to letter when image fails to load
+                    e.currentTarget.style.display = "none";
+                    const div = document.createElement("div");
+                    div.className =
+                      "w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center text-xs font-bold";
+                    div.textContent =
+                      feed.title?.charAt(0)?.toUpperCase() || "F";
+                    e.currentTarget.parentElement.insertBefore(
+                      div,
+                      e.currentTarget
+                    );
+                  }}
+                />
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                  {feed.title?.charAt(0)?.toUpperCase()}
+                </div>
               )}
               <span>{feed.title}</span>
             </button>

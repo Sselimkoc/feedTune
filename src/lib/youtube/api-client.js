@@ -110,9 +110,10 @@ async function makeRequest(endpoint, params = {}) {
  * Search for YouTube channels
  * @param {string} query - Search query
  * @param {number} maxResults - Maximum number of results (default: 10)
+ * @param {string} language - Language code (tr, en, etc.)
  * @returns {Promise<Array>} - List of channel results
  */
-export async function searchChannels(query, maxResults = 10) {
+export async function searchChannels(query, maxResults = 10, language = "en") {
   try {
     if (!query || query.trim() === "") {
       console.warn("Empty search query provided");
@@ -122,11 +123,21 @@ export async function searchChannels(query, maxResults = 10) {
     const trimmedQuery = query.trim();
     console.log(`YouTube kanalları aranıyor: "${trimmedQuery}"`);
 
+    // Map language codes to YouTube API language codes
+    const languageMap = {
+      tr: "tr",
+      en: "en",
+      // Diğer diller için ekleme yapılabilir
+    };
+    const youtubeLanguage = languageMap[language] || "en";
+
     const response = await makeRequest("search", {
       part: "snippet",
       type: "channel",
       q: trimmedQuery,
       maxResults: Math.min(maxResults, 50), // YouTube API en fazla 50 sonuç döndürür
+      hl: youtubeLanguage, // Host language for snippet content
+      regionCode: language === "tr" ? "TR" : "US", // Region code
     });
 
     if (!response.items || response.items.length === 0) {
@@ -153,17 +164,26 @@ export async function searchChannels(query, maxResults = 10) {
 /**
  * Get channel details by ID
  * @param {string} channelId - YouTube channel ID
+ * @param {string} language - Language code (tr, en, etc.)
  * @returns {Promise<object>} - Channel details
  */
-export async function getChannelById(channelId) {
+export async function getChannelById(channelId, language = "en") {
   try {
     if (!channelId || channelId.trim() === "") {
       throw new Error("Geçerli bir YouTube kanal ID'si gerekli");
     }
 
+    // Map language codes to YouTube API language codes
+    const languageMap = {
+      tr: "tr",
+      en: "en",
+    };
+    const youtubeLanguage = languageMap[language] || "en";
+
     const response = await makeRequest("channels", {
       part: "snippet,contentDetails,statistics",
       id: channelId.trim(),
+      hl: youtubeLanguage, // Host language for snippet content
     });
 
     if (!response.items || response.items.length === 0) {

@@ -203,7 +203,14 @@ function normalizeUrl(url) {
 // Enhanced delta update with content fingerprinting and duplicate detection
 async function fetchFeedDataWithDelta(feed, supabaseClient) {
   try {
-    const { id: feedId, url, type, last_updated } = feed;
+    const {
+      id: feedId,
+      url,
+      type,
+      last_updated,
+      updated_at,
+      last_fetched,
+    } = feed;
 
     console.log(`[Delta Update] Processing feed ${feedId} (${type}): ${url}`);
 
@@ -225,7 +232,9 @@ async function fetchFeedDataWithDelta(feed, supabaseClient) {
       `[Delta Update] Feed type: ${type}, Existing items: ${existingItems.length}, Existing IDs: ${existingGuids.size}`
     );
 
-    const deltaThreshold = calculateDeltaThreshold(last_updated);
+    // Use updated_at if last_updated is not available (fallback for DB schema)
+    const feedTimestamp = last_updated || updated_at || last_fetched;
+    const deltaThreshold = calculateDeltaThreshold(feedTimestamp);
     console.log(`[Delta Update] Threshold: ${deltaThreshold.toISOString()}`);
 
     let newItems = [];
@@ -507,11 +516,11 @@ async function processBatchYouTubeItems(feedId, items, supabaseClient) {
   return { inserted: insertedCount, skipped: skippedCount };
 }
 
-// Update feed metadata and last_updated timestamp
+// Update feed metadata and updated_at timestamp
 async function updateFeedMetadata(feedId, feedMetadata, supabaseClient) {
   try {
     const updateData = {
-      last_updated: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     if (feedMetadata) {
@@ -734,7 +743,16 @@ export function useFeedService() {
             throw new Error(`Failed to fetch feed: ${response.statusText}`);
           }
 
-          feedInfo = await response.json();
+          const rssData = await response.json();
+
+          if (!rssData.success) {
+            throw new Error(rssData.error || "Failed to parse RSS feed");
+          }
+
+          feedInfo = {
+            feed: rssData.feed || {},
+            items: rssData.items || rssData.feed?.items || [],
+          };
         }
       } catch (error) {
         console.error("Feed parsing error:", error);
@@ -742,6 +760,18 @@ export function useFeedService() {
       }
 
       // Prepare feed data
+      const categoryMap = {
+        general: "550e8400-e29b-41d4-a716-446655440001",
+        tech: "550e8400-e29b-41d4-a716-446655440002",
+        news: "550e8400-e29b-41d4-a716-446655440003",
+        entertainment: "550e8400-e29b-41d4-a716-446655440004",
+        other: "550e8400-e29b-41d4-a716-446655440005",
+      };
+
+      const categoryId = extraData.category
+        ? categoryMap[extraData.category] || categoryMap.general
+        : categoryMap.general;
+
       const feedData = {
         url: normalizedUrl,
         user_id: user.id,
@@ -749,7 +779,7 @@ export function useFeedService() {
         title: extraData.title || feedInfo.feed?.title || normalizedUrl,
         description: extraData.description || feedInfo.feed?.description || "",
         icon: extraData.icon || feedInfo.feed?.icon || null,
-        category_id: extraData.category_id || null,
+        category_id: categoryId,
       };
 
       // Add feed to database
@@ -779,15 +809,18 @@ export function useFeedService() {
       return newFeed;
     },
     onSuccess: (newFeed) => {
-      // Invalidate feed-related queries
+      // Invalidate feed-related queries with exact keys
       queryClient.invalidateQueries({
-        queryKey: ["feeds"],
+        queryKey: ["feeds", user?.id],
+        exact: true,
       });
       queryClient.invalidateQueries({
-        queryKey: ["items"],
+        queryKey: ["items", user?.id],
+        exact: true,
       });
       queryClient.invalidateQueries({
-        queryKey: ["feedsSummary"],
+        queryKey: ["feedsSummary", user?.id],
+        exact: true,
       });
 
       toast({
@@ -836,7 +869,8 @@ export function useFeedService() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["feeds"],
+        queryKey: ["feeds", user?.id],
+        exact: true,
       });
       toast({
         title: t("common.success"),
@@ -880,12 +914,15 @@ export function useFeedService() {
 
       await queryClient.invalidateQueries({
         queryKey: ["items", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["favorites", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["read_later", user.id],
+        exact: true,
       });
 
       toast({
@@ -925,12 +962,15 @@ export function useFeedService() {
 
       await queryClient.invalidateQueries({
         queryKey: ["items", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["favorites", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["read_later", user.id],
+        exact: true,
       });
 
       toast({
@@ -973,15 +1013,19 @@ export function useFeedService() {
 
       await queryClient.invalidateQueries({
         queryKey: ["feeds", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["items", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["favorites", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["read_later", user.id],
+        exact: true,
       });
 
       toast({
@@ -1055,12 +1099,15 @@ export function useFeedService() {
       if (totalUpdated > 0) {
         await queryClient.invalidateQueries({
           queryKey: ["items", user.id],
+          exact: true,
         });
         await queryClient.invalidateQueries({
           queryKey: ["favorites", user.id],
+          exact: true,
         });
         await queryClient.invalidateQueries({
           queryKey: ["read_later", user.id],
+          exact: true,
         });
 
         toast({
@@ -1083,7 +1130,7 @@ export function useFeedService() {
       console.error("Error fetching new feed data:", error);
       throw error;
     }
-  }, [user, feedsQuery.data?.length, queryClient]);
+  }, [user, queryClient]);
 
   // Auto-fetch new feed data when user logs in and feeds are loaded
   useEffect(() => {
@@ -1108,9 +1155,11 @@ export function useFeedService() {
     try {
       await queryClient.invalidateQueries({
         queryKey: ["feeds", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["items", user.id],
+        exact: true,
       });
       toast({
         title: t("common.success"),
@@ -1132,9 +1181,11 @@ export function useFeedService() {
     try {
       await queryClient.invalidateQueries({
         queryKey: ["feeds", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["items", user.id],
+        exact: true,
       });
       toast({
         title: t("common.success"),
