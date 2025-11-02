@@ -133,6 +133,9 @@ CREATE TABLE youtube_cache (
   channel_title TEXT,
   description TEXT,
   rss_url TEXT NOT NULL,
+  statistics JSONB DEFAULT NULL,
+  subscribers BIGINT DEFAULT NULL,
+  video_count INTEGER DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

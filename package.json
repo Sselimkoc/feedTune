@@ -55,12 +55,12 @@
     "zustand": "^4.5.1"
   },
   "devDependencies": {
+    "@eslint/config-array": "^0.18.0",
+    "@eslint/eslintrc": "^2.1.4",
+    "@eslint/object-schema": "^2.1.4",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
-    "@eslint/eslintrc": "^2.1.4",
-    "@eslint/config-array": "^0.18.0",
-    "@eslint/object-schema": "^2.1.4",
     "autoprefixer": "^10.4.14",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
