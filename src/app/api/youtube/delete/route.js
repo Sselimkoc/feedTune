@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteYoutubeChannel } from "@/lib/youtube/service";
+import { youtubeService } from "@/lib/youtube/service";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 
@@ -48,7 +48,7 @@ export async function DELETE(request) {
       );
     }
 
-    const result = await deleteYoutubeChannel(feedId);
+    const result = await youtubeService.deleteYoutubeChannel(feedId, session.user.id);
 
     return NextResponse.json({
       success: true,
