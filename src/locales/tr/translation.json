@@ -70,6 +70,12 @@
       "back": "Geri",
       "fullContentDescription": "Tam makale içeriğini getir (daha yavaş olabilir)"
     },
+    "addSuccess": "Besleme başarıyla eklendi!",
+    "addError": {
+      "duplicate": "Bu besleme zaten mevcut. Lütfen farklı bir besleme ekleyin."
+    },
+    "editSuccess": "Besleme başarıyla güncellendi!",
+    "editError": "Besleme güncellenemedi",
     "autoSyncComplete": "Beslemeler Güncellendi",
     "autoSyncDescription": "{{count}} besleme yeni içerikle yenilendi"
   },

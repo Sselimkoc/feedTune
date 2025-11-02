@@ -6,7 +6,15 @@ import {
 } from "@/components/core/ui/card";
 import { Button } from "@/components/core/ui/button";
 import { Badge } from "@/components/core/ui/badge";
-import { Rss, Youtube, ArrowRight, Plus, Trash2, Clock, FileText } from "lucide-react";
+import {
+  Rss,
+  Youtube,
+  ArrowRight,
+  Plus,
+  Trash2,
+  Clock,
+  FileText,
+} from "lucide-react";
 
 export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
   // Group feeds by type
@@ -33,7 +41,12 @@ export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
               </div>
             </div>
           </span>
-          <Button variant="ghost" size="sm" onClick={onViewAll} className="hover:bg-blue-50 dark:hover:bg-blue-900/20">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onViewAll}
+            className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+          >
             View All
             <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
@@ -51,7 +64,7 @@ export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
             </p>
             <Button
               onClick={onAddFeed}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Your First Feed

@@ -1,7 +1,13 @@
 import { Card, CardContent } from "@/components/core/ui/card";
 import { Rss, Activity, Star, Bookmark } from "lucide-react";
 
-export function DashboardStats({ stats }) {
+export function DashboardStats({ stats, feeds = [] }) {
+  // Calculate feeds by type
+  const feedsByType = {
+    rss: feeds.filter((f) => f.type === "rss").length,
+    youtube: feeds.filter((f) => f.type === "youtube").length,
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <StatCard
@@ -9,7 +15,7 @@ export function DashboardStats({ stats }) {
         value={stats.totalFeeds}
         icon={<Rss className="h-6 w-6" />}
         color="blue"
-        subtitle={`${stats.feedsByType?.rss || 0} RSS • ${stats.feedsByType?.youtube || 0} YouTube`}
+        subtitle={`${feedsByType.rss} RSS • ${feedsByType.youtube} YouTube`}
       />
       <StatCard
         title="Total Items"
@@ -22,14 +28,14 @@ export function DashboardStats({ stats }) {
         title="Favorites"
         value={stats.totalFavorites}
         icon={<Star className="h-6 w-6" />}
-        color="yellow"
+        color="blue"
         subtitle="Saved items"
       />
       <StatCard
         title="Read Later"
         value={stats.totalReadLater}
         icon={<Bookmark className="h-6 w-6" />}
-        color="purple"
+        color="green"
         subtitle="To read"
       />
     </div>
@@ -42,12 +48,6 @@ function StatCard({ title, value = 0, icon, color, subtitle }) {
     blue: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800",
     green:
       "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800",
-    yellow:
-      "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-100 dark:border-yellow-800",
-    purple:
-      "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800",
-    orange:
-      "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800",
   };
 
   return (

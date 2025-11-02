@@ -17,6 +17,7 @@ import {
   getReadLaterQueryConfig,
   queryConstants,
 } from "./feed-screen/useQueryConfig";
+import { useInvalidateFeedsCache } from "./useFeedsQuery";
 
 // Constants
 const STALE_TIME = queryConstants.STALE_TIME;
@@ -660,17 +661,81 @@ export function useFeedService() {
       // Parse feed metadata
       let feedInfo = {};
       try {
-        const response = await fetch("/api/rss-preview", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: normalizedUrl, skipCache: true }),
-        });
+        // YouTube feed için ayrı endpoint kullan
+        if (feedType === "youtube") {
+          const response = await fetch("/api/youtube/channel-search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: normalizedUrl }),
+          });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch feed: ${response.statusText}`);
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch YouTube channel: ${response.statusText}`
+            );
+          }
+
+          const data = await response.json();
+          if (!data.success || !data.channel) {
+            throw new Error(data.error || "Failed to fetch YouTube channel");
+          }
+
+          // YouTube kanalının son 15 videosunu getir
+          let items = [];
+          try {
+            const videosResponse = await fetch("/api/youtube/channel-videos", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                channelId: data.channel.id,
+                maxResults: 15,
+              }),
+            });
+
+            if (videosResponse.ok) {
+              const videosData = await videosResponse.json();
+              if (videosData.success && videosData.videos) {
+                items = videosData.videos.map((video) => ({
+                  video_id: video.id,
+                  videoId: video.id, // For compatibility
+                  link: video.url, // For compatibility with processBatchYouTubeItems
+                  title: video.title,
+                  description: video.description,
+                  thumbnail: video.thumbnail,
+                  pubDate: video.publishedAt,
+                  publishedAt: video.publishedAt,
+                  author: data.channel.title,
+                  channelTitle: data.channel.title,
+                  url: video.url,
+                }));
+              }
+            }
+          } catch (videoError) {
+            console.warn("YouTube videoları fetch edilirken hata:", videoError);
+          }
+
+          feedInfo = {
+            feed: {
+              title: data.channel.title,
+              description: data.channel.description,
+              icon: data.channel.thumbnail,
+            },
+            items: items,
+          };
+        } else {
+          // RSS feed için rss-preview endpoint'ini kullan
+          const response = await fetch("/api/rss-preview", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: normalizedUrl, skipCache: true }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch feed: ${response.statusText}`);
+          }
+
+          feedInfo = await response.json();
         }
-
-        feedInfo = await response.json();
       } catch (error) {
         console.error("Feed parsing error:", error);
         throw new Error(`Failed to parse ${feedType} feed: ${error.message}`);
@@ -685,8 +750,6 @@ export function useFeedService() {
         description: extraData.description || feedInfo.feed?.description || "",
         icon: extraData.icon || feedInfo.feed?.icon || null,
         category_id: extraData.category_id || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       };
 
       // Add feed to database
@@ -716,8 +779,17 @@ export function useFeedService() {
       return newFeed;
     },
     onSuccess: (newFeed) => {
-      queryClient.invalidateQueries(["feeds", user.id]);
-      queryClient.invalidateQueries(["items", user.id]);
+      // Invalidate feed-related queries
+      queryClient.invalidateQueries({
+        queryKey: ["feeds"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["items"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["feedsSummary"],
+      });
+
       toast({
         title: t("common.success"),
         description: t("feeds.addSuccess"),
@@ -725,9 +797,22 @@ export function useFeedService() {
     },
     onError: (error) => {
       console.error("Error adding feed:", error);
+
+      // Duplicate feed check
+      let errorMessage = error.message || t("feeds.addError");
+
+      if (
+        error.message?.includes("duplicate key") ||
+        error.message?.includes("unique constraint")
+      ) {
+        errorMessage =
+          t("feeds.addError.duplicate") ||
+          "Bu feed zaten ekli. Lütfen başka bir feed ekleyin.";
+      }
+
       toast({
         title: t("common.error"),
-        description: error.message || t("feeds.addError"),
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -750,7 +835,9 @@ export function useFeedService() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["feeds", user.id]);
+      queryClient.invalidateQueries({
+        queryKey: ["feeds"],
+      });
       toast({
         title: t("common.success"),
         description: t("feeds.editSuccess"),
@@ -791,9 +878,15 @@ export function useFeedService() {
         throw new Error(errorData.error || "Failed to add interaction");
       }
 
-      await queryClient.invalidateQueries(["items", user.id]);
-      await queryClient.invalidateQueries(["favorites", user.id]);
-      await queryClient.invalidateQueries(["read_later", user.id]);
+      await queryClient.invalidateQueries({
+        queryKey: ["items", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["favorites", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["read_later", user.id],
+      });
 
       toast({
         title: t("common.success"),
@@ -830,9 +923,15 @@ export function useFeedService() {
         throw new Error(errorData.error || "Failed to remove interaction");
       }
 
-      await queryClient.invalidateQueries(["items", user.id]);
-      await queryClient.invalidateQueries(["favorites", user.id]);
-      await queryClient.invalidateQueries(["read_later", user.id]);
+      await queryClient.invalidateQueries({
+        queryKey: ["items", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["favorites", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["read_later", user.id],
+      });
 
       toast({
         title: t("common.success"),
@@ -872,10 +971,18 @@ export function useFeedService() {
         throw new Error(errorData.error || "Failed to delete feed");
       }
 
-      await queryClient.invalidateQueries(["feeds", user.id]);
-      await queryClient.invalidateQueries(["items", user.id]);
-      await queryClient.invalidateQueries(["favorites", user.id]);
-      await queryClient.invalidateQueries(["read_later", user.id]);
+      await queryClient.invalidateQueries({
+        queryKey: ["feeds", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["items", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["favorites", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["read_later", user.id],
+      });
 
       toast({
         title: t("common.success"),
@@ -946,9 +1053,15 @@ export function useFeedService() {
       );
 
       if (totalUpdated > 0) {
-        await queryClient.invalidateQueries(["items", user.id]);
-        await queryClient.invalidateQueries(["favorites", user.id]);
-        await queryClient.invalidateQueries(["read_later", user.id]);
+        await queryClient.invalidateQueries({
+          queryKey: ["items", user.id],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["favorites", user.id],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["read_later", user.id],
+        });
 
         toast({
           title: t("common.success"),
@@ -993,8 +1106,12 @@ export function useFeedService() {
   const refreshAllFeeds = async () => {
     if (!user) return;
     try {
-      await queryClient.invalidateQueries(["feeds", user.id]);
-      await queryClient.invalidateQueries(["items", user.id]);
+      await queryClient.invalidateQueries({
+        queryKey: ["feeds", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["items", user.id],
+      });
       toast({
         title: t("common.success"),
         description: t("feeds.refreshSuccess"),
@@ -1013,8 +1130,12 @@ export function useFeedService() {
   const syncFeed = async (feedId) => {
     if (!user) return;
     try {
-      await queryClient.invalidateQueries(["feeds", user.id]);
-      await queryClient.invalidateQueries(["items", user.id]);
+      await queryClient.invalidateQueries({
+        queryKey: ["feeds", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["items", user.id],
+      });
       toast({
         title: t("common.success"),
         description: t("feeds.syncSuccess"),
@@ -1058,8 +1179,13 @@ export function useFeedService() {
       readLaterQuery.isLoading,
     error: feedsQuery.error || itemsQuery.error,
 
+    // Queries
+    feedsQuery,
+    itemsQuery,
+
     // Mutations
     addFeed: addFeedMutation.mutate,
+    addFeedMutation,
     editFeed: editFeedMutation.mutate,
     deleteFeed,
 

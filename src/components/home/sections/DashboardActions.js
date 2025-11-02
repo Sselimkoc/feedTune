@@ -17,8 +17,8 @@ export function DashboardActions({
     <Card className="bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow">
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
-          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-            <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+            <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
             <div>Quick Actions</div>
@@ -67,7 +67,7 @@ function ActionButton({ onClick, icon, label, variant }) {
       variant={variant === "primary" ? "default" : "outline"}
       className={`h-auto py-3 flex flex-col items-center justify-center gap-1.5 rounded-lg transition-all ${
         variant === "primary"
-          ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0"
+          ? "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white border-0"
           : "border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50"
       }`}
     >

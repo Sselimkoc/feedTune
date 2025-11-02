@@ -21,12 +21,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useFeedService } from "@/hooks/features/useFeedService";
 import { AddFeedButton } from "@/components/features/feed/buttons/AddFeedButton";
 import { AddFeedDialog } from "@/components/features/feed/dialogs/AddFeedDialog";
 
 export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { addFeedMutation } = useFeedService();
 
   return (
     <section className="py-6 lg:py-8">
@@ -151,7 +153,8 @@ export function HomeFeedManagement({ feeds, onAddFeed, onDeleteFeed }) {
 
         <AddFeedDialog
           isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
+          onOpenChange={setIsDialogOpen}
+          addFeedMutation={addFeedMutation}
           onSubmit={onAddFeed}
         />
       </div>

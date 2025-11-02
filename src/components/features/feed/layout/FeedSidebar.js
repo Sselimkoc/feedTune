@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { AddFeedDialog } from "@/components/features/feed/dialogs/AddFeedDialog";
 import { AddFeedButton } from "@/components/features/feed/buttons/AddFeedButton";
+import { useFeedService } from "@/hooks/features/useFeedService";
 import Link from "next/link";
 
 /**
@@ -43,6 +44,7 @@ export function FeedSidebar({
   const { theme } = useTheme();
   const { t } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { addFeedMutation } = useFeedService();
 
   // Aramalı ve filtrelenmiş feed listesi
   const filteredFeeds = useMemo(() => {
@@ -279,7 +281,11 @@ export function FeedSidebar({
       </ScrollArea>
 
       {/* Feed ekleme diyaloğu */}
-      <AddFeedDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} />
+      <AddFeedDialog
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        addFeedMutation={addFeedMutation}
+      />
     </div>
   );
 }
