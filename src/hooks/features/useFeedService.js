@@ -791,15 +791,18 @@ export function useFeedService() {
       return newFeed;
     },
     onSuccess: (newFeed) => {
-      // Invalidate feed-related queries
+      // Invalidate feed-related queries with exact keys
       queryClient.invalidateQueries({
-        queryKey: ["feeds"],
+        queryKey: ["feeds", user?.id],
+        exact: true,
       });
       queryClient.invalidateQueries({
-        queryKey: ["items"],
+        queryKey: ["items", user?.id],
+        exact: true,
       });
       queryClient.invalidateQueries({
-        queryKey: ["feedsSummary"],
+        queryKey: ["feedsSummary", user?.id],
+        exact: true,
       });
 
       toast({
@@ -848,7 +851,8 @@ export function useFeedService() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["feeds"],
+        queryKey: ["feeds", user?.id],
+        exact: true,
       });
       toast({
         title: t("common.success"),
@@ -892,12 +896,15 @@ export function useFeedService() {
 
       await queryClient.invalidateQueries({
         queryKey: ["items", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["favorites", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["read_later", user.id],
+        exact: true,
       });
 
       toast({
@@ -937,12 +944,15 @@ export function useFeedService() {
 
       await queryClient.invalidateQueries({
         queryKey: ["items", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["favorites", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["read_later", user.id],
+        exact: true,
       });
 
       toast({
@@ -985,15 +995,19 @@ export function useFeedService() {
 
       await queryClient.invalidateQueries({
         queryKey: ["feeds", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["items", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["favorites", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["read_later", user.id],
+        exact: true,
       });
 
       toast({
@@ -1067,12 +1081,15 @@ export function useFeedService() {
       if (totalUpdated > 0) {
         await queryClient.invalidateQueries({
           queryKey: ["items", user.id],
+          exact: true,
         });
         await queryClient.invalidateQueries({
           queryKey: ["favorites", user.id],
+          exact: true,
         });
         await queryClient.invalidateQueries({
           queryKey: ["read_later", user.id],
+          exact: true,
         });
 
         toast({
@@ -1095,7 +1112,7 @@ export function useFeedService() {
       console.error("Error fetching new feed data:", error);
       throw error;
     }
-  }, [user, feedsQuery.data?.length, queryClient]);
+  }, [user, queryClient]);
 
   // Auto-fetch new feed data when user logs in and feeds are loaded
   useEffect(() => {
@@ -1120,9 +1137,11 @@ export function useFeedService() {
     try {
       await queryClient.invalidateQueries({
         queryKey: ["feeds", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["items", user.id],
+        exact: true,
       });
       toast({
         title: t("common.success"),
@@ -1144,9 +1163,11 @@ export function useFeedService() {
     try {
       await queryClient.invalidateQueries({
         queryKey: ["feeds", user.id],
+        exact: true,
       });
       await queryClient.invalidateQueries({
         queryKey: ["items", user.id],
+        exact: true,
       });
       toast({
         title: t("common.success"),
