@@ -33,6 +33,7 @@ import { DIALOG_STEPS, FEED_TYPES } from "./constants";
 
 // Service
 import { mapCategoryToUUID } from "@/services/feedService";
+import { useLanguage } from "@/hooks/useLanguage";
 
 /**
  * Refactored AddFeedDialog Component
@@ -50,6 +51,7 @@ export function AddFeedDialog({
   isLoading = false,
 }) {
   const { t } = useTranslation();
+  const { language } = useLanguage();
 
   // Hooks
   const form = useAddFeedForm();
@@ -166,12 +168,16 @@ export function AddFeedDialog({
         feedSteps.goToSearch(feedSteps.searchResults);
       } else {
         feedSteps.goToInput();
+        // Input'u temizle
+        form.form.setValue("url", "");
       }
     } else if (feedSteps.step === DIALOG_STEPS.SEARCH) {
       // Arama sonuçlarından INPUT'a dön
       feedSteps.goToInput();
+      // Input'u temizle
+      form.form.setValue("url", "");
     }
-  }, [feedSteps]);
+  }, [feedSteps, form]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>

@@ -84,7 +84,7 @@ export async function POST(request) {
 
     console.log("Request body:", body);
 
-    const { query, url, keyword } = body;
+    const { query, url, keyword, language = "en" } = body;
 
     // Arama sorgusu önceliği: query > keyword > url
     const searchQuery = query || keyword || url;
@@ -181,7 +181,7 @@ export async function POST(request) {
     console.log(`Anahtar kelime ile YouTube araması: "${searchQuery}"`);
 
     // Fetch-client ile kanal araması yap (401 hatası vermeyen client)
-    const results = await searchChannels(searchQuery, 5);
+    const results = await searchChannels(searchQuery, 5, language);
 
     if (!results || results.length === 0) {
       return NextResponse.json(
@@ -197,24 +197,41 @@ export async function POST(request) {
     // İlk sonucu ana kanal olarak kullan ve detayları al
     const primaryChannel = results[0];
 
-    // İlk kanal için detaylı bilgi almak için ikinci bir istek yap
-    let detailedChannel = primaryChannel;
-    let subscriberCount = "Bilinmiyor";
-    let videoCount = "0";
+    // Tüm kanallar için detaylı bilgi almak için paralel istek yap
+    let primaryChannelDetails = {
+      subscriberCount: "Bilinmiyor",
+      videoCount: "0",
+    };
+    let allChannelDetails = [];
 
     try {
-      if (primaryChannel.id) {
-        const channelDetails = await getChannelById(primaryChannel.id);
-        if (channelDetails && channelDetails.statistics) {
-          subscriberCount =
-            channelDetails.statistics.subscriberCount || "Bilinmiyor";
-          videoCount = channelDetails.statistics.videoCount || "0";
-          detailedChannel = {
-            ...primaryChannel,
-            statistics: channelDetails.statistics,
-          };
+      // Tüm kanalların detaylarını paralel olarak al
+      const channelDetailPromises = results.map(async (channel) => {
+        try {
+          if (channel.id) {
+            const channelDetails = await getChannelById(channel.id, language);
+            if (channelDetails && channelDetails.statistics) {
+              return {
+                subscriberCount:
+                  channelDetails.statistics.subscriberCount || "Bilinmiyor",
+                videoCount: channelDetails.statistics.videoCount || "0",
+              };
+            }
+          }
+        } catch (error) {
+          console.warn(
+            `Kanal ${channel.id} detayları alınırken hata:`,
+            error
+          );
         }
-      }
+        return {
+          subscriberCount: "Bilinmiyor",
+          videoCount: "0",
+        };
+      });
+
+      allChannelDetails = await Promise.all(channelDetailPromises);
+      primaryChannelDetails = allChannelDetails[0] || primaryChannelDetails;
     } catch (detailError) {
       console.warn("Kanal detayları alınırken hata oluştu:", detailError);
     }
@@ -232,29 +249,33 @@ export async function POST(request) {
             primaryChannel.title || "Channel"
           )}&background=random&color=fff&size=120`,
         url: `https://youtube.com/channel/${primaryChannel.id}`,
-        subscribers: subscriberCount,
-        subscribersFormatted: formatNumber(subscriberCount),
-        videoCount: videoCount,
-        videoCountFormatted: formatNumber(videoCount),
+        subscribers: primaryChannelDetails.subscriberCount,
+        subscribersFormatted: formatNumber(primaryChannelDetails.subscriberCount),
+        videoCount: primaryChannelDetails.videoCount,
+        videoCountFormatted: formatNumber(primaryChannelDetails.videoCount),
       },
-      channels: results.map((channel, index) => ({
-        id: channel.id,
-        title: channel.title,
-        description: channel.description,
-        thumbnail:
-          channel.thumbnail ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            channel.title || "Channel"
-          )}&background=random&color=fff&size=120`,
-        url: `https://youtube.com/channel/${channel.id}`,
-        publishedAt: channel.publishedAt,
-        // Sadece ilk kanal için detaylı bilgileri içerir, diğerleri için varsayılan değerler kullanılır
-        subscribers: index === 0 ? subscriberCount : "Bilinmiyor",
-        subscribersFormatted:
-          index === 0 ? formatNumber(subscriberCount) : "Bilinmiyor",
-        videoCount: index === 0 ? videoCount : "0",
-        videoCountFormatted: index === 0 ? formatNumber(videoCount) : "0",
-      })),
+      channels: results.map((channel, index) => {
+        const details = allChannelDetails ? allChannelDetails[index] : {
+          subscriberCount: "Bilinmiyor",
+          videoCount: "0",
+        };
+        return {
+          id: channel.id,
+          title: channel.title,
+          description: channel.description,
+          thumbnail:
+            channel.thumbnail ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              channel.title || "Channel"
+            )}&background=random&color=fff&size=120`,
+          url: `https://youtube.com/channel/${channel.id}`,
+          publishedAt: channel.publishedAt,
+          subscribers: details.subscriberCount,
+          subscribersFormatted: formatNumber(details.subscriberCount),
+          videoCount: details.videoCount,
+          videoCountFormatted: formatNumber(details.videoCount),
+        };
+      }),
     });
   } catch (error) {
     console.error("YouTube kanal araması sırasında hata:", error);

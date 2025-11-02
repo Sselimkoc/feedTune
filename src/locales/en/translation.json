@@ -68,6 +68,7 @@
       "searchResults": "Search Results",
       "feedPreview": "Feed Preview",
       "back": "Back",
+      "subscribers": "subs",
       "fullContentDescription": "Fetch full article content (may be slower)"
     },
     "addSuccess": "Feed added successfully!",

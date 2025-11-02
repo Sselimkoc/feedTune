@@ -11,17 +11,18 @@ const FEED_TYPES = {
 /**
  * YouTube channel'ı URL veya keyword ile ara/preview yap
  * @param {string} input - YouTube URL veya channel adı
+ * @param {string} language - Dil kodu (tr, en, etc.)
  * @returns {Promise<Object>} Channel bilgileri
  */
-export const searchYoutubeChannel = async (input) => {
+export const searchYoutubeChannel = async (input, language = "en") => {
   try {
     const res = await fetch("/api/youtube/channel-search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
         /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(input)
-          ? { url: input }
-          : { keyword: input }
+          ? { url: input, language }
+          : { keyword: input, language }
       ),
     });
 
