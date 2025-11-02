@@ -40,3 +40,7 @@ next-env.d.ts
 .idea/
 
 .cursorrules
+
+# Supabase - local development only
+supabase/migrations/
+.supabase/

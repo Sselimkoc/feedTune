@@ -69,7 +69,7 @@ const getProxiedImageUrl = (url) => {
 // Form schema
 const formSchema = z.object({
   title: z.string().optional(),
-  url: z.string().min(1, "URL is required"),
+  url: z.string().optional(), // URL preview step'te otomatik set edilir
   type: z.enum(["rss", "youtube"]),
   category: z.string().optional(),
   fetch_full_content: z.boolean().optional(),
@@ -90,7 +90,7 @@ export function AddFeedDialog({
   isOpen = false,
   onOpenChange = () => {},
   onSubmit = null,
-  addFeed = null,
+  addFeedMutation = null,
   isLoading = false,
 }) {
   const { t } = useTranslation();
@@ -116,6 +116,7 @@ export function AddFeedDialog({
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reset states when dialog closes
   useEffect(() => {
@@ -128,9 +129,25 @@ export function AddFeedDialog({
       setSearchResults([]);
       setSearchLoading(false);
       setSearchError("");
+      setIsSubmitting(false);
       form.reset();
     }
   }, [isOpen, form]);
+
+  // Close dialog when feed is added successfully
+  useEffect(() => {
+    if (isSubmitting && addFeedMutation && !addFeedMutation.isPending) {
+      setIsSubmitting(false);
+      form.reset();
+      onOpenChange(false);
+    }
+  }, [
+    addFeedMutation?.isPending,
+    isSubmitting,
+    form,
+    onOpenChange,
+    addFeedMutation,
+  ]);
 
   const handleTabChange = useCallback(
     (tab) => {
@@ -276,25 +293,26 @@ export function AddFeedDialog({
     });
     form.setValue("title", result.title || "");
     form.setValue("url", result.url);
+    form.setValue("type", "youtube");
+    form.setValue("category", "general");
     setStep("preview");
     setSearchResults([]);
   };
 
   // Form submit handler
   const handleSubmit = async (values) => {
-    if (!previewData) return;
+    if (!previewData || !addFeedMutation) return;
 
-    const extraData = {
-      title: values.title,
-      category: values.category,
+    const feedData = {
+      url: previewData.url || values.url,
+      type: activeTab,
+      title: values.title || previewData.title,
+      category_id: null, // TODO: Kategorileri UUID ile map et
       fetch_full_content: values.fetch_full_content,
     };
 
-    const success = await addFeed(previewData.url, activeTab, extraData);
-    if (success) {
-      form.reset();
-      onOpenChange(false);
-    }
+    setIsSubmitting(true);
+    addFeedMutation.mutate(feedData);
   };
 
   const goBack = () => {
@@ -558,6 +576,7 @@ export function AddFeedDialog({
                     <Form {...form}>
                       <form
                         onSubmit={form.handleSubmit(handleSubmit)}
+                        noValidate
                         className="space-y-6"
                       >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -660,17 +679,17 @@ export function AddFeedDialog({
                             type="button"
                             variant="outline"
                             onClick={() => onOpenChange(false)}
-                            disabled={isLoading}
+                            disabled={addFeedMutation?.isPending}
                             className="px-8 py-3 text-lg rounded-xl font-semibold shadow"
                           >
                             {t("common.cancel")}
                           </Button>
                           <Button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={addFeedMutation?.isPending}
                             className="font-bold px-8 py-3 text-lg rounded-xl bg-gradient-to-r from-primary to-blue-500 text-white shadow-lg hover:from-blue-500 hover:to-primary transition"
                           >
-                            {isLoading ? (
+                            {addFeedMutation?.isPending ? (
                               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
                               <Plus className="mr-2 h-5 w-5" />

@@ -246,6 +246,7 @@ export async function POST(request) {
           `https://ui-avatars.com/api/?name=${encodeURIComponent(
             channel.title || "Channel"
           )}&background=random&color=fff&size=120`,
+        url: `https://youtube.com/channel/${channel.id}`,
         publishedAt: channel.publishedAt,
         // Sadece ilk kanal için detaylı bilgileri içerir, diğerleri için varsayılan değerler kullanılır
         subscribers: index === 0 ? subscriberCount : "Bilinmiyor",

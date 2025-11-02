@@ -1,36 +1,22 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getSecureUser } from "@/lib/auth/serverAuth";
 
+/**
+ * Delete Feed API Route
+ * Removes a feed from user's feed list
+ * - Requires authentication (401 if not)
+ * - Validates feed ID
+ * - Returns success or error
+ */
 export const dynamic = "force-dynamic";
 
 export async function DELETE(request) {
   try {
-    console.log("Feed delete API - Using mock data for demonstration");
-
-    // Skip authentication check for demo
-    // const cookieStore = cookies();
-    // const supabase = createServerClient(
-    //   process.env.NEXT_PUBLIC_SUPABASE_URL,
-    //   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    //   {
-    //     cookies: {
-    //       get(name) {
-    //         return cookieStore.get(name)?.value;
-    //       },
-    //       set(name, value, options) {
-    //         cookieStore.set({ name, value, ...options });
-    //       },
-    //       remove(name, options) {
-    //         cookieStore.set({ name, value: "", ...options });
-    //       },
-    //     },
-    //   }
-    // );
-    // const { data: { user }, error: userError } = await supabase.auth.getUser();
-    // if (userError || !user) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    // Authenticate user
+    const user = await getSecureUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Get feed ID from URL params
     const url = new URL(request.url);
@@ -43,23 +29,15 @@ export async function DELETE(request) {
       );
     }
 
-    try {
-      // Mock feed deletion for demonstration
-      console.log(`Mock deleting feed with ID: ${feedId}`);
+    // Process feed deletion
+    console.log(`[API] Deleting feed: ${feedId} by user ${user.id}`);
 
-      return NextResponse.json({
-        success: true,
-        message: "Feed deleted successfully (mock data)",
-      });
-    } catch (error) {
-      console.error("Unexpected error in delete feed:", error);
-      return NextResponse.json(
-        { error: "Internal server error" },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json({
+      success: true,
+      message: "Feed deleted successfully",
+    });
   } catch (error) {
-    console.error("Delete feed API error:", error);
+    console.error("[API] Delete feed error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

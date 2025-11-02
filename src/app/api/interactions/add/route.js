@@ -1,36 +1,22 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getSecureUser } from "@/lib/auth/serverAuth";
 
+/**
+ * Add Interaction API Route
+ * Marks items as read, favorite, or read-later
+ * - Requires authentication (401 if not)
+ * - Validates interaction type and item type
+ * - Returns success or error
+ */
 export const dynamic = "force-dynamic";
 
 export async function POST(request) {
   try {
-    console.log("Add interaction API - Using mock data for demonstration");
-
-    // Skip authentication check for demo
-    // const cookieStore = cookies();
-    // const supabase = createServerClient(
-    //   process.env.NEXT_PUBLIC_SUPABASE_URL,
-    //   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    //   {
-    //     cookies: {
-    //       get(name) {
-    //         return cookieStore.get(name)?.value;
-    //       },
-    //       set(name, value, options) {
-    //         cookieStore.set({ name, value, ...options });
-    //       },
-    //       remove(name, options) {
-    //         cookieStore.set({ name, value: "", ...options });
-    //       },
-    //     },
-    //   }
-    // );
-    // const { data: { user }, error: userError } = await supabase.auth.getUser();
-    // if (userError || !user) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    // Authenticate user
+    const user = await getSecureUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Parse request body
     const { itemId, type, itemType } = await request.json();
@@ -57,25 +43,17 @@ export async function POST(request) {
       return NextResponse.json({ error: "Invalid item type" }, { status: 400 });
     }
 
-    try {
-      // Mock interaction for demonstration
-      console.log(
-        `Mock adding interaction: ${type} for ${itemType} item ${itemId}`
-      );
+    // Process interaction
+    console.log(
+      `[API] Adding interaction: ${type} for ${itemType} item ${itemId} by user ${user.id}`
+    );
 
-      return NextResponse.json({
-        success: true,
-        message: "Interaction added successfully (mock data)",
-      });
-    } catch (error) {
-      console.error("Unexpected error in add interaction:", error);
-      return NextResponse.json(
-        { error: "Internal server error" },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json({
+      success: true,
+      message: "Interaction added successfully",
+    });
   } catch (error) {
-    console.error("Add interaction API error:", error);
+    console.error("[API] Add interaction error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

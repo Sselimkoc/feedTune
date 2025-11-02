@@ -70,6 +70,12 @@
       "back": "Back",
       "fullContentDescription": "Fetch full article content (may be slower)"
     },
+    "addSuccess": "Feed added successfully!",
+    "addError": {
+      "duplicate": "This feed already exists. Please add a different feed."
+    },
+    "editSuccess": "Feed updated successfully!",
+    "editError": "Failed to update feed",
     "autoSyncComplete": "Feeds Updated",
     "autoSyncDescription": "{{count}} feeds have been refreshed with new content"
   },

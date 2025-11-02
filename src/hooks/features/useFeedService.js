@@ -9,10 +9,19 @@ import { useToast } from "@/components/core/ui/use-toast";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useSupabase } from "../useSupabase";
+import { feedApi } from "@/lib/api/feedApi";
+import {
+  getFeedsQueryConfig,
+  getItemsQueryConfig,
+  getFavoritesQueryConfig,
+  getReadLaterQueryConfig,
+  queryConstants,
+} from "./feed-screen/useQueryConfig";
+import { useInvalidateFeedsCache } from "./useFeedsQuery";
 
 // Constants
-const STALE_TIME = 1000 * 60 * 5; // 5 minutes
-const CACHE_TIME = 1000 * 60 * 30; // 30 minutes
+const STALE_TIME = queryConstants.STALE_TIME;
+const CACHE_TIME = queryConstants.CACHE_TIME;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
@@ -561,164 +570,65 @@ export function useFeedService() {
   // Auto-sync trigger state
   const [hasAutoSynced, setHasAutoSynced] = useState(false);
 
-  // Debug session state
-  useEffect(() => {
-    console.log("[useFeedService] Session state:", {
-      hasSession: !!session,
-      hasAccessToken: !!session?.access_token,
-      userId: user?.id,
-      isAuthenticated,
-    });
-  }, [session, user, isAuthenticated]);
-
-  // Set session on Supabase client when available
-  useEffect(() => {
-    if (session && supabase) {
-      console.log("[useFeedService] Setting session on Supabase client");
-      supabase.auth.setSession(session).then(({ data, error }) => {
-        if (error) {
-          console.error("[useFeedService] Error setting session:", error);
-        } else {
-          console.log("[useFeedService] Session set successfully on client");
-        }
-      });
-    }
-  }, [session, supabase]);
-
   // ============================================================================
   // QUERIES
   // ============================================================================
 
   // Fetch feeds with their categories
   const feedsQuery = useQuery({
-    queryKey: ["feeds", user?.id],
+    ...getFeedsQueryConfig(user?.id, isAuthenticated),
     queryFn: async () => {
-      console.log("[feedsQuery] Starting query for user:", user?.id);
-      if (!user || !isAuthenticated) {
-        console.log(
-          "[feedsQuery] No user or not authenticated, returning empty array"
-        );
-        return [];
-      }
-
+      console.log("[feedsQuery] Fetching feeds for user:", user?.id);
       try {
-        console.log("[feedsQuery] Fetching feeds from API...");
-        const response = await fetch("/api/feeds", {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const feeds = data.feeds || [];
-
+        const feeds = await feedApi.fetchFeeds();
         console.log("[feedsQuery] Successfully fetched feeds:", feeds.length);
         return feeds;
       } catch (error) {
-        console.error("[feedsQuery] Error in feeds query:", error);
+        console.error("[feedsQuery] Error fetching feeds:", error);
         return [];
       }
     },
-    enabled: !!user && isAuthenticated,
   });
 
   // Fetch all items with interactions
   const itemsQuery = useQuery({
-    queryKey: ["items", user?.id],
+    ...getItemsQueryConfig(user?.id, isAuthenticated),
     queryFn: async () => {
-      console.log("[itemsQuery] Starting query for user:", user?.id);
-      if (!user || !isAuthenticated) {
-        console.log(
-          "[itemsQuery] No user or not authenticated, returning empty array"
-        );
-        return [];
-      }
-      console.log("[itemsQuery] Fetching items from API...");
-
+      console.log("[itemsQuery] Fetching items for user:", user?.id);
       try {
-        const response = await fetch("/api/feeds", {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const items = data.recentItems || [];
-
-        console.log(
-          "[itemsQuery] Query completed, returning",
-          items.length,
-          "items"
-        );
+        const items = await feedApi.fetchItems();
+        console.log("[itemsQuery] Successfully fetched items:", items.length);
         return items;
       } catch (error) {
         console.error("[itemsQuery] Error fetching items:", error);
         return [];
       }
     },
-    enabled: !!user && isAuthenticated,
-    staleTime: STALE_TIME,
-    gcTime: CACHE_TIME,
   });
 
   // Fetch favorites
   const favoritesQuery = useQuery({
-    queryKey: ["favorites", user?.id],
+    ...getFavoritesQueryConfig(user?.id, isAuthenticated),
     queryFn: async () => {
-      if (!user || !isAuthenticated) return [];
-
+      console.log("[favoritesQuery] Fetching favorites for user:", user?.id);
       try {
-        const response = await fetch("/api/favorites", {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return data.items || [];
+        const items = await feedApi.fetchFavorites();
+        return items;
       } catch (error) {
         console.error("[favoritesQuery] Error fetching favorites:", error);
         return [];
       }
     },
-    enabled: !!user && isAuthenticated,
-    staleTime: STALE_TIME,
-    gcTime: CACHE_TIME,
   });
 
   // Fetch read later items
   const readLaterQuery = useQuery({
-    queryKey: ["read_later", user?.id],
+    ...getReadLaterQueryConfig(user?.id, isAuthenticated),
     queryFn: async () => {
-      if (!user || !isAuthenticated) return [];
-
+      console.log("[readLaterQuery] Fetching read later for user:", user?.id);
       try {
-        const response = await fetch("/api/read-later", {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return data.items || [];
+        const items = await feedApi.fetchReadLater();
+        return items;
       } catch (error) {
         console.error(
           "[readLaterQuery] Error fetching read later items:",
@@ -727,9 +637,6 @@ export function useFeedService() {
         return [];
       }
     },
-    enabled: !!user && isAuthenticated,
-    staleTime: STALE_TIME,
-    gcTime: CACHE_TIME,
   });
 
   // ============================================================================
@@ -754,17 +661,81 @@ export function useFeedService() {
       // Parse feed metadata
       let feedInfo = {};
       try {
-        const response = await fetch("/api/rss-preview", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: normalizedUrl, skipCache: true }),
-        });
+        // YouTube feed için ayrı endpoint kullan
+        if (feedType === "youtube") {
+          const response = await fetch("/api/youtube/channel-search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: normalizedUrl }),
+          });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch feed: ${response.statusText}`);
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch YouTube channel: ${response.statusText}`
+            );
+          }
+
+          const data = await response.json();
+          if (!data.success || !data.channel) {
+            throw new Error(data.error || "Failed to fetch YouTube channel");
+          }
+
+          // YouTube kanalının son 15 videosunu getir
+          let items = [];
+          try {
+            const videosResponse = await fetch("/api/youtube/channel-videos", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                channelId: data.channel.id,
+                maxResults: 15,
+              }),
+            });
+
+            if (videosResponse.ok) {
+              const videosData = await videosResponse.json();
+              if (videosData.success && videosData.videos) {
+                items = videosData.videos.map((video) => ({
+                  video_id: video.id,
+                  videoId: video.id, // For compatibility
+                  link: video.url, // For compatibility with processBatchYouTubeItems
+                  title: video.title,
+                  description: video.description,
+                  thumbnail: video.thumbnail,
+                  pubDate: video.publishedAt,
+                  publishedAt: video.publishedAt,
+                  author: data.channel.title,
+                  channelTitle: data.channel.title,
+                  url: video.url,
+                }));
+              }
+            }
+          } catch (videoError) {
+            console.warn("YouTube videoları fetch edilirken hata:", videoError);
+          }
+
+          feedInfo = {
+            feed: {
+              title: data.channel.title,
+              description: data.channel.description,
+              icon: data.channel.thumbnail,
+            },
+            items: items,
+          };
+        } else {
+          // RSS feed için rss-preview endpoint'ini kullan
+          const response = await fetch("/api/rss-preview", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: normalizedUrl, skipCache: true }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch feed: ${response.statusText}`);
+          }
+
+          feedInfo = await response.json();
         }
-
-        feedInfo = await response.json();
       } catch (error) {
         console.error("Feed parsing error:", error);
         throw new Error(`Failed to parse ${feedType} feed: ${error.message}`);
@@ -779,8 +750,6 @@ export function useFeedService() {
         description: extraData.description || feedInfo.feed?.description || "",
         icon: extraData.icon || feedInfo.feed?.icon || null,
         category_id: extraData.category_id || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       };
 
       // Add feed to database
@@ -810,8 +779,17 @@ export function useFeedService() {
       return newFeed;
     },
     onSuccess: (newFeed) => {
-      queryClient.invalidateQueries(["feeds", user.id]);
-      queryClient.invalidateQueries(["items", user.id]);
+      // Invalidate feed-related queries
+      queryClient.invalidateQueries({
+        queryKey: ["feeds"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["items"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["feedsSummary"],
+      });
+
       toast({
         title: t("common.success"),
         description: t("feeds.addSuccess"),
@@ -819,9 +797,22 @@ export function useFeedService() {
     },
     onError: (error) => {
       console.error("Error adding feed:", error);
+
+      // Duplicate feed check
+      let errorMessage = error.message || t("feeds.addError");
+
+      if (
+        error.message?.includes("duplicate key") ||
+        error.message?.includes("unique constraint")
+      ) {
+        errorMessage =
+          t("feeds.addError.duplicate") ||
+          "Bu feed zaten ekli. Lütfen başka bir feed ekleyin.";
+      }
+
       toast({
         title: t("common.error"),
-        description: error.message || t("feeds.addError"),
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -844,7 +835,9 @@ export function useFeedService() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["feeds", user.id]);
+      queryClient.invalidateQueries({
+        queryKey: ["feeds"],
+      });
       toast({
         title: t("common.success"),
         description: t("feeds.editSuccess"),
@@ -885,9 +878,15 @@ export function useFeedService() {
         throw new Error(errorData.error || "Failed to add interaction");
       }
 
-      await queryClient.invalidateQueries(["items", user.id]);
-      await queryClient.invalidateQueries(["favorites", user.id]);
-      await queryClient.invalidateQueries(["read_later", user.id]);
+      await queryClient.invalidateQueries({
+        queryKey: ["items", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["favorites", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["read_later", user.id],
+      });
 
       toast({
         title: t("common.success"),
@@ -924,9 +923,15 @@ export function useFeedService() {
         throw new Error(errorData.error || "Failed to remove interaction");
       }
 
-      await queryClient.invalidateQueries(["items", user.id]);
-      await queryClient.invalidateQueries(["favorites", user.id]);
-      await queryClient.invalidateQueries(["read_later", user.id]);
+      await queryClient.invalidateQueries({
+        queryKey: ["items", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["favorites", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["read_later", user.id],
+      });
 
       toast({
         title: t("common.success"),
@@ -966,10 +971,18 @@ export function useFeedService() {
         throw new Error(errorData.error || "Failed to delete feed");
       }
 
-      await queryClient.invalidateQueries(["feeds", user.id]);
-      await queryClient.invalidateQueries(["items", user.id]);
-      await queryClient.invalidateQueries(["favorites", user.id]);
-      await queryClient.invalidateQueries(["read_later", user.id]);
+      await queryClient.invalidateQueries({
+        queryKey: ["feeds", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["items", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["favorites", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["read_later", user.id],
+      });
 
       toast({
         title: t("common.success"),
@@ -1040,9 +1053,15 @@ export function useFeedService() {
       );
 
       if (totalUpdated > 0) {
-        await queryClient.invalidateQueries(["items", user.id]);
-        await queryClient.invalidateQueries(["favorites", user.id]);
-        await queryClient.invalidateQueries(["read_later", user.id]);
+        await queryClient.invalidateQueries({
+          queryKey: ["items", user.id],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["favorites", user.id],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["read_later", user.id],
+        });
 
         toast({
           title: t("common.success"),
@@ -1087,8 +1106,12 @@ export function useFeedService() {
   const refreshAllFeeds = async () => {
     if (!user) return;
     try {
-      await queryClient.invalidateQueries(["feeds", user.id]);
-      await queryClient.invalidateQueries(["items", user.id]);
+      await queryClient.invalidateQueries({
+        queryKey: ["feeds", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["items", user.id],
+      });
       toast({
         title: t("common.success"),
         description: t("feeds.refreshSuccess"),
@@ -1107,8 +1130,12 @@ export function useFeedService() {
   const syncFeed = async (feedId) => {
     if (!user) return;
     try {
-      await queryClient.invalidateQueries(["feeds", user.id]);
-      await queryClient.invalidateQueries(["items", user.id]);
+      await queryClient.invalidateQueries({
+        queryKey: ["feeds", user.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["items", user.id],
+      });
       toast({
         title: t("common.success"),
         description: t("feeds.syncSuccess"),
@@ -1152,8 +1179,13 @@ export function useFeedService() {
       readLaterQuery.isLoading,
     error: feedsQuery.error || itemsQuery.error,
 
+    // Queries
+    feedsQuery,
+    itemsQuery,
+
     // Mutations
     addFeed: addFeedMutation.mutate,
+    addFeedMutation,
     editFeed: editFeedMutation.mutate,
     deleteFeed,
 

@@ -8,17 +8,22 @@ import i18n from "@/i18n";
 import { LoadingState } from "@/components/core/states/LoadingState";
 import { Toaster } from "@/components/core/ui/toaster";
 import { ToastProvider } from "@/components/core/ui/toast";
+import { AuthProvider } from "@/providers/AuthProvider";
 import { useAuthStore } from "@/store/useAuthStore";
 
 /**
- * Component that combines all context providers for the application.
- * Includes React Query, ThemeProvider, and other providers.
+ * Main application provider component
+ * Combines all context providers:
+ * - React Query
+ * - i18n (internationalization)
+ * - Theme
+ * - Auth
  *
  * @param {object} children - Child components
  * @returns {JSX.Element}
  */
 export function AppProvider({ children }) {
-  // Create query client
+  // Create query client with optimized defaults
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -52,15 +57,17 @@ export function AppProvider({ children }) {
           enableSystem
           disableTransitionOnChange
         >
-          <Suspense fallback={<LoadingState minimal />}>
-            {children}
-            <Toaster
-              position="bottom-right"
-              expand={false}
-              richColors
-              closeButton
-            />
-          </Suspense>
+          <AuthProvider>
+            <Suspense fallback={<LoadingState minimal />}>
+              {children}
+              <Toaster
+                position="bottom-right"
+                expand={false}
+                richColors
+                closeButton
+              />
+            </Suspense>
+          </AuthProvider>
         </ThemeProvider>
       </I18nextProvider>
     </QueryClientProvider>

@@ -4,8 +4,11 @@ import { cookies } from "next/headers";
 import { getSecureUser } from "@/lib/auth/serverAuth";
 
 /**
- * API to create user database record
- * This API creates a database record for authenticated users if they don't exist
+ * Ensure User API Route
+ * Creates database record for authenticated users if not exists
+ * - Requires authentication (401 if not)
+ * - Creates user record in database
+ * - Returns user data on success
  */
 export async function POST() {
   try {

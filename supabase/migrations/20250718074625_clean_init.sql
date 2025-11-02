@@ -1,8 +1,3 @@
--- Clean database initialization
--- Drop all existing tables and functions
-DROP SCHEMA IF EXISTS public CASCADE;
-CREATE SCHEMA public;
-
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -181,24 +176,56 @@ ALTER TABLE item_tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE youtube_cache ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
-CREATE POLICY users_select_policy ON users FOR SELECT USING (auth.uid() = id);
-CREATE POLICY users_insert_policy ON users FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY users_update_policy ON users FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY users_delete_policy ON users FOR DELETE USING (auth.uid() = id);
+-- RLS Policies with Service Role bypass
+CREATE POLICY users_select_policy ON users FOR SELECT USING (auth.uid() = id OR auth.role() = 'service_role');
+CREATE POLICY users_insert_policy ON users FOR INSERT WITH CHECK (auth.uid() = id OR auth.role() = 'service_role');
+CREATE POLICY users_update_policy ON users FOR UPDATE USING (auth.uid() = id OR auth.role() = 'service_role');
+CREATE POLICY users_delete_policy ON users FOR DELETE USING (auth.uid() = id OR auth.role() = 'service_role');
 
-CREATE POLICY categories_policy ON categories FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY feeds_select_policy ON feeds FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY feeds_insert_policy ON feeds FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY feeds_update_policy ON feeds FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY feeds_delete_policy ON feeds FOR DELETE USING (auth.uid() = user_id);
-CREATE POLICY user_interactions_policy ON user_interactions FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY rss_items_select_policy ON rss_items FOR SELECT USING (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()));
-CREATE POLICY youtube_items_select_policy ON youtube_items FOR SELECT USING (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()));
-CREATE POLICY tags_policy ON tags FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY item_tags_policy ON item_tags FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY settings_policy ON settings FOR ALL USING (true);
-CREATE POLICY youtube_cache_policy ON youtube_cache FOR ALL USING (true);
+CREATE POLICY categories_select_policy ON categories FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY categories_insert_policy ON categories FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY categories_update_policy ON categories FOR UPDATE USING (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY categories_delete_policy ON categories FOR DELETE USING (auth.uid() = user_id OR auth.role() = 'service_role');
+
+CREATE POLICY feeds_select_policy ON feeds FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY feeds_insert_policy ON feeds FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY feeds_update_policy ON feeds FOR UPDATE USING (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY feeds_delete_policy ON feeds FOR DELETE USING (auth.uid() = user_id OR auth.role() = 'service_role');
+
+CREATE POLICY user_interactions_select_policy ON user_interactions FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY user_interactions_insert_policy ON user_interactions FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY user_interactions_update_policy ON user_interactions FOR UPDATE USING (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY user_interactions_delete_policy ON user_interactions FOR DELETE USING (auth.uid() = user_id OR auth.role() = 'service_role');
+
+CREATE POLICY rss_items_select_policy ON rss_items FOR SELECT USING (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+CREATE POLICY rss_items_insert_policy ON rss_items FOR INSERT WITH CHECK (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+CREATE POLICY rss_items_update_policy ON rss_items FOR UPDATE USING (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+CREATE POLICY rss_items_delete_policy ON rss_items FOR DELETE USING (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+
+CREATE POLICY youtube_items_select_policy ON youtube_items FOR SELECT USING (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+CREATE POLICY youtube_items_insert_policy ON youtube_items FOR INSERT WITH CHECK (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+CREATE POLICY youtube_items_update_policy ON youtube_items FOR UPDATE USING (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+CREATE POLICY youtube_items_delete_policy ON youtube_items FOR DELETE USING (feed_id IN (SELECT id FROM feeds WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+
+CREATE POLICY tags_select_policy ON tags FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY tags_insert_policy ON tags FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY tags_update_policy ON tags FOR UPDATE USING (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY tags_delete_policy ON tags FOR DELETE USING (auth.uid() = user_id OR auth.role() = 'service_role');
+
+CREATE POLICY item_tags_select_policy ON item_tags FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY item_tags_insert_policy ON item_tags FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY item_tags_update_policy ON item_tags FOR UPDATE USING (auth.uid() = user_id OR auth.role() = 'service_role');
+CREATE POLICY item_tags_delete_policy ON item_tags FOR DELETE USING (auth.uid() = user_id OR auth.role() = 'service_role');
+
+CREATE POLICY settings_select_policy ON settings FOR SELECT USING (true);
+CREATE POLICY settings_insert_policy ON settings FOR INSERT WITH CHECK (true);
+CREATE POLICY settings_update_policy ON settings FOR UPDATE USING (true);
+CREATE POLICY settings_delete_policy ON settings FOR DELETE USING (true);
+
+CREATE POLICY youtube_cache_select_policy ON youtube_cache FOR SELECT USING (true);
+CREATE POLICY youtube_cache_insert_policy ON youtube_cache FOR INSERT WITH CHECK (true);
+CREATE POLICY youtube_cache_update_policy ON youtube_cache FOR UPDATE USING (true);
+CREATE POLICY youtube_cache_delete_policy ON youtube_cache FOR DELETE USING (true);
 
 -- User creation trigger function
 CREATE OR REPLACE FUNCTION public.handle_new_user()
