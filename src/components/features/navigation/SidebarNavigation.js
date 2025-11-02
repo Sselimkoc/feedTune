@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -42,7 +42,36 @@ export function SidebarNavigation() {
   const router = useRouter();
   const { toast } = useToast();
 
-  console.log("SidebarNavigation - user:", user);
+  const items = useMemo(
+    () => [
+      {
+        title: t("navigation.home"),
+        href: "/",
+        icon: HomeIcon,
+      },
+      {
+        title: t("navigation.feeds"),
+        href: "/feeds",
+        icon: Rss,
+      },
+      {
+        title: t("navigation.readLater"),
+        href: "/read-later",
+        icon: BookmarkIcon,
+      },
+      {
+        title: t("navigation.favorites"),
+        href: "/favorites",
+        icon: StarIcon,
+      },
+      {
+        title: t("navigation.settings"),
+        href: "/settings",
+        icon: SettingsIcon,
+      },
+    ],
+    [t]
+  );
 
   const handleSignOutClick = useCallback(async () => {
     try {
@@ -80,34 +109,6 @@ export function SidebarNavigation() {
   if (isLoggingOut) {
     return <LoadingState message={t("auth.loggingOut")} />;
   }
-
-  const items = [
-    {
-      title: t("navigation.home"),
-      href: "/",
-      icon: HomeIcon,
-    },
-    {
-      title: t("navigation.feeds"),
-      href: "/feeds",
-      icon: Rss,
-    },
-    {
-      title: t("navigation.readLater"),
-      href: "/read-later",
-      icon: BookmarkIcon,
-    },
-    {
-      title: t("navigation.favorites"),
-      href: "/favorites",
-      icon: StarIcon,
-    },
-    {
-      title: t("navigation.settings"),
-      href: "/settings",
-      icon: SettingsIcon,
-    },
-  ];
 
   return (
     <ScrollArea className="h-full py-6 bg-white dark:bg-[#151c29] shadow border-r border-blue-900">
