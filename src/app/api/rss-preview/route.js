@@ -1,82 +1,57 @@
 import { NextResponse } from "next/server";
 import { isValidUrl } from "@/lib/utils";
-
-// Mock RSS feed data for demonstration
-const mockRssFeeds = {
-  "https://techcrunch.com/feed/": {
-    title: "TechCrunch",
-    description: "Latest technology news and startup information",
-    link: "https://techcrunch.com",
-    icon: "https://techcrunch.com/wp-content/uploads/2015/02/cropped-cropped-favicon-gradient.png",
-    url: "https://techcrunch.com/feed/",
-  },
-  "https://www.theverge.com/rss/index.xml": {
-    title: "The Verge",
-    description: "Technology, science, art, and culture",
-    link: "https://www.theverge.com",
-    icon: "https://cdn.vox-cdn.com/uploads/chorus_asset/file/7395359/favicon-32x32.0.png",
-    url: "https://www.theverge.com/rss/index.xml",
-  },
-  "https://feeds.arstechnica.com/arstechnica/index": {
-    title: "Ars Technica",
-    description: "Technology news and analysis",
-    link: "https://arstechnica.com",
-    icon: "https://cdn.arstechnica.net/wp-content/uploads/2016/02/ars-logo-2016.png",
-    url: "https://feeds.arstechnica.com/arstechnica/index",
-  },
-};
+import Parser from "rss-parser";
 
 /**
  * RSS Feed Preview API
- * Parses RSS feeds and returns metadata
+ * Parses RSS feeds and returns metadata with items
  */
+
+const parser = new Parser({
+  customFields: {
+    item: [
+      ["media:content", "media"],
+      ["media:thumbnail", "mediaThumbnail"],
+      ["enclosure", "enclosure"],
+      ["content:encoded", "contentEncoded"],
+      ["dc:creator", "creator"],
+      ["pubDate", "pubDate"],
+    ],
+  },
+  requestOptions: {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; FeedTune/1.0)",
+    },
+  },
+});
 
 /**
- * Parse RSS feed and extract metadata
- * @param {string} url - RSS feed URL
- * @returns {Promise<object>} - Feed metadata
+ * Convert relative URL to absolute URL
  */
-async function parseRssFeed(url) {
-  try {
-    // Fetch the RSS feed
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; FeedTune/1.0)",
-      },
-    });
+function resolveUrl(url, baseUrl) {
+  if (!url) return null;
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch RSS feed: ${response.status}`);
-    }
-
-    const xmlText = await response.text();
-
-    // Basic XML parsing (in a real app, you'd use a proper XML parser)
-    const titleMatch = xmlText.match(/<title[^>]*>([^<]+)<\/title>/i);
-    const descriptionMatch = xmlText.match(
-      /<description[^>]*>([^<]+)<\/description>/i
-    );
-    const linkMatch = xmlText.match(/<link[^>]*>([^<]+)<\/link>/i);
-    const imageMatch = xmlText.match(
-      /<image[^>]*>.*?<url[^>]*>([^<]+)<\/url>/is
-    );
-
-    const title = titleMatch ? titleMatch[1].trim() : "Unknown Feed";
-    const description = descriptionMatch ? descriptionMatch[1].trim() : "";
-    const link = linkMatch ? linkMatch[1].trim() : url;
-    const icon = imageMatch ? imageMatch[1].trim() : null;
-
-    return {
-      title,
-      description,
-      link,
-      icon,
-      url,
-    };
-  } catch (error) {
-    console.error("Error parsing RSS feed:", error);
-    throw new Error(`Failed to parse RSS feed: ${error.message}`);
+  // If already absolute, return as-is
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
   }
+
+  // If protocol-relative (//example.com), add https:
+  if (url.startsWith("//")) {
+    return "https:" + url;
+  }
+
+  // If path-relative (/path), use base domain
+  if (url.startsWith("/")) {
+    try {
+      const baseUrlObj = new URL(baseUrl);
+      return baseUrlObj.origin + url;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -85,6 +60,7 @@ async function parseRssFeed(url) {
  * POST /api/rss-preview
  * Body:
  * - url: RSS feed URL
+ * - skipCache: (optional) Skip cache for fresh data
  */
 export async function POST(request) {
   console.log("RSS preview API POST called");
@@ -97,7 +73,7 @@ export async function POST(request) {
 
     console.log("Request body:", body);
 
-    const { url } = body;
+    const { url, skipCache = true } = body;
 
     if (!url) {
       console.error("RSS preview requires URL parameter");
@@ -121,24 +97,58 @@ export async function POST(request) {
       );
     }
 
-    // Check if we have mock data for this URL
-    if (mockRssFeeds[url]) {
-      console.log("Using mock RSS feed data for:", url);
-      const feedData = mockRssFeeds[url];
+    try {
+      // Use rss-parser to parse the RSS feed with items
+      const feed = await parser.parseURL(url);
+
+      if (!feed) {
+        throw new Error("Failed to parse feed");
+      }
+
+      // Format feed data
+      const feedImage =
+        feed.image?.url ||
+        feed.image?.["url"] ||
+        (typeof feed.image === "string" ? feed.image : null) ||
+        null;
+
+      const feedData = {
+        title: feed.title || "Unknown Feed",
+        description: feed.description || "",
+        link: feed.link || url,
+        icon: feedImage ? resolveUrl(feedImage, url) : null,
+        url: url,
+      };
+
+      // Format items
+      const items = (feed.items || []).slice(0, 20).map((item) => {
+        const itemImage =
+          item.mediaThumbnail?.url ||
+          item.media?.url ||
+          item.image?.url ||
+          (typeof item.image === "string" ? item.image : null) ||
+          null;
+
+        return {
+          title: item.title || "Untitled",
+          description: item.description || item.content || "",
+          link: item.link || "",
+          pubDate: item.pubDate || item.published || new Date().toISOString(),
+          author: item.creator || item.author || "",
+          thumbnail: itemImage ? resolveUrl(itemImage, url) : null,
+          guid: item.guid || item.link || item.title,
+        };
+      });
 
       return NextResponse.json({
         success: true,
-        data: feedData,
+        feed: feedData,
+        items: items,
       });
+    } catch (parseError) {
+      console.error("Error parsing RSS feed:", parseError);
+      throw parseError;
     }
-
-    // Parse the RSS feed (fallback for non-mock URLs)
-    const feedData = await parseRssFeed(url);
-
-    return NextResponse.json({
-      success: true,
-      feed: feedData,
-    });
   } catch (error) {
     console.error("RSS preview error:", error);
     return NextResponse.json(

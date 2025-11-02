@@ -17,13 +17,19 @@ export default function DashboardContent() {
   const { user, isLoading } = useSession();
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { addFeedMutation, feedsQuery, itemsQuery } = useFeedService();
+  const { addFeedMutation, feedsQuery, itemsQuery, deleteFeedMutation } = useFeedService();
 
   const { data: stats = {}, isLoading: isLoadingStats } = useFeedsSummary();
 
   if (isLoading || isLoadingStats) {
     return <DashboardLoadingState />;
   }
+
+  const handleDeleteFeed = (feedId) => {
+    if (confirm("Are you sure you want to delete this feed?")) {
+      deleteFeedMutation.mutate(feedId);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -56,14 +62,14 @@ export default function DashboardContent() {
               feeds={feedsQuery.data || []}
               onAddFeed={() => setIsDialogOpen(true)}
               onViewAll={() => router.push("/feeds")}
-              onDeleteFeed={() => {}}
+              onDeleteFeed={handleDeleteFeed}
             />
           </div>
 
           {/* Recent Activity */}
           <div>
             <DashboardActivity
-              recentItems={itemsQuery.data?.slice(0, 5) || []}
+              recentItems={itemsQuery.data?.slice(0, 4) || []}
               onViewAll={() => router.push("/feeds")}
             />
           </div>

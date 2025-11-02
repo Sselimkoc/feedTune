@@ -53,7 +53,7 @@ export function DashboardActivity({ recentItems, onViewAll }) {
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-96">
         {recentItems.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-5xl mb-4">🔍</div>

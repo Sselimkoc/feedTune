@@ -203,7 +203,14 @@ function normalizeUrl(url) {
 // Enhanced delta update with content fingerprinting and duplicate detection
 async function fetchFeedDataWithDelta(feed, supabaseClient) {
   try {
-    const { id: feedId, url, type, last_updated } = feed;
+    const {
+      id: feedId,
+      url,
+      type,
+      last_updated,
+      updated_at,
+      last_fetched,
+    } = feed;
 
     console.log(`[Delta Update] Processing feed ${feedId} (${type}): ${url}`);
 
@@ -225,7 +232,9 @@ async function fetchFeedDataWithDelta(feed, supabaseClient) {
       `[Delta Update] Feed type: ${type}, Existing items: ${existingItems.length}, Existing IDs: ${existingGuids.size}`
     );
 
-    const deltaThreshold = calculateDeltaThreshold(last_updated);
+    // Use updated_at if last_updated is not available (fallback for DB schema)
+    const feedTimestamp = last_updated || updated_at || last_fetched;
+    const deltaThreshold = calculateDeltaThreshold(feedTimestamp);
     console.log(`[Delta Update] Threshold: ${deltaThreshold.toISOString()}`);
 
     let newItems = [];
@@ -507,11 +516,11 @@ async function processBatchYouTubeItems(feedId, items, supabaseClient) {
   return { inserted: insertedCount, skipped: skippedCount };
 }
 
-// Update feed metadata and last_updated timestamp
+// Update feed metadata and updated_at timestamp
 async function updateFeedMetadata(feedId, feedMetadata, supabaseClient) {
   try {
     const updateData = {
-      last_updated: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     if (feedMetadata) {
@@ -734,7 +743,16 @@ export function useFeedService() {
             throw new Error(`Failed to fetch feed: ${response.statusText}`);
           }
 
-          feedInfo = await response.json();
+          const rssData = await response.json();
+
+          if (!rssData.success) {
+            throw new Error(rssData.error || "Failed to parse RSS feed");
+          }
+
+          feedInfo = {
+            feed: rssData.feed || {},
+            items: rssData.items || rssData.feed?.items || [],
+          };
         }
       } catch (error) {
         console.error("Feed parsing error:", error);
