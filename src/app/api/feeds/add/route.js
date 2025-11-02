@@ -63,6 +63,19 @@ export async function POST(request) {
       normalizedUrl = "https://" + normalizedUrl;
     }
 
+    // Map category name to UUID
+    const categoryMap = {
+      general: "550e8400-e29b-41d4-a716-446655440001",
+      tech: "550e8400-e29b-41d4-a716-446655440002",
+      news: "550e8400-e29b-41d4-a716-446655440003",
+      entertainment: "550e8400-e29b-41d4-a716-446655440004",
+      other: "550e8400-e29b-41d4-a716-446655440005",
+    };
+
+    const categoryId = extraData.category
+      ? categoryMap[extraData.category] || categoryMap.general
+      : categoryMap.general;
+
     // Prepare feed data
     const feedData = {
       url: normalizedUrl,
@@ -71,7 +84,7 @@ export async function POST(request) {
       title: extraData.title || feedInfo.feed?.title || normalizedUrl,
       description: extraData.description || feedInfo.feed?.description || "",
       icon: extraData.icon || feedInfo.feed?.icon || null,
-      category_id: extraData.category_id || null,
+      category_id: categoryId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -85,7 +98,7 @@ export async function POST(request) {
       title: extraData.title || feedInfo.feed?.title || normalizedUrl,
       description: extraData.description || feedInfo.feed?.description || "",
       icon: extraData.icon || feedInfo.feed?.icon || null,
-      category_id: extraData.category_id || null,
+      category_id: categoryId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

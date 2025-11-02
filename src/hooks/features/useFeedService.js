@@ -742,6 +742,18 @@ export function useFeedService() {
       }
 
       // Prepare feed data
+      const categoryMap = {
+        general: "550e8400-e29b-41d4-a716-446655440001",
+        tech: "550e8400-e29b-41d4-a716-446655440002",
+        news: "550e8400-e29b-41d4-a716-446655440003",
+        entertainment: "550e8400-e29b-41d4-a716-446655440004",
+        other: "550e8400-e29b-41d4-a716-446655440005",
+      };
+
+      const categoryId = extraData.category
+        ? categoryMap[extraData.category] || categoryMap.general
+        : categoryMap.general;
+
       const feedData = {
         url: normalizedUrl,
         user_id: user.id,
@@ -749,7 +761,7 @@ export function useFeedService() {
         title: extraData.title || feedInfo.feed?.title || normalizedUrl,
         description: extraData.description || feedInfo.feed?.description || "",
         icon: extraData.icon || feedInfo.feed?.icon || null,
-        category_id: extraData.category_id || null,
+        category_id: categoryId,
       };
 
       // Add feed to database
