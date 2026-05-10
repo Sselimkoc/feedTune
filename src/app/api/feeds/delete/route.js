@@ -1,46 +1,44 @@
-import { NextResponse } from "next/server";
-import { getSecureUser } from "@/lib/auth/serverAuth";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { ApiResponse } from "@/lib/api/response";
+import { withAuth } from "@/lib/api/withAuth";
 
-/**
- * Delete Feed API Route
- * Removes a feed from user's feed list
- * - Requires authentication (401 if not)
- * - Validates feed ID
- * - Returns success or error
- */
 export const dynamic = "force-dynamic";
 
-export async function DELETE(request) {
-  try {
-    // Authenticate user
-    const user = await getSecureUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export const DELETE = withAuth(async (request, { user }) => {
+  const { searchParams } = new URL(request.url);
+  const feedId = searchParams.get("feedId");
 
-    // Get feed ID from URL params
-    const url = new URL(request.url);
-    const feedId = url.searchParams.get("feedId");
+  if (!feedId) return ApiResponse.badRequest("Feed ID is required");
 
-    if (!feedId) {
-      return NextResponse.json(
-        { error: "Feed ID is required" },
-        { status: 400 }
-      );
-    }
+  const supabase = createServerSupabaseClient();
 
-    // Process feed deletion
-    console.log(`[API] Deleting feed: ${feedId} by user ${user.id}`);
+  // Verify the feed belongs to this user before deleting
+  const { data: feed, error: fetchError } = await supabase
+    .from("feeds")
+    .select("id")
+    .eq("id", feedId)
+    .eq("user_id", user.id)
+    .is("deleted_at", null)
+    .maybeSingle();
 
-    return NextResponse.json({
-      success: true,
-      message: "Feed deleted successfully",
-    });
-  } catch (error) {
-    console.error("[API] Delete feed error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  if (fetchError) {
+    console.error("[feeds/delete] fetch error:", fetchError);
+    return ApiResponse.error("Failed to verify feed ownership");
   }
-}
+
+  if (!feed) return ApiResponse.notFound("Feed not found");
+
+  // Soft-delete
+  const { error: deleteError } = await supabase
+    .from("feeds")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", feedId)
+    .eq("user_id", user.id);
+
+  if (deleteError) {
+    console.error("[feeds/delete] delete error:", deleteError);
+    return ApiResponse.error("Failed to delete feed");
+  }
+
+  return ApiResponse.ok({ success: true });
+});

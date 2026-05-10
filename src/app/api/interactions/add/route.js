@@ -1,62 +1,52 @@
-import { NextResponse } from "next/server";
-import { getSecureUser } from "@/lib/auth/serverAuth";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { ApiResponse } from "@/lib/api/response";
+import { withAuth } from "@/lib/api/withAuth";
 
-/**
- * Add Interaction API Route
- * Marks items as read, favorite, or read-later
- * - Requires authentication (401 if not)
- * - Validates interaction type and item type
- * - Returns success or error
- */
 export const dynamic = "force-dynamic";
 
-export async function POST(request) {
+const VALID_TYPES = ["is_read", "is_favorite", "is_read_later"];
+const VALID_ITEM_TYPES = ["rss", "youtube"];
+
+export const POST = withAuth(async (request, { user }) => {
+  let body;
   try {
-    // Authenticate user
-    const user = await getSecureUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Parse request body
-    const { itemId, type, itemType } = await request.json();
-
-    if (!itemId || !type || !itemType) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    // Validate interaction type
-    const validTypes = ["is_read", "is_favorite", "is_read_later"];
-    if (!validTypes.includes(type)) {
-      return NextResponse.json(
-        { error: "Invalid interaction type" },
-        { status: 400 }
-      );
-    }
-
-    // Validate item type
-    const validItemTypes = ["rss", "youtube"];
-    if (!validItemTypes.includes(itemType)) {
-      return NextResponse.json({ error: "Invalid item type" }, { status: 400 });
-    }
-
-    // Process interaction
-    console.log(
-      `[API] Adding interaction: ${type} for ${itemType} item ${itemId} by user ${user.id}`
-    );
-
-    return NextResponse.json({
-      success: true,
-      message: "Interaction added successfully",
-    });
-  } catch (error) {
-    console.error("[API] Add interaction error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    body = await request.json();
+  } catch {
+    return ApiResponse.badRequest("Invalid JSON body");
   }
-}
+
+  const { itemId, type, itemType } = body;
+
+  if (!itemId || !type || !itemType) {
+    return ApiResponse.badRequest("Missing required fields: itemId, type, itemType");
+  }
+  if (!VALID_TYPES.includes(type)) {
+    return ApiResponse.badRequest(`Invalid interaction type. Must be one of: ${VALID_TYPES.join(", ")}`);
+  }
+  if (!VALID_ITEM_TYPES.includes(itemType)) {
+    return ApiResponse.badRequest(`Invalid item type. Must be one of: ${VALID_ITEM_TYPES.join(", ")}`);
+  }
+
+  const supabase = createServerSupabaseClient();
+
+  // Upsert: create or update the interaction row, setting only the requested field
+  const { error } = await supabase
+    .from("user_interactions")
+    .upsert(
+      {
+        user_id: user.id,
+        item_id: itemId,
+        item_type: itemType,
+        [type]: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,item_id" }
+    );
+
+  if (error) {
+    console.error("[interactions/add] upsert error:", error);
+    return ApiResponse.error("Failed to save interaction");
+  }
+
+  return ApiResponse.ok({ success: true });
+});
