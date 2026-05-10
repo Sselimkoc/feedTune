@@ -17,7 +17,7 @@ export default function DashboardContent() {
   const { user, isLoading } = useSession();
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { addFeedMutation, feedsQuery, itemsQuery, deleteFeedMutation } = useFeedService();
+  const { addFeedMutation, feedsQuery, itemsQuery, deleteFeed } = useFeedService();
 
   const { data: stats = {}, isLoading: isLoadingStats } = useFeedsSummary();
 
@@ -27,7 +27,7 @@ export default function DashboardContent() {
 
   const handleDeleteFeed = (feedId) => {
     if (confirm("Are you sure you want to delete this feed?")) {
-      deleteFeedMutation.mutate(feedId);
+      deleteFeed(feedId);
     }
   };
 
