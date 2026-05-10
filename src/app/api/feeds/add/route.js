@@ -1,19 +1,22 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
-import { mockFeeds } from "@/lib/mockData";
 
 export async function POST(request) {
   try {
-    console.log("Feed add API - Using mock data for demonstration");
+    const cookieStore = cookies();
+    const supabase = createServerSupabaseClient();
 
-    // Skip authentication check for demo
-    // const cookieStore = await cookies();
-    // const supabase = createServerSupabaseClient();
-    // const { data: { session } } = await supabase.auth.getSession();
-    // if (!session) {
-    //   return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    // }
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
 
     const { url, type, extraData = {} } = await request.json();
 
@@ -63,18 +66,45 @@ export async function POST(request) {
       normalizedUrl = "https://" + normalizedUrl;
     }
 
-    // Map category name to UUID
-    const categoryMap = {
-      general: "550e8400-e29b-41d4-a716-446655440001",
-      tech: "550e8400-e29b-41d4-a716-446655440002",
-      news: "550e8400-e29b-41d4-a716-446655440003",
-      entertainment: "550e8400-e29b-41d4-a716-446655440004",
-      other: "550e8400-e29b-41d4-a716-446655440005",
-    };
+    // Get category from database instead of hard-coded UUIDs
+    let categoryId = null;
+    if (extraData.category) {
+      const { data: category } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("name", extraData.category)
+        .single();
 
-    const categoryId = extraData.category
-      ? categoryMap[extraData.category] || categoryMap.general
-      : categoryMap.general;
+      if (category) {
+        categoryId = category.id;
+      }
+    }
+
+    // If no category found, use default category
+    if (!categoryId) {
+      const { data: defaultCategory } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("name", "general")
+        .single();
+
+      categoryId = defaultCategory?.id || null;
+    }
+
+    // Check if feed already exists for this user
+    const { data: existingFeed } = await supabase
+      .from("rss_feeds")
+      .select("id")
+      .eq("url", normalizedUrl)
+      .eq("user_id", session.user.id)
+      .single();
+
+    if (existingFeed) {
+      return NextResponse.json(
+        { error: "This feed is already in your collection" },
+        { status: 409 }
+      );
+    }
 
     // Prepare feed data
     const feedData = {
@@ -85,28 +115,24 @@ export async function POST(request) {
       description: extraData.description || feedInfo.feed?.description || "",
       icon: extraData.icon || feedInfo.feed?.icon || null,
       category_id: categoryId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     };
 
-    // Create mock feed for demonstration
-    const mockFeed = {
-      id: `mock-${Date.now()}`,
-      url: normalizedUrl,
-      user_id: "demo-user",
-      type: feedType,
-      title: extraData.title || feedInfo.feed?.title || normalizedUrl,
-      description: extraData.description || feedInfo.feed?.description || "",
-      icon: extraData.icon || feedInfo.feed?.icon || null,
-      category_id: categoryId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    // Insert feed into database
+    const { data: newFeed, error: insertError } = await supabase
+      .from("rss_feeds")
+      .insert(feedData)
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Error inserting feed:", insertError);
+      throw new Error("Failed to save feed to database");
+    }
 
     return NextResponse.json({
       success: true,
-      feed: mockFeed,
-      message: "Feed added successfully (mock data)",
+      feed: newFeed,
+      message: "Feed added successfully",
     });
   } catch (error) {
     console.error("Error adding feed:", error);

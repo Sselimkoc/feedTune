@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
-import { mockUser } from "@/lib/mockData";
 
 export function useAuthState() {
   const [authState, setAuthState] = useState({
