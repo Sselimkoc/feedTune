@@ -1,100 +1,59 @@
-import { NextResponse } from "next/server";
 import { youtubeService } from "@/lib/youtube/service";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { cookies } from "next/headers";
-import { supabase } from "@/lib/supabase";
+import { ApiResponse } from "@/lib/api/response";
+import { withAuth } from "@/lib/api/withAuth";
 
-// Helper function to insert YouTube items
-async function insertYoutubeItems(feedId, items) {
-  try {
-    let insertedCount = 0;
+async function insertYoutubeItems(supabase, feedId, items) {
+  let insertedCount = 0;
 
-    for (const item of items) {
-      try {
-        const videoId = item.videoId || item.video_id;
-        if (!videoId) continue;
+  for (const item of items) {
+    const videoId = item.videoId || item.video_id;
+    if (!videoId) continue;
 
-        const { error } = await supabase.from("youtube_items").insert({
-          feed_id: feedId,
-          video_id: videoId,
-          title: item.title || "Untitled Video",
-          description: item.description
-            ? item.description.substring(0, 500)
-            : null,
-          thumbnail: item.thumbnail || item.image || null,
-          published_at:
-            item.pubDate || item.publishedAt || new Date().toISOString(),
-          channel_title: item.author || item.channelTitle || null,
-          url: item.link || `https://youtube.com/watch?v=${videoId}`,
-          created_at: new Date().toISOString(),
-        });
+    const { error } = await supabase.from("youtube_items").insert({
+      feed_id: feedId,
+      video_id: videoId,
+      title: item.title || "Untitled Video",
+      description: item.description ? item.description.substring(0, 500) : null,
+      thumbnail: item.thumbnail || item.image || null,
+      published_at: item.pubDate || item.publishedAt || new Date().toISOString(),
+      channel_title: item.author || item.channelTitle || null,
+      url: item.link || `https://youtube.com/watch?v=${videoId}`,
+      created_at: new Date().toISOString(),
+    });
 
-        if (!error) {
-          insertedCount++;
-        } else if (error.code !== "23505") {
-          // Ignore duplicate key errors
-          console.error("Error inserting YouTube item:", error);
-        }
-      } catch (itemError) {
-        console.error("Error processing YouTube item:", itemError);
-      }
+    if (!error) {
+      insertedCount++;
+    } else if (error.code !== "23505") {
+      console.error("[youtube/update] item insert error:", error);
     }
-
-    return insertedCount;
-  } catch (error) {
-    console.error("Error inserting YouTube items:", error);
-    throw error;
   }
+
+  return insertedCount;
 }
 
-/**
- * YouTube channel update endpoint
- *
- * Updates a YouTube channel using the feedId parameter from the POST request.
- */
-export async function POST(request) {
+export const POST = withAuth(async (request, { user }) => {
+  let body;
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerSupabaseClient();
+    body = await request.json();
+  } catch {
+    return ApiResponse.badRequest("Invalid JSON body");
+  }
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+  const { feedId } = body;
+  if (!feedId) return ApiResponse.badRequest("feedId is required");
 
-    if (!session) {
-      return NextResponse.json(
-        { error: "You must be logged in" },
-        { status: 401 }
-      );
-    }
+  const supabase = createServerSupabaseClient();
 
-    const body = await request.json();
-    const feedId = body.feedId;
-
-    if (!feedId) {
-      return NextResponse.json(
-        { error: "feedId parameter is required" },
-        { status: 400 }
-      );
-    }
-
+  try {
     const result = await youtubeService.updateYoutubeChannel(
       feedId,
-      session.user.id,
-      insertYoutubeItems
+      user.id,
+      (id, items) => insertYoutubeItems(supabase, id, items)
     );
-
-    return NextResponse.json({
-      success: true,
-      message: "YouTube channel updated successfully",
-      feed: result,
-    });
+    return ApiResponse.ok({ success: true, feed: result });
   } catch (error) {
-    console.error("YouTube channel update error:", error);
-
-    return NextResponse.json(
-      { error: error.message || "YouTube channel update error" },
-      { status: 500 }
-    );
+    console.error("[youtube/update] error:", error);
+    return ApiResponse.error(error.message || "Failed to update YouTube channel");
   }
-}
+});
