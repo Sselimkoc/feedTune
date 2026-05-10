@@ -3,10 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useFeedService } from "./useFeedService";
 
-/**
- * Ana sayfa için özelleştirilmiş feed hook'u
- * @returns {Object} Ana sayfa içerikleri ve fonksiyonları
- */
 export function useHomeFeeds() {
   const [stats, setStats] = useState({
     totalFeeds: 0,
@@ -15,7 +11,6 @@ export function useHomeFeeds() {
     totalReadLater: 0,
   });
 
-  // Ana feed servisini kullan
   const {
     feeds,
     items,
@@ -30,7 +25,6 @@ export function useHomeFeeds() {
     toggleReadLater,
   } = useFeedService();
 
-  // İstatistikleri hesapla
   useEffect(() => {
     if (feeds && items && favorites && readLaterItems) {
       setStats({
@@ -42,19 +36,15 @@ export function useHomeFeeds() {
     }
   }, [feeds, items, favorites, readLaterItems]);
 
-  // Son eklenen öğeleri al (tüm feed'lerden en son 10 öğe)
   const recentItems = useMemo(() => {
     if (!items) return [];
-
     return items
       .sort((a, b) => new Date(b.published_at) - new Date(a.published_at))
       .slice(0, 10);
   }, [items]);
 
-  // Feed'leri kategorilere ayır
   const categorizedFeeds = useMemo(() => {
     if (!feeds) return { rssFeeds: [], youtubeFeeds: [] };
-
     return {
       rssFeeds: feeds.filter((feed) => feed.type === "rss"),
       youtubeFeeds: feeds.filter((feed) => feed.type === "youtube"),
@@ -62,7 +52,6 @@ export function useHomeFeeds() {
   }, [feeds]);
 
   return {
-    // Veri durumları
     feeds,
     recentItems,
     stats,
@@ -70,8 +59,6 @@ export function useHomeFeeds() {
     isLoading,
     isError,
     error,
-
-    // Ana fonksiyonlar
     refresh: refreshAll,
     toggleRead,
     toggleFavorite,

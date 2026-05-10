@@ -18,11 +18,16 @@ export const POST = withAuth(async (request, { user }) => {
 
   const feedType =
     type ||
-    (url.includes("youtube.com") || url.includes("youtu.be") ? "youtube" : "rss");
+    (url.includes("youtube.com") || url.includes("youtu.be")
+      ? "youtube"
+      : "rss");
 
   // Normalize URL
   let normalizedUrl = url.trim();
-  if (!normalizedUrl.startsWith("http://") && !normalizedUrl.startsWith("https://")) {
+  if (
+    !normalizedUrl.startsWith("http://") &&
+    !normalizedUrl.startsWith("https://")
+  ) {
     normalizedUrl = "https://" + normalizedUrl;
   }
 
@@ -55,7 +60,7 @@ export const POST = withAuth(async (request, { user }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: normalizedUrl, skipCache: true }),
-      }
+      },
     );
     if (response.ok) {
       feedInfo = await response.json();

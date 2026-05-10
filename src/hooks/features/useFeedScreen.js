@@ -16,13 +16,10 @@ export function useFeedScreen({ initialFeedId } = {}) {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
-  // URL'den feed ID'sini al
   const urlFeedId = searchParams.get("feed");
 
-  // State'ler - sadece UI state'leri
   const [selectedFeedId, setSelectedFeedId] = useState(() => {
-    if (typeof window === "undefined")
-      return initialFeedId || urlFeedId || null;
+    if (typeof window === "undefined") return initialFeedId || urlFeedId || null;
     return (
       getFromCache("feed-screen-state")?.selectedFeedId ||
       initialFeedId ||
@@ -40,7 +37,6 @@ export function useFeedScreen({ initialFeedId } = {}) {
   const [selectedItems, setSelectedItems] = useState([]);
   const [isBulkMode, setIsBulkMode] = useState(false);
 
-  // Filters hook
   const {
     filters,
     filterObject,
@@ -53,7 +49,6 @@ export function useFeedScreen({ initialFeedId } = {}) {
     setSortByFilter,
   } = useFilters();
 
-  // Feed service - tüm data operations buradan geliyor
   const {
     feeds,
     items: feedItems,
@@ -67,24 +62,13 @@ export function useFeedScreen({ initialFeedId } = {}) {
     syncFeed,
   } = useFeedService();
 
-  // Cache state değişikliklerini
   useEffect(() => {
     if (!userId) return;
-
-    saveToCache(
-      "feed-screen-state",
-      {
-        selectedFeedId,
-        viewMode,
-      },
-      1000 * 60 * 60 * 24 // 24 saat
-    );
+    saveToCache("feed-screen-state", { selectedFeedId, viewMode }, 1000 * 60 * 60 * 24);
   }, [selectedFeedId, viewMode, userId]);
 
-  // Feed seçimi değiştiğinde URL'i güncelle
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     const url = new URL(window.location.href);
     if (selectedFeedId) {
       url.searchParams.set("feed", selectedFeedId);
@@ -94,7 +78,6 @@ export function useFeedScreen({ initialFeedId } = {}) {
     window.history.replaceState({}, "", url.toString());
   }, [selectedFeedId]);
 
-  // Bulk mode handlers
   const toggleBulkMode = useCallback(() => {
     setIsBulkMode((prev) => !prev);
     setSelectedItems([]);
@@ -102,185 +85,113 @@ export function useFeedScreen({ initialFeedId } = {}) {
 
   const toggleItemSelection = useCallback((itemId) => {
     setSelectedItems((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
     );
   }, []);
 
-  // Bulk actions - useFeedService'teki fonksiyonları kullan
   const handleBulkMarkAsRead = useCallback(async () => {
     if (!selectedItems.length) return;
-    
     try {
       for (const itemId of selectedItems) {
         await addInteraction(itemId, "is_read", "rss");
       }
       setSelectedItems([]);
       setIsBulkMode(false);
-      toast({
-        title: t("common.success"),
-        description: t("items.markedAsRead"),
-      });
-    } catch (error) {
-      console.error("Error marking items as read:", error);
-      toast({
-        title: t("common.error"),
-        description: t("errors.markAsReadFailed"),
-        variant: "destructive",
-      });
+      toast({ title: t("common.success"), description: t("items.markedAsRead") });
+    } catch {
+      toast({ title: t("common.error"), description: t("errors.markAsReadFailed"), variant: "destructive" });
     }
   }, [selectedItems, addInteraction, toast, t]);
 
   const handleBulkMarkAsUnread = useCallback(async () => {
     if (!selectedItems.length) return;
-    
     try {
       for (const itemId of selectedItems) {
         await removeInteraction(itemId, "is_read", "rss");
       }
       setSelectedItems([]);
       setIsBulkMode(false);
-      toast({
-        title: t("common.success"),
-        description: t("items.markedAsUnread"),
-      });
-    } catch (error) {
-      console.error("Error marking items as unread:", error);
-      toast({
-        title: t("common.error"),
-        description: t("errors.markAsUnreadFailed"),
-        variant: "destructive",
-      });
+      toast({ title: t("common.success"), description: t("items.markedAsUnread") });
+    } catch {
+      toast({ title: t("common.error"), description: t("errors.markAsUnreadFailed"), variant: "destructive" });
     }
   }, [selectedItems, removeInteraction, toast, t]);
 
   const handleBulkAddToFavorites = useCallback(async () => {
     if (!selectedItems.length) return;
-    
     try {
       for (const itemId of selectedItems) {
         await addInteraction(itemId, "is_favorite", "rss");
       }
       setSelectedItems([]);
       setIsBulkMode(false);
-      toast({
-        title: t("common.success"),
-        description: t("items.addedToFavorites"),
-      });
-    } catch (error) {
-      console.error("Error adding items to favorites:", error);
-      toast({
-        title: t("common.error"),
-        description: t("errors.addToFavoritesFailed"),
-        variant: "destructive",
-      });
+      toast({ title: t("common.success"), description: t("items.addedToFavorites") });
+    } catch {
+      toast({ title: t("common.error"), description: t("errors.addToFavoritesFailed"), variant: "destructive" });
     }
   }, [selectedItems, addInteraction, toast, t]);
 
   const handleBulkAddToReadLater = useCallback(async () => {
     if (!selectedItems.length) return;
-    
     try {
       for (const itemId of selectedItems) {
         await addInteraction(itemId, "is_read_later", "rss");
       }
       setSelectedItems([]);
       setIsBulkMode(false);
-      toast({
-        title: t("common.success"),
-        description: t("items.addedToReadLater"),
-      });
-    } catch (error) {
-      console.error("Error adding items to read later:", error);
-      toast({
-        title: t("common.error"),
-        description: t("errors.addToReadLaterFailed"),
-        variant: "destructive",
-      });
+      toast({ title: t("common.success"), description: t("items.addedToReadLater") });
+    } catch {
+      toast({ title: t("common.error"), description: t("errors.addToReadLaterFailed"), variant: "destructive" });
     }
   }, [selectedItems, addInteraction, toast, t]);
 
-  // Wrapper functions for useFeedService operations
   const refreshFeed = useCallback(async (feedId) => {
     try {
       await syncFeed(feedId);
-      toast({
-        title: t("common.success"),
-        description: t("feeds.syncSuccess"),
-      });
-    } catch (error) {
-      console.error("Error syncing feed:", error);
-      toast({
-        title: t("common.error"),
-        description: t("errors.syncFailed"),
-        variant: "destructive",
-      });
+      toast({ title: t("common.success"), description: t("feeds.syncSuccess") });
+    } catch {
+      toast({ title: t("common.error"), description: t("errors.syncFailed"), variant: "destructive" });
     }
   }, [syncFeed, toast, t]);
 
   const toggleFavorite = useCallback(async (itemId, itemType = "rss") => {
     try {
       await addInteraction(itemId, "is_favorite", itemType);
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-      toast({
-        title: t("common.error"),
-        description: t("errors.toggleFavoriteFailed"),
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: t("common.error"), description: t("errors.toggleFavoriteFailed"), variant: "destructive" });
     }
   }, [addInteraction, toast, t]);
 
   const toggleReadLater = useCallback(async (itemId, itemType = "rss") => {
     try {
       await addInteraction(itemId, "is_read_later", itemType);
-    } catch (error) {
-      console.error("Error toggling read later:", error);
-      toast({
-        title: t("common.error"),
-        description: t("errors.toggleReadLaterFailed"),
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: t("common.error"), description: t("errors.toggleReadLaterFailed"), variant: "destructive" });
     }
   }, [addInteraction, toast, t]);
 
   const markItemRead = useCallback(async (itemId, itemType = "rss") => {
     try {
       await addInteraction(itemId, "is_read", itemType);
-    } catch (error) {
-      console.error("Error marking item as read:", error);
-      toast({
-        title: t("common.error"),
-        description: t("errors.markAsReadFailed"),
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: t("common.error"), description: t("errors.markAsReadFailed"), variant: "destructive" });
     }
   }, [addInteraction, toast, t]);
 
   return {
-    // State
     selectedFeedId,
     viewMode,
     searchQuery,
     isBulkMode,
     selectedItems,
-
-    // Filters
     filters,
     filterObject,
-
-    // Data - useFeedService'ten geliyor
     feeds,
     items: feedItems,
     favorites,
     readLaterItems,
-
-    // Loading states
     isLoading: isLoadingFeeds || isLoadingUser,
     isError: !!feedsError,
-
-    // Actions
     setSelectedFeedId,
     setViewMode,
     setSearchQuery,
@@ -289,8 +200,6 @@ export function useFeedScreen({ initialFeedId } = {}) {
     toggleFavorite,
     toggleReadLater,
     markItemRead,
-
-    // Filter actions
     applyFilters,
     updateFilter,
     resetFilters,
@@ -298,8 +207,6 @@ export function useFeedScreen({ initialFeedId } = {}) {
     setFeedTypeFilter,
     setReadStatusFilter,
     setSortByFilter,
-
-    // Bulk actions
     toggleBulkMode,
     toggleItemSelection,
     handleBulkMarkAsRead,
