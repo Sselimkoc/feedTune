@@ -1,66 +1,36 @@
-import { NextResponse } from "next/server";
 import { youtubeService } from "@/lib/youtube/service";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { cookies } from "next/headers";
+import { ApiResponse } from "@/lib/api/response";
+import { withAuth } from "@/lib/api/withAuth";
 
-/**
- * YouTube channel delete endpoint
- *
- * Deletes a channel using the feedId parameter from the DELETE request
- */
-export async function DELETE(request) {
-  try {
-    const cookieStore = await cookies();
-    const supabase = createServerSupabaseClient();
+export const DELETE = withAuth(async (request, { user }) => {
+  const { searchParams } = new URL(request.url);
+  const feedId = searchParams.get("feedId");
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+  if (!feedId) return ApiResponse.badRequest("feedId is required");
 
-    if (!session) {
-      return NextResponse.json(
-        { error: "You must be logged in" },
-        { status: 401 }
-      );
-    }
+  const supabase = createServerSupabaseClient();
 
-    const { searchParams } = new URL(request.url);
-    const feedId = searchParams.get("feedId");
+  // Verify ownership before deleting
+  const { data: feed, error: feedError } = await supabase
+    .from("feeds")
+    .select("id")
+    .eq("id", feedId)
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-    if (!feedId) {
-      return NextResponse.json(
-        { error: "feedId parametresi gereklidir" },
-        { status: 400 }
-      );
-    }
-
-    const { data: feed, error: feedError } = await supabase
-      .from("feeds")
-      .select("*")
-      .eq("id", feedId)
-      .eq("user_id", session.user.id)
-      .single();
-
-    if (feedError || !feed) {
-      return NextResponse.json(
-        { error: "Beslemeyi silme yetkiniz yok veya besleme bulunamadı" },
-        { status: 403 }
-      );
-    }
-
-    const result = await youtubeService.deleteYoutubeChannel(feedId, session.user.id);
-
-    return NextResponse.json({
-      success: true,
-      message: "YouTube channel deleted successfully",
-      result: result,
-    });
-  } catch (error) {
-    console.error("YouTube channel delete error:", error);
-
-    return NextResponse.json(
-      { error: error.message || "YouTube channel delete error" },
-      { status: 500 }
-    );
+  if (feedError) {
+    console.error("[youtube/delete] fetch error:", feedError);
+    return ApiResponse.error("Failed to verify feed ownership");
   }
-}
+
+  if (!feed) return ApiResponse.notFound("Feed not found");
+
+  try {
+    const result = await youtubeService.deleteYoutubeChannel(feedId, user.id);
+    return ApiResponse.ok({ success: true, result });
+  } catch (error) {
+    console.error("[youtube/delete] error:", error);
+    return ApiResponse.error(error.message || "Failed to delete YouTube channel");
+  }
+});
