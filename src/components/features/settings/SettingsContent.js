@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/core/ui/button";
 import {
   Card,
@@ -86,7 +86,7 @@ export function SettingsContent() {
   }, []);
 
   // Error handling wrapper
-  const handleError = (error, context) => {
+  const handleError = useCallback((error, context) => {
     console.error(`Settings error in ${context}:`, error);
     setError(error.message || `Error in ${context}`);
     toast({
@@ -94,7 +94,7 @@ export function SettingsContent() {
       description: error.message || `Error in ${context}`,
       variant: "destructive",
     });
-  };
+  }, [toast, t]);
 
   const handleThemeChange = (newTheme) => {
     if (theme === newTheme) return;
@@ -134,8 +134,7 @@ export function SettingsContent() {
     }, 300);
   };
 
-  // Cleanup handlers
-  const handleGetCleanupStats = async () => {
+  const handleGetCleanupStats = useCallback(async () => {
     try {
       const stats = await getCleanupStats(cleanupOptions.olderThanDays);
       setCleanupStats(stats);
@@ -143,7 +142,7 @@ export function SettingsContent() {
     } catch (error) {
       handleError(error, "getting cleanup stats");
     }
-  };
+  }, [cleanupOptions.olderThanDays, getCleanupStats, handleError]);
 
   const handlePreviewCleanup = async () => {
     try {
@@ -175,7 +174,7 @@ export function SettingsContent() {
     if (cleanupDialogOpen && canRunCleanup()) {
       handleGetCleanupStats();
     }
-  }, [cleanupDialogOpen, cleanupOptions.olderThanDays]);
+  }, [canRunCleanup, cleanupDialogOpen, handleGetCleanupStats]);
 
   if (!mounted) {
     return (
@@ -211,7 +210,7 @@ export function SettingsContent() {
 
       <div className="container relative z-10 px-0 sm:px-4">
         <motion.div
-          className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center gap-3 mb-4"
+          className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:gap-3 mb-4"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -476,7 +475,7 @@ export function SettingsContent() {
                       toast({
                         title: t("settings.data.refresh.success"),
                         description: t(
-                          "settings.data.refresh.successDescription"
+                          "settings.data.refresh.successDescription",
                         ),
                       });
                     }}
@@ -506,7 +505,7 @@ export function SettingsContent() {
                       toast({
                         title: t("settings.data.reset.success"),
                         description: t(
-                          "settings.data.reset.successDescription"
+                          "settings.data.reset.successDescription",
                         ),
                       });
                     }}

@@ -835,9 +835,8 @@ class YouTubeService {
           user_id: userId,
           title: channelInfo.title,
           url: channelInfo.rss_url || createRssUrl(channelId),
-          feed_type: "youtube",
-          channel_id: channelId,
-          thumbnail: channelInfo.thumbnail,
+          type: "youtube",
+          icon: channelInfo.thumbnail,
           description: channelInfo.description,
         })
         .select("*")
