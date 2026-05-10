@@ -108,73 +108,59 @@ export const useAuthStore = create(
       },
 
       /**
-       * Sign up with email and password
+       * Sign up with email and password — routes through server API to bypass anon key rate limits
        */
-      signUp: async ({
-        email,
-        password,
-        displayName,
-        toastSuccess,
-        toastError,
-      }) => {
+      signUp: async ({ email, password, displayName, toastSuccess, toastError }) => {
         try {
           set({ isLoading: true, error: null });
 
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: {
-                display_name: displayName || email.split("@")[0],
-              },
-            },
+          const res = await fetch("/api/auth/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password, displayName }),
           });
 
-          if (error) throw error;
+          const data = await res.json();
+          set({ isLoading: false });
+
+          if (!res.ok) {
+            const errorMessage = data.error || "Sign up failed";
+            set({ error: errorMessage });
+
+            if (res.status === 409) {
+              if (toastError) toastError("auth.emailAlreadyExists");
+              return { success: false, error: errorMessage, status: "email_exists" };
+            }
+
+            if (toastError) toastError("auth.registerError");
+            return { success: false, error: errorMessage };
+          }
 
           if (toastSuccess) toastSuccess("auth.registerSuccess");
-
-          return {
-            success: true,
-            error: null,
-            needsVerification: !data.session,
-            status: data.session
-              ? "direct_signup"
-              : "email_verification_needed",
-          };
+          return { success: true, error: null, needsVerification: true, status: "email_verification_needed" };
         } catch (error) {
           const errorMessage = error.message || "Sign up failed";
-
           set({ isLoading: false, error: errorMessage });
-
-          // Check if error is due to rate limit
-          if (
-            errorMessage.includes("rate limit") ||
-            errorMessage.includes("429")
-          ) {
-            if (toastError) toastError("auth.rateLimitError");
-            return {
-              success: false,
-              error: errorMessage,
-              status: "rate_limit",
-            };
-          }
-
-          // Check if error is due to email already existing
-          if (
-            errorMessage.includes("already registered") ||
-            errorMessage.includes("User already exists")
-          ) {
-            if (toastError) toastError("auth.emailAlreadyExists");
-            return {
-              success: false,
-              error: errorMessage,
-              status: "email_exists",
-            };
-          }
-
           if (toastError) toastError("auth.registerError");
           return { success: false, error: errorMessage };
+        }
+      },
+
+      /**
+       * Update authenticated user profile (password, metadata)
+       */
+      updateProfile: async (updates, { toastSuccess, toastError } = {}) => {
+        try {
+          set({ isLoading: true, error: null });
+          const { error } = await supabase.auth.updateUser(updates);
+          if (error) throw error;
+          set({ isLoading: false });
+          if (toastSuccess) toastSuccess("auth.profileUpdated");
+          return { success: true, error: null };
+        } catch (error) {
+          set({ isLoading: false, error: error.message });
+          if (toastError) toastError("auth.profileUpdateError");
+          return { success: false, error: error.message };
         }
       },
 
@@ -251,7 +237,7 @@ export function useAuth() {
  * Access auth action methods
  */
 export function useAuthActions() {
-  const { signIn, signUp, signOut, initialize, clearError } = useAuthStore();
+  const { signIn, signUp, signOut, initialize, clearError, updateProfile } = useAuthStore();
 
   return {
     signIn,
@@ -259,5 +245,6 @@ export function useAuthActions() {
     signOut,
     initialize,
     clearError,
+    updateProfile,
   };
 }
