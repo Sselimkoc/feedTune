@@ -1,9 +1,11 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
-import { FeedParser } from "@/utils/feedParser";
+import Parser from "rss-parser";
 
 export const dynamic = "force-dynamic";
+
+const feedParser = new Parser();
 
 const BATCH_SIZE = 20;
 
@@ -37,8 +39,7 @@ export const POST = withAuth(async (request, { user }) => {
 
   let rssFeed;
   try {
-    const parser = new FeedParser();
-    rssFeed = await parser.parseRssFeed(feed.url);
+    rssFeed = await feedParser.parseURL(feed.url);
   } catch (error) {
     console.error("[sync-items] RSS parse error:", error);
     return ApiResponse.error(`Could not fetch RSS feed: ${error.message}`);
@@ -77,7 +78,7 @@ export const POST = withAuth(async (request, { user }) => {
   const now = new Date().toISOString();
   await supabase
     .from("feeds")
-    .update({ last_updated: now, last_fetched: now, updated_at: now })
+    .update({ last_fetched: now, updated_at: now })
     .eq("id", feedId);
 
   if (newItems.length === 0) {

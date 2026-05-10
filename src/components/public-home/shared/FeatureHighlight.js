@@ -16,10 +16,10 @@ export function FeatureHighlight({ feature, learnMoreText }) {
       <div className="space-y-4 flex flex-col items-center md:items-start text-center md:text-left">
         <h3 className="text-2xl font-bold">{feature.title}</h3>
         <p className="text-muted-foreground">{feature.description}</p>
-        <Button variant="outline" size="sm">
+        {/* <Button variant="outline" size="sm">
           <SearchIcon className="w-4 h-4 mr-2" />
           {learnMoreText}
-        </Button>
+        </Button> */}
       </div>
       <div className="relative aspect-video rounded-lg overflow-hidden border border-border/50 shadow-xl mx-auto w-full max-w-md">
         <Image

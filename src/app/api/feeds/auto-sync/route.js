@@ -9,7 +9,7 @@ export const POST = withAuth(async (_request, { user }) => {
 
   const { data: feeds, error: feedsError } = await supabase
     .from("feeds")
-    .select("id, title, url, type, last_fetched, last_updated")
+    .select("id, title, url, type, last_fetched")
     .eq("user_id", user.id)
     .is("deleted_at", null)
     .or(`last_fetched.is.null,last_fetched.lt.${thirtyMinutesAgo}`);
@@ -34,7 +34,7 @@ export const POST = withAuth(async (_request, { user }) => {
       batch.map((feed) =>
         supabase
           .from("feeds")
-          .update({ last_fetched: now, last_updated: now })
+          .update({ last_fetched: now, updated_at: now })
           .eq("id", feed.id)
       )
     );

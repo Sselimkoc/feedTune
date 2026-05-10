@@ -29,7 +29,7 @@ async function updateFeedTimestamp(supabase, feedId) {
   const now = new Date().toISOString();
   const { error } = await supabase
     .from("feeds")
-    .update({ last_updated: now, last_fetched: now, updated_at: now })
+    .update({ last_fetched: now, updated_at: now })
     .eq("id", feedId);
   if (error) console.error("[youtube/sync] timestamp update error:", error);
 }
