@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth, useAuthActions } from "@/hooks/auth/useAuth";
-import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/core/ui/use-toast";
 import { Button } from "@/components/core/ui/button";
 import { Input } from "@/components/core/ui/input";
@@ -79,11 +78,8 @@ export function ProfileSettings() {
           variant: "default",
         });
         setFormData((prev) => ({ ...prev, password: "", confirmPassword: "" }));
-      } else {
-        // Hata useAuthActions içinde toast ediliyor
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
       toast({
         title: t("common.error"),
         description: error.message || t("errors.general"),
@@ -111,11 +107,11 @@ export function ProfileSettings() {
     setIsLoading(true);
 
     try {
-      const { error: rpcError } = await supabase.rpc("delete_user_account", {
-        user_id: userId,
-      });
-
-      if (rpcError) throw rpcError;
+      const res = await fetch("/api/user/delete", { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete account");
+      }
 
       const { success: signOutSuccess, error: signOutError } =
         await signOutAction();
@@ -129,7 +125,6 @@ export function ProfileSettings() {
       });
       router.push("/");
     } catch (error) {
-      console.error("Error deleting account:", error);
       toast({
         title: t("common.error"),
         description:

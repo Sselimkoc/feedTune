@@ -4,21 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/components/core/ui/use-toast";
-import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useSupabase } from "../useSupabase";
 import { feedApi } from "@/lib/api/feedApi";
 import {
   getFeedsQueryConfig,
   getItemsQueryConfig,
   getFavoritesQueryConfig,
   getReadLaterQueryConfig,
-  queryConstants,
 } from "./feed-screen/useQueryConfig";
-import { useInvalidateFeedsCache } from "./useFeedsQuery";
-
-const STALE_TIME = queryConstants.STALE_TIME;
-const CACHE_TIME = queryConstants.CACHE_TIME;
 
 function normalizeUrl(url) {
   try {
@@ -37,7 +30,7 @@ function normalizeUrl(url) {
 
 export function useFeedService() {
   const { user } = useAuth();
-  const { supabase, isAuthenticated } = useSupabase();
+  const isAuthenticated = !!user;
   const { toast } = useToast();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
@@ -159,15 +152,16 @@ export function useFeedService() {
   const editFeedMutation = useMutation({
     mutationFn: async ({ id, ...feedData }) => {
       if (!user) throw new Error("User not authenticated");
-      const { data, error } = await supabase
-        .from("feeds")
-        .update(feedData)
-        .eq("id", id)
-        .eq("user_id", user.id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      const res = await fetch("/api/feeds/edit", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...feedData }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to update feed");
+      }
+      return (await res.json()).feed;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["feeds", user?.id], exact: true });

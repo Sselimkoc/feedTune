@@ -40,45 +40,23 @@ export function useAuthActions() {
         return { success, error };
       }
 
-      // Handle email verification error
       if (status === "email_not_verified") {
-        return {
-          success: false,
-          error,
-          status: "email_not_verified",
-          email: credentials.email,
-        };
+        return { success: false, error, status: "email_not_verified", email: credentials.email };
       }
 
       return { success, error };
     } catch (error) {
-      console.error("Sign in error:", error);
-      toast({
-        title: t("common.error"),
-        description: error.message || t("auth.loginError"),
-        variant: "destructive",
-      });
+      toast({ title: t("common.error"), description: error.message || t("auth.loginError"), variant: "destructive" });
       return { success: false, error };
     }
   };
 
   const handleSignUp = async (credentials) => {
     try {
-      const { success, error, status } = await signUp({
-        ...credentials,
-        toastSuccess,
-        toastError,
-      });
-
-      // Return result without automatic redirection
+      const { success, error, status } = await signUp({ ...credentials, toastSuccess, toastError });
       return { success, error, status };
     } catch (error) {
-      console.error("Sign up error:", error);
-      toast({
-        title: t("common.error"),
-        description: error.message || t("auth.registerError"),
-        variant: "destructive",
-      });
+      toast({ title: t("common.error"), description: error.message || t("auth.registerError"), variant: "destructive" });
       return { success: false, error };
     }
   };
@@ -86,35 +64,20 @@ export function useAuthActions() {
   const handleSignOut = async () => {
     try {
       const { success, error } = await signOut({ toastSuccess, toastError });
-      if (success) {
-        router.push("/");
-      }
+      if (success) router.push("/");
       return { success, error };
     } catch (error) {
-      console.error("Sign out error:", error);
-      toast({
-        title: t("common.error"),
-        description: error.message || t("auth.logoutError"),
-        variant: "destructive",
-      });
+      toast({ title: t("common.error"), description: error.message || t("auth.logoutError"), variant: "destructive" });
       return { success: false, error };
     }
   };
 
   const handleUpdateProfile = async (updates) => {
     try {
-      const { success, error } = await updateProfile(updates, {
-        toastSuccess,
-        toastError,
-      });
+      const { success, error } = await updateProfile(updates, { toastSuccess, toastError });
       return { success, error };
     } catch (error) {
-      console.error("Update profile error:", error);
-      toast({
-        title: t("common.error"),
-        description: error.message || t("auth.profileUpdateError"),
-        variant: "destructive",
-      });
+      toast({ title: t("common.error"), description: error.message || t("auth.profileUpdateError"), variant: "destructive" });
       return { success: false, error };
     }
   };
