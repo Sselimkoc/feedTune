@@ -9,7 +9,11 @@ export const GET = withAuth(async (_request, { user }) => {
   const supabase = createServerSupabaseClient();
 
   try {
-    const items = await fetchInteractionItems(supabase, user.id, "is_read_later");
+    const items = await fetchInteractionItems(
+      supabase,
+      user.id,
+      "is_read_later",
+    );
     return ApiResponse.ok({ items, count: items.length });
   } catch (error) {
     console.error("[read-later] fetch error:", error);

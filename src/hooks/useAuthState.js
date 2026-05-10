@@ -14,67 +14,31 @@ export function useAuthState() {
   const initRef = useRef(false);
   const { user: storeUser, session: storeSession } = useAuthStore();
 
-  // Initialize auth state once
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
 
-    if (storeUser && storeSession) {
-      console.log("[useAuthState] Initialized with store user:", storeUser.id);
-      setAuthState({
-        user: storeUser,
-        session: storeSession,
-        isAuthenticated: true,
-        isInitialized: true,
-      });
-    } else {
-      console.log("[useAuthState] Initialized with mock user");
-      const mockSession = {
-        access_token: "mock-token",
-        refresh_token: "mock-refresh-token",
-        user: mockUser,
-      };
-
-      setAuthState({
-        user: mockUser,
-        session: mockSession,
-        isAuthenticated: true,
-        isInitialized: true,
-      });
-    }
+    setAuthState({
+      user: storeUser ?? null,
+      session: storeSession ?? null,
+      isAuthenticated: !!(storeUser && storeSession),
+      isInitialized: true,
+    });
   }, []);
 
-  // Sync with store changes
   useEffect(() => {
     if (!initRef.current) return;
 
-    if (storeUser && storeSession) {
-      setAuthState((prev) => {
-        // Only update if changed
+    setAuthState((prev) => {
+      if (storeUser && storeSession) {
         if (prev.user?.id === storeUser.id) return prev;
-
-        console.log("[useAuthState] Synced with store user:", storeUser.id);
-        return {
-          user: storeUser,
-          session: storeSession,
-          isAuthenticated: true,
-          isInitialized: true,
-        };
-      });
-    } else if (!storeUser && !storeSession) {
-      setAuthState((prev) => {
-        // Only sign out if currently logged in
-        if (!prev.user) return prev;
-
-        console.log("[useAuthState] Signed out");
-        return {
-          user: null,
-          session: null,
-          isAuthenticated: false,
-          isInitialized: true,
-        };
-      });
-    }
+        return { user: storeUser, session: storeSession, isAuthenticated: true, isInitialized: true };
+      }
+      if (!storeUser && prev.user) {
+        return { user: null, session: null, isAuthenticated: false, isInitialized: true };
+      }
+      return prev;
+    });
   }, [storeUser, storeSession]);
 
   return authState;

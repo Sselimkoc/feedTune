@@ -20,7 +20,6 @@ export const useFeedSteps = () => {
   const goToPreview = useCallback((data) => {
     setPreviewData(data);
     setStep(DIALOG_STEPS.PREVIEW);
-    // searchResults'ı sakla - geri gitmek isterse SEARCH'e dönebilsin
   }, []);
 
   const reset = useCallback(() => {

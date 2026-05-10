@@ -41,7 +41,6 @@ export const useAuthStore = create(
           const { data, error } = await supabase.auth.getSession();
 
           if (error) {
-            console.error("[useAuthStore] Init error:", error);
             set({ user: null, session: null, isLoading: false, error });
             return;
           }
@@ -58,7 +57,6 @@ export const useAuthStore = create(
             set({ user: null, session: null, isLoading: false, error: null });
           }
         } catch (error) {
-          console.error("[useAuthStore] Initialize error:", error);
           set({ user: null, session: null, isLoading: false, error });
         }
       },
@@ -88,7 +86,6 @@ export const useAuthStore = create(
 
           return { success: true, error: null };
         } catch (error) {
-          console.error("[useAuthStore] signIn error:", error);
           const errorMessage = error.message || "Login failed";
           set({ isLoading: false, error: errorMessage });
 
@@ -146,7 +143,6 @@ export const useAuthStore = create(
               : "email_verification_needed",
           };
         } catch (error) {
-          console.error("[useAuthStore] signUp error:", error);
           const errorMessage = error.message || "Sign up failed";
 
           set({ isLoading: false, error: errorMessage });
@@ -204,7 +200,6 @@ export const useAuthStore = create(
 
           return { success: true, error: null };
         } catch (error) {
-          console.error("[useAuthStore] signOut error:", error);
           set({ isLoading: false, error });
           if (toastError) toastError("auth.logoutError");
           return { success: false, error };

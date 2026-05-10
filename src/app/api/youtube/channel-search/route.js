@@ -25,7 +25,7 @@ export async function POST(request) {
   if (!searchQuery) {
     return NextResponse.json(
       { error: "query, url, or keyword is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -35,7 +35,8 @@ export async function POST(request) {
       if (channelId) {
         const channelInfo = await youtubeService.getChannelInfo(channelId);
         if (channelInfo) {
-          const subscriberCount = channelInfo.statistics?.subscriberCount || "Unknown";
+          const subscriberCount =
+            channelInfo.statistics?.subscriberCount || "Unknown";
           const videoCount = channelInfo.statistics?.videoCount || "0";
           const channelData = {
             id: channelId,
@@ -52,7 +53,13 @@ export async function POST(request) {
             success: true,
             source: "channel_id",
             channel: channelData,
-            channels: [{ ...channelData, publishedAt: channelInfo.publishedAt || new Date().toISOString() }],
+            channels: [
+              {
+                ...channelData,
+                publishedAt:
+                  channelInfo.publishedAt || new Date().toISOString(),
+              },
+            ],
           });
         }
       }
@@ -66,7 +73,7 @@ export async function POST(request) {
   if (!results || results.length === 0) {
     return NextResponse.json(
       { error: "No channels found", channels: [] },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -79,7 +86,8 @@ export async function POST(request) {
             const details = await getChannelById(channel.id, language);
             if (details?.statistics) {
               return {
-                subscriberCount: details.statistics.subscriberCount || "Unknown",
+                subscriberCount:
+                  details.statistics.subscriberCount || "Unknown",
                 videoCount: details.statistics.videoCount || "0",
               };
             }
@@ -88,13 +96,19 @@ export async function POST(request) {
           // ignore per-channel errors
         }
         return { subscriberCount: "Unknown", videoCount: "0" };
-      })
+      }),
     );
   } catch {
-    allChannelDetails = results.map(() => ({ subscriberCount: "Unknown", videoCount: "0" }));
+    allChannelDetails = results.map(() => ({
+      subscriberCount: "Unknown",
+      videoCount: "0",
+    }));
   }
 
-  const primaryDetails = allChannelDetails[0] ?? { subscriberCount: "Unknown", videoCount: "0" };
+  const primaryDetails = allChannelDetails[0] ?? {
+    subscriberCount: "Unknown",
+    videoCount: "0",
+  };
   const primary = results[0];
 
   return NextResponse.json({
@@ -112,7 +126,10 @@ export async function POST(request) {
       videoCountFormatted: formatNumber(primaryDetails.videoCount),
     },
     channels: results.map((channel, index) => {
-      const details = allChannelDetails[index] ?? { subscriberCount: "Unknown", videoCount: "0" };
+      const details = allChannelDetails[index] ?? {
+        subscriberCount: "Unknown",
+        videoCount: "0",
+      };
       return {
         id: channel.id,
         title: channel.title,
@@ -141,7 +158,7 @@ export async function GET(request) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, keyword, url }),
-      })
+      }),
     );
   }
 
