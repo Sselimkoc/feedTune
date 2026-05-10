@@ -1,117 +1,40 @@
-import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { getSecureUser } from "@/lib/auth/serverAuth";
+import { ApiResponse } from "@/lib/api/response";
+import { withAuth } from "@/lib/api/withAuth";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 
-/**
- * Ensure User API Route
- * Creates database record for authenticated users if not exists
- * - Requires authentication (401 if not)
- * - Creates user record in database
- * - Returns user data on success
- */
-export async function POST() {
-  try {
-    // Secure user check
-    const user = await getSecureUser();
+export const POST = withAuth(async (_request, { user }) => {
+  const supabase = createServerSupabaseClient();
 
-    // Return error if no user
-    if (!user) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
-    }
+  const { data: existing, error: checkError } = await supabase
+    .from("users")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
 
-    const userId = user.id;
-
-    // Initialize Supabase client for database operations
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          get(name) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name, value, options) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name, options) {
-            cookieStore.set({ name, value: "", ...options });
-          },
-        },
-      }
-    );
-
-    // Check if user already exists
-    const { data: existingUser, error: checkError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("id", userId)
-      .single();
-
-    // Error check - if not a "record not found" error
-    if (checkError && checkError.code !== "PGRST116") {
-      console.error("Error during user check:", checkError);
-      return NextResponse.json(
-        { error: "Error occurred during user check" },
-        { status: 500 }
-      );
-    }
-
-    // If user already exists, return success response
-    if (existingUser) {
-      return NextResponse.json({
-        success: true,
-        message: "User already exists",
-        user: { id: existingUser.id },
-      });
-    }
-
-    // Create new user record
-    const { data: newUser, error: createError } = await supabase
-      .from("users")
-      .insert([
-        {
-          id: userId,
-          email: user.email,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ])
-      .select()
-      .single();
-
-    if (createError) {
-      console.error("Error creating user:", createError);
-      return NextResponse.json(
-        { error: "Failed to create user record" },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: "User created successfully",
-      user: newUser,
-    });
-  } catch (error) {
-    console.error("Unexpected error in ensure-user API:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  if (checkError) {
+    console.error("[ensure-user] check error:", checkError);
+    return ApiResponse.error("Error occurred during user check");
   }
-}
 
-/**
- * API status check
- */
-export async function GET() {
-  return NextResponse.json({
-    status: "available",
-    message: "User registration service is running",
-  });
+  if (existing) {
+    return ApiResponse.ok({ success: true, user: { id: existing.id } });
+  }
+
+  const now = new Date().toISOString();
+  const { data: newUser, error: createError } = await supabase
+    .from("users")
+    .insert({ id: user.id, email: user.email, created_at: now, updated_at: now })
+    .select()
+    .single();
+
+  if (createError) {
+    console.error("[ensure-user] create error:", createError);
+    return ApiResponse.error("Failed to create user record");
+  }
+
+  return ApiResponse.ok({ success: true, user: newUser });
+});
+
+export function GET() {
+  return ApiResponse.ok({ status: "available" });
 }
