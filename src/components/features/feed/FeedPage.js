@@ -21,12 +21,6 @@ export function FeedPage() {
     user,
   } = useFeedService();
 
-  // Debug logging
-  console.log("[FeedPage] User:", user);
-  console.log("[FeedPage] Feeds:", feeds);
-  console.log("[FeedPage] Items:", items);
-  console.log("[FeedPage] Loading:", isLoading);
-  console.log("[FeedPage] Error:", error);
   const [selectedFeedIds, setSelectedFeedIds] = useState([]);
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -91,6 +85,138 @@ export function FeedPage() {
     return () => window.removeEventListener("focus", handleFocus);
   }, [queryClient, user?.id]);
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen relative">
+        {/* Background animated patterns */}
+        <div className="absolute inset-0 overflow-hidden -z-10">
+          <div
+            className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+            style={{ animationDuration: "10s" }}
+          ></div>
+          <div
+            className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
+            style={{ animationDuration: "12s" }}
+          ></div>
+        </div>
+        <div className="container relative z-10">
+          <div className="flex items-center justify-center min-h-[70vh]">
+            <div className="text-center">
+              <Rss className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-lg text-muted-foreground">{t("common.loading")}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen relative">
+        {/* Background animated patterns */}
+        <div className="absolute inset-0 overflow-hidden -z-10">
+          <div
+            className="absolute top-1/4 right-1/3 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-pulse"
+            style={{ animationDuration: "10s" }}
+          ></div>
+        </div>
+        <div className="container relative z-10">
+          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
+            <div className="text-destructive text-4xl font-bold mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold mb-2">{t("common.error")}</h2>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              {error?.message || t("common.errorDescription")}
+            </p>
+            <Button
+              onClick={() => window.location.reload()}
+              variant="outline"
+              className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
+            >
+              {t("common.retry")}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state - no feeds
+  if (!feeds || feeds.length === 0) {
+    return (
+      <div className="flex flex-col min-h-screen relative">
+        {/* Background animated patterns */}
+        <div className="absolute inset-0 overflow-hidden -z-10">
+          <div
+            className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+            style={{ animationDuration: "10s" }}
+          ></div>
+        </div>
+        <div className="container relative z-10">
+          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
+            <Rss className="h-16 w-16 text-muted-foreground mb-4" />
+            <h2 className="text-2xl font-bold mb-2">{t("feeds.emptyTitle")}</h2>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              {t("feeds.emptyDescription")}
+            </p>
+            <Button
+              asChild
+              className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
+            >
+              <a href="/settings">{t("feeds.addFirstFeed")}</a>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state - no items in selected feeds
+  if (itemsWithFeedTitle.length === 0 && selectedFeedIds.length > 0) {
+    return (
+      <div className="flex flex-col min-h-screen relative">
+        {/* Background animated patterns */}
+        <div className="absolute inset-0 overflow-hidden -z-10">
+          <div
+            className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+            style={{ animationDuration: "10s" }}
+          ></div>
+        </div>
+        <div className="container relative z-10">
+          <header className="w-full max-w-screen-2xl mx-auto px-2 md:px-6 mt-8 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Rss className="h-7 w-7 text-blue-600" />
+              <div>
+                <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-blue-500 drop-shadow-sm">
+                  {t("feeds.title")}
+                </h1>
+                <p className="text-muted-foreground text-base max-w-2xl">
+                  {t("feeds.description")}
+                </p>
+              </div>
+            </div>
+          </header>
+          <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+            <div className="text-muted-foreground text-4xl mb-4">📭</div>
+            <h3 className="text-xl font-semibold mb-2">{t("feeds.noItemsInSelection")}</h3>
+            <p className="text-muted-foreground mb-4">
+              {t("feeds.noItemsInSelectionDescription")}
+            </p>
+            <Button
+              onClick={() => setSelectedFeedIds([])}
+              variant="outline"
+              className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
+            >
+              {t("feeds.showAllFeeds")}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen relative">
       {/* Background animated patterns */}
@@ -131,26 +257,32 @@ export function FeedPage() {
               </p>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {itemsWithFeedTitle.length} {t("feeds.items")}
+            </span>
+          </div>
         </header>
+
         {/* Feed Filter Bar */}
         <nav className="w-full overflow-x-auto flex gap-2 mb-8 py-2 px-1 bg-white/10 dark:bg-gray-800/30 rounded-xl shadow-inner sticky top-0 z-20">
           <button
             onClick={() => setSelectedFeedIds([])}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium",
+              "flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium whitespace-nowrap",
               selectedFeedIds.length === 0
                 ? "bg-blue-600 text-white shadow"
                 : "bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-blue-100"
             )}
           >
-            <span className="font-bold">Tümü</span>
+            <span className="font-bold">{t("feeds.allFeeds")}</span>
           </button>
           {feeds.map((feed) => (
             <button
               key={feed.id}
               onClick={() => handleFeedSelect(feed.id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium",
+                "flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium whitespace-nowrap",
                 selectedFeedIds.includes(feed.id)
                   ? "bg-blue-600 text-white shadow"
                   : "bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-blue-100"
@@ -184,6 +316,7 @@ export function FeedPage() {
             </button>
           ))}
         </nav>
+
         {/* Main Content */}
         <main className="flex-1 w-full max-w-screen-2xl mx-auto px-2 md:px-6">
           <section className="flex-1">

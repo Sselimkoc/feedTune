@@ -1,22 +1,18 @@
-import { NextResponse } from "next/server";
-import { mockRecentItems } from "@/lib/mockData";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { ApiResponse } from "@/lib/api/response";
+import { withAuth } from "@/lib/api/withAuth";
+import { fetchInteractionItems } from "@/lib/api/fetchInteractionItems";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
-    // Return only favorite items
-    const favoriteItems = mockRecentItems.filter((item) => item.is_favorite);
+export const GET = withAuth(async (_request, { user }) => {
+  const supabase = createServerSupabaseClient();
 
-    return NextResponse.json({
-      items: favoriteItems,
-      count: favoriteItems.length,
-    });
+  try {
+    const items = await fetchInteractionItems(supabase, user.id, "is_favorite");
+    return ApiResponse.ok({ items, count: items.length });
   } catch (error) {
-    console.error("Favorites API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("[favorites] fetch error:", error);
+    return ApiResponse.error("Failed to fetch favorites");
   }
-}
+});

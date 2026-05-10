@@ -1,22 +1,22 @@
-import { NextResponse } from "next/server";
-import { mockRecentItems } from "@/lib/mockData";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { ApiResponse } from "@/lib/api/response";
+import { withAuth } from "@/lib/api/withAuth";
+import { fetchInteractionItems } from "@/lib/api/fetchInteractionItems";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
-    // Return only read later items
-    const readLaterItems = mockRecentItems.filter((item) => item.is_read_later);
+export const GET = withAuth(async (_request, { user }) => {
+  const supabase = createServerSupabaseClient();
 
-    return NextResponse.json({
-      items: readLaterItems,
-      count: readLaterItems.length,
-    });
-  } catch (error) {
-    console.error("Read Later API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+  try {
+    const items = await fetchInteractionItems(
+      supabase,
+      user.id,
+      "is_read_later",
     );
+    return ApiResponse.ok({ items, count: items.length });
+  } catch (error) {
+    console.error("[read-later] fetch error:", error);
+    return ApiResponse.error("Failed to fetch read later items");
   }
-}
+});

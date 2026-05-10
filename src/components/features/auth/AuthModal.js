@@ -105,6 +105,9 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
 
         if (result?.success) {
           onOpenChange?.(false);
+        } else if (result?.status === "email_not_verified") {
+          setVerifyingEmail(true);
+          setRegisteredEmail(email);
         } else if (result?.status === "rate_limit") {
           // Rate limit - toast already shown by store
           console.warn("Rate limit exceeded");
