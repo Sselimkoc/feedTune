@@ -89,6 +89,18 @@ export const useAuthStore = create(
           const errorMessage = error.message || "Login failed";
           set({ isLoading: false, error: errorMessage });
 
+          // Check if error is due to unconfirmed email
+          if (
+            error.code === "email_not_confirmed" ||
+            errorMessage.includes("Email not confirmed")
+          ) {
+            return {
+              success: false,
+              error: errorMessage,
+              status: "email_not_verified",
+            };
+          }
+
           // Check if error is due to rate limit
           if (
             errorMessage.includes("rate limit") ||

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useSession } from "@/hooks/auth/useSession";
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { useFeedsSummary } from "@/hooks/features/useFeedsQuery";
@@ -10,25 +10,17 @@ import { HomeTechnology } from "@/components/public-home/HomeTechnology";
 import { HomeShowcase } from "@/components/public-home/HomeShowcase";
 import { HomeCommunity } from "@/components/public-home/HomeCommunity";
 import { AuthModal } from "@/components/features/auth/AuthModal";
-import { useRouter } from "next/navigation";
 import { DashboardLoadingState } from "@/components/home/states/DashboardLoadingState";
 import DashboardContent from "@/components/home/DashboardContent";
 
 export function HomeContent() {
   const { user, isLoading: isSessionLoading } = useSession();
-  const router = useRouter();
   const { deleteFeed } = useFeedService();
 
   // Use React Query for caching - only fetches when user is authenticated
   const { data: stats = {}, isLoading: isDataLoading } = useFeedsSummary();
 
   const [showAuthModal, setShowAuthModal] = useState(false);
-
-  useEffect(() => {
-    if (!isSessionLoading && !user) {
-      router.replace("/");
-    }
-  }, [isSessionLoading, user, router]);
 
   const handleDeleteFeed = useCallback(
     async (feedId) => {

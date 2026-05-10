@@ -1,10 +1,18 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
-import { FeedParser } from "@/utils/feedParser";
-import axios from "axios";
+import Parser from "rss-parser";
 
 const BATCH_SIZE = 20;
+
+const feedParser = new Parser({
+  customFields: {
+    item: [
+      ["media:group", "mediaGroup"],
+      ["media:thumbnail", "thumbnail"],
+    ],
+  },
+});
 
 function extractChannelId(url) {
   if (!url) return null;
@@ -27,16 +35,7 @@ async function updateFeedTimestamp(supabase, feedId) {
 }
 
 async function parseRssFeed(feedUrl) {
-  try {
-    const parser = new FeedParser();
-    return await parser.parseRssFeed(feedUrl);
-  } catch {
-    const response = await axios.get(feedUrl);
-    if (response.status !== 200)
-      throw new Error(`Failed to fetch RSS feed: ${response.status}`);
-    const parser = new FeedParser();
-    return parser.parser.parseString(response.data);
-  }
+  return await feedParser.parseURL(feedUrl);
 }
 
 export const POST = withAuth(async (request, { user }) => {
