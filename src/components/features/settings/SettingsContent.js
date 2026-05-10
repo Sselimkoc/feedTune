@@ -60,6 +60,9 @@ export function SettingsContent() {
   const [languageChanging, setLanguageChanging] = useState(false);
   const { toast } = useToast();
 
+  // Error state
+  const [error, setError] = useState(null);
+
   // Cleanup service
   const {
     isLoading: isCleanupLoading,
@@ -82,12 +85,28 @@ export function SettingsContent() {
     setMounted(true);
   }, []);
 
+  // Error handling wrapper
+  const handleError = (error, context) => {
+    console.error(`Settings error in ${context}:`, error);
+    setError(error.message || `Error in ${context}`);
+    toast({
+      title: t("common.error"),
+      description: error.message || `Error in ${context}`,
+      variant: "destructive",
+    });
+  };
+
   const handleThemeChange = (newTheme) => {
     if (theme === newTheme) return;
 
     setThemeChanging(true);
     setTimeout(() => {
-      setTheme(newTheme);
+      try {
+        setTheme(newTheme);
+        setError(null);
+      } catch (error) {
+        handleError(error, "theme change");
+      }
       setTimeout(() => {
         setThemeChanging(false);
       }, 300);
@@ -99,11 +118,16 @@ export function SettingsContent() {
 
     setLanguageChanging(true);
     setTimeout(() => {
-      changeLanguage(newLanguage);
-      toast({
-        title: t("settings.languageChanged"),
-        description: t("settings.languageChangedDescription"),
-      });
+      try {
+        changeLanguage(newLanguage);
+        toast({
+          title: t("settings.languageChanged"),
+          description: t("settings.languageChangedDescription"),
+        });
+        setError(null);
+      } catch (error) {
+        handleError(error, "language change");
+      }
       setTimeout(() => {
         setLanguageChanging(false);
       }, 300);
@@ -115,8 +139,9 @@ export function SettingsContent() {
     try {
       const stats = await getCleanupStats(cleanupOptions.olderThanDays);
       setCleanupStats(stats);
+      setError(null);
     } catch (error) {
-      console.error("Error getting cleanup stats:", error);
+      handleError(error, "getting cleanup stats");
     }
   };
 
@@ -124,8 +149,9 @@ export function SettingsContent() {
     try {
       await previewCleanup(cleanupOptions);
       await handleGetCleanupStats(); // Refresh stats
+      setError(null);
     } catch (error) {
-      console.error("Error previewing cleanup:", error);
+      handleError(error, "previewing cleanup");
     }
   };
 
@@ -134,8 +160,13 @@ export function SettingsContent() {
       await runCleanup(cleanupOptions);
       await handleGetCleanupStats(); // Refresh stats
       setCleanupDialogOpen(false);
+      setError(null);
+      toast({
+        title: t("cleanup.success"),
+        description: t("cleanup.successDescription"),
+      });
     } catch (error) {
-      console.error("Error running cleanup:", error);
+      handleError(error, "running cleanup");
     }
   };
 
@@ -147,7 +178,17 @@ export function SettingsContent() {
   }, [cleanupDialogOpen, cleanupOptions.olderThanDays]);
 
   if (!mounted) {
-    return null; // Avoid hydration mismatch
+    return (
+      <section className="py-4 px-2 sm:py-6 sm:px-0 lg:py-8 relative">
+        <div className="container relative z-10 px-0 sm:px-4">
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="animate-pulse text-muted-foreground">
+              {t("common.loading")}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -188,6 +229,30 @@ export function SettingsContent() {
             </div>
           </div>
         </motion.div>
+
+        {/* Error Display */}
+        {error && (
+          <motion.div
+            className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="font-medium">{t("common.error")}</span>
+            </div>
+            <p className="text-sm text-destructive/80 mt-1">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => setError(null)}
+            >
+              {t("common.dismiss")}
+            </Button>
+          </motion.div>
+        )}
 
         <div className="grid gap-4 sm:gap-6 grid-cols-1">
           {/* Appearance & Language */}

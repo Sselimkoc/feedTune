@@ -41,7 +41,7 @@ const validateChannelId = (channelId) => {
   try {
     if (channelId.includes("youtube.com") || channelId.includes("youtu.be")) {
       new URL(
-        channelId.startsWith("http") ? channelId : `https://${channelId}`
+        channelId.startsWith("http") ? channelId : `https://${channelId}`,
       );
       return true;
     }
@@ -79,7 +79,7 @@ export async function GET(request) {
     if (!session) {
       return NextResponse.json(
         { error: "You must be logged in" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -89,7 +89,7 @@ export async function GET(request) {
     if (!channelId) {
       return NextResponse.json(
         { error: "channelId parameter is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -98,14 +98,14 @@ export async function GET(request) {
         {
           error: "Please enter a valid YouTube channel ID, username or URL",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const channelData = await withTimeout(
       parseYoutubeChannel(channelId),
       PARSE_TIMEOUT,
-      "YouTube channel fetch timeout. Please try again."
+      "YouTube channel fetch timeout. Please try again.",
     );
 
     const responseVideos = (channelData.videos || []).slice(0, 5);
@@ -121,17 +121,93 @@ export async function GET(request) {
     if (error.message && error.message.includes("timeout")) {
       return NextResponse.json(
         { error: error.message },
-        { status: 408 } // Request Timeout status
+        { status: 408 }, // Request Timeout status
       );
     }
 
     return NextResponse.json(
       { error: error.message || "YouTube channel parsing failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
+/**
+ * YouTube channel parsing endpoint (POST variant)
+ *
+ * Accepts a JSON body with channelId
+ * and returns the YouTube channel information
+ */
 export async function POST(request) {
-  // ... existing code ...
+  try {
+    const cookieStore = cookies();
+    const supabase = createServerSupabaseClient();
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { error: "You must be logged in" },
+        { status: 401 },
+      );
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      return NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 },
+      );
+    }
+
+    const { channelId } = body;
+
+    if (!channelId) {
+      return NextResponse.json(
+        { error: "channelId is required in request body" },
+        { status: 400 },
+      );
+    }
+
+    if (!validateChannelId(channelId)) {
+      return NextResponse.json(
+        {
+          error: "Please enter a valid YouTube channel ID, username or URL",
+        },
+        { status: 400 },
+      );
+    }
+
+    const channelData = await withTimeout(
+      parseYoutubeChannel(channelId),
+      PARSE_TIMEOUT,
+      "YouTube channel fetch timeout. Please try again.",
+    );
+
+    const responseVideos = (channelData.videos || []).slice(0, 5);
+
+    return NextResponse.json({
+      channel: channelData.channel,
+      videos: responseVideos,
+      suggestedChannels: channelData.suggestedChannels || [],
+    });
+  } catch (error) {
+    console.error("YouTube channel parsing error:", error);
+
+    if (error.message && error.message.includes("timeout")) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 408 }, // Request Timeout status
+      );
+    }
+
+    return NextResponse.json(
+      { error: error.message || "YouTube channel parsing failed" },
+      { status: 500 },
+    );
+  }
 }

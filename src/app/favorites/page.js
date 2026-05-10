@@ -7,11 +7,13 @@ export const dynamic = "force-dynamic";
 // Metadata and OpenGraph
 export async function generateMetadata() {
   return {
-    title: "Favoriler | FeedTune",
-    description: "Favori içeriklerinizi görüntüleyin ve yönetin.",
+    title: "Favorites | FeedTune",
+    description: "View and manage your favorite content from RSS feeds and YouTube channels.",
+    keywords: ["favorites", "bookmarks", "saved content", "RSS", "YouTube"],
     openGraph: {
-      title: "Favoriler | FeedTune",
-      description: "Favori içeriklerinizi görüntüleyin ve yönetin.",
+      title: "Favorites | FeedTune",
+      description: "View and manage your favorite content from RSS feeds and YouTube channels.",
+      type: "website",
     },
   };
 }
