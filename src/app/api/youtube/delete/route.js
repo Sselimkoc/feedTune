@@ -1,5 +1,5 @@
-import { youtubeService } from "@/lib/youtube/service";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+﻿import { youtubeService } from "@/lib/youtube/service";
+import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
 
@@ -9,7 +9,7 @@ export const DELETE = withAuth(async (request, { user }) => {
 
   if (!feedId) return ApiResponse.badRequest("feedId is required");
 
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   // Verify ownership before deleting
   const { data: feed, error: feedError } = await supabase

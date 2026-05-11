@@ -44,3 +44,4 @@ next-env.d.ts
 # Supabase - local development only
 supabase/migrations/
 .supabase/
+CLAUDE.md

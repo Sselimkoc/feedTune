@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+﻿import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
 
@@ -27,7 +27,7 @@ export const POST = withAuth(async (request, { user }) => {
     return ApiResponse.badRequest(`Invalid item type. Must be one of: ${VALID_ITEM_TYPES.join(", ")}`);
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   // Set only the specific interaction flag to false
   const { error } = await supabase

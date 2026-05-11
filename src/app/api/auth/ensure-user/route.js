@@ -1,9 +1,9 @@
-import { ApiResponse } from "@/lib/api/response";
+﻿import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { createServiceRoleClient } from "@/lib/supabase-server";
 
 export const POST = withAuth(async (_request, { user }) => {
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { data: existing, error: checkError } = await supabase
     .from("users")
