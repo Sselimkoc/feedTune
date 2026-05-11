@@ -134,10 +134,23 @@ export function useFeedService() {
         return (await addRes.json()).feed;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["feeds", user?.id], exact: true });
-      queryClient.invalidateQueries({ queryKey: ["items", user?.id], exact: true });
-      queryClient.invalidateQueries({ queryKey: ["feedsSummary", user?.id], exact: true });
+    onSuccess: async (feed) => {
+      if (feed?.type === "rss" && feed?.id) {
+        try {
+          await fetch("/api/feeds/sync-items", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ feedId: feed.id }),
+          });
+        } catch (e) {
+          console.error("[addFeed] sync-items error:", e);
+        }
+      }
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["feeds", user?.id], exact: true }),
+        queryClient.refetchQueries({ queryKey: ["items", user?.id], exact: true }),
+        queryClient.refetchQueries({ queryKey: ["feedsSummary", user?.id], exact: true }),
+      ]);
       toast({ title: t("common.success"), description: t("feeds.addSuccess") });
     },
     onError: (error) => {
@@ -164,7 +177,7 @@ export function useFeedService() {
       return (await res.json()).feed;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["feeds", user?.id], exact: true });
+      queryClient.refetchQueries({ queryKey: ["feeds", user?.id], exact: true });
       toast({ title: t("common.success"), description: t("feeds.editSuccess") });
     },
     onError: () => {
@@ -188,9 +201,9 @@ export function useFeedService() {
         const err = await response.json();
         throw new Error(err.error || "Failed to add interaction");
       }
-      await queryClient.invalidateQueries({ queryKey: ["items", user.id], exact: true });
-      await queryClient.invalidateQueries({ queryKey: ["favorites", user.id], exact: true });
-      await queryClient.invalidateQueries({ queryKey: ["read_later", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["items", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["favorites", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["read_later", user.id], exact: true });
       toast({ title: t("common.success"), description: t("interactions.addSuccess") });
     } catch {
       toast({ title: t("common.error"), description: t("interactions.addError"), variant: "destructive" });
@@ -209,9 +222,9 @@ export function useFeedService() {
         const err = await response.json();
         throw new Error(err.error || "Failed to remove interaction");
       }
-      await queryClient.invalidateQueries({ queryKey: ["items", user.id], exact: true });
-      await queryClient.invalidateQueries({ queryKey: ["favorites", user.id], exact: true });
-      await queryClient.invalidateQueries({ queryKey: ["read_later", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["items", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["favorites", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["read_later", user.id], exact: true });
       toast({ title: t("common.success"), description: t("interactions.removeSuccess") });
     } catch {
       toast({ title: t("common.error"), description: t("interactions.removeError"), variant: "destructive" });
@@ -233,10 +246,10 @@ export function useFeedService() {
         const err = await response.json();
         throw new Error(err.error || "Failed to delete feed");
       }
-      await queryClient.invalidateQueries({ queryKey: ["feeds", user.id], exact: true });
-      await queryClient.invalidateQueries({ queryKey: ["items", user.id], exact: true });
-      await queryClient.invalidateQueries({ queryKey: ["favorites", user.id], exact: true });
-      await queryClient.invalidateQueries({ queryKey: ["read_later", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["feeds", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["items", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["favorites", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["read_later", user.id], exact: true });
       toast({ title: t("common.success"), description: t("feeds.deleteSuccess") });
     } catch {
       toast({ title: t("common.error"), description: t("feeds.deleteError"), variant: "destructive" });
@@ -274,9 +287,9 @@ export function useFeedService() {
     }, 0);
 
     if (totalInserted > 0) {
-      await queryClient.invalidateQueries({ queryKey: ["items", user.id], exact: true });
-      await queryClient.invalidateQueries({ queryKey: ["favorites", user.id], exact: true });
-      await queryClient.invalidateQueries({ queryKey: ["read_later", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["items", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["favorites", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["read_later", user.id], exact: true });
       toast({
         title: t("common.success"),
         description: t("feeds.updateSuccess", { updated: totalInserted, skipped: 0 }),
@@ -297,8 +310,8 @@ export function useFeedService() {
   const refreshAllFeeds = async () => {
     if (!user) return;
     try {
-      await queryClient.invalidateQueries({ queryKey: ["feeds", user.id], exact: true });
-      await queryClient.invalidateQueries({ queryKey: ["items", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["feeds", user.id], exact: true });
+      await queryClient.refetchQueries({ queryKey: ["items", user.id], exact: true });
       toast({ title: t("common.success"), description: t("feeds.refreshSuccess") });
     } catch {
       toast({ title: t("common.error"), description: t("feeds.refreshError"), variant: "destructive" });
