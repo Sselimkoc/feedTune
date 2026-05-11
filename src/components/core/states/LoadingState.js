@@ -236,7 +236,7 @@ export function FullScreenLoader({ text }) {
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
       <Image
-        src="/images/feedtunelogo.png"
+        src="/images/logologo.png"
         alt="FeedTune Logo"
         width={64}
         height={64}

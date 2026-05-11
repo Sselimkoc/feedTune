@@ -1,19 +1,29 @@
-import { Inter } from "next/font/google";
-import { ThemeProvider } from "@/providers/ThemeProvider";
-import { LanguageProvider } from "@/providers/LanguageProvider";
-import { AppProvider } from "@/providers/AppProvider";
-import { AppLayout } from "@/components/core/layout/AppLayout";
-import { Toaster } from "@/components/core/ui/toaster";
-
 import "./globals.css";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { LanguageProvider } from "../providers/LanguageProvider";
+import { AppProvider } from "../providers/AppProvider";
+import { Toaster } from "@/components/core/ui/toaster";
+import { AppLayout } from "../components/core/layout/AppLayout";
+import { ThemeProvider } from "../providers/ThemeProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const geist = Geist({
+  variable: "--font-geist",
+  subsets: ["latin"],
+});
 
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 export const metadata = {
   title: "FeedTune - RSS & YouTube Feed Reader",
   description:
     "Modern RSS and YouTube feed reader with AI-powered content curation",
   metadataBase: new URL("http://localhost:3000"),
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 /**
@@ -23,7 +33,11 @@ export const metadata = {
  */
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning className="scroll-smooth">
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={` ${geist.variable} ${geistMono.variable} scroll-smooth`}
+    >
       <body
         className={`${inter.variable} font-sans h-full antialiased`}
         style={{

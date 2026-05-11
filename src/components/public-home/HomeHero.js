@@ -19,7 +19,7 @@ export default function HomeHero({ onAuthClick }) {
     <section className="flex justify-center items-center w-full py-6 md:py-12 relative overflow-hidden">
       <div className="absolute inset-0 -z-10">
         <Image
-          src="/images/feedtunelogo.png"
+          src="/images/logo.png"
           alt="FeedTune Background Logo"
           width={300}
           height={300}
@@ -50,7 +50,7 @@ export default function HomeHero({ onAuthClick }) {
     <section className="py-12 md:py-20 lg:py-32 overflow-hidden relative">
       <div className="absolute inset-0 overflow-hidden -z-10">
         <Image
-          src="/images/feedtunelogo.png"
+          src="/images/logo.png"
           alt="FeedTune Background Logo"
           layout="fill"
           objectFit="contain"

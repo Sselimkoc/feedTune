@@ -5,25 +5,32 @@ import { cookies } from "next/headers";
 /**
  * User context ile Supabase client oluşturucu
  * User authentication'a ihtiyaç olan operasyonlar için
+ * Next.js 15 asenkron çerez yapısına uygun hale getirildi.
  */
-export function createServerSupabaseClient() {
-  const cookieStore = cookies();
+export async function createServerSupabaseClient() {
+  const cookieStore = await cookies();
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name, value, options) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name, options) {
-          cookieStore.set({ name, value: "", ...options });
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch (error) {
+            // Server Component içinde çerez set etmek bazen kısıtlıdır.
+            // Bu hata genellikle Middleware tarafından yönetildiği için debug edilebilir.
+            console.debug("Supabase SSR cookie setAll warning:", error.message);
+          }
         },
       },
-    }
+    },
   );
 }
 
@@ -45,6 +52,6 @@ export function createServiceRoleClient() {
         autoRefreshToken: false,
         persistSession: false,
       },
-    }
+    },
   );
 }

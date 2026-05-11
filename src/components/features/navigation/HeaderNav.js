@@ -46,7 +46,7 @@ export function HeaderNav() {
         {/* Left: Logo */}
         <Link href="/" className="flex items-center gap-2 h-full">
           <Image
-            src="/images/feedtunelogo.png"
+            src="/images/logo.png"
             alt="FeedTune Logo"
             width={28}
             height={28}

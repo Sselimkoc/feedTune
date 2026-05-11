@@ -16,7 +16,8 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui"],
+        sans: ["var(--font-geist)", "ui-sans-serif", "system-ui"],
+        mono: ["var(--font-geist-mono)", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -117,7 +118,7 @@ module.exports = {
     require("tailwindcss-animate"),
     function ({ addUtilities, theme, e }) {
       const animationDelayUtilities = Object.entries(
-        theme("transitionDelay", {})
+        theme("transitionDelay", {}),
       ).map(([key, value]) => {
         return {
           [`.${e(`animation-delay-${key}`)}`]: {
