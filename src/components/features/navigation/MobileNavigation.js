@@ -160,7 +160,7 @@ export function MobileNavigation() {
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2 h-full">
         <Image
-          src="/images/feedtunelogo.png"
+          src="/images/logo.png"
           alt="FeedTune Logo"
           width={28}
           height={28}
@@ -193,7 +193,7 @@ export function MobileNavigation() {
                 onClick={() => setOpen(false)}
               >
                 <Image
-                  src="/images/feedtunelogo.png"
+                  src="/images/logo.png"
                   alt="FeedTune Logo"
                   width={24}
                   height={24}

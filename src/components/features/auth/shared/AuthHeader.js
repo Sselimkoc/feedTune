@@ -40,7 +40,7 @@ export function AuthHeader({ particles }) {
         {/* Logo background */}
         <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center relative z-10 bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 backdrop-blur-sm p-2">
           <Image
-            src="/images/feedtunelogo.png"
+            src="/images/logo.png"
             alt="FeedTune Logo"
             layout="fill"
             objectFit="contain"

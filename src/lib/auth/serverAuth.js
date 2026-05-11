@@ -1,11 +1,6 @@
 /**
  * Session Service
- * Server-side authentication and session management
- *
- * Handles:
- * - Session validation
- * - User retrieval
- * - Token management
+ * Server-side authentication and session management (Next.js 15+ Compatible)
  */
 
 import { createServerClient } from "@supabase/ssr";
@@ -13,34 +8,28 @@ import { cookies } from "next/headers";
 
 /**
  * Create server-side Supabase client
- * New instance per request to handle cookie updates
+ * Handles async cookies for Next.js 15
  */
-function createSupabaseServerClient() {
-  const cookieStore = cookies();
+async function createSupabaseServerClient() {
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name, value, options) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options });
-          } catch (error) {
-            console.debug("[sessionService] Cookie set error:", error?.message);
-          }
-        },
-        remove(name, options) {
-          try {
-            cookieStore.set({ name, value: "", ...options });
-          } catch (error) {
-            console.debug(
-              "[sessionService] Cookie remove error:",
-              error?.message
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
             );
+          } catch (error) {
+            // Server Component'lerde çerez set etmek bazen hata verebilir,
+            // bu durum genellikle Middleware tarafından yönetilir.
+            console.debug("[sessionService] Cookie setAll warning:", error?.message);
           }
         },
       },
@@ -50,17 +39,14 @@ function createSupabaseServerClient() {
 
 /**
  * Get current authenticated user
- * @returns {Promise<Object|null>} User object or null if not authenticated
  */
 export async function getSecureUser() {
   try {
-    const supabase = createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser();
 
     if (error) {
-      // Status 400 means no active session - this is normal
       if (error.status === 400) {
-        console.debug("[sessionService] No active session");
         return null;
       }
       throw error;
@@ -75,56 +61,33 @@ export async function getSecureUser() {
 
 /**
  * Get current user ID
- * @returns {Promise<string|null>} User ID or null
  */
 export async function getSecureUserId() {
-  try {
-    const user = await getSecureUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error("[sessionService] getSecureUserId error:", error);
-    return null;
-  }
+  const user = await getSecureUser();
+  return user?.id || null;
 }
 
 /**
  * Check if user is authenticated
- * @returns {Promise<boolean>} True if user is authenticated
  */
 export async function isAuthenticated() {
-  try {
-    const user = await getSecureUser();
-    return !!user;
-  } catch (error) {
-    console.error("[sessionService] isAuthenticated error:", error);
-    return false;
-  }
+  const user = await getSecureUser();
+  return !!user;
 }
 
 /**
  * Validate user session and return user data
- * @returns {Promise<Object>} { user, error }
  */
 export async function validateUserSession() {
   try {
     const user = await getSecureUser();
 
     if (!user) {
-      return {
-        user: null,
-        error: "User not authenticated",
-      };
+      return { user: null, error: "User not authenticated" };
     }
 
-    return {
-      user,
-      error: null,
-    };
+    return { user, error: null };
   } catch (error) {
-    console.error("[sessionService] validateUserSession error:", error);
-    return {
-      user: null,
-      error: error.message,
-    };
+    return { user: null, error: error.message };
   }
 }
