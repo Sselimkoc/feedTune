@@ -31,7 +31,7 @@ async function syncInitialVideos(supabase, feedId, rssUrl) {
         video_id: videoId,
         title: item.title || "Untitled Video",
         url: item.link || `https://www.youtube.com/watch?v=${videoId}`,
-        description: item.description || item.summary || "",
+        description: item.mediaGroup?.["media:description"]?.[0] || item.description || item.summary || "",
         thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
         channel_title: feed.title || "",
         published_at: item.pubDate || item.isoDate || new Date().toISOString(),
