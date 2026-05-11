@@ -1,9 +1,9 @@
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+﻿import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
 
 export const PATCH = withAuth(async (request, { user }) => {
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   let body;
   try {

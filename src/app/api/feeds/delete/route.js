@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+﻿import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
 
@@ -10,7 +10,7 @@ export const DELETE = withAuth(async (request, { user }) => {
 
   if (!feedId) return ApiResponse.badRequest("Feed ID is required");
 
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   // Verify the feed belongs to this user before deleting
   const { data: feed, error: fetchError } = await supabase

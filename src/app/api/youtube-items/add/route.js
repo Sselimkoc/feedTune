@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+﻿import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
 
@@ -18,7 +18,7 @@ export const POST = withAuth(async (request, { user }) => {
     return ApiResponse.badRequest("feedId and non-empty items array are required");
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { data: feed, error: feedError } = await supabase
     .from("feeds")

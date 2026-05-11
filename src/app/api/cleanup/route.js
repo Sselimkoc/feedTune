@@ -1,9 +1,9 @@
-import { ApiResponse } from "@/lib/api/response";
+﻿import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { createServiceRoleClient } from "@/lib/supabase-server";
 
 async function handleCleanup(request, user) {
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { searchParams } = new URL(request.url);
   const olderThanDays = parseInt(searchParams.get("olderThanDays")) || 30;
   const keepFavorites = searchParams.get("keepFavorites") !== "false";

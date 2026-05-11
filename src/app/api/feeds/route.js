@@ -23,20 +23,30 @@ export const GET = withAuth(async (_request, { user }) => {
     Date.now() - 30 * 24 * 60 * 60 * 1000
   ).toISOString();
 
+  const activeFeedIds = feeds.map((f) => f.id);
+
+  const itemsQuery = activeFeedIds.length > 0;
+
   const [{ data: recentRssItems, error: rssError }, { data: recentYoutubeItems, error: youtubeError }] =
     await Promise.all([
-      serviceSupabase
-        .from("rss_items")
-        .select("*, feed:feeds(id, title)")
-        .gte("published_at", thirtyDaysAgo)
-        .order("published_at", { ascending: false })
-        .limit(50),
-      serviceSupabase
-        .from("youtube_items")
-        .select("*, feed:feeds(id, title)")
-        .gte("published_at", thirtyDaysAgo)
-        .order("published_at", { ascending: false })
-        .limit(50),
+      itemsQuery
+        ? serviceSupabase
+            .from("rss_items")
+            .select("*, feed:feeds(id, title)")
+            .in("feed_id", activeFeedIds)
+            .gte("published_at", thirtyDaysAgo)
+            .order("published_at", { ascending: false })
+            .limit(50)
+        : { data: [], error: null },
+      itemsQuery
+        ? serviceSupabase
+            .from("youtube_items")
+            .select("*, feed:feeds(id, title)")
+            .in("feed_id", activeFeedIds)
+            .gte("published_at", thirtyDaysAgo)
+            .order("published_at", { ascending: false })
+            .limit(50)
+        : { data: [], error: null },
     ]);
 
   if (rssError || youtubeError) {

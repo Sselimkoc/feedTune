@@ -1,9 +1,9 @@
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+﻿import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
 
 export const POST = withAuth(async (request, { user }) => {
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   let body;
   try {
@@ -38,17 +38,33 @@ export const POST = withAuth(async (request, { user }) => {
     return ApiResponse.badRequest("Invalid feed URL format");
   }
 
-  // Check if feed already exists for this user
+  // Check if feed already exists for this user (active or soft-deleted)
   const { data: existingFeed } = await supabase
     .from("feeds")
-    .select("id")
+    .select("id, deleted_at")
     .eq("url", normalizedUrl)
     .eq("user_id", user.id)
-    .is("deleted_at", null)
     .maybeSingle();
 
   if (existingFeed) {
-    return ApiResponse.conflict("This feed is already in your collection");
+    if (!existingFeed.deleted_at) {
+      return ApiResponse.conflict("This feed is already in your collection");
+    }
+
+    // Restore soft-deleted feed
+    const { data: restoredFeed, error: restoreError } = await supabase
+      .from("feeds")
+      .update({ deleted_at: null })
+      .eq("id", existingFeed.id)
+      .select()
+      .single();
+
+    if (restoreError) {
+      console.error("Error restoring feed:", restoreError);
+      return ApiResponse.error("Failed to restore feed");
+    }
+
+    return ApiResponse.ok({ feed: restoredFeed }, 201);
   }
 
   // Parse feed metadata

@@ -1,5 +1,5 @@
-import { ApiResponse } from "@/lib/api/response";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+﻿import { ApiResponse } from "@/lib/api/response";
+import { createServiceRoleClient } from "@/lib/supabase-server";
 
 export async function POST(request) {
   let body;
@@ -12,7 +12,7 @@ export async function POST(request) {
   const { email } = body;
   if (!email) return ApiResponse.badRequest("email is required");
 
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { error } = await supabase.auth.signInWithPassword({
     email,

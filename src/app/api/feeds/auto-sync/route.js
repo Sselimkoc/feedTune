@@ -1,9 +1,9 @@
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+﻿import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
 
 export const POST = withAuth(async (_request, { user }) => {
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 

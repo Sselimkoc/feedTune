@@ -794,7 +794,7 @@ class YouTubeService {
    * @returns {Promise<object>} - The newly created feed
    * @throws {YouTubeError} - If channel cannot be added
    */
-  async addYoutubeChannel(channelId, userId, insertYoutubeItems) {
+  async addYoutubeChannel(channelId, userId, insertYoutubeItems, supabaseClient) {
     if (!channelId) {
       throw new YouTubeError(
         "Channel ID or URL is required",
@@ -829,36 +829,60 @@ class YouTubeService {
       const channelInfo = await this.getChannelInfo(channelId);
 
       // Add feed to database
-      const { data: feed, error } = await supabase
-        .from("feeds")
-        .insert({
-          user_id: userId,
-          title: channelInfo.title,
-          url: channelInfo.rss_url || createRssUrl(channelId),
-          type: "youtube",
-          icon: channelInfo.thumbnail,
-          description: channelInfo.description,
-        })
-        .select("*")
-        .single();
+      const dbClient = supabaseClient || supabase;
+      const feedUrl = channelInfo.rss_url || createRssUrl(channelId);
 
-      if (error) {
-        // Duplicated feed error için özel işleme
-        if (error.code === "23505") {
-          // PostgreSQL duplicate key error
+      // Check for existing (including soft-deleted) feed
+      const { data: existingFeed } = await dbClient
+        .from("feeds")
+        .select("id, deleted_at")
+        .eq("url", feedUrl)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      let feed;
+
+      if (existingFeed) {
+        if (!existingFeed.deleted_at) {
           throw new YouTubeError(
             "This YouTube channel is already in your feeds",
-            "DUPLICATE_FEED",
-            error
+            "DUPLICATE_FEED"
           );
         }
 
-        console.error("Error adding YouTube channel:", error);
-        throw new YouTubeError(
-          "Failed to add YouTube channel",
-          "DATABASE_ERROR",
-          error
-        );
+        // Restore soft-deleted feed
+        const { data: restoredFeed, error: restoreError } = await dbClient
+          .from("feeds")
+          .update({ deleted_at: null, title: channelInfo.title, icon: channelInfo.thumbnail, description: channelInfo.description })
+          .eq("id", existingFeed.id)
+          .select("*")
+          .single();
+
+        if (restoreError) {
+          throw new YouTubeError("Failed to restore YouTube channel", "DATABASE_ERROR", restoreError);
+        }
+
+        feed = restoredFeed;
+      } else {
+        const { data: newFeed, error } = await dbClient
+          .from("feeds")
+          .insert({
+            user_id: userId,
+            title: channelInfo.title,
+            url: feedUrl,
+            type: "youtube",
+            icon: channelInfo.thumbnail,
+            description: channelInfo.description,
+          })
+          .select("*")
+          .single();
+
+        if (error) {
+          console.error("Error adding YouTube channel:", error);
+          throw new YouTubeError("Failed to add YouTube channel", "DATABASE_ERROR", error);
+        }
+
+        feed = newFeed;
       }
 
       // Sync videos after adding the channel

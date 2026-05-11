@@ -1,5 +1,5 @@
-import { youtubeService } from "@/lib/youtube/service";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+﻿import { youtubeService } from "@/lib/youtube/service";
+import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
 
@@ -43,13 +43,14 @@ export const POST = withAuth(async (request, { user }) => {
   const { channelId } = body;
   if (!channelId) return ApiResponse.badRequest("channelId is required");
 
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   try {
     const newFeed = await youtubeService.addYoutubeChannel(
       channelId,
       user.id,
-      (feedId, items) => insertYoutubeItems(supabase, feedId, items)
+      (feedId, items) => insertYoutubeItems(supabase, feedId, items),
+      supabase
     );
 
     return ApiResponse.ok({ feed: newFeed }, 201);

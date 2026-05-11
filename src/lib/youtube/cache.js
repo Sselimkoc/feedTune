@@ -1,7 +1,9 @@
 /**
  * YouTube data caching module
  */
-import { supabase } from "@/lib/supabase";
+import { createServiceRoleClient } from "@/lib/supabase-server";
+
+const supabase = createServiceRoleClient();
 
 /**
  * Default cache duration in days

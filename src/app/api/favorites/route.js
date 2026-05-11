@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+﻿import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
 import { fetchInteractionItems } from "@/lib/api/fetchInteractionItems";
@@ -6,7 +6,7 @@ import { fetchInteractionItems } from "@/lib/api/fetchInteractionItems";
 export const dynamic = "force-dynamic";
 
 export const GET = withAuth(async (_request, { user }) => {
-  const supabase = createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   try {
     const items = await fetchInteractionItems(supabase, user.id, "is_favorite");
