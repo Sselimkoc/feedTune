@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/components/core/ui/use-toast";
@@ -35,7 +35,8 @@ export function useFeedService() {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
 
-  const [hasAutoSynced, setHasAutoSynced] = useState(false);
+  const LAST_SYNC_KEY = "feedtune-last-auto-sync";
+  const SYNC_COOLDOWN = 30 * 60 * 1000; // 30 minutes
 
   // ============================================================================
   // QUERIES
@@ -189,8 +190,26 @@ export function useFeedService() {
   // INTERACTIONS
   // ============================================================================
 
+  // Apply an optimistic update to cached items/favorites/read_later for an interaction flag
+  const applyOptimisticInteraction = (itemId, flag, value) => {
+    queryClient.setQueryData(["items", user.id], (old) =>
+      old?.map((item) => (item.id === itemId ? { ...item, [flag]: value } : item))
+    );
+    if (flag === "is_favorite") {
+      queryClient.setQueryData(["favorites", user.id], (old) =>
+        value ? old : old?.filter((item) => item.id !== itemId)
+      );
+    }
+    if (flag === "is_read_later") {
+      queryClient.setQueryData(["read_later", user.id], (old) =>
+        value ? old : old?.filter((item) => item.id !== itemId)
+      );
+    }
+  };
+
   const addInteraction = async (itemId, type, itemType) => {
     if (!user) return;
+    applyOptimisticInteraction(itemId, type, true);
     try {
       const response = await fetch("/api/interactions/add", {
         method: "POST",
@@ -201,17 +220,16 @@ export function useFeedService() {
         const err = await response.json();
         throw new Error(err.error || "Failed to add interaction");
       }
-      await queryClient.refetchQueries({ queryKey: ["items", user.id], exact: true });
-      await queryClient.refetchQueries({ queryKey: ["favorites", user.id], exact: true });
-      await queryClient.refetchQueries({ queryKey: ["read_later", user.id], exact: true });
       toast({ title: t("common.success"), description: t("interactions.addSuccess") });
     } catch {
+      applyOptimisticInteraction(itemId, type, false);
       toast({ title: t("common.error"), description: t("interactions.addError"), variant: "destructive" });
     }
   };
 
   const removeInteraction = async (itemId, type, itemType) => {
     if (!user) return;
+    applyOptimisticInteraction(itemId, type, false);
     try {
       const response = await fetch("/api/interactions/remove", {
         method: "POST",
@@ -222,11 +240,9 @@ export function useFeedService() {
         const err = await response.json();
         throw new Error(err.error || "Failed to remove interaction");
       }
-      await queryClient.refetchQueries({ queryKey: ["items", user.id], exact: true });
-      await queryClient.refetchQueries({ queryKey: ["favorites", user.id], exact: true });
-      await queryClient.refetchQueries({ queryKey: ["read_later", user.id], exact: true });
       toast({ title: t("common.success"), description: t("interactions.removeSuccess") });
     } catch {
+      applyOptimisticInteraction(itemId, type, true);
       toast({ title: t("common.error"), description: t("interactions.removeError"), variant: "destructive" });
     }
   };
@@ -299,13 +315,19 @@ export function useFeedService() {
     return { success: true, totalUpdated: totalInserted, feedsProcessed: activeFeeds.length };
   }, [user, feedsQuery.data, queryClient, toast, t]);
 
-  // Auto-sync once on first load
+  // Auto-sync on first load, with a 30-minute cooldown stored in localStorage
+  // so remounting the component (e.g. tab switch) doesn't re-sync all feeds
   useEffect(() => {
-    if (user && feedsQuery.data?.length && !hasAutoSynced) {
-      setHasAutoSynced(true);
-      fetchNewFeedData().catch(() => {});
+    if (!user || !feedsQuery.data?.length) return;
+    try {
+      const lastSync = parseInt(localStorage.getItem(LAST_SYNC_KEY) || "0", 10);
+      if (Date.now() - lastSync < SYNC_COOLDOWN) return;
+      localStorage.setItem(LAST_SYNC_KEY, String(Date.now()));
+    } catch {
+      // localStorage unavailable — proceed with sync
     }
-  }, [user, feedsQuery.data?.length, hasAutoSynced, fetchNewFeedData]);
+    fetchNewFeedData().catch(() => {});
+  }, [user, feedsQuery.data?.length, fetchNewFeedData]);
 
   const refreshAllFeeds = async () => {
     if (!user) return;

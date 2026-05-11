@@ -1,6 +1,6 @@
 "use client";
 
-const STALE_TIME = 1000 * 60 * 5; // 5 minutes
+const STALE_TIME = 1000 * 60 * 10; // 10 minutes
 const CACHE_TIME = 1000 * 60 * 30; // 30 minutes
 
 const baseQueryConfig = {

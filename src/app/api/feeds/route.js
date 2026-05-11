@@ -31,7 +31,7 @@ export const GET = withAuth(async (_request, { user }) => {
             .select("*, feed:feeds(id, title)")
             .in("feed_id", activeFeedIds)
             .order("published_at", { ascending: false })
-            .limit(100)
+            .limit(50)
         : { data: [], error: null },
       hasFeeds
         ? serviceSupabase
@@ -39,7 +39,7 @@ export const GET = withAuth(async (_request, { user }) => {
             .select("*, feed:feeds(id, title)")
             .in("feed_id", activeFeedIds)
             .order("published_at", { ascending: false })
-            .limit(100)
+            .limit(50)
         : { data: [], error: null },
     ]);
 
@@ -65,7 +65,7 @@ export const GET = withAuth(async (_request, { user }) => {
     ...(recentYoutubeItems ?? []).map((item) => ({ ...item, type: "youtube" })),
   ]
     .sort((a, b) => new Date(b.published_at) - new Date(a.published_at))
-    .slice(0, 200);
+    .slice(0, 100);
 
   return ApiResponse.ok({ feeds: feeds ?? [], stats, recentItems });
 });

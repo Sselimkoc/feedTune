@@ -1,14 +1,12 @@
 "use client";
 
 import { useFeedService } from "@/hooks/features/useFeedService";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Rss } from "lucide-react";
 import { Button } from "@/components/core/ui/button";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardTitle } from "@/components/core/ui/card";
 import VideoCard from "./layout/VideoCard";
-import { useQueryClient } from "@tanstack/react-query";
 
 export function FeedPage() {
   const {
@@ -18,20 +16,19 @@ export function FeedPage() {
     error,
     addInteraction,
     removeInteraction,
-    user,
   } = useFeedService();
 
   const [selectedFeedIds, setSelectedFeedIds] = useState([]);
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
 
-  // Feed selection logic
+  // Feed selection logic — scroll to top so user sees updated content
   const handleFeedSelect = (feedId) => {
     setSelectedFeedIds((prev) =>
       prev.includes(feedId)
         ? prev.filter((id) => id !== feedId)
         : [...prev, feedId]
     );
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
   // Filter items by selected feeds
@@ -74,16 +71,6 @@ export function FeedPage() {
       await addInteraction(video.id, "is_read_later", itemType);
     }
   };
-
-  useEffect(() => {
-    const handleFocus = () => {
-      queryClient.invalidateQueries(["items", user?.id]);
-      queryClient.invalidateQueries(["favorites", user?.id]);
-      queryClient.invalidateQueries(["read_later", user?.id]);
-    };
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [queryClient, user?.id]);
 
   // Loading state
   if (isLoading) {
@@ -173,50 +160,6 @@ export function FeedPage() {
     );
   }
 
-  // Empty state - no items in selected feeds
-  if (itemsWithFeedTitle.length === 0 && selectedFeedIds.length > 0) {
-    return (
-      <div className="flex flex-col min-h-screen relative">
-        {/* Background animated patterns */}
-        <div className="absolute inset-0 overflow-hidden -z-10">
-          <div
-            className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
-            style={{ animationDuration: "10s" }}
-          ></div>
-        </div>
-        <div className="container relative z-10">
-          <header className="w-full max-w-screen-2xl mx-auto px-2 md:px-6 mt-8 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Rss className="h-7 w-7 text-blue-600" />
-              <div>
-                <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-blue-500 drop-shadow-sm">
-                  {t("feeds.title")}
-                </h1>
-                <p className="text-muted-foreground text-base max-w-2xl">
-                  {t("feeds.description")}
-                </p>
-              </div>
-            </div>
-          </header>
-          <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-            <div className="text-muted-foreground text-4xl mb-4">📭</div>
-            <h3 className="text-xl font-semibold mb-2">{t("feeds.noItemsInSelection")}</h3>
-            <p className="text-muted-foreground mb-4">
-              {t("feeds.noItemsInSelectionDescription")}
-            </p>
-            <Button
-              onClick={() => setSelectedFeedIds([])}
-              variant="outline"
-              className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
-            >
-              {t("feeds.showAllFeeds")}
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col min-h-screen relative">
       {/* Background animated patterns */}
@@ -265,7 +208,7 @@ export function FeedPage() {
         </header>
 
         {/* Feed Filter Bar */}
-        <nav className="w-full overflow-x-auto flex gap-2 mb-8 py-2 px-1 bg-white/10 dark:bg-gray-800/30 rounded-xl shadow-inner sticky top-0 z-20">
+        <nav className="w-full overflow-x-auto flex gap-2 mb-8 py-2 px-1 bg-white/10 dark:bg-gray-800/30 rounded-xl shadow-inner sticky top-16 z-20">
           <button
             onClick={() => setSelectedFeedIds([])}
             className={cn(
@@ -320,16 +263,36 @@ export function FeedPage() {
         {/* Main Content */}
         <main className="flex-1 w-full max-w-screen-2xl mx-auto px-2 md:px-6">
           <section className="flex-1">
-            <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-              {itemsWithFeedTitle.map((item) => (
-                <VideoCard
-                  key={item.id}
-                  video={item}
-                  onToggleFavorite={handleToggleFavorite}
-                  onToggleReadLater={handleToggleReadLater}
-                />
-              ))}
-            </div>
+            {itemsWithFeedTitle.length === 0 ? (
+              <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+                <div className="text-muted-foreground text-4xl mb-4">📭</div>
+                <h3 className="text-xl font-semibold mb-2">{t("feeds.noItemsInSelection")}</h3>
+                <p className="text-muted-foreground mb-4">
+                  {t("feeds.noItemsInSelectionDescription")}
+                </p>
+                <Button
+                  onClick={() => {
+                    setSelectedFeedIds([]);
+                    window.scrollTo({ top: 0, behavior: "instant" });
+                  }}
+                  variant="outline"
+                  className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
+                >
+                  {t("feeds.showAllFeeds")}
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                {itemsWithFeedTitle.map((item) => (
+                  <VideoCard
+                    key={item.id}
+                    video={item}
+                    onToggleFavorite={handleToggleFavorite}
+                    onToggleReadLater={handleToggleReadLater}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         </main>
       </div>
