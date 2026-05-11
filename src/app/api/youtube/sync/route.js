@@ -107,11 +107,7 @@ export const POST = withAuth(async (request, { user }) => {
         title: item.title || "Untitled Video",
         url: item.link || `https://www.youtube.com/watch?v=${videoId}`,
         description: item.description || item.summary || "",
-        thumbnail:
-          item.thumbnail ||
-          item.image?.url ||
-          item.mediaGroup?.[0]?.thumbnail?.[0]?.url ||
-          "",
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
         channel_title: feed.title || rssFeed.title,
         published_at: item.pubDate || item.isoDate || new Date().toISOString(),
         created_at: new Date().toISOString(),

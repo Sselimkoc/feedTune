@@ -1,36 +1,7 @@
-﻿import { youtubeService } from "@/lib/youtube/service";
 import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
-
-async function insertYoutubeItems(supabase, feedId, items) {
-  let insertedCount = 0;
-
-  for (const item of items) {
-    const videoId = item.videoId || item.video_id;
-    if (!videoId) continue;
-
-    const { error } = await supabase.from("youtube_items").insert({
-      feed_id: feedId,
-      video_id: videoId,
-      title: item.title || "Untitled Video",
-      description: item.description ? item.description.substring(0, 500) : null,
-      thumbnail: item.thumbnail || item.image || null,
-      published_at: item.pubDate || item.publishedAt || new Date().toISOString(),
-      channel_title: item.author || item.channelTitle || null,
-      url: item.link || `https://youtube.com/watch?v=${videoId}`,
-      created_at: new Date().toISOString(),
-    });
-
-    if (!error) {
-      insertedCount++;
-    } else if (error.code !== "23505") {
-      console.error("[youtube/update] item insert error:", error);
-    }
-  }
-
-  return insertedCount;
-}
+import { getChannelInfo } from "@/lib/youtube";
 
 export const POST = withAuth(async (request, { user }) => {
   let body;
@@ -45,13 +16,41 @@ export const POST = withAuth(async (request, { user }) => {
 
   const supabase = createServiceRoleClient();
 
+  const { data: feed, error: feedError } = await supabase
+    .from("feeds")
+    .select("id, url, type")
+    .eq("id", feedId)
+    .eq("user_id", user.id)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (feedError) return ApiResponse.error(feedError.message);
+  if (!feed) return ApiResponse.notFound("Feed not found");
+  if (feed.type !== "youtube") return ApiResponse.badRequest("Feed is not a YouTube feed");
+
+  // Extract channel ID from feed URL
+  const channelIdMatch = feed.url.match(/channel_id=(UC[\w-]{21,22})/);
+  if (!channelIdMatch) return ApiResponse.badRequest("Could not extract channel ID from feed URL");
+  const channelId = channelIdMatch[1];
+
   try {
-    const result = await youtubeService.updateYoutubeChannel(
-      feedId,
-      user.id,
-      (id, items) => insertYoutubeItems(supabase, id, items)
-    );
-    return ApiResponse.ok({ success: true, feed: result });
+    const info = await getChannelInfo(channelId);
+    const { data: updated, error: updateError } = await supabase
+      .from("feeds")
+      .update({
+        title: info.title,
+        icon: info.thumbnail,
+        description: info.description,
+        channel_id: channelId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", feedId)
+      .select("*")
+      .single();
+
+    if (updateError) return ApiResponse.error("Failed to update feed metadata");
+
+    return ApiResponse.ok({ success: true, feed: updated });
   } catch (error) {
     console.error("[youtube/update] error:", error);
     return ApiResponse.error(error.message || "Failed to update YouTube channel");

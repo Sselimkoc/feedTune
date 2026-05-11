@@ -29,6 +29,7 @@ CREATE TABLE feeds (
   description TEXT,
   icon TEXT,
   type TEXT NOT NULL CHECK (type IN ('rss', 'youtube', 'atom')),
+  channel_id TEXT,
   category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
   last_fetched TIMESTAMP WITH TIME ZONE DEFAULT now(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,

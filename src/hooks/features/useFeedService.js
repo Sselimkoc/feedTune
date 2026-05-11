@@ -115,7 +115,12 @@ export function useFeedService() {
         const addRes = await fetch("/api/youtube/add", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ channelId: searchData.channel.id }),
+          body: JSON.stringify({
+            channelId: searchData.channel.id,
+            title: searchData.channel.title,
+            description: searchData.channel.description,
+            thumbnail: searchData.channel.thumbnail,
+          }),
         });
         if (!addRes.ok) {
           const err = await addRes.json();

@@ -1,6 +1,6 @@
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
-import { youtubeService } from "@/lib/youtube/service";
+import { resolveChannelId, getChannelInfo, getChannelVideos } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
 
@@ -15,35 +15,41 @@ function withTimeout(promise, ms) {
   ]);
 }
 
-function validateChannelId(channelId) {
+function validateInput(channelId) {
   if (!channelId || channelId.length > 2000) return false;
-  try {
-    if (channelId.includes("youtube.com") || channelId.includes("youtu.be")) {
-      new URL(channelId.startsWith("http") ? channelId : `https://${channelId}`);
-      return true;
-    }
-    return (
-      (channelId.startsWith("UC") && channelId.length >= 11 && channelId.length <= 24) ||
-      channelId.startsWith("@") ||
-      (!/\s/.test(channelId) && channelId.length >= 3 && channelId.length <= 50)
-    );
-  } catch {
-    return false;
-  }
+  return true;
+}
+
+async function parseFn(channelId) {
+  const resolvedId = await resolveChannelId(channelId) ?? channelId;
+  const [info, videos] = await Promise.all([
+    getChannelInfo(resolvedId),
+    getChannelVideos(resolvedId, 5),
+  ]);
+  return {
+    channel: {
+      id: resolvedId,
+      title: info.title,
+      description: info.description,
+      thumbnail: info.thumbnail,
+      url: `https://youtube.com/channel/${resolvedId}`,
+      rssUrl: info.rssUrl,
+    },
+    videos,
+  };
 }
 
 async function handleParse(channelId) {
-  if (!channelId) return ApiResponse.badRequest("channelId is required");
-  if (!validateChannelId(channelId)) {
-    return ApiResponse.badRequest("Please enter a valid YouTube channel ID, username or URL");
+  if (!validateInput(channelId)) {
+    return ApiResponse.badRequest("channelId is required");
   }
 
   try {
-    const channelData = await withTimeout(youtubeService.parseChannel(channelId), PARSE_TIMEOUT);
+    const result = await withTimeout(parseFn(channelId), PARSE_TIMEOUT);
     return ApiResponse.ok({
-      channel: channelData.channel,
-      videos: (channelData.videos || []).slice(0, 5),
-      suggestedChannels: channelData.suggestedChannels || [],
+      channel: result.channel,
+      videos: result.videos,
+      suggestedChannels: [],
     });
   } catch (error) {
     console.error("[youtube/parse] error:", error);

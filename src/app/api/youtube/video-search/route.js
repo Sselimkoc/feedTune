@@ -1,16 +1,7 @@
 import { NextResponse } from "next/server";
-import { searchChannels, getChannelVideos } from "@/lib/youtube/fetch-client";
+import { searchChannels, getChannelVideos } from "@/lib/youtube";
 
-export async function POST(request) {
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    body = {};
-  }
-
-  const { query, maxResults = 10 } = body;
-
+async function handleRequest({ query, maxResults = 10 }) {
   if (!query) {
     return NextResponse.json({ error: "query is required" }, { status: 400 });
   }
@@ -18,22 +9,22 @@ export async function POST(request) {
   try {
     const channels = await searchChannels(query, 1);
 
-    if (!channels || channels.length === 0) {
+    if (!channels.length) {
       return NextResponse.json(
         { error: "No channels found for this query", videos: [] },
         { status: 404 }
       );
     }
 
-    const channelId = channels[0].id;
-    const videos = await getChannelVideos(channelId, Math.min(Number(maxResults) || 10, 30));
+    const channel = channels[0];
+    const videos = await getChannelVideos(channel.id, Math.min(Number(maxResults) || 10, 30));
 
     return NextResponse.json({
       success: true,
-      channelId,
-      channelTitle: channels[0].title,
+      channelId: channel.id,
+      channelTitle: channel.title,
       query,
-      videos: videos ?? [],
+      videos,
     });
   } catch (error) {
     console.error("[video-search] error:", error);
@@ -44,19 +35,23 @@ export async function POST(request) {
   }
 }
 
+export async function POST(request) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+  return handleRequest(body);
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("query");
   const maxResults = searchParams.get("maxResults") || 10;
 
   if (query) {
-    return POST(
-      new Request(request.url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, maxResults }),
-      })
-    );
+    return handleRequest({ query, maxResults });
   }
 
   return NextResponse.json({ status: "available" });

@@ -479,7 +479,16 @@ export const swaggerSpec = {
           required: true,
           content: {
             "application/json": {
-              schema: { type: "object", required: ["channelId"], properties: { channelId: { type: "string" } } },
+              schema: {
+                type: "object",
+                required: ["channelId"],
+                properties: {
+                  channelId: { type: "string" },
+                  title: { type: "string", description: "Pre-fetched channel title (avoids redundant API call)" },
+                  description: { type: "string" },
+                  thumbnail: { type: "string", description: "Pre-fetched channel thumbnail URL" },
+                },
+              },
             },
           },
         },
