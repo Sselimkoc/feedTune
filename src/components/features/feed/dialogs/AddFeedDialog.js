@@ -78,8 +78,15 @@ export function AddFeedDialog({
   useEffect(() => {
     if (isSubmitting && addFeedMutation && !addFeedMutation.isPending) {
       setIsSubmitting(false);
-      form.resetForm();
-      onOpenChange(false);
+      if (addFeedMutation.isSuccess) {
+        // Progress bar animasyonunun tamamlanması için bekle, sonra kapat
+        const t = setTimeout(() => {
+          form.resetForm();
+          onOpenChange(false);
+        }, 800);
+        return () => clearTimeout(t);
+      }
+      // Hata durumunda dialog açık kalır, kullanıcı tekrar deneyebilir
     }
   }, [
     addFeedMutation?.isPending,

@@ -65,6 +65,7 @@
       "useFullContent": "Tam İçerik",
       "useSummary": "Sadece Özet",
       "add": "Besleme Ekle",
+      "adding": "Ekleniyor…",
       "searchResults": "Arama Sonuçları",
       "feedPreview": "Besleme Önizlemesi",
       "back": "Geri",
@@ -78,7 +79,9 @@
     "editSuccess": "Besleme başarıyla güncellendi!",
     "editError": "Besleme güncellenemedi",
     "autoSyncComplete": "Beslemeler Güncellendi",
-    "autoSyncDescription": "{{count}} besleme yeni içerikle yenilendi"
+    "autoSyncDescription": "{{count}} besleme yeni içerikle yenilendi",
+    "items": "Öğe",
+    "allFeeds": "Tüm Kategoriler"
   },
   "interactions": {
     "addSuccess": "Etkileşim başarıyla eklendi",

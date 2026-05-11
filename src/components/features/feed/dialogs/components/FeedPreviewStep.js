@@ -1,9 +1,47 @@
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/core/ui/button";
-import { Loader2, Plus, ArrowLeft } from "lucide-react";
+import { Plus, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { FeedPreviewCard } from "./FeedPreviewCard";
 import { FeedAdvancedOptions } from "./FeedAdvancedOptions";
+
+function AddProgressBar({ isActive }) {
+  const [progress, setProgress] = useState(0);
+  const wasActive = useRef(false);
+
+  useEffect(() => {
+    if (isActive) {
+      wasActive.current = true;
+      setProgress(0);
+
+      const steps = [[300, 25], [600, 50], [500, 65], [800, 78], [1200, 88]];
+      const timeouts = [];
+      let elapsed = 0;
+      steps.forEach(([delay, target]) => {
+        elapsed += delay;
+        timeouts.push(setTimeout(() => setProgress(target), elapsed));
+      });
+      return () => timeouts.forEach(clearTimeout);
+    } else if (wasActive.current) {
+      wasActive.current = false;
+      setProgress(100);
+      const t = setTimeout(() => setProgress(0), 700);
+      return () => clearTimeout(t);
+    }
+  }, [isActive]);
+
+  if (progress === 0) return null;
+
+  return (
+    <div className="w-full h-1.5 bg-muted/50 rounded-full overflow-hidden">
+      <div
+        className="h-full bg-primary rounded-full transition-[width] duration-500 ease-out"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
+  );
+}
 
 export function FeedPreviewStep({
   previewData,
@@ -49,28 +87,27 @@ export function FeedPreviewStep({
       >
         <FeedAdvancedOptions form={form} />
 
-        <div className="flex flex-row justify-end gap-3 pt-4 border-t border-border/20">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onBack}
-            disabled={addFeedMutation?.isPending}
-            className="px-6 py-2 text-sm rounded-lg font-medium"
-          >
-            {t("common.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            disabled={addFeedMutation?.isPending}
-            className="px-6 py-2 text-sm rounded-lg font-medium"
-          >
-            {addFeedMutation?.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
+        <div className="space-y-3 pt-4 border-t border-border/20">
+          <AddProgressBar isActive={!!addFeedMutation?.isPending} />
+          <div className="flex flex-row justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onBack}
+              disabled={addFeedMutation?.isPending}
+              className="px-6 py-2 text-sm rounded-lg font-medium"
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              disabled={addFeedMutation?.isPending}
+              className="px-6 py-2 text-sm rounded-lg font-medium"
+            >
               <Plus className="mr-2 h-4 w-4" />
-            )}
-            {t("feeds.addFeed.add")}
-          </Button>
+              {addFeedMutation?.isPending ? t("feeds.addFeed.adding") : t("feeds.addFeed.add")}
+            </Button>
+          </div>
         </div>
       </form>
     </motion.div>

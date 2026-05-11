@@ -141,15 +141,17 @@ export function useFeedService() {
       }
     },
     onSuccess: async (feed) => {
-      if (feed?.type === "rss" && feed?.id) {
+      if (feed?.id) {
+        const syncEndpoint =
+          feed.type === "youtube" ? "/api/youtube/sync" : "/api/feeds/sync-items";
         try {
-          await fetch("/api/feeds/sync-items", {
+          await fetch(syncEndpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ feedId: feed.id }),
           });
         } catch (e) {
-          console.error("[addFeed] sync-items error:", e);
+          console.error("[addFeed] sync error:", e);
         }
       }
       await Promise.all([

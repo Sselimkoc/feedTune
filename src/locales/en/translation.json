@@ -65,6 +65,7 @@
       "useFullContent": "Full Content",
       "useSummary": "Summary Only",
       "add": "Add Feed",
+      "adding": "Adding…",
       "searchResults": "Search Results",
       "feedPreview": "Feed Preview",
       "back": "Back",
@@ -78,7 +79,9 @@
     "editSuccess": "Feed updated successfully!",
     "editError": "Failed to update feed",
     "autoSyncComplete": "Feeds Updated",
-    "autoSyncDescription": "{{count}} feeds have been refreshed with new content"
+    "autoSyncDescription": "{{count}} feeds have been refreshed with new content",
+    "items": "Items",
+    "allFeeds": "All Categories"
   },
   "interactions": {
     "addSuccess": "Interaction added successfully",

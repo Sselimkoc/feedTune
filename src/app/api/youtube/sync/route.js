@@ -1,6 +1,7 @@
 ﻿import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
+import { detectIsShort } from "@/lib/youtube";
 import Parser from "rss-parser";
 
 const BATCH_SIZE = 20;
@@ -127,13 +128,20 @@ export const POST = withAuth(async (request, { user }) => {
   }
 
   const existingIds = new Set(existingItems?.map((i) => i.video_id) ?? []);
-  const newItems = youtubeItems.filter((i) => !existingIds.has(i.video_id));
+  const filteredItems = youtubeItems.filter((i) => !existingIds.has(i.video_id));
 
   await updateFeedTimestamp(supabase, feedId);
 
-  if (newItems.length === 0) {
+  if (filteredItems.length === 0) {
     return ApiResponse.ok({ inserted: 0, total: rssFeed.items.length });
   }
+
+  const newItems = await Promise.all(
+    filteredItems.map(async (item) => ({
+      ...item,
+      is_short: await detectIsShort(item.video_id, item.title, item.description),
+    }))
+  );
 
   // Batch insert
   let insertedCount = 0;

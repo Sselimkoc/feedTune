@@ -1,6 +1,20 @@
-import { createRssUrl, extractVideoId, createThumbnailUrl } from "./utils";
+import { createRssUrl, createThumbnailUrl } from "./utils";
 
 const YOUTUBE_API = "https://www.googleapis.com/youtube/v3";
+
+// #Shorts hashtag check first (free), then HEAD request to Shorts URL (no quota)
+export async function detectIsShort(videoId, title = "", description = "") {
+  if (/#[Ss]horts?\b/.test(title) || /#[Ss]horts?\b/.test(description)) return true;
+  try {
+    const res = await fetch(`https://www.youtube.com/shorts/${videoId}`, {
+      method: "HEAD",
+      redirect: "manual",
+    });
+    return res.status === 200;
+  } catch {
+    return false;
+  }
+}
 
 async function apiRequest(endpoint, params) {
   const apiKey = process.env.YOUTUBE_API_KEY;
