@@ -1,6 +1,6 @@
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
-import { parseYoutubeChannel } from "@/lib/youtube/service";
+import { youtubeService } from "@/lib/youtube/service";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +39,7 @@ async function handleParse(channelId) {
   }
 
   try {
-    const channelData = await withTimeout(parseYoutubeChannel(channelId), PARSE_TIMEOUT);
+    const channelData = await withTimeout(youtubeService.parseChannel(channelId), PARSE_TIMEOUT);
     return ApiResponse.ok({
       channel: channelData.channel,
       videos: (channelData.videos || []).slice(0, 5),
