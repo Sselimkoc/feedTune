@@ -23,14 +23,20 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
         <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-medium z-10 shadow">
           {video.source || "YouTube"}
         </span>
-        <img
-          src={
-            video.thumbnail ||
-            "https://via.placeholder.com/480x270?text=Video+Thumbnail"
-          }
-          alt={video.title || "Video Thumbnail"}
-          className="absolute top-0 left-0 w-full h-full object-cover"
-        />
+        {video.thumbnail ? (
+          <img
+            src={video.thumbnail}
+            alt={video.title || "Video Thumbnail"}
+            className="absolute top-0 left-0 w-full h-full object-cover"
+            onError={(e) => {
+              e.target.style.display = "none";
+            }}
+          />
+        ) : (
+          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-primary/5">
+            <span className="text-primary/40 text-sm font-semibold">FeedTune</span>
+          </div>
+        )}
       </div>
 
       {/* Video Content */}
@@ -47,13 +53,20 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
         <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-200 dark:border-white/10">
           {/* Channel Info */}
           <div className="flex items-center gap-3 flex-1">
-            <img
-              src={
-                video.channelLogo || "https://via.placeholder.com/32x32?text=C"
-              }
-              alt={video.channelName || "Channel"}
-              className="w-8 h-8 rounded-full object-cover"
-            />
+            {video.channelLogo ? (
+              <img
+                src={video.channelLogo}
+                alt={video.channelName || "Channel"}
+                className="w-8 h-8 rounded-full object-cover"
+                onError={(e) => { e.target.style.display = "none"; }}
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-primary/60 text-xs font-semibold">
+                  {(video.channelName || "?")[0].toUpperCase()}
+                </span>
+              </div>
+            )}
             <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
               {video.channelName || "Bilinmeyen Kanal"}
             </span>

@@ -19,33 +19,27 @@ export const GET = withAuth(async (_request, { user }) => {
     return ApiResponse.error(`Failed to fetch feeds: ${feedsError.message}`);
   }
 
-  const thirtyDaysAgo = new Date(
-    Date.now() - 30 * 24 * 60 * 60 * 1000
-  ).toISOString();
-
   const activeFeedIds = feeds.map((f) => f.id);
 
-  const itemsQuery = activeFeedIds.length > 0;
+  const hasFeeds = activeFeedIds.length > 0;
 
   const [{ data: recentRssItems, error: rssError }, { data: recentYoutubeItems, error: youtubeError }] =
     await Promise.all([
-      itemsQuery
+      hasFeeds
         ? serviceSupabase
             .from("rss_items")
             .select("*, feed:feeds(id, title)")
             .in("feed_id", activeFeedIds)
-            .gte("published_at", thirtyDaysAgo)
             .order("published_at", { ascending: false })
-            .limit(50)
+            .limit(100)
         : { data: [], error: null },
-      itemsQuery
+      hasFeeds
         ? serviceSupabase
             .from("youtube_items")
             .select("*, feed:feeds(id, title)")
             .in("feed_id", activeFeedIds)
-            .gte("published_at", thirtyDaysAgo)
             .order("published_at", { ascending: false })
-            .limit(50)
+            .limit(100)
         : { data: [], error: null },
     ]);
 
@@ -71,7 +65,7 @@ export const GET = withAuth(async (_request, { user }) => {
     ...(recentYoutubeItems ?? []).map((item) => ({ ...item, type: "youtube" })),
   ]
     .sort((a, b) => new Date(b.published_at) - new Date(a.published_at))
-    .slice(0, 30);
+    .slice(0, 200);
 
   return ApiResponse.ok({ feeds: feeds ?? [], stats, recentItems });
 });
