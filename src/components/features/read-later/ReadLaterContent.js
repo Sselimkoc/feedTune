@@ -1,14 +1,14 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { BookmarkCheck, Loader2 } from "lucide-react";
+import { BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/core/ui/button";
 import { FavoriteDetailCard } from "../favorites/FavoriteDetailCard";
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { toast } from "@/components/core/ui/use-toast";
 import { useCallback } from "react";
-import { EmptyState } from "@/components/core/states/EmptyState";
 import { AnimatedPageBackground } from "@/components/shared/AnimatedPageBackground";
+import { PageLoadingState, PageErrorState, PageEmptyState } from "@/components/core/states/PageStates";
 
 export function ReadLaterContent() {
   const { t } = useTranslation();
@@ -22,7 +22,7 @@ export function ReadLaterContent() {
 
   // Handle item click
   const handleItemClick = useCallback(
-    (url, item) => {
+    (url) => {
       if (!url) {
         toast({
           title: t("common.error"),
@@ -63,43 +63,12 @@ export function ReadLaterContent() {
     [t]
   );
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col min-h-screen relative">
-        <AnimatedPageBackground />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <Loader2 className="h-10 w-10 animate-spin text-blue-500 mx-auto mb-3" />
-            <p className="text-muted-foreground">{t("common.loading")}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 text-center">
-        <span className="text-destructive text-2xl font-bold mb-2">
-          {t("common.error")}
-        </span>
-        <span className="text-muted-foreground mb-4">
-          {error?.message || t("common.errorDescription")}
-        </span>
-        <Button
-          onClick={() => window.location.reload()}
-          variant="outline"
-          className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
-        >
-          {t("common.retry")}
-        </Button>
-      </div>
-    );
-  }
+  if (isLoading) return <PageLoadingState />;
+  if (error) return <PageErrorState message={error?.message} />;
 
   if (!items || items.length === 0) {
     return (
-      <EmptyState
+      <PageEmptyState
         title={t("readLater.emptyTitle")}
         description={t("readLater.emptyDescription")}
         buttonText={t("readLater.emptyButton")}

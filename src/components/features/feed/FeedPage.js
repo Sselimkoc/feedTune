@@ -7,8 +7,8 @@ import { Rss } from "lucide-react";
 import { Button } from "@/components/core/ui/button";
 import { useTranslation } from "react-i18next";
 import VideoCard from "./layout/VideoCard";
-import { EmptyState } from "@/components/core/states/EmptyState";
 import { AnimatedPageBackground } from "@/components/shared/AnimatedPageBackground";
+import { PageLoadingState, PageErrorState, PageEmptyState } from "@/components/core/states/PageStates";
 
 export function FeedPage() {
   const { feeds, items, isLoading, error, addInteraction, removeInteraction } =
@@ -64,51 +64,12 @@ const handleToggleReadLater = async (video) => {
     }
   };
 
-if (isLoading) {
-    return (
-      <div className="flex flex-col min-h-screen relative">
-        <AnimatedPageBackground />
-        <div className="container relative z-10">
-          <div className="flex items-center justify-center min-h-[70vh]">
-            <div className="text-center">
-              <Rss className="h-12 w-12 animate-ping text-blue-600 mx-auto mb-4" />
-              <p className="text-lg text-muted-foreground">
-                {t("common.loading")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-if (error) {
-    return (
-      <div className="flex flex-col min-h-screen relative">
-        <AnimatedPageBackground />
-        <div className="container relative z-10">
-          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
-            <div className="text-destructive text-4xl font-bold mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold mb-2">{t("common.error")}</h2>
-            <p className="text-muted-foreground mb-6 max-w-md">
-              {error?.message || t("common.errorDescription")}
-            </p>
-            <Button
-              onClick={() => window.location.reload()}
-              variant="outline"
-              className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
-            >
-              {t("common.retry")}
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+if (isLoading) return <PageLoadingState />;
+if (error) return <PageErrorState message={error?.message} />;
 
 if (!feeds || feeds.length === 0) {
     return (
-      <EmptyState
+      <PageEmptyState
         title={t("emptyState.defaultTitle")}
         description={t("emptyState.defaultDescription")}
       />
