@@ -37,7 +37,7 @@ export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
             <Plus className="h-3.5 w-3.5 mr-1" />
             {t("home.dashboard.add")}
           </Button>
-          {feeds.length > 0 && (
+          {/* {feeds.length > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -47,7 +47,7 @@ export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
               {t("home.dashboard.viewAll")}
               <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
-          )}
+          )} */}
         </div>
       </div>
 

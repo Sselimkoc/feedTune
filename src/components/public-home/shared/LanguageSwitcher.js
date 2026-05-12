@@ -11,7 +11,7 @@ export function LanguageSwitcher({ isMobile = false }) {
   return (
     <div className="flex flex-wrap justify-center gap-2">
       <span className={`${sizeClass} text-muted-foreground`}>
-        {t("home.hero.availableIn")}:
+        {t("home.hero.availableIn")}
       </span>
       <button
         className={`${sizeClass} font-medium px-1 py-0.5 rounded transition-colors ${

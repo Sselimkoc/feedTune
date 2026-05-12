@@ -86,15 +86,18 @@ export function SettingsContent() {
   }, []);
 
   // Error handling wrapper
-  const handleError = useCallback((error, context) => {
-    console.error(`Settings error in ${context}:`, error);
-    setError(error.message || `Error in ${context}`);
-    toast({
-      title: t("common.error"),
-      description: error.message || `Error in ${context}`,
-      variant: "destructive",
-    });
-  }, [toast, t]);
+  const handleError = useCallback(
+    (error, context) => {
+      console.error(`Settings error in ${context}:`, error);
+      setError(error.message || `Error in ${context}`);
+      toast({
+        title: t("common.error"),
+        description: error.message || `Error in ${context}`,
+        variant: "destructive",
+      });
+    },
+    [toast, t],
+  );
 
   const handleThemeChange = (newTheme) => {
     if (theme === newTheme) return;
@@ -369,7 +372,7 @@ export function SettingsContent() {
                 {/* Language Selection */}
                 <div className="space-y-2 sm:space-y-3">
                   <Label className="text-xs sm:text-sm text-muted-foreground">
-                    {t("settings.language.title")}
+                    {t("settings.language")}
                   </Label>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <motion.div
