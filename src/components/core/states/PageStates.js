@@ -35,16 +35,18 @@ export function PageEmptyState({ title, description, buttonText, buttonLink, onB
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
             <Inbox className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold mb-2">{title || t("emptyState.defaultTitle")}</h3>
+          <h3 className="text-xl font-semibold mb-2">
+            {title || t("emptyState.defaultTitle")}
+          </h3>
           <p className="text-muted-foreground mb-6 max-w-md">
             {description || t("emptyState.defaultDescription")}
           </p>
-          {(buttonText && buttonLink) && (
+          {buttonText && buttonLink && (
             <Button asChild className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90">
               <Link href={buttonLink}>{buttonText}</Link>
             </Button>
           )}
-          {(buttonText && onButtonClick) && (
+          {buttonText && onButtonClick && (
             <Button
               onClick={onButtonClick}
               className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
