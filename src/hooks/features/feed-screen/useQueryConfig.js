@@ -29,12 +29,14 @@ export const getFavoritesQueryConfig = (userId, isAuthenticated) => ({
   queryKey: ["favorites", userId],
   enabled: !!userId && isAuthenticated,
   ...baseQueryConfig,
+  refetchOnMount: true,
 });
 
 export const getReadLaterQueryConfig = (userId, isAuthenticated) => ({
   queryKey: ["read_later", userId],
   enabled: !!userId && isAuthenticated,
   ...baseQueryConfig,
+  refetchOnMount: true,
 });
 
 export const queryConstants = {

@@ -1,14 +1,14 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Loader2 } from "lucide-react";
 import { Button } from "@/components/core/ui/button";
-import Link from "next/link";
 import { FavoriteDetailCard } from "./FavoriteDetailCard";
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { toast } from "@/components/core/ui/use-toast";
 import { useCallback } from "react";
 import { EmptyState } from "@/components/core/states/EmptyState";
+import { AnimatedPageBackground } from "@/components/shared/AnimatedPageBackground";
 
 export function FavoritesContent() {
   const { t } = useTranslation();
@@ -21,7 +21,7 @@ export function FavoritesContent() {
   } = useFeedService();
 
   // Handle item click
-  const handleItemClick = useCallback((url, item) => {
+  const handleItemClick = useCallback((url) => {
     if (!url) {
       toast({
         title: t("common.error"),
@@ -54,10 +54,14 @@ export function FavoritesContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <span className="animate-pulse text-lg text-muted-foreground">
-          {t("common.loading")}
-        </span>
+      <div className="flex flex-col min-h-screen relative">
+        <AnimatedPageBackground />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <Loader2 className="h-10 w-10 animate-spin text-blue-500 mx-auto mb-3" />
+            <p className="text-muted-foreground">{t("common.loading")}</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -84,26 +88,6 @@ export function FavoritesContent() {
 
   if (!items || items.length === 0) {
     return (
-      // <div className="flex flex-col items-center justify-center h-96 text-center">
-      //   <img
-      //     src="/images/placeholder.webp"
-      //     alt="Empty"
-      //     className="w-32 h-32 opacity-60 mb-4"
-      //   />
-      //   <span className="text-lg font-semibold mb-2">
-      //     {t("favorites.emptyTitle")}
-      //   </span>
-      //   <span className="text-muted-foreground mb-4">
-      //     {t("favorites.emptyDescription")}
-      //   </span>
-      //   <Button
-      //     variant="outline"
-      //     className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
-      //     asChild
-      //   >
-      //     <Link href="/feeds">{t("favorites.emptyButton")}</Link>
-      //   </Button>
-      // </div>
       <EmptyState
         title={t("favorites.emptyTitle")}
         description={t("favorites.emptyDescription")}
@@ -115,29 +99,7 @@ export function FavoritesContent() {
 
   return (
     <div className="flex flex-col min-h-screen relative">
-      {/* Background animated patterns */}
-      <div className="absolute inset-0 overflow-hidden -z-10">
-        <div
-          className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "10s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "12s" }}
-        ></div>
-        <div
-          className="absolute top-1/2 left-2/3 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "14s" }}
-        ></div>
-        <div
-          className="absolute top-1/3 left-1/4 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "16s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "18s" }}
-        ></div>
-      </div>
+      <AnimatedPageBackground />
 
       <div className="container relative z-10">
         {/* Header */}

@@ -8,6 +8,7 @@ import { Button } from "@/components/core/ui/button";
 import { useTranslation } from "react-i18next";
 import VideoCard from "./layout/VideoCard";
 import { EmptyState } from "@/components/core/states/EmptyState";
+import { AnimatedPageBackground } from "@/components/shared/AnimatedPageBackground";
 
 export function FeedPage() {
   const { feeds, items, isLoading, error, addInteraction, removeInteraction } =
@@ -16,7 +17,7 @@ export function FeedPage() {
   const [selectedFeedIds, setSelectedFeedIds] = useState([]);
   const { t } = useTranslation();
 
-  // Feed selection logic — scroll to top so user sees updated content
+  // scroll to top on feed select so user sees updated content
   const handleFeedSelect = (feedId) => {
     setSelectedFeedIds((prev) =>
       prev.includes(feedId)
@@ -26,14 +27,12 @@ export function FeedPage() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-  // Filter items by selected feeds
-  const filteredItems =
+const filteredItems =
     selectedFeedIds.length === 0
       ? items
       : items.filter((item) => selectedFeedIds.includes(item.feed_id));
 
-  // Enrich items with feed/channel title if missing
-  const itemsWithFeedTitle = filteredItems.map((item) => {
+const itemsWithFeedTitle = filteredItems.map((item) => {
     const feed = feeds.find((f) => f.id === item.feed_id);
     return {
       ...item,
@@ -43,8 +42,7 @@ export function FeedPage() {
     };
   });
 
-  // Favori toggle fonksiyonu
-  const handleToggleFavorite = async (video) => {
+const handleToggleFavorite = async (video) => {
     if (!video) return;
     const itemType =
       video.type || (video.feed_type || "").toLowerCase() || "rss";
@@ -55,8 +53,7 @@ export function FeedPage() {
     }
   };
 
-  // Sonra oku toggle fonksiyonu
-  const handleToggleReadLater = async (video) => {
+const handleToggleReadLater = async (video) => {
     if (!video) return;
     const itemType =
       video.type || (video.feed_type || "").toLowerCase() || "rss";
@@ -67,25 +64,14 @@ export function FeedPage() {
     }
   };
 
-  // Loading state
-  if (isLoading) {
+if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen relative">
-        {/* Background animated patterns */}
-        <div className="absolute inset-0 overflow-hidden -z-10">
-          <div
-            className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
-            style={{ animationDuration: "10s" }}
-          ></div>
-          <div
-            className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
-            style={{ animationDuration: "12s" }}
-          ></div>
-        </div>
+        <AnimatedPageBackground />
         <div className="container relative z-10">
           <div className="flex items-center justify-center min-h-[70vh]">
             <div className="text-center">
-              <Rss className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+              <Rss className="h-12 w-12 animate-ping text-blue-600 mx-auto mb-4" />
               <p className="text-lg text-muted-foreground">
                 {t("common.loading")}
               </p>
@@ -96,17 +82,10 @@ export function FeedPage() {
     );
   }
 
-  // Error state
-  if (error) {
+if (error) {
     return (
       <div className="flex flex-col min-h-screen relative">
-        {/* Background animated patterns */}
-        <div className="absolute inset-0 overflow-hidden -z-10">
-          <div
-            className="absolute top-1/4 right-1/3 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-pulse"
-            style={{ animationDuration: "10s" }}
-          ></div>
-        </div>
+        <AnimatedPageBackground />
         <div className="container relative z-10">
           <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
             <div className="text-destructive text-4xl font-bold mb-4">⚠️</div>
@@ -127,67 +106,18 @@ export function FeedPage() {
     );
   }
 
-  // Empty state - no feeds
-  if (!feeds || feeds.length === 0) {
+if (!feeds || feeds.length === 0) {
     return (
-      // <div className="flex flex-col min-h-screen relative">
-      //   {/* Background animated patterns */}
-      //   <div className="absolute inset-0 overflow-hidden -z-10">
-      //     <div
-      //       className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
-      //       style={{ animationDuration: "10s" }}
-      //     ></div>
-      //   </div>
-      //   <div className="container relative z-10">
-      //     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
-      //       <Rss className="h-16 w-16 text-muted-foreground mb-4" />
-      //       <h2 className="text-2xl font-bold mb-2">
-      //         {t("emptyState.defaultTitle")}
-      //       </h2>
-      //       <p className="text-muted-foreground mb-6 max-w-md">
-      //         {t("emptyState.defaultDescription")}
-      //       </p>
-      //       {/* <Button
-      //         asChild
-      //         className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
-      //       >
-      //         <a href="/">{t("emptyState.addFirstFeed")}</a>
-      //       </Button> */}
-      //     </div>
-      //   </div>
-      // </div>
       <EmptyState
         title={t("emptyState.defaultTitle")}
-        description={t("emptyState.defaultDescription")}  
+        description={t("emptyState.defaultDescription")}
       />
     );
   }
 
   return (
     <div className="flex flex-col min-h-screen relative">
-      {/* Background animated patterns */}
-      <div className="absolute inset-0 overflow-hidden -z-10">
-        <div
-          className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "10s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "12s" }}
-        ></div>
-        <div
-          className="absolute top-1/2 left-2/3 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "14s" }}
-        ></div>
-        <div
-          className="absolute top-1/3 left-1/4 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "16s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "18s" }}
-        ></div>
-      </div>
+      <AnimatedPageBackground />
 
       <div className="container relative z-10">
         {/* Header */}

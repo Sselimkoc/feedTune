@@ -227,6 +227,12 @@ export function useFeedService() {
         const err = await response.json();
         throw new Error(err.error || "Failed to add interaction");
       }
+      if (type === "is_favorite") {
+        queryClient.refetchQueries({ queryKey: ["favorites", user.id], exact: true });
+      }
+      if (type === "is_read_later") {
+        queryClient.refetchQueries({ queryKey: ["read_later", user.id], exact: true });
+      }
       toast({ title: t("common.success"), description: t("interactions.addSuccess") });
     } catch {
       applyOptimisticInteraction(itemId, type, false);
@@ -247,10 +253,36 @@ export function useFeedService() {
         const err = await response.json();
         throw new Error(err.error || "Failed to remove interaction");
       }
+      if (type === "is_favorite") {
+        queryClient.refetchQueries({ queryKey: ["favorites", user.id], exact: true });
+      }
+      if (type === "is_read_later") {
+        queryClient.refetchQueries({ queryKey: ["read_later", user.id], exact: true });
+      }
       toast({ title: t("common.success"), description: t("interactions.removeSuccess") });
     } catch {
       applyOptimisticInteraction(itemId, type, true);
       toast({ title: t("common.error"), description: t("interactions.removeError"), variant: "destructive" });
+    }
+  };
+
+  const toggleFavorite = async (video) => {
+    if (!video) return;
+    const itemType = video.type || (video.feed_type || "").toLowerCase() || "rss";
+    if (video.is_favorite) {
+      await removeInteraction(video.id, "is_favorite", itemType);
+    } else {
+      await addInteraction(video.id, "is_favorite", itemType);
+    }
+  };
+
+  const toggleReadLater = async (video) => {
+    if (!video) return;
+    const itemType = video.type || (video.feed_type || "").toLowerCase() || "rss";
+    if (video.is_read_later) {
+      await removeInteraction(video.id, "is_read_later", itemType);
+    } else {
+      await addInteraction(video.id, "is_read_later", itemType);
     }
   };
 
@@ -384,6 +416,8 @@ export function useFeedService() {
     isEditingFeed: editFeedMutation.isPending,
     addInteraction,
     removeInteraction,
+    toggleFavorite,
+    toggleReadLater,
     refreshAllFeeds,
     syncFeed,
     fetchNewFeedData,

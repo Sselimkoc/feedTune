@@ -69,15 +69,16 @@ export function ProfileSettings() {
     }
 
     try {
-      const { success } = await updateProfile(updates);
+      const { success, error: updateError } = await updateProfile(updates);
 
       if (success) {
-        toast({
-          title: t("common.success"),
-          description: t("auth.profileUpdated"),
-          variant: "default",
-        });
         setFormData((prev) => ({ ...prev, password: "", confirmPassword: "" }));
+      } else if (updateError) {
+        toast({
+          title: t("common.error"),
+          description: updateError || t("errors.general"),
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
@@ -136,7 +137,7 @@ export function ProfileSettings() {
     }
   }, [userId, router, signOutAction, toast, t]);
 
-  if (isLoadingAuth || isLoading) {
+  if (isLoadingAuth && !user) {
     return (
       <div className="flex items-center justify-center h-40">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
