@@ -1,145 +1,112 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/core/ui/card";
+"use client";
+
+import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/core/ui/button";
-import {
-  Activity,
-  Rss,
-  Youtube,
-  Calendar,
-  ArrowRight,
-  ExternalLink,
-  Zap,
-} from "lucide-react";
+import { Rss, Youtube, Zap, ArrowRight, ExternalLink } from "lucide-react";
+
+function timeAgo(date, t) {
+  const s = Math.floor((Date.now() - new Date(date)) / 1000);
+  if (s < 60) return t("home.recentContent.timeAgo.justNow");
+  if (s < 3600) return t("home.recentContent.timeAgo.minutesAgo", { count: Math.floor(s / 60) });
+  if (s < 86400) return t("home.recentContent.timeAgo.hoursAgo", { count: Math.floor(s / 3600) });
+  return t("home.recentContent.timeAgo.daysAgo", { count: Math.floor(s / 86400) });
+}
 
 export function DashboardActivity({ recentItems, onViewAll }) {
-  const getTimeAgo = (date) => {
-    const now = new Date();
-    const published = new Date(date);
-    const seconds = Math.floor((now - published) / 1000);
-
-    if (seconds < 60) return "Just now";
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    return `${Math.floor(seconds / 86400)}d ago`;
-  };
+  const { t } = useTranslation();
 
   return (
-    <Card className="bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <div>Recent Activity</div>
-              <div className="text-xs font-normal text-gray-500 dark:text-gray-400 mt-1">
-                Latest from your feeds
-              </div>
-            </div>
-          </span>
+    <div className="bg-white dark:bg-[#181C2A] border border-gray-200 dark:border-blue-900/40 rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-blue-900/40 bg-gray-50 dark:bg-[#151c29]/60">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded-lg bg-indigo-500/10">
+            <Zap className="h-3.5 w-3.5 text-indigo-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              {t("home.dashboard.recentActivity")}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {t("home.dashboard.latestFromFeeds")}
+            </p>
+          </div>
+        </div>
+        {recentItems.length > 0 && (
           <Button
             variant="ghost"
             size="sm"
             onClick={onViewAll}
-            className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground hover:bg-blue-500/10 border border-transparent hover:border-blue-200 dark:hover:border-blue-900/60"
           >
-            View All
-            <ArrowRight className="h-4 w-4 ml-1" />
+            {t("home.dashboard.viewAll")}
+            <ArrowRight className="h-3 w-3 ml-1" />
           </Button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="min-h-96">
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="p-2">
         {recentItems.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-5xl mb-4">🔍</div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No recent activity
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              Your recent feed activity will appear here
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-blue-200 dark:border-blue-900/40 flex items-center justify-center mb-4">
+              <Zap className="h-6 w-6 text-indigo-400/60" />
+            </div>
+            <p className="text-sm font-semibold text-foreground mb-1">
+              {t("home.dashboard.noActivity.title")}
+            </p>
+            <p className="text-xs text-muted-foreground max-w-[200px]">
+              {t("home.dashboard.noActivity.description")}
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {recentItems.map((item, index) => (
-              <div
+          <div className="space-y-px">
+            {recentItems.map((item, i) => (
+              <motion.div
                 key={item.id}
-                className="group relative flex items-start gap-3 p-4 rounded-lg bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-700/30 dark:to-transparent hover:from-blue-50 dark:hover:from-blue-700/20 transition-all duration-200 border border-gray-100 dark:border-gray-700/50"
+                initial={{ opacity: 0, x: 6 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.04, duration: 0.25 }}
+                onClick={() => window.open(item.url || item.link, "_blank")}
+                className="group flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-colors duration-150 cursor-pointer"
               >
-                {/* Timeline indicator */}
-                <div className="flex-shrink-0 flex flex-col items-center">
-                  <div
-                    className={`w-3 h-3 rounded-full border-2 ${
-                      index === 0
-                        ? "bg-green-500 border-green-300 dark:border-green-400"
-                        : "bg-gray-300 dark:bg-gray-600 border-gray-200 dark:border-gray-500"
-                    } transition-all group-hover:scale-125`}
-                  />
-                  {index < recentItems.length - 1 && (
-                    <div className="w-0.5 h-12 bg-gradient-to-b from-gray-300 to-transparent dark:from-gray-600 dark:to-transparent mt-2" />
+                <div
+                  className={`flex-shrink-0 mt-0.5 w-7 h-7 rounded-md flex items-center justify-center ${
+                    item.type === "youtube" ? "bg-red-500/10" : "bg-blue-500/10"
+                  }`}
+                >
+                  {item.type === "youtube" ? (
+                    <Youtube className="h-3.5 w-3.5 text-red-400" />
+                  ) : (
+                    <Rss className="h-3.5 w-3.5 text-blue-400" />
                   )}
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0 pt-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 leading-snug">
-                        {item.title}
-                      </h4>
-                      <div className="flex items-center gap-3 mt-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 px-2 py-1 rounded-full border border-gray-200 dark:border-gray-700">
-                          {item.type === "youtube" ? (
-                            <>
-                              <Youtube className="h-3 w-3 text-red-500" />
-                              <span>YouTube</span>
-                            </>
-                          ) : (
-                            <>
-                              <Rss className="h-3 w-3 text-blue-500" />
-                              <span>RSS</span>
-                            </>
-                          )}
-                        </span>
-                        {item.feed?.title && (
-                          <span className="inline-flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full border border-green-200 dark:border-green-700/50">
-                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                            <span className="truncate max-w-[120px]">
-                              {item.feed.title}
-                            </span>
-                          </span>
-                        )}
-                        {item.published_at && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {getTimeAgo(item.published_at)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                      onClick={() =>
-                        window.open(item.url || item.link, "_blank")
-                      }
-                      title="Open in new tab"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-300 line-clamp-2 leading-snug transition-colors duration-150">
+                    {item.title}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    {item.feed?.title && (
+                      <span className="text-[10px] font-medium text-blue-600/70 dark:text-blue-400/70 truncate max-w-[130px]">
+                        {item.feed.title}
+                      </span>
+                    )}
+                    {item.published_at && (
+                      <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                        · {timeAgo(item.published_at, t)}
+                      </span>
+                    )}
                   </div>
                 </div>
-              </div>
+
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0 mt-0.5 transition-opacity" />
+              </motion.div>
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

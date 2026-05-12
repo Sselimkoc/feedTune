@@ -191,6 +191,35 @@
       "addFirstFeed": "İlk Beslemeyi Ekle",
       "viewAllFeeds": "Tüm Beslemeleri Gör"
     },
+    "dashboard": {
+      "greeting": {
+        "morning": "Günaydın",
+        "afternoon": "İyi Günler",
+        "evening": "İyi Akşamlar"
+      },
+      "subtitle": "Bugün beslemelerinizde neler oluyor.",
+      "syncAll": "Tümünü Senkronize Et",
+      "add": "Ekle",
+      "viewAll": "Tümünü Gör",
+      "yourFeeds": "Beslemeleriniz",
+      "subscribed": "{{count}} abone",
+      "recentActivity": "Son Aktiviteler",
+      "latestFromFeeds": "Beslemelerden son içerikler",
+      "deleteConfirm": "Bu beslemeyi silmek istediğinizden emin misiniz?",
+      "noFeeds": {
+        "description": "Başlamak için RSS beslemeleri veya YouTube kanalları ekleyin"
+      },
+      "noActivity": {
+        "title": "Henüz aktivite yok",
+        "description": "Buradaki içerikleri görmek için beslemelerinizi senkronize edin"
+      },
+      "stats": {
+        "rssYoutube": "{{rss}} RSS · {{yt}} YouTube",
+        "allContent": "Tüm içerik",
+        "savedItems": "Kaydedilen öğeler",
+        "toRead": "Okunacaklar"
+      }
+    },
     "recentContent": {
       "title": "Son İçerikler",
       "description": "Beslemelerinizden en son içerikler.",

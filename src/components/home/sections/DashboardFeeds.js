@@ -1,127 +1,140 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/core/ui/card";
+"use client";
+
+import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/core/ui/button";
-import { Badge } from "@/components/core/ui/badge";
-import {
-  Rss,
-  Youtube,
-  ArrowRight,
-  Plus,
-  Trash2,
-  Clock,
-  FileText,
-} from "lucide-react";
+import { Rss, Youtube, Plus, Trash2, Clock, ArrowRight } from "lucide-react";
 
 export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
-  // Group feeds by type
-  const groupedFeeds = feeds.reduce((acc, feed) => {
-    if (!acc[feed.type]) acc[feed.type] = [];
-    acc[feed.type].push(feed);
-    return acc;
-  }, {});
-
-  // Show max 6 feeds, rest will be in scrollable area
-  const displayFeeds = feeds.slice(0, 6);
+  const { t } = useTranslation();
+  const displayFeeds = feeds.slice(0, 7);
 
   return (
-    <Card className="bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <Rss className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <div>Your Feeds</div>
-              <div className="text-xs font-normal text-gray-500 dark:text-gray-400 mt-1">
-                {feeds.length} total feeds
-              </div>
-            </div>
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="min-h-96">
+    <div className="bg-white dark:bg-[#181C2A] border border-gray-200 dark:border-blue-900/40 rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-blue-900/40 bg-gray-50 dark:bg-[#151c29]/60">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded-lg bg-blue-500/10">
+            <Rss className="h-3.5 w-3.5 text-blue-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              {t("home.dashboard.yourFeeds")}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {t("home.dashboard.subscribed", { count: feeds.length })}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onAddFeed}
+            className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground hover:bg-blue-500/10 border border-transparent hover:border-blue-200 dark:hover:border-blue-900/60"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            {t("home.dashboard.add")}
+          </Button>
+          {feeds.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onViewAll}
+              className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground hover:bg-blue-500/10 border border-transparent hover:border-blue-200 dark:hover:border-blue-900/60"
+            >
+              {t("home.dashboard.viewAll")}
+              <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="p-2">
         {feeds.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-5xl mb-4">📭</div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No feeds yet
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              Add your first feed to get started with curated content
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-200 dark:border-blue-900/40 flex items-center justify-center mb-4">
+              <Rss className="h-6 w-6 text-blue-400/60" />
+            </div>
+            <p className="text-sm font-semibold text-foreground mb-1">
+              {t("home.feedManagement.noFeedsTitle")}
+            </p>
+            <p className="text-xs text-muted-foreground mb-5 max-w-[200px]">
+              {t("home.dashboard.noFeeds.description")}
             </p>
             <Button
               onClick={onAddFeed}
-              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
+              size="sm"
+              className="h-8 bg-blue-600 hover:bg-blue-500 text-white border-0 shadow-lg shadow-blue-600/30 text-xs"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Feed
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              {t("home.feedManagement.addFirstFeed")}
             </Button>
           </div>
         ) : (
-          <div className="h-[470px] overflow-y-auto">
-            <div className="space-y-3 pr-2">
-              {displayFeeds.map((feed) => (
+          <div className="space-y-px">
+            {displayFeeds.map((feed, i) => (
+              <motion.div
+                key={feed.id}
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.04, duration: 0.25 }}
+                className="group flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-colors duration-150 cursor-default"
+              >
                 <div
-                  key={feed.id}
-                  className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-700/30 dark:to-transparent hover:from-gray-100 dark:hover:from-gray-700/50 transition-all duration-200 group border border-gray-100 dark:border-gray-700/50"
+                  className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                    feed.type === "youtube" ? "bg-red-500/10" : "bg-blue-500/10"
+                  }`}
                 >
-                  {/* Feed Type Icon */}
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 flex items-center justify-center border border-blue-200/50 dark:border-blue-400/30">
-                      {feed.type === "youtube" ? (
-                        <Youtube className="h-6 w-6 text-red-500" />
-                      ) : (
-                        <Rss className="h-6 w-6 text-blue-500" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Feed Info */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-gray-900 dark:text-white truncate text-sm">
-                      {feed.title}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <Badge
-                        variant="secondary"
-                        className="text-xs capitalize bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                      >
-                        {feed.type === "youtube" ? "YouTube" : "RSS"}
-                      </Badge>
-                      {feed.last_synced_at && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(feed.last_synced_at).toLocaleDateString(
-                            "en-US",
-                            { month: "short", day: "numeric" }
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Delete Button */}
-                  {onDeleteFeed && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDeleteFeed(feed.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  {feed.type === "youtube" ? (
+                    <Youtube className="h-4 w-4 text-red-400" />
+                  ) : (
+                    <Rss className="h-4 w-4 text-blue-400" />
                   )}
                 </div>
-              ))}
-            </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate leading-tight">
+                    {feed.title}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span
+                      className={`text-[10px] font-semibold uppercase tracking-wide ${
+                        feed.type === "youtube"
+                          ? "text-red-500/70 dark:text-red-400/70"
+                          : "text-blue-600/70 dark:text-blue-400/70"
+                      }`}
+                    >
+                      {feed.type === "youtube" ? "YouTube" : "RSS"}
+                    </span>
+                    {feed.last_synced_at && (
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                        <Clock className="h-2.5 w-2.5" />
+                        {new Date(feed.last_synced_at).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {onDeleteFeed && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDeleteFeed(feed.id)}
+                    className="opacity-0 group-hover:opacity-100 h-7 w-7 p-0 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </motion.div>
+            ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

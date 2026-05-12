@@ -1,77 +1,115 @@
-import { Card, CardContent } from "@/components/core/ui/card";
-import { Rss, Activity, Star, Bookmark } from "lucide-react";
+"use client";
+
+import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import { Rss, FileText, Star, Bookmark } from "lucide-react";
+
+const CARDS = [
+  {
+    key: "totalFeeds",
+    labelKey: "home.stats.totalFeeds",
+    icon: Rss,
+    accent: "border-l-blue-500",
+    iconBg: "bg-blue-500/10",
+    iconColor: "text-blue-400",
+    glowColor: "hover:shadow-blue-500/10",
+    subtitleKey: "home.dashboard.stats.rssYoutube",
+  },
+  {
+    key: "totalItems",
+    labelKey: "home.stats.totalItems",
+    icon: FileText,
+    accent: "border-l-indigo-500",
+    iconBg: "bg-indigo-500/10",
+    iconColor: "text-indigo-400",
+    glowColor: "hover:shadow-indigo-500/10",
+    subtitleKey: "home.dashboard.stats.allContent",
+  },
+  {
+    key: "totalFavorites",
+    labelKey: "feeds.favorites",
+    icon: Star,
+    accent: "border-l-yellow-500",
+    iconBg: "bg-yellow-500/10",
+    iconColor: "text-yellow-400",
+    glowColor: "hover:shadow-yellow-500/10",
+    subtitleKey: "home.dashboard.stats.savedItems",
+  },
+  {
+    key: "totalReadLater",
+    labelKey: "feeds.readLater",
+    icon: Bookmark,
+    accent: "border-l-violet-500",
+    iconBg: "bg-violet-500/10",
+    iconColor: "text-violet-400",
+    glowColor: "hover:shadow-violet-500/10",
+    subtitleKey: "home.dashboard.stats.toRead",
+  },
+];
+
+const container = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+};
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+};
 
 export function DashboardStats({ stats, feeds = [] }) {
-  // Calculate feeds by type
-  const feedsByType = {
-    rss: feeds.filter((f) => f.type === "rss").length,
-    youtube: feeds.filter((f) => f.type === "youtube").length,
+  const { t } = useTranslation();
+
+  const rss = feeds.filter((f) => f.type === "rss").length;
+  const yt = feeds.filter((f) => f.type === "youtube").length;
+
+  const getSubtitle = (card) => {
+    if (card.subtitleKey === "home.dashboard.stats.rssYoutube") {
+      return t(card.subtitleKey, { rss, yt });
+    }
+    return t(card.subtitleKey);
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <StatCard
-        title="Total Feeds"
-        value={stats.totalFeeds}
-        icon={<Rss className="h-6 w-6" />}
-        color="blue"
-        subtitle={`${feedsByType.rss} RSS • ${feedsByType.youtube} YouTube`}
-      />
-      <StatCard
-        title="Total Items"
-        value={stats.totalItems}
-        icon={<Activity className="h-6 w-6" />}
-        color="green"
-        subtitle="All content"
-      />
-      <StatCard
-        title="Favorites"
-        value={stats.totalFavorites}
-        icon={<Star className="h-6 w-6" />}
-        color="blue"
-        subtitle="Saved items"
-      />
-      <StatCard
-        title="Read Later"
-        value={stats.totalReadLater}
-        icon={<Bookmark className="h-6 w-6" />}
-        color="green"
-        subtitle="To read"
-      />
-    </div>
-  );
-}
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="grid grid-cols-2 lg:grid-cols-4 gap-3"
+    >
+      {CARDS.map((card) => {
+        const Icon = card.icon;
+        const value = stats[card.key] ?? 0;
 
-// Stat Card Component
-function StatCard({ title, value = 0, icon, color, subtitle }) {
-  const colorClasses = {
-    blue: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800",
-    green:
-      "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800",
-  };
+        return (
+          <motion.div
+            key={card.key}
+            variants={cardVariant}
+            className={`
+              relative bg-white dark:bg-[#181C2A] border border-gray-200 dark:border-blue-900/40 border-l-2 ${card.accent}
+              rounded-xl p-4 transition-all duration-200
+              hover:border-gray-300 dark:hover:border-blue-900/80 hover:shadow-lg ${card.glowColor}
+              hover:-translate-y-0.5
+            `}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className={`p-2 rounded-lg ${card.iconBg}`}>
+                <Icon className={`h-4 w-4 ${card.iconColor}`} />
+              </div>
+              <span className="text-[11px] font-medium text-muted-foreground">
+                {getSubtitle(card)}
+              </span>
+            </div>
 
-  return (
-    <Card className="bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-300">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-              {title}
+            <p className="text-3xl font-bold text-foreground tabular-nums leading-none mb-1">
+              {value.toLocaleString()}
             </p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {(value || 0).toLocaleString()}
+            <p className="text-xs text-muted-foreground font-medium">
+              {t(card.labelKey)}
             </p>
-            {subtitle && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {subtitle}
-              </p>
-            )}
-          </div>
-          <div className={`p-3 rounded-lg ${colorClasses[color]} border`}>
-            {icon}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          </motion.div>
+        );
+      })}
+    </motion.div>
   );
 }

@@ -191,6 +191,35 @@
       "addFirstFeed": "Add First Feed",
       "viewAllFeeds": "View All Feeds"
     },
+    "dashboard": {
+      "greeting": {
+        "morning": "Good Morning",
+        "afternoon": "Good Afternoon",
+        "evening": "Good Evening"
+      },
+      "subtitle": "Here's what's happening with your feeds today.",
+      "syncAll": "Sync All",
+      "add": "Add",
+      "viewAll": "View All",
+      "yourFeeds": "Your Feeds",
+      "subscribed": "{{count}} subscribed",
+      "recentActivity": "Recent Activity",
+      "latestFromFeeds": "Latest from your feeds",
+      "deleteConfirm": "Are you sure you want to delete this feed?",
+      "noFeeds": {
+        "description": "Add RSS feeds or YouTube channels to get started"
+      },
+      "noActivity": {
+        "title": "No activity yet",
+        "description": "Sync your feeds to see the latest items here"
+      },
+      "stats": {
+        "rssYoutube": "{{rss}} RSS · {{yt}} YouTube",
+        "allContent": "All content",
+        "savedItems": "Saved items",
+        "toRead": "To read"
+      }
+    },
     "recentContent": {
       "title": "Recent Content",
       "description": "Latest items from your feeds.",
