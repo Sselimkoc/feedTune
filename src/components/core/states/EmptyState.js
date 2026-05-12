@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/core/ui/button";
 import { useTheme } from "@/hooks/useTheme";
 import { motion } from "framer-motion";
@@ -78,6 +78,15 @@ export function EmptyState({
 }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   // Feed variant için özel render
   if (variant === "feed") {

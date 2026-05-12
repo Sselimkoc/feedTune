@@ -8,6 +8,7 @@ import { FavoriteDetailCard } from "./FavoriteDetailCard";
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { toast } from "@/components/core/ui/use-toast";
 import { useCallback } from "react";
+import { EmptyState } from "@/components/core/states/EmptyState";
 
 export function FavoritesContent() {
   const { t } = useTranslation();
@@ -83,26 +84,32 @@ export function FavoritesContent() {
 
   if (!items || items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 text-center">
-        <img
-          src="/images/placeholder.webp"
-          alt="Empty"
-          className="w-32 h-32 opacity-60 mb-4"
-        />
-        <span className="text-lg font-semibold mb-2">
-          {t("favorites.emptyTitle")}
-        </span>
-        <span className="text-muted-foreground mb-4">
-          {t("favorites.emptyDescription")}
-        </span>
-        <Button
-          variant="outline"
-          className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
-          asChild
-        >
-          <Link href="/feeds">{t("favorites.emptyButton")}</Link>
-        </Button>
-      </div>
+      // <div className="flex flex-col items-center justify-center h-96 text-center">
+      //   <img
+      //     src="/images/placeholder.webp"
+      //     alt="Empty"
+      //     className="w-32 h-32 opacity-60 mb-4"
+      //   />
+      //   <span className="text-lg font-semibold mb-2">
+      //     {t("favorites.emptyTitle")}
+      //   </span>
+      //   <span className="text-muted-foreground mb-4">
+      //     {t("favorites.emptyDescription")}
+      //   </span>
+      //   <Button
+      //     variant="outline"
+      //     className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
+      //     asChild
+      //   >
+      //     <Link href="/feeds">{t("favorites.emptyButton")}</Link>
+      //   </Button>
+      // </div>
+      <EmptyState
+        title={t("favorites.emptyTitle")}
+        description={t("favorites.emptyDescription")}
+        buttonText={t("favorites.emptyButton")}
+        buttonLink="/feeds"
+      />
     );
   }
 

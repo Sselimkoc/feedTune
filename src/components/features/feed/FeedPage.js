@@ -7,16 +7,11 @@ import { Rss } from "lucide-react";
 import { Button } from "@/components/core/ui/button";
 import { useTranslation } from "react-i18next";
 import VideoCard from "./layout/VideoCard";
+import { EmptyState } from "@/components/core/states/EmptyState";
 
 export function FeedPage() {
-  const {
-    feeds,
-    items,
-    isLoading,
-    error,
-    addInteraction,
-    removeInteraction,
-  } = useFeedService();
+  const { feeds, items, isLoading, error, addInteraction, removeInteraction } =
+    useFeedService();
 
   const [selectedFeedIds, setSelectedFeedIds] = useState([]);
   const { t } = useTranslation();
@@ -26,7 +21,7 @@ export function FeedPage() {
     setSelectedFeedIds((prev) =>
       prev.includes(feedId)
         ? prev.filter((id) => id !== feedId)
-        : [...prev, feedId]
+        : [...prev, feedId],
     );
     window.scrollTo({ top: 0, behavior: "instant" });
   };
@@ -91,7 +86,9 @@ export function FeedPage() {
           <div className="flex items-center justify-center min-h-[70vh]">
             <div className="text-center">
               <Rss className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-              <p className="text-lg text-muted-foreground">{t("common.loading")}</p>
+              <p className="text-lg text-muted-foreground">
+                {t("common.loading")}
+              </p>
             </div>
           </div>
         </div>
@@ -133,30 +130,36 @@ export function FeedPage() {
   // Empty state - no feeds
   if (!feeds || feeds.length === 0) {
     return (
-      <div className="flex flex-col min-h-screen relative">
-        {/* Background animated patterns */}
-        <div className="absolute inset-0 overflow-hidden -z-10">
-          <div
-            className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
-            style={{ animationDuration: "10s" }}
-          ></div>
-        </div>
-        <div className="container relative z-10">
-          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
-            <Rss className="h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-2xl font-bold mb-2">{t("feeds.emptyTitle")}</h2>
-            <p className="text-muted-foreground mb-6 max-w-md">
-              {t("feeds.emptyDescription")}
-            </p>
-            <Button
-              asChild
-              className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
-            >
-              <a href="/settings">{t("feeds.addFirstFeed")}</a>
-            </Button>
-          </div>
-        </div>
-      </div>
+      // <div className="flex flex-col min-h-screen relative">
+      //   {/* Background animated patterns */}
+      //   <div className="absolute inset-0 overflow-hidden -z-10">
+      //     <div
+      //       className="absolute top-1/4 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+      //       style={{ animationDuration: "10s" }}
+      //     ></div>
+      //   </div>
+      //   <div className="container relative z-10">
+      //     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
+      //       <Rss className="h-16 w-16 text-muted-foreground mb-4" />
+      //       <h2 className="text-2xl font-bold mb-2">
+      //         {t("emptyState.defaultTitle")}
+      //       </h2>
+      //       <p className="text-muted-foreground mb-6 max-w-md">
+      //         {t("emptyState.defaultDescription")}
+      //       </p>
+      //       {/* <Button
+      //         asChild
+      //         className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
+      //       >
+      //         <a href="/">{t("emptyState.addFirstFeed")}</a>
+      //       </Button> */}
+      //     </div>
+      //   </div>
+      // </div>
+      <EmptyState
+        title={t("emptyState.defaultTitle")}
+        description={t("emptyState.defaultDescription")}  
+      />
     );
   }
 
@@ -215,7 +218,7 @@ export function FeedPage() {
               "flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium whitespace-nowrap",
               selectedFeedIds.length === 0
                 ? "bg-blue-600 text-white shadow"
-                : "bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-blue-100"
+                : "bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-blue-100",
             )}
           >
             <span className="font-bold">{t("feeds.allFeeds")}</span>
@@ -228,7 +231,7 @@ export function FeedPage() {
                 "flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium whitespace-nowrap",
                 selectedFeedIds.includes(feed.id)
                   ? "bg-blue-600 text-white shadow"
-                  : "bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-blue-100"
+                  : "bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-blue-100",
               )}
             >
               {feed.icon ? (
@@ -246,7 +249,7 @@ export function FeedPage() {
                       feed.title?.charAt(0)?.toUpperCase() || "F";
                     e.currentTarget.parentElement.insertBefore(
                       div,
-                      e.currentTarget
+                      e.currentTarget,
                     );
                   }}
                 />
@@ -266,7 +269,9 @@ export function FeedPage() {
             {itemsWithFeedTitle.length === 0 ? (
               <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
                 <div className="text-muted-foreground text-4xl mb-4">📭</div>
-                <h3 className="text-xl font-semibold mb-2">{t("feeds.noItemsInSelection")}</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  {t("feeds.noItemsInSelection")}
+                </h3>
                 <p className="text-muted-foreground mb-4">
                   {t("feeds.noItemsInSelectionDescription")}
                 </p>

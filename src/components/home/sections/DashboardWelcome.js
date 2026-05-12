@@ -40,7 +40,15 @@ export function DashboardWelcome({ user, onAddFeed, onRefresh }) {
         </p>
       </div>
 
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row items-center gap-2 flex-shrink-0" >
+        <Button
+          onClick={onAddFeed}
+          size="sm"
+          className="h-10 px-4 bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-lg shadow-primary/30 text-xs font-medium"
+        >
+          <Plus className="h-3.5 w-3.5 mr-1.5" />
+          {t("feeds.add")}
+        </Button>
         <Button
           onClick={onRefresh}
           variant="ghost"
@@ -49,14 +57,6 @@ export function DashboardWelcome({ user, onAddFeed, onRefresh }) {
         >
           <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
           {t("home.dashboard.syncAll")}
-        </Button>
-        <Button
-          onClick={onAddFeed}
-          size="sm"
-          className="h-10 px-4 bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-lg shadow-primary/30 text-xs font-medium"
-        >
-          <Plus className="h-3.5 w-3.5 mr-1.5" />
-          {t("feeds.add")}
         </Button>
       </div>
     </motion.div>

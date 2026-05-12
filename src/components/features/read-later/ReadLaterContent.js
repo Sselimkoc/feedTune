@@ -8,6 +8,8 @@ import { FavoriteDetailCard } from "../favorites/FavoriteDetailCard";
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { toast } from "@/components/core/ui/use-toast";
 import { useCallback } from "react";
+import { LoadingState } from "@/components/core/states/LoadingState";
+import { EmptyState } from "@/components/core/states/EmptyState";
 
 export function ReadLaterContent() {
   const { t } = useTranslation();
@@ -64,11 +66,12 @@ export function ReadLaterContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <span className="animate-pulse text-lg text-muted-foreground">
-          {t("common.loading")}
-        </span>
-      </div>
+      // <div className="flex items-center justify-center h-96">
+      //   <span className="animate-pulse text-lg text-muted-foreground">
+      //     {t("common.loading")}
+      //   </span>
+      // </div>
+      <LoadingState message={t("common.loading")} />
     );
   }
 
@@ -94,26 +97,32 @@ export function ReadLaterContent() {
 
   if (!items || items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 text-center">
-        <img
-          src="/images/placeholder.webp"
-          alt="Empty"
-          className="w-32 h-32 opacity-60 mb-4"
-        />
-        <span className="text-lg font-semibold mb-2">
-          {t("readLater.emptyTitle")}
-        </span>
-        <span className="text-muted-foreground mb-4">
-          {t("readLater.emptyDescription")}
-        </span>
-        <Button
-          variant="outline"
-          className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
-          asChild
-        >
-          <Link href="/feeds">{t("readLater.emptyButton")}</Link>
-        </Button>
-      </div>
+      // <div className="flex flex-col items-center justify-center h-96 text-center">
+      //   <img
+      //     src="/images/placeholder.webp"
+      //     alt="Empty"
+      //     className="w-32 h-32 opacity-60 mb-4"
+      //   />
+      //   <span className="text-lg font-semibold mb-2">
+      //     {t("readLater.emptyTitle")}
+      //   </span>
+      //   <span className="text-muted-foreground mb-4">
+      //     {t("readLater.emptyDescription")}
+      //   </span>
+      //   <Button
+      //     variant="outline"
+      //     className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
+      //     asChild
+      //   >
+      //     <Link href="/feeds">{t("readLater.emptyButton")}</Link>
+      //   </Button>
+      // </div>
+      <EmptyState 
+        title={t("readLater.emptyTitle")}
+        description={t("readLater.emptyDescription")}
+        buttonText={t("readLater.emptyButton")}
+        buttonLink="/feeds"
+      />
     );
   }
 

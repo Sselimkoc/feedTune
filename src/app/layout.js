@@ -60,7 +60,7 @@ export default function RootLayout({ children }) {
               </div>
 
               <AppLayout>
-                <div className="glass rounded-xl p-6 min-h-[calc(100vh-2rem)]">
+                <div className="glass rounded-xl p-6 ">
                   {children}
                 </div>
               </AppLayout>

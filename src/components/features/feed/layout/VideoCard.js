@@ -1,5 +1,6 @@
 import React from "react";
 import { Heart, Bookmark } from "lucide-react";
+import { t } from "i18next";
 
 const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
   if (!video) return null;
@@ -42,11 +43,11 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
       {/* Video Content */}
       <div className="p-4 flex flex-col flex-grow">
         <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white leading-tight line-clamp-2">
-          {video.title || "Başlıksız Video"}
+          {video.title || t("feeds.noTitle")}
         </h3>
 
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 flex-grow line-clamp-3">
-          {video.description || "Bu video için açıklama bulunmamaktadır."}
+          {video.description || t("feeds.noDescription")}
         </p>
 
         {/* Bottom Layout - Channel Info and Actions */}
