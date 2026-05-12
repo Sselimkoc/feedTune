@@ -71,16 +71,22 @@ export function useCleanupService() {
 
   const getLastCleanupResult = useCallback(() => lastCleanupResult, [lastCleanupResult]);
 
-  const canRunCleanup = useCallback(
-    () => !!user && (process.env.NODE_ENV === "development" || user.role === "admin"),
-    [user]
-  );
+  const getCleanupStats = useCallback(async (olderThanDays = 30) => {
+    const params = new URLSearchParams({ olderThanDays: olderThanDays.toString() });
+    const response = await fetch(`/api/cleanup?${params}`);
+    if (!response.ok) throw new Error(`Failed to get cleanup stats: ${response.statusText}`);
+    const result = await response.json();
+    return result.details;
+  }, []);
+
+  const canRunCleanup = useCallback(() => !!user, [user]);
 
   return {
     isLoading,
     lastCleanupResult,
     runCleanup,
     previewCleanup,
+    getCleanupStats,
     getLastCleanupResult,
     canRunCleanup,
     user,
