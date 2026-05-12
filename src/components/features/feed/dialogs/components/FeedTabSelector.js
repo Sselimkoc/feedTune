@@ -1,4 +1,5 @@
-import { Youtube, Rss } from "lucide-react";
+import { Rss } from "lucide-react";
+import { YouTubeIcon } from "@/components/core/icons/YouTubeIcon";
 import { Tabs, TabsList, TabsTrigger } from "@/components/core/ui/tabs";
 import { useTranslation } from "react-i18next";
 
@@ -12,7 +13,7 @@ export function FeedTabSelector({ activeTab, onTabChange }) {
           value="youtube"
           className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-md transition-all font-medium text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-foreground"
         >
-          <Youtube className="h-4 w-4 md:h-5 md:w-5" />
+          <YouTubeIcon className="h-4 w-4 md:h-5 md:w-5" />
           <span className="hidden sm:inline">YouTube</span>
         </TabsTrigger>
         <TabsTrigger

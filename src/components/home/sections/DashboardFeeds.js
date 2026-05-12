@@ -3,14 +3,15 @@
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/core/ui/button";
-import { Rss, Youtube, Plus, Trash2, Clock, ArrowRight } from "lucide-react";
+import { Rss, Plus, Trash2, Clock, ArrowRight } from "lucide-react";
+import { YouTubeIcon } from "@/components/core/icons/YouTubeIcon";
 
 export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
   const { t } = useTranslation();
   const displayFeeds = feeds.slice(0, 7);
 
   return (
-    <div className="bg-white dark:bg-[#181C2A] border border-gray-200 dark:border-blue-900/40 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#181C2A] border border-gray-200 dark:border-blue-900/40 rounded-xl overflow-hidden flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-blue-900/40 bg-gray-50 dark:bg-[#151c29]/60">
         <div className="flex items-center gap-2.5">
@@ -88,7 +89,7 @@ export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
                   }`}
                 >
                   {feed.type === "youtube" ? (
-                    <Youtube className="h-4 w-4 text-red-400" />
+                    <YouTubeIcon className="h-4 w-4 text-red-400" />
                   ) : (
                     <Rss className="h-4 w-4 text-blue-400" />
                   )}

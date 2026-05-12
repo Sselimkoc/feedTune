@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Server, Youtube } from "lucide-react";
+import { Server } from "lucide-react";
+import { YouTubeIcon } from "@/components/core/icons/YouTubeIcon";
 import { Button } from "@/components/core/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
@@ -94,7 +95,7 @@ export function SyncButton({
               disabled={isLoading || !feedId}
             >
               {isYoutube ? (
-                <Youtube
+                <YouTubeIcon
                   className={cn("h-4 w-4", isLoading && "animate-pulse")}
                 />
               ) : (

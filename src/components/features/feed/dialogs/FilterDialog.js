@@ -32,7 +32,8 @@ import { motion } from "framer-motion";
 import { ArrowDownAZ, ArrowUpAZ, Filter, RefreshCw, Star } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/core/ui/radio-group";
 import { Label as UILabel } from "@/components/core/ui/label";
-import { Rss, Youtube } from "lucide-react";
+import { Rss } from "lucide-react";
+import { YouTubeIcon } from "@/components/core/icons/YouTubeIcon";
 
 export function FilterDialog({
   open,
@@ -185,7 +186,7 @@ export function FilterDialog({
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="youtube" id="show-youtube" />
                   <UILabel htmlFor="show-youtube" className="flex items-center">
-                    <Youtube className="mr-1 h-3.5 w-3.5 text-red-500" />
+                    <YouTubeIcon className="mr-1 h-3.5 w-3.5 text-red-500" />
                     <span>YouTube</span>
                   </UILabel>
                 </div>

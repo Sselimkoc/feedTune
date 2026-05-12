@@ -10,7 +10,8 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { Badge } from "@/components/core/ui/badge";
 import { toast } from "@/components/core/ui/use-toast";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { Newspaper, RssIcon, Youtube } from "lucide-react";
+import { Newspaper, RssIcon } from "lucide-react";
+import { YouTubeIcon } from "@/components/core/icons/YouTubeIcon";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /**
@@ -99,7 +100,7 @@ export function FeedScreen() {
 
     switch (selectedFeed.type) {
       case "youtube":
-        return <Youtube className="text-red-500" />;
+        return <YouTubeIcon className="text-red-500" />;
       case "rss":
         return <RssIcon className="text-blue-500" />;
       default:

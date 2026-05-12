@@ -30,7 +30,7 @@ export default function DashboardContent() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen relative">
+    <div className="relative flex flex-col h-[calc(100vh-11rem)]">
       {/* Animated background blobs — matches app-wide pattern */}
       <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
         <div
@@ -47,7 +47,7 @@ export default function DashboardContent() {
         />
       </div>
 
-      <div className="container relative z-10 mx-auto px-4 py-6 max-w-6xl space-y-5">
+      <div className="relative z-10 flex flex-col flex-1 min-h-0 mx-auto w-full px-4 pt-4 max-w-6xl gap-4">
         <DashboardWelcome
           user={user}
           onAddFeed={() => setIsDialogOpen(true)}
@@ -56,7 +56,7 @@ export default function DashboardContent() {
 
         {/* <DashboardStats stats={stats} feeds={feedsQuery.data || []} /> */}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
           <DashboardFeeds
             feeds={feedsQuery.data || []}
             onAddFeed={() => setIsDialogOpen(true)}

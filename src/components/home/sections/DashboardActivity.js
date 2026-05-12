@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/core/ui/button";
-import { Rss, Youtube, Zap, ArrowRight, ExternalLink } from "lucide-react";
+import { Rss, Zap, ArrowRight, ExternalLink } from "lucide-react";
+import { YouTubeIcon } from "@/components/core/icons/YouTubeIcon";
 
 function timeAgo(date, t) {
   const s = Math.floor((Date.now() - new Date(date)) / 1000);
@@ -17,7 +18,7 @@ export function DashboardActivity({ recentItems, onViewAll }) {
   const { t } = useTranslation();
 
   return (
-    <div className="bg-white dark:bg-[#181C2A] border border-gray-200 dark:border-blue-900/40 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#181C2A] border border-gray-200 dark:border-blue-900/40 rounded-xl overflow-hidden flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-blue-900/40 bg-gray-50 dark:bg-[#151c29]/60">
         <div className="flex items-center gap-2.5">
@@ -77,7 +78,7 @@ export function DashboardActivity({ recentItems, onViewAll }) {
                   }`}
                 >
                   {item.type === "youtube" ? (
-                    <Youtube className="h-3.5 w-3.5 text-red-400" />
+                    <YouTubeIcon className="h-3.5 w-3.5 text-red-400" />
                   ) : (
                     <Rss className="h-3.5 w-3.5 text-blue-400" />
                   )}
