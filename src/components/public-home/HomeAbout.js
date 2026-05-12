@@ -18,42 +18,42 @@ export function HomeAbout() {
 
   const details = [
     {
-      icon: <BookOpen className="w-6 h-6 text-primary" />,
+      icon: <BookOpen className="w-6 h-6 text-blue-500" />,
       title: t("home.about.reading.title"),
       description: t("home.about.reading.description"),
     },
     {
-      icon: <RefreshCw className="w-6 h-6 text-green-500" />,
+      icon: <RefreshCw className="w-6 h-6 text-cyan-500" />,
       title: t("home.about.sync.title"),
       description: t("home.about.sync.description"),
     },
     {
-      icon: <Share2 className="w-6 h-6 text-blue-500" />,
+      icon: <Share2 className="w-6 h-6 text-indigo-500" />,
       title: t("home.about.share.title"),
       description: t("home.about.share.description"),
     },
     {
-      icon: <Smartphone className="w-6 h-6 text-purple-500" />,
+      icon: <Smartphone className="w-6 h-6 text-blue-400" />,
       title: t("home.about.responsive.title"),
       description: t("home.about.responsive.description"),
     },
     {
-      icon: <Moon className="w-6 h-6 text-yellow-500" />,
+      icon: <Moon className="w-6 h-6 text-indigo-400" />,
       title: t("home.about.theme.title"),
       description: t("home.about.theme.description"),
     },
     {
-      icon: <Palette className="w-6 h-6 text-pink-500" />,
+      icon: <Palette className="w-6 h-6 text-cyan-400" />,
       title: t("home.about.ui.title"),
       description: t("home.about.ui.description"),
     },
     {
-      icon: <Globe2 className="w-6 h-6 text-indigo-500" />,
+      icon: <Globe2 className="w-6 h-6 text-blue-600" />,
       title: t("home.about.language.title"),
       description: t("home.about.language.description"),
     },
     {
-      icon: <Shield className="w-6 h-6 text-red-500" />,
+      icon: <Shield className="w-6 h-6 text-indigo-600" />,
       title: t("home.about.security.title"),
       description: t("home.about.security.description"),
     },

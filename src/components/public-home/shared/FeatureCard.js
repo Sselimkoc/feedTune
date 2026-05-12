@@ -12,7 +12,7 @@ export function FeatureCard({ icon, title, description, index }) {
             {icon}
           </div>
           <h3 className="text-lg font-semibold mb-2">{title}</h3>
-          <p className="text-muted-foreground text-sm flex-grow">{description}</p>
+          <p className="text-muted-foreground text-sm flex-grow leading-relaxed">{description}</p>
         </CardContent>
       </Card>
     </AnimatedSection>

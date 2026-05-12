@@ -102,7 +102,7 @@ export function HomeCommunity() {
             <Button
               variant="outline"
               size={isMobile ? "default" : "lg"}
-              className="w-full md:w-auto"
+              className="w-full md:w-auto text-muted-foreground hover:text-foreground"
             >
               <GithubIcon className="w-4 h-4 md:w-5 md:h-5 mr-2" />
               {t("home.community.join.github")}
@@ -110,7 +110,7 @@ export function HomeCommunity() {
             <Button
               variant="outline"
               size={isMobile ? "default" : "lg"}
-              className="w-full md:w-auto"
+              className="w-full md:w-auto text-muted-foreground hover:text-foreground"
             >
               <TwitterIcon className="w-4 h-4 md:w-5 md:h-5 mr-2" />
               {t("home.community.join.twitter")}
@@ -118,7 +118,7 @@ export function HomeCommunity() {
             <Button
               variant="default"
               size={isMobile ? "default" : "lg"}
-              className="w-full md:w-auto"
+              className="w-full md:w-auto shadow-md hover:shadow-lg transition-shadow rounded-full px-8"
             >
               <HeartIcon className="w-4 h-4 md:w-5 md:h-5 mr-2" />
               {t("home.community.join.support")}

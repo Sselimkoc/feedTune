@@ -28,7 +28,7 @@ export default function HomeHero({ onAuthClick }) {
           priority
         />
       </div>
-      <div className="w-full max-w-md bg-card/80 rounded-xl shadow-md p-5 flex flex-col items-center gap-4 relative z-10">
+      <div className="w-full max-w-md glass rounded-xl shadow-md p-5 flex flex-col items-center gap-4 relative z-10">
         <h1 className="text-xl md:text-3xl font-bold text-center">FeedTune</h1>
         <p className="text-sm md:text-base text-muted-foreground text-center">
           {t("home.hero.subtitle")}
@@ -60,15 +60,15 @@ export default function HomeHero({ onAuthClick }) {
           }}
         />
         <div
-          className="absolute top-1/4 right-1/3 w-72 h-72 bg-primary/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/4 right-1/3 w-72 h-72 bg-primary/15 dark:bg-primary/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "8s" }}
         ></div>
         <div
-          className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-blue-500/10 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-indigo-400/12 dark:bg-indigo-500/8 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "10s" }}
         ></div>
         <div
-          className="absolute top-1/2 left-2/3 w-64 h-64 bg-yellow-500/5 dark:bg-primary/5 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/2 left-2/3 w-64 h-64 bg-cyan-400/10 dark:bg-cyan-500/8 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: "12s" }}
         ></div>
       </div>
@@ -95,7 +95,7 @@ export default function HomeHero({ onAuthClick }) {
             <span className="relative z-10">{t("home.hero.newFeature")}</span>
           </motion.div>
           <motion.h1
-            className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-6xl/none bg-gradient-to-br from-primary via-primary/90 to-primary/70 dark:from-primary dark:via-primary/90 dark:to-primary/70 bg-clip-text text-transparent drop-shadow-sm"
+            className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-6xl/none bg-gradient-to-br from-blue-600 via-blue-400 to-cyan-400 dark:from-blue-400 dark:via-blue-300 dark:to-cyan-300 bg-clip-text text-transparent drop-shadow-sm"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
@@ -109,7 +109,7 @@ export default function HomeHero({ onAuthClick }) {
             FeedTune
           </motion.h1>
           <motion.p
-            className="max-w-[600px] text-xl text-muted-foreground dark:text-muted-foreground mt-2"
+            className="max-w-[600px] text-xl text-muted-foreground dark:text-muted-foreground mt-2 leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{

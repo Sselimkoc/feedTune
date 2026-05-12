@@ -16,7 +16,7 @@
     --secondary: 210 40% 96.5%; /* Biraz daha açık ikincil ton */
     --secondary-foreground: 222 47% 12%;
     --muted: 210 40% 96.5%; /* Muted arka planı biraz daha belirgin */
-    --muted-foreground: 215 16% 50%; /* Biraz daha koyu muted metin kontrastı artırmak için */
+    --muted-foreground: 215 20% 40%; /* Raised from 50% → 40% lightness for 4.5:1 contrast */
     --accent: 220 90% 56%; /* Blue */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
@@ -43,9 +43,9 @@
     /* Modern Dark Theme */
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
+    --card: 222 47% 14%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
+    --popover: 222 47% 16%;
     --popover-foreground: 210 40% 98%;
     --primary: 217 91% 60%; /* Blue */
     --primary-foreground: 222 47% 11%;
@@ -84,8 +84,8 @@
     @apply bg-background text-foreground transition-colors duration-300 font-sans;
   }
   
-  /* Smooth transitions for theme changes */
-  *, *::before, *::after {
+  /* Theme transition only triggers on the .theme-transitioning class, not all elements */
+  .theme-transitioning *, .theme-transitioning *::before, .theme-transitioning *::after {
     transition-property: background-color, border-color, color, fill, stroke;
     transition-duration: var(--theme-transition-duration);
     transition-timing-function: var(--theme-transition-timing);
@@ -292,4 +292,13 @@
 .loading-container {
   background: linear-gradient(135deg, var(--background) 0%, var(--muted) 100%);
   backdrop-filter: blur(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
