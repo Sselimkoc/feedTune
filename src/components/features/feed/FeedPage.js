@@ -2,13 +2,19 @@
 
 import { useFeedService } from "@/hooks/features/useFeedService";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { Rss } from "lucide-react";
 import { Button } from "@/components/core/ui/button";
 import { useTranslation } from "react-i18next";
 import VideoCard from "./layout/VideoCard";
 import { AnimatedPageBackground } from "@/components/shared/AnimatedPageBackground";
-import { PageLoadingState, PageErrorState, PageEmptyState } from "@/components/core/states/PageStates";
+import {
+  PageLoadingState,
+  PageErrorState,
+  PageEmptyState,
+} from "@/components/core/states/PageStates";
+import { FeedFilterBar } from "./FeedFilterBar";
+import FeedHeader from "./FeedHeader";
+import FeedMain from "./FeedMain";
 
 export function FeedPage() {
   const { feeds, items, isLoading, error, addInteraction, removeInteraction } =
@@ -27,12 +33,12 @@ export function FeedPage() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-const filteredItems =
+  const filteredItems =
     selectedFeedIds.length === 0
       ? items
       : items.filter((item) => selectedFeedIds.includes(item.feed_id));
 
-const itemsWithFeedTitle = filteredItems.map((item) => {
+  const itemsWithFeedTitle = filteredItems.map((item) => {
     const feed = feeds.find((f) => f.id === item.feed_id);
     return {
       ...item,
@@ -42,32 +48,10 @@ const itemsWithFeedTitle = filteredItems.map((item) => {
     };
   });
 
-const handleToggleFavorite = async (video) => {
-    if (!video) return;
-    const itemType =
-      video.type || (video.feed_type || "").toLowerCase() || "rss";
-    if (video.is_favorite) {
-      await removeInteraction(video.id, "is_favorite", itemType);
-    } else {
-      await addInteraction(video.id, "is_favorite", itemType);
-    }
-  };
+  if (isLoading) return <PageLoadingState />;
+  if (error) return <PageErrorState message={error?.message} />;
 
-const handleToggleReadLater = async (video) => {
-    if (!video) return;
-    const itemType =
-      video.type || (video.feed_type || "").toLowerCase() || "rss";
-    if (video.is_read_later) {
-      await removeInteraction(video.id, "is_read_later", itemType);
-    } else {
-      await addInteraction(video.id, "is_read_later", itemType);
-    }
-  };
-
-if (isLoading) return <PageLoadingState />;
-if (error) return <PageErrorState message={error?.message} />;
-
-if (!feeds || feeds.length === 0) {
+  if (!feeds || feeds.length === 0) {
     return (
       <PageEmptyState
         title={t("emptyState.defaultTitle")}
@@ -82,115 +66,18 @@ if (!feeds || feeds.length === 0) {
 
       <div className="container relative z-10">
         {/* Header */}
-        <header className="w-full max-w-screen-2xl mx-auto px-2 md:px-6 mt-8 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Rss className="h-7 w-7 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-blue-500 drop-shadow-sm">
-                {t("feeds.title")}
-              </h1>
-              <p className="text-muted-foreground text-base max-w-2xl">
-                {t("feeds.description")}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {itemsWithFeedTitle.length} {t("feeds.items")}
-            </span>
-          </div>
-        </header>
+        <FeedHeader totalFeeds={itemsWithFeedTitle.length} />
 
         {/* Feed Filter Bar */}
-        <nav className="w-full overflow-x-auto flex gap-2 mb-8 py-2 px-1 bg-white/10 dark:bg-gray-800/30 rounded-xl shadow-inner sticky top-16 z-20">
-          <button
-            onClick={() => setSelectedFeedIds([])}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium whitespace-nowrap",
-              selectedFeedIds.length === 0
-                ? "bg-blue-600 text-white shadow"
-                : "bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-blue-100",
-            )}
-          >
-            <span className="font-bold">{t("feeds.allFeeds")}</span>
-          </button>
-          {feeds.map((feed) => (
-            <button
-              key={feed.id}
-              onClick={() => handleFeedSelect(feed.id)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium whitespace-nowrap",
-                selectedFeedIds.includes(feed.id)
-                  ? "bg-blue-600 text-white shadow"
-                  : "bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-blue-100",
-              )}
-            >
-              {feed.icon ? (
-                <img
-                  src={feed.icon}
-                  alt=""
-                  className="w-5 h-5 rounded-full"
-                  onError={(e) => {
-                    // Fallback to letter when image fails to load
-                    e.currentTarget.style.display = "none";
-                    const div = document.createElement("div");
-                    div.className =
-                      "w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center text-xs font-bold";
-                    div.textContent =
-                      feed.title?.charAt(0)?.toUpperCase() || "F";
-                    e.currentTarget.parentElement.insertBefore(
-                      div,
-                      e.currentTarget,
-                    );
-                  }}
-                />
-              ) : (
-                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center text-xs font-bold">
-                  {feed.title?.charAt(0)?.toUpperCase()}
-                </div>
-              )}
-              <span>{feed.title}</span>
-            </button>
-          ))}
-        </nav>
+        <FeedFilterBar
+          feeds={feeds}
+          selectedFeedIds={selectedFeedIds}
+          onSelectAll={() => setSelectedFeedIds([])}
+          onSelectFeed={handleFeedSelect}
+        />
 
         {/* Main Content */}
-        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-2 md:px-6">
-          <section className="flex-1">
-            {itemsWithFeedTitle.length === 0 ? (
-              <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-                <div className="text-muted-foreground text-4xl mb-4">📭</div>
-                <h3 className="text-xl font-semibold mb-2">
-                  {t("feeds.noItemsInSelection")}
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  {t("feeds.noItemsInSelectionDescription")}
-                </p>
-                <Button
-                  onClick={() => {
-                    setSelectedFeedIds([]);
-                    window.scrollTo({ top: 0, behavior: "instant" });
-                  }}
-                  variant="outline"
-                  className="bg-blue-600 hover:bg-blue-700 dark:bg-primary dark:hover:bg-primary/90"
-                >
-                  {t("feeds.showAllFeeds")}
-                </Button>
-              </div>
-            ) : (
-              <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                {itemsWithFeedTitle.map((item) => (
-                  <VideoCard
-                    key={item.id}
-                    video={item}
-                    onToggleFavorite={handleToggleFavorite}
-                    onToggleReadLater={handleToggleReadLater}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        </main>
+        <FeedMain feeds={itemsWithFeedTitle} />
       </div>
     </div>
   );
