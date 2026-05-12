@@ -6,7 +6,7 @@ import { Button } from "@/components/core/ui/button";
 import { Moon, Sun } from "lucide-react";
 
 export const ThemeSwitcher = memo(function ThemeSwitcher() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const buttonRef = useRef(null);
   const animatingRef = useRef(false);
@@ -25,7 +25,7 @@ export const ThemeSwitcher = memo(function ThemeSwitcher() {
     }
 
     setTimeout(() => {
-      setTheme(theme === "dark" ? "light" : "dark");
+      setTheme(resolvedTheme === "dark" ? "light" : "dark");
       if (el) {
         el.style.opacity = "1";
         el.style.transform = "scale(1)";
@@ -41,10 +41,10 @@ export const ThemeSwitcher = memo(function ThemeSwitcher() {
       size="icon"
       onClick={handleThemeChange}
       className="rounded-full w-10 h-10 border border-transparent hover:border-accent hover:bg-transparent hover:text-foreground transition-all duration-300"
-      aria-label={mounted ? (theme === "dark" ? "Switch to light theme" : "Switch to dark theme") : "Toggle theme"}
+      aria-label={mounted ? (resolvedTheme === "dark" ? "Switch to light theme" : "Switch to dark theme") : "Toggle theme"}
     >
       {mounted ? (
-        theme === "dark" ? (
+        resolvedTheme === "dark" ? (
           <Sun className="h-4 w-4" />
         ) : (
           <Moon className="h-4 w-4" />
