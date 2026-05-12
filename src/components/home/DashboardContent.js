@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/hooks/auth/useSession";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -9,29 +10,58 @@ import { useFeedService } from "@/hooks/features/useFeedService";
 import { AddFeedDialog } from "@/components/features/feed/dialogs/AddFeedDialog";
 import { DashboardLoadingState } from "@/components/home/states/DashboardLoadingState";
 import { DashboardWelcome } from "@/components/home/sections/DashboardWelcome";
-import { DashboardStats } from "@/components/home/sections/DashboardStats";
 import { DashboardFeeds } from "@/components/home/sections/DashboardFeeds";
 import { DashboardActivity } from "@/components/home/sections/DashboardActivity";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/core/ui/dialog";
+import { Button } from "@/components/core/ui/button";
 
 export default function DashboardContent() {
   const { user, isLoading } = useSession();
   const router = useRouter();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { addFeedMutation, feedsQuery, itemsQuery, deleteFeed } = useFeedService();
+  const queryClient = useQueryClient();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [feedToDelete, setFeedToDelete] = useState(null);
+  const { addFeedMutation, feedsQuery, itemsQuery, deleteFeed } =
+    useFeedService();
   const { data: stats = {}, isLoading: isLoadingStats } = useFeedsSummary();
   const { t } = useTranslation();
 
   if (isLoading || isLoadingStats) return <DashboardLoadingState />;
 
-  const handleDeleteFeed = (feedId) => {
-    if (confirm(t("home.dashboard.deleteConfirm"))) {
-      deleteFeed(feedId);
+  const handleRefresh = async () => {
+    await Promise.all([
+      queryClient.refetchQueries({
+        queryKey: ["feeds", user?.id],
+        exact: true,
+      }),
+      queryClient.refetchQueries({
+        queryKey: ["items", user?.id],
+        exact: true,
+      }),
+      queryClient.refetchQueries({
+        queryKey: ["feedsSummary", user?.id],
+        exact: true,
+      }),
+    ]);
+  };
+
+  const handleConfirmDelete = () => {
+    if (feedToDelete) {
+      deleteFeed(feedToDelete);
+      setFeedToDelete(null);
     }
   };
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-11rem)]">
-      {/* Animated background blobs — matches app-wide pattern */}
+    <div className="relative">
+      {/* Animated background blobs */}
       <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
         <div
           className="absolute top-1/4 right-1/3 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-3xl animate-pulse"
@@ -47,21 +77,19 @@ export default function DashboardContent() {
         />
       </div>
 
-      <div className="relative z-10 flex flex-col flex-1 min-h-0 mx-auto w-full px-4 pt-4 max-w-6xl gap-4">
+      <div className="relative z-10 mx-auto w-full px-4 pt-4 pb-8 max-w-6xl flex flex-col gap-4">
         <DashboardWelcome
           user={user}
-          onAddFeed={() => setIsDialogOpen(true)}
-          onRefresh={() => window.location.reload()}
+          onAddFeed={() => setIsAddDialogOpen(true)}
+          onRefresh={handleRefresh}
         />
 
-        {/* <DashboardStats stats={stats} feeds={feedsQuery.data || []} /> */}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <DashboardFeeds
             feeds={feedsQuery.data || []}
-            onAddFeed={() => setIsDialogOpen(true)}
+            onAddFeed={() => setIsAddDialogOpen(true)}
             onViewAll={() => router.push("/feeds")}
-            onDeleteFeed={handleDeleteFeed}
+            onDeleteFeed={(feedId) => setFeedToDelete(feedId)}
           />
           <DashboardActivity
             recentItems={itemsQuery.data?.slice(0, 6) || []}
@@ -71,10 +99,37 @@ export default function DashboardContent() {
       </div>
 
       <AddFeedDialog
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        isOpen={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
         addFeedMutation={addFeedMutation}
       />
+
+      <Dialog
+        open={!!feedToDelete}
+        onOpenChange={(open) => !open && setFeedToDelete(null)}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {t("home.dashboard.deleteConfirm.title", "Remove feed?")}
+            </DialogTitle>
+            <DialogDescription>
+              {t(
+                "home.dashboard.deleteConfirm.description",
+                "This feed and its items will be removed from your list. This action cannot be undone.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setFeedToDelete(null)}>
+              {t("common.cancel", "Cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              {t("common.delete", "Delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

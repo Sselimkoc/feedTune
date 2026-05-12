@@ -18,9 +18,9 @@ export function DashboardActivity({ recentItems, onViewAll }) {
   const { t } = useTranslation();
 
   return (
-    <div className="bg-white dark:bg-[#181C2A] border border-gray-200 dark:border-blue-900/40 rounded-xl overflow-hidden flex flex-col h-full">
+    <div className="bg-card border border-border rounded-xl overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-blue-900/40 bg-gray-50 dark:bg-[#151c29]/60">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 rounded-lg bg-indigo-500/10">
             <Zap className="h-3.5 w-3.5 text-indigo-400" />
@@ -29,7 +29,7 @@ export function DashboardActivity({ recentItems, onViewAll }) {
             <p className="text-sm font-semibold text-foreground">
               {t("home.dashboard.recentActivity")}
             </p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {t("home.dashboard.latestFromFeeds")}
             </p>
           </div>
@@ -69,7 +69,7 @@ export function DashboardActivity({ recentItems, onViewAll }) {
                 initial={{ opacity: 0, x: 6 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.04, duration: 0.25 }}
-                onClick={() => window.open(item.url || item.link, "_blank")}
+                onClick={() => window.open(item.url || item.link, "_blank", "noopener,noreferrer")}
                 className="group flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-colors duration-150 cursor-pointer"
               >
                 <div
@@ -90,12 +90,12 @@ export function DashboardActivity({ recentItems, onViewAll }) {
                   </p>
                   <div className="flex items-center gap-1.5 mt-1">
                     {item.feed?.title && (
-                      <span className="text-[10px] font-medium text-blue-600/70 dark:text-blue-400/70 truncate max-w-[130px]">
+                      <span className="text-xs font-medium text-blue-600/70 dark:text-blue-400/70 truncate max-w-[130px]">
                         {item.feed.title}
                       </span>
                     )}
                     {item.published_at && (
-                      <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
                         · {timeAgo(item.published_at, t)}
                       </span>
                     )}

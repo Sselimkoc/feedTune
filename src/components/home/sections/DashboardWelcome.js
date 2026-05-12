@@ -25,7 +25,7 @@ export function DashboardWelcome({ user, onAddFeed, onRefresh }) {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="flex items-center justify-between gap-4 py-4 border-b border-gray-200 dark:border-blue-900/60"
+      className="flex items-center justify-between gap-4 py-4 border-b border-border"
     >
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest text-blue-500/70 dark:text-blue-400/70 mb-1">
@@ -45,7 +45,7 @@ export function DashboardWelcome({ user, onAddFeed, onRefresh }) {
           onClick={onRefresh}
           variant="ghost"
           size="sm"
-          className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-blue-500/10 text-xs border border-transparent hover:border-blue-200 dark:hover:border-blue-900/60"
+          className="h-10 px-3 text-muted-foreground hover:text-foreground hover:bg-blue-500/10 text-xs border border-transparent hover:border-blue-200 dark:hover:border-blue-900/60"
         >
           <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
           {t("home.dashboard.syncAll")}
@@ -53,7 +53,7 @@ export function DashboardWelcome({ user, onAddFeed, onRefresh }) {
         <Button
           onClick={onAddFeed}
           size="sm"
-          className="h-8 px-4 bg-blue-600 hover:bg-blue-500 text-white border-0 shadow-lg shadow-blue-600/30 text-xs font-medium"
+          className="h-10 px-4 bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-lg shadow-primary/30 text-xs font-medium"
         >
           <Plus className="h-3.5 w-3.5 mr-1.5" />
           {t("feeds.add")}

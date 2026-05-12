@@ -15,24 +15,7 @@ import DashboardContent from "@/components/home/DashboardContent";
 
 export function HomeContent() {
   const { user, isLoading: isSessionLoading } = useSession();
-  const { deleteFeed } = useFeedService();
-
-  // Use React Query for caching - only fetches when user is authenticated
-  const { data: stats = {}, isLoading: isDataLoading } = useFeedsSummary();
-
   const [showAuthModal, setShowAuthModal] = useState(false);
-
-  const handleDeleteFeed = useCallback(
-    async (feedId) => {
-      try {
-        await deleteFeed(feedId);
-        window.location.reload();
-      } catch (error) {
-        console.error("Error deleting feed:", error);
-      }
-    },
-    [deleteFeed]
-  );
 
   const handleAuthClick = () => setShowAuthModal(true);
 
@@ -53,13 +36,7 @@ export function HomeContent() {
       );
     }
 
-    return (
-      <DashboardContent
-        stats={stats}
-        isLoading={isDataLoading}
-        onDeleteFeed={handleDeleteFeed}
-      />
-    );
+    return <DashboardContent />;
   };
 
   return (

@@ -11,9 +11,9 @@ export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
   const displayFeeds = feeds.slice(0, 7);
 
   return (
-    <div className="bg-white dark:bg-[#181C2A] border border-gray-200 dark:border-blue-900/40 rounded-xl overflow-hidden flex flex-col h-full">
+    <div className="bg-card border border-border rounded-xl overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-blue-900/40 bg-gray-50 dark:bg-[#151c29]/60">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 rounded-lg bg-blue-500/10">
             <Rss className="h-3.5 w-3.5 text-blue-400" />
@@ -22,7 +22,7 @@ export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
             <p className="text-sm font-semibold text-foreground">
               {t("home.dashboard.yourFeeds")}
             </p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {t("home.dashboard.subscribed", { count: feeds.length })}
             </p>
           </div>
@@ -67,7 +67,7 @@ export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
             <Button
               onClick={onAddFeed}
               size="sm"
-              className="h-8 bg-blue-600 hover:bg-blue-500 text-white border-0 shadow-lg shadow-blue-600/30 text-xs"
+              className="h-9 bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-lg shadow-primary/30 text-xs"
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               {t("home.feedManagement.addFirstFeed")}
@@ -101,7 +101,7 @@ export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
                   </p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span
-                      className={`text-[10px] font-semibold uppercase tracking-wide ${
+                      className={`text-xs font-semibold uppercase tracking-wide ${
                         feed.type === "youtube"
                           ? "text-red-500/70 dark:text-red-400/70"
                           : "text-blue-600/70 dark:text-blue-400/70"
@@ -110,7 +110,7 @@ export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
                       {feed.type === "youtube" ? "YouTube" : "RSS"}
                     </span>
                     {feed.last_synced_at && (
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                      <span className="text-xs text-muted-foreground flex items-center gap-0.5">
                         <Clock className="h-2.5 w-2.5" />
                         {new Date(feed.last_synced_at).toLocaleDateString(undefined, {
                           month: "short",
@@ -126,7 +126,8 @@ export function DashboardFeeds({ feeds, onAddFeed, onViewAll, onDeleteFeed }) {
                     variant="ghost"
                     size="sm"
                     onClick={() => onDeleteFeed(feed.id)}
-                    className="opacity-0 group-hover:opacity-100 h-7 w-7 p-0 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all"
+                    aria-label={`Delete ${feed.title}`}
+                    className="opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-50 h-7 w-7 p-0 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
