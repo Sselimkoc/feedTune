@@ -18,49 +18,49 @@ export function HomeAbout() {
 
   const details = [
     {
-      icon: <BookOpen className="w-6 h-6 text-blue-500" />,
+      icon: <BookOpen className="w-6 h-6 text-primary" />,
       title: t("home.about.reading.title"),
       description: t("home.about.reading.description"),
     },
     {
-      icon: <RefreshCw className="w-6 h-6 text-cyan-500" />,
+      icon: <RefreshCw className="w-6 h-6 text-primary" />,
       title: t("home.about.sync.title"),
       description: t("home.about.sync.description"),
     },
     {
-      icon: <Share2 className="w-6 h-6 text-indigo-500" />,
+      icon: <Share2 className="w-6 h-6 text-primary" />,
       title: t("home.about.share.title"),
       description: t("home.about.share.description"),
     },
     {
-      icon: <Smartphone className="w-6 h-6 text-blue-400" />,
+      icon: <Smartphone className="w-6 h-6 text-primary" />,
       title: t("home.about.responsive.title"),
       description: t("home.about.responsive.description"),
     },
     {
-      icon: <Moon className="w-6 h-6 text-indigo-400" />,
+      icon: <Moon className="w-6 h-6 text-primary" />,
       title: t("home.about.theme.title"),
       description: t("home.about.theme.description"),
     },
     {
-      icon: <Palette className="w-6 h-6 text-cyan-400" />,
+      icon: <Palette className="w-6 h-6 text-primary" />,
       title: t("home.about.ui.title"),
       description: t("home.about.ui.description"),
     },
     {
-      icon: <Globe2 className="w-6 h-6 text-blue-600" />,
+      icon: <Globe2 className="w-6 h-6 text-primary" />,
       title: t("home.about.language.title"),
       description: t("home.about.language.description"),
     },
     {
-      icon: <Shield className="w-6 h-6 text-indigo-600" />,
+      icon: <Shield className="w-6 h-6 text-primary" />,
       title: t("home.about.security.title"),
       description: t("home.about.security.description"),
     },
   ];
 
   return (
-    <section className="py-16 bg-muted/30" id="about">
+    <section className="py-16 bg-muted/60" id="about">
       <div className="container mx-auto px-4">
         <SectionHeader
           title={t("home.about.title")}

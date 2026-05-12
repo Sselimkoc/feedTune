@@ -13,13 +13,26 @@ import { AuthModal } from "@/components/features/auth/AuthModal";
 import { DashboardLoadingState } from "@/components/home/states/DashboardLoadingState";
 import DashboardContent from "@/components/home/DashboardContent";
 
-export function HomeContent() {
+export function HomeContent({ initialSession }) {
   const { user, isLoading: isSessionLoading } = useSession();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const handleAuthClick = () => setShowAuthModal(true);
 
   const renderContent = () => {
+    // Sunucu session yok diyorsa loading göstermeden direkt public sayfa
+    if (isSessionLoading && initialSession === null) {
+      return (
+        <>
+          <HomeHero onAuthClick={handleAuthClick} />
+          <HomeAbout />
+          <HomeTechnology />
+          <HomeShowcase />
+          <HomeCommunity />
+        </>
+      );
+    }
+
     if (isSessionLoading) {
       return <DashboardLoadingState />;
     }

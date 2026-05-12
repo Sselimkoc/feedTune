@@ -1,17 +1,24 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 import { Button } from "@/components/core/ui/button";
 import {
-  TwitterIcon,
   GithubIcon,
   HeartIcon,
   UsersIcon,
-  MessageSquareIcon,
+  RssIcon,
   StarIcon,
+  Quote,
 } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { SectionHeader, StatCard, TestimonialCard, AnimatedSection } from "./shared";
+
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
+  transition: { duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] },
+});
 
 export function HomeCommunity() {
   const { t } = useTranslation();
@@ -20,111 +27,137 @@ export function HomeCommunity() {
   const testimonials = [
     {
       id: 1,
-      name: "Alex Chen",
+      name: "Musab",
       role: t("home.community.roles.developer"),
-      avatar: "https://ui-avatars.com/api/?name=Alex+Chen&background=random",
       content: t("home.community.testimonials.alex"),
       rating: 5,
+      initials: "MU",
     },
     {
       id: 2,
-      name: "Sarah Miller",
+      name: "Ömer Faruk",
       role: t("home.community.roles.contentCreator"),
-      avatar: "https://ui-avatars.com/api/?name=Sarah+Miller&background=random",
       content: t("home.community.testimonials.sarah"),
       rating: 5,
+      initials: "ÖF",
     },
     {
       id: 3,
-      name: "David Kim",
+      name: "Mert",
       role: t("home.community.roles.journalist"),
-      avatar: "https://ui-avatars.com/api/?name=David+Kim&background=random",
       content: t("home.community.testimonials.david"),
       rating: 5,
+      initials: "ME",
     },
   ];
 
   const stats = [
     {
       icon: <UsersIcon className="w-5 h-5" />,
-      value: "10,000+",
+      value: "250+",
       label: t("home.community.stats.users"),
     },
     {
-      icon: <MessageSquareIcon className="w-5 h-5" />,
-      value: "50,000+",
+      icon: <RssIcon className="w-5 h-5" />,
+      value: "1,200+",
       label: t("home.community.stats.feeds"),
     },
     {
       icon: <StarIcon className="w-5 h-5" />,
-      value: "4.9/5",
+      value: "4.8/5",
       label: t("home.community.stats.rating"),
     },
   ];
 
   return (
-    <section className="py-8 md:py-16 bg-gradient-to-b from-background to-muted/30">
-      <div className="container mx-auto px-4">
-        <SectionHeader
-          title={t("home.community.title")}
-          subtitle={t("home.community.subtitle")}
-        />
+    <section className="relative py-16 md:py-28 overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/50 to-background pointer-events-none" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-8 md:mb-16">
-          {stats.map((stat, index) => (
-            <StatCard
-              key={index}
-              icon={stat.icon}
-              value={stat.value}
-              label={stat.label}
-              index={index}
-            />
+      <div className="relative container mx-auto px-4">
+        {/* Header */}
+        <motion.div className="text-center mb-16 md:mb-20" {...fadeUp(0)}>
+          <div className="w-10 h-1 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full mx-auto mb-4" />
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
+            {t("home.community.title")}
+          </h2>
+          <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto">
+            {t("home.community.subtitle")}
+          </p>
+        </motion.div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4 md:gap-8 mb-16 md:mb-24 max-w-2xl mx-auto">
+          {stats.map((stat, i) => (
+            <motion.div key={i} className="text-center" {...fadeUp(i * 0.1)}>
+              <div className="text-3xl md:text-5xl font-bold mb-1 text-primary tabular-nums">
+                {stat.value}
+              </div>
+              <div className="text-xs md:text-sm text-muted-foreground uppercase tracking-widest">
+                {stat.label}
+              </div>
+            </motion.div>
           ))}
         </div>
 
+        {/* Testimonials */}
         {!isMobile && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            {testimonials.map((testimonial, index) => (
-              <TestimonialCard
-                key={testimonial.id}
-                testimonial={testimonial}
-                index={index}
-              />
+          <div className="grid grid-cols-3 gap-5 mb-16 md:mb-24">
+            {testimonials.map((t_, i) => (
+              <motion.div
+                key={t_.id}
+                className="relative rounded-2xl border border-border bg-card/60 p-6 flex flex-col gap-4 backdrop-blur-sm"
+                {...fadeUp(i * 0.12)}
+              >
+                <Quote className="w-7 h-7 text-muted-foreground/20 absolute top-5 right-5" />
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed flex-grow pr-6">
+                  "{t_.content}"
+                </p>
+                <div className="flex gap-0.5 mb-1">
+                  {[...Array(t_.rating)].map((_, i) => (
+                    <StarIcon key={i} className="w-3.5 h-3.5 fill-primary text-primary" />
+                  ))}
+                </div>
+                <div className="flex items-center gap-3 pt-2 border-t border-border">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                    {t_.initials}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold leading-none mb-0.5">{t_.name}</div>
+                    <div className="text-xs text-muted-foreground">{t_.role}</div>
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
         )}
 
-        <AnimatedSection className="text-center">
-          <h3 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">
+        {/* Join CTA */}
+        <motion.div className="text-center" {...fadeUp(0.2)}>
+          <h3 className="text-xl md:text-2xl font-bold mb-6">
             {t("home.community.join.title")}
           </h3>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button
               variant="outline"
               size={isMobile ? "default" : "lg"}
-              className="w-full md:w-auto text-muted-foreground hover:text-foreground"
+              className="w-full sm:w-auto gap-2 border-border/60 hover:border-border"
+              onClick={() => window.open("https://github.com/Sselimkoc/feedTune", "_blank")}
             >
-              <GithubIcon className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+              <GithubIcon className="w-4 h-4" />
               {t("home.community.join.github")}
-            </Button>
-            <Button
-              variant="outline"
-              size={isMobile ? "default" : "lg"}
-              className="w-full md:w-auto text-muted-foreground hover:text-foreground"
-            >
-              <TwitterIcon className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-              {t("home.community.join.twitter")}
             </Button>
             <Button
               variant="default"
               size={isMobile ? "default" : "lg"}
-              className="w-full md:w-auto shadow-md hover:shadow-lg transition-shadow rounded-full px-8"
+              className="w-full sm:w-auto gap-2"
             >
-              <HeartIcon className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+              <HeartIcon className="w-4 h-4" />
               {t("home.community.join.support")}
             </Button>
           </div>
-        </AnimatedSection>
+        </motion.div>
       </div>
     </section>
   );

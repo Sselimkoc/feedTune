@@ -16,37 +16,37 @@ export function HomeTechnology() {
 
   const technologies = [
     {
-      icon: <Cpu className="w-6 h-6 text-blue-500" />,
+      icon: <Cpu className="w-6 h-6 text-primary" />,
       title: t("home.technology.nextjs.title"),
       description: t("home.technology.nextjs.description"),
       tech: "Next.js 16",
     },
     {
-      icon: <ShieldCheck className="w-6 h-6 text-red-500" />,
+      icon: <ShieldCheck className="w-6 h-6 text-primary" />,
       title: t("home.technology.auth.title"),
       description: t("home.technology.auth.description"),
       tech: "Supabase",
     },
     {
-      icon: <Database className="w-6 h-6 text-purple-500" />,
+      icon: <Database className="w-6 h-6 text-primary" />,
       title: t("home.technology.database.title"),
       description: t("home.technology.database.description"),
       tech: "TanStack Query v5",
     },
     {
-      icon: <Palette className="w-6 h-6 text-green-500" />,
+      icon: <Palette className="w-6 h-6 text-primary" />,
       title: t("home.technology.tailwind.title"),
       description: t("home.technology.tailwind.description"),
       tech: "Tailwind CSS v3",
     },
     {
-      icon: <Layers className="w-6 h-6 text-orange-500" />,
+      icon: <Layers className="w-6 h-6 text-primary" />,
       title: t("home.technology.radix.title"),
       description: t("home.technology.radix.description"),
       tech: "Zustand",
     },
     {
-      icon: <Wand2 className="w-6 h-6 text-pink-500" />,
+      icon: <Wand2 className="w-6 h-6 text-primary" />,
       title: t("home.technology.typescript.title"),
       description: t("home.technology.typescript.description"),
       tech: "Framer Motion",
@@ -54,7 +54,7 @@ export function HomeTechnology() {
   ];
 
   return (
-    <section className="py-12 md:py-20 bg-muted/30">
+    <section className="py-16 md:py-20 bg-background">
       <div className="container mx-auto px-4">
         <SectionHeader
           title={t("home.technology.title")}

@@ -36,32 +36,24 @@ export function HomeShowcase() {
       icon: <RssIcon className="w-5 h-5 md:w-6 md:h-6" />,
       title: t("home.showcase.feedManagement.title"),
       description: t("home.showcase.feedManagement.description"),
-      image:
-        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: "youtube-integration",
       icon: <YoutubeIcon className="w-5 h-5 md:w-6 md:h-6" />,
       title: t("home.showcase.youtube.title"),
       description: t("home.showcase.youtube.description"),
-      image:
-        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: "reading-features",
       icon: <BookmarkIcon className="w-5 h-5 md:w-6 md:h-6" />,
       title: t("home.showcase.reading.title"),
       description: t("home.showcase.reading.description"),
-      image:
-        "https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: "sharing",
       icon: <ShareIcon className="w-5 h-5 md:w-6 md:h-6" />,
       title: t("home.showcase.sharing.title"),
       description: t("home.showcase.sharing.description"),
-      image:
-        "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=800&q=80",
     },
   ];
 
@@ -85,7 +77,7 @@ export function HomeShowcase() {
   ];
 
   return (
-    <section className="py-6 md:py-16 bg-muted/30" id="showcase">
+    <section className="py-16 md:py-20 bg-muted/60" id="showcase">
       <div className="container mx-auto px-4 md:px-6 max-w-6xl">
         <SectionHeader
           title={t("home.showcase.title")}
@@ -104,7 +96,7 @@ export function HomeShowcase() {
           </div>
         ) : (
           <Tabs defaultValue="feed-management" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 max-w-[800px] mx-auto mb-8">
+            <TabsList className="grid w-full grid-cols-4 max-w-[800px] mx-auto mb-8 h-auto p-1.5">
               {features.map((feature) => (
                 <TabsTrigger
                   key={feature.id}

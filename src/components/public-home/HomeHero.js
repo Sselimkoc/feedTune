@@ -5,10 +5,47 @@ import { Button } from "@/components/core/ui/button";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Zap } from "lucide-react";
+import { ArrowRight, Zap, Moon, Sun } from "lucide-react";
 import Image from "next/image";
 import { AnimatedParticle, LanguageSwitcher } from "./shared";
+import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
 import { generateParticles } from "./utils/particleUtils";
+
+function HeroThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  const isDark = theme === "dark";
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <button
+        type="button"
+        onClick={() => setTheme("light")}
+        className={`flex items-center gap-1.5 px-1 py-0.5 font-medium transition-colors ${
+          !isDark
+            ? "text-foreground border-b border-foreground"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <Sun className="w-3.5 h-3.5" /> Light Mode
+      </button>
+      <span className="text-muted-foreground">·</span>
+      <button
+        type="button"
+        onClick={() => setTheme("dark")}
+        className={`flex items-center gap-1.5 px-1 py-0.5 font-medium transition-colors ${
+          isDark
+            ? "text-foreground border-b border-foreground"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <Moon className="w-3.5 h-3.5" /> Dark Mode
+      </button>
+    </div>
+  );
+}
 
 export default function HomeHero({ onAuthClick }) {
   const { t } = useTranslation();
@@ -42,6 +79,7 @@ export default function HomeHero({ onAuthClick }) {
           </Button>
         </div>
         <LanguageSwitcher isMobile />
+        <HeroThemeToggle />
       </div>
     </section>
   );
@@ -155,6 +193,7 @@ export default function HomeHero({ onAuthClick }) {
             </Button>
           </motion.div>
           <LanguageSwitcher />
+          <HeroThemeToggle />
         </div>
       </div>
     </section>
