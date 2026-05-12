@@ -3,12 +3,11 @@
 import { useTranslation } from "react-i18next";
 import {
   Cpu,
-  Zap,
-  Smartphone,
   ShieldCheck,
   Database,
-  Code2,
+  Palette,
   Layers,
+  Wand2,
 } from "lucide-react";
 import { SectionHeader, TechCard } from "./shared";
 
@@ -20,43 +19,37 @@ export function HomeTechnology() {
       icon: <Cpu className="w-6 h-6 text-blue-500" />,
       title: t("home.technology.nextjs.title"),
       description: t("home.technology.nextjs.description"),
-      tech: "Next.js 14",
-    },
-    {
-      icon: <Zap className="w-6 h-6 text-yellow-500" />,
-      title: t("home.technology.react.title"),
-      description: t("home.technology.react.description"),
-      tech: "React 18",
-    },
-    {
-      icon: <Smartphone className="w-6 h-6 text-green-500" />,
-      title: t("home.technology.tailwind.title"),
-      description: t("home.technology.tailwind.description"),
-      tech: "Tailwind CSS",
+      tech: "Next.js 16",
     },
     {
       icon: <ShieldCheck className="w-6 h-6 text-red-500" />,
       title: t("home.technology.auth.title"),
       description: t("home.technology.auth.description"),
-      tech: "Supabase Auth",
+      tech: "Supabase",
     },
     {
       icon: <Database className="w-6 h-6 text-purple-500" />,
       title: t("home.technology.database.title"),
       description: t("home.technology.database.description"),
-      tech: "PostgreSQL",
+      tech: "TanStack Query v5",
     },
     {
-      icon: <Code2 className="w-6 h-6 text-indigo-500" />,
-      title: t("home.technology.typescript.title"),
-      description: t("home.technology.typescript.description"),
-      tech: "TypeScript",
+      icon: <Palette className="w-6 h-6 text-green-500" />,
+      title: t("home.technology.tailwind.title"),
+      description: t("home.technology.tailwind.description"),
+      tech: "Tailwind CSS v3",
     },
     {
       icon: <Layers className="w-6 h-6 text-orange-500" />,
       title: t("home.technology.radix.title"),
       description: t("home.technology.radix.description"),
-      tech: "Radix UI",
+      tech: "Zustand",
+    },
+    {
+      icon: <Wand2 className="w-6 h-6 text-pink-500" />,
+      title: t("home.technology.typescript.title"),
+      description: t("home.technology.typescript.description"),
+      tech: "Framer Motion",
     },
   ];
 

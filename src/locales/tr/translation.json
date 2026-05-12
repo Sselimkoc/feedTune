@@ -313,7 +313,7 @@
       "subtitle": "Modern teknolojilerle geliştirildi.",
       "nextjs": {
         "title": "Next.js",
-        "description": "Üretim için React framework'ü."
+        "description": "App Router tabanlı, üretim için React framework'ü."
       },
       "react": {
         "title": "React",
@@ -321,23 +321,23 @@
       },
       "tailwind": {
         "title": "Tailwind CSS",
-        "description": "Yardımcı sınıf tabanlı CSS framework'ü."
+        "description": "Hızlı UI geliştirme için yardımcı sınıf tabanlı CSS framework'ü."
       },
       "auth": {
-        "title": "Supabase Auth",
-        "description": "Uygulamanız için güvenli kimlik doğrulama."
+        "title": "Supabase",
+        "description": "Supabase SSR ile kimlik doğrulama ve veritabanı yönetimi."
       },
       "database": {
-        "title": "PostgreSQL",
-        "description": "Güvenilir ve güçlü veritabanı."
+        "title": "TanStack Query",
+        "description": "Güçlü asenkron durum yönetimi ve sunucu verisi önbellekleme."
       },
       "typescript": {
-        "title": "TypeScript",
-        "description": "Büyük projeler için tipli JavaScript."
+        "title": "Framer Motion",
+        "description": "React için üretim kalitesinde animasyon ve etkileşim kütüphanesi."
       },
       "radix": {
-        "title": "Radix UI",
-        "description": "Yüksek kaliteli tasarım sistemleri için bileşenler."
+        "title": "Zustand",
+        "description": "React için hafif global durum yönetimi."
       }
     }
   },

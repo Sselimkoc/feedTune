@@ -314,7 +314,7 @@
       "subtitle": "Built with modern technologies.",
       "nextjs": {
         "title": "Next.js",
-        "description": "The React framework for production."
+        "description": "App Router-based React framework for production."
       },
       "react": {
         "title": "React",
@@ -322,23 +322,23 @@
       },
       "tailwind": {
         "title": "Tailwind CSS",
-        "description": "A utility-first CSS framework."
+        "description": "A utility-first CSS framework for rapid UI development."
       },
       "auth": {
-        "title": "Supabase Auth",
-        "description": "Secure authentication for your app."
+        "title": "Supabase",
+        "description": "Authentication and database powered by Supabase SSR."
       },
       "database": {
-        "title": "PostgreSQL",
-        "description": "Reliable and powerful database."
+        "title": "TanStack Query",
+        "description": "Powerful async state management and server data caching."
       },
       "typescript": {
-        "title": "TypeScript",
-        "description": "Typed JavaScript at scale."
+        "title": "Framer Motion",
+        "description": "Production-ready animations and interactions for React."
       },
       "radix": {
-        "title": "Radix UI",
-        "description": "Primitives for building high-quality design systems."
+        "title": "Zustand",
+        "description": "Lightweight global state management for React."
       }
     }
   },
