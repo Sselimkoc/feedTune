@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata = {
   title: "FeedTune - RSS & YouTube Feed Reader",
-  description: "Modern RSS and YouTube feed reader with AI-powered content curation",
+  description: "Modern RSS and YouTube feed reader with a sleek interface and powerful features.",
   metadataBase: new URL("http://localhost:3000"),
   icons: { icon: "/logo.png" },
 };
@@ -41,7 +41,7 @@ export default async function RootLayout({ children }) {
           enableSystem
           disableTransitionOnChange
         >
-          <LanguageProvider initialLanguage={language}>
+          <LanguageProvider>
             <AppProvider>
               <div className="fixed inset-0 -z-10 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
