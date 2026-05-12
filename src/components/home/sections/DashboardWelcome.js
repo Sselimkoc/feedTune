@@ -1,9 +1,25 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/core/ui/button";
 import { useTranslation } from "react-i18next";
+
+const WELCOME_MESSAGE_COUNT = 20;
+const SESSION_KEY = "feedtune-welcome-msg-idx";
+
+function getSessionMessageIndex() {
+  try {
+    const stored = sessionStorage.getItem(SESSION_KEY);
+    if (stored !== null) return parseInt(stored, 10);
+    const idx = Math.floor(Math.random() * WELCOME_MESSAGE_COUNT) + 1;
+    sessionStorage.setItem(SESSION_KEY, String(idx));
+    return idx;
+  } catch {
+    return Math.floor(Math.random() * WELCOME_MESSAGE_COUNT) + 1;
+  }
+}
 
 export function DashboardWelcome({ user, onAddFeed, onRefresh }) {
   const { t, i18n } = useTranslation();
@@ -19,6 +35,11 @@ export function DashboardWelcome({ user, onAddFeed, onRefresh }) {
     month: "long",
     day: "numeric",
   });
+
+  const welcomeMessage = useMemo(() => {
+    const idx = getSessionMessageIndex();
+    return t(`home.dashboard.welcomeMessages.msg${idx}`);
+  }, [t]);
 
   return (
     <motion.div
@@ -36,7 +57,7 @@ export function DashboardWelcome({ user, onAddFeed, onRefresh }) {
           <span className="text-blue-600 dark:text-blue-400">{displayName}</span>
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {t("home.dashboard.subtitle")}
+          {welcomeMessage}
         </p>
       </div>
 
