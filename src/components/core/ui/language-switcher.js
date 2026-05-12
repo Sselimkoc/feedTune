@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useRef } from "react";
 import { Button } from "@/components/core/ui/button";
 import {
   DropdownMenu,
@@ -8,61 +8,60 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/core/ui/dropdown-menu";
-import { Globe } from "lucide-react";
+import { Languages } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useSettingsStore } from "@/store/useSettingsStore";
 
-export function LanguageSwitcher() {
+const languages = [
+  { code: "tr", name: "Türkçe", flag: "fi fi-tr" },
+  { code: "en", name: "English", flag: "fi fi-gb" },
+];
+
+export const LanguageSwitcher = memo(function LanguageSwitcher() {
   const { language, changeLanguage, t } = useLanguage();
-  const [open, setOpen] = useState(false);
-  const [changing, setChanging] = useState(false);
-
-  const languages = [
-    { code: "tr", name: "Türkçe" },
-    { code: "en", name: "English" },
-  ];
+  const buttonRef = useRef(null);
+  const animatingRef = useRef(false);
 
   const handleLanguageChange = (langCode) => {
-    if (language === langCode) {
-      setOpen(false);
-      return;
+    if (language === langCode || animatingRef.current) return;
+    animatingRef.current = true;
+
+    const el = buttonRef.current;
+    if (el) {
+      el.style.transition = "opacity 150ms ease, transform 150ms ease";
+      el.style.opacity = "0";
+      el.style.transform = "scale(0.85)";
     }
 
-    setChanging(true);
     setTimeout(() => {
       changeLanguage(langCode);
-      setOpen(false);
-      setTimeout(() => {
-        setChanging(false);
-      }, 300);
-    }, 300);
+      if (el) {
+        el.style.opacity = "1";
+        el.style.transform = "scale(1)";
+      }
+      setTimeout(() => { animatingRef.current = false; }, 150);
+    }, 150);
   };
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`h-9 w-9 transition-all duration-300 ${
-            changing ? "opacity-0 scale-90" : "opacity-100 scale-100"
-          }`}
-        >
-          <Globe className="h-4 w-4" />
+        <Button ref={buttonRef} variant="ghost" size="icon" className="rounded-full w-10 h-10 border border-transparent hover:border-accent hover:bg-transparent hover:text-foreground transition-all duration-300">
+          <Languages className="h-4 w-4" />
           <span className="sr-only">{t("settings.language")}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="min-w-[160px] p-1 flex flex-col gap-1">
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
             onClick={() => handleLanguageChange(lang.code)}
-            className={language === lang.code ? "bg-accent" : ""}
+            className={`py-3 px-3 gap-3 text-sm font-medium ${language === lang.code ? "bg-accent" : ""}`}
           >
+            <span className={`${lang.flag} rounded-sm w-5 h-4`} />
             {lang.name}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});

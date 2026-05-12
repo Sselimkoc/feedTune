@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "i18next";
 
 export function LanguageSwitcher({ isMobile = false }) {
   const { language, changeLanguage } = useLanguage();
@@ -10,7 +11,7 @@ export function LanguageSwitcher({ isMobile = false }) {
   return (
     <div className="flex flex-wrap justify-center gap-2">
       <span className={`${sizeClass} text-muted-foreground`}>
-        Available in
+        {t("home.hero.availableIn")}:
       </span>
       <button
         className={`${sizeClass} font-medium px-1 py-0.5 rounded transition-colors ${
@@ -19,7 +20,7 @@ export function LanguageSwitcher({ isMobile = false }) {
         onClick={() => changeLanguage("tr")}
         type="button"
       >
-        🇹🇷 Türkçe
+        <span className="fi fi-tr " /> Türkçe
       </button>
       <span className={`${sizeClass} font-medium`}>·</span>
       <button
@@ -29,7 +30,7 @@ export function LanguageSwitcher({ isMobile = false }) {
         onClick={() => changeLanguage("en")}
         type="button"
       >
-        🇬🇧 English
+        <span className="fi fi-gb " /> English
       </button>
     </div>
   );

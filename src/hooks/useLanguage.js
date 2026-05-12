@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
@@ -8,12 +9,12 @@ const supportedLanguages = {
   tr: {
     name: "Türkçe",
     nativeName: "Türkçe",
-    flag: "🇹🇷",
+    flag: "fi fi-tr",
   },
   en: {
     name: "English",
     nativeName: "English",
-    flag: "🇬🇧",
+    flag: "fi fi-gb",
   },
 };
 
@@ -28,15 +29,12 @@ export function useLanguage() {
   const { i18n, t } = useTranslation();
   const { settings, setLanguage: setStoreLanguage } = useSettingsStore();
 
-  // Change language function
-  const changeLanguage = (newLanguage) => {
+  const changeLanguage = useCallback((newLanguage) => {
     if (supportedLanguages[newLanguage]) {
       i18n.changeLanguage(newLanguage);
       setStoreLanguage(newLanguage);
-    } else {
-      console.warn(`Unsupported language: ${newLanguage}`);
     }
-  };
+  }, [i18n, setStoreLanguage]);
 
   // Current language metadata
   const currentLanguageData =
