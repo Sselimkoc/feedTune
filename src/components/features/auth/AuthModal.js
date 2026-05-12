@@ -183,6 +183,11 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
     setPasswordStrength(0);
   };
 
+  const handleFillTestUser = () => {
+    setEmail("testuser@gmail.com");
+    setPassword("Test1881");
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md w-[95vw] max-h-[95vh] p-0 gap-0 overflow-visible mx-auto flex flex-col">
@@ -211,6 +216,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
                   onPasswordChange={handlePasswordChange}
                   onTogglePassword={togglePasswordVisibility}
                   onSubmit={handleFormSubmit}
+                  onFillTestUser={handleFillTestUser}
                   validationErrors={validationErrors}
                   isLoading={isLoading}
                   isSubmitting={isSubmitting}

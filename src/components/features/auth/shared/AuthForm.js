@@ -18,6 +18,7 @@ export function AuthForm({
   onPasswordChange,
   onTogglePassword,
   onSubmit,
+  onFillTestUser,
   validationErrors,
   isLoading,
   isSubmitting,
@@ -76,7 +77,19 @@ export function AuthForm({
         />
       </motion.div>
 
-      <motion.div custom={2} variants={inputVariants}>
+      {mode === "login" && onFillTestUser && (
+        <motion.div custom={2} variants={inputVariants}>
+          <button
+            type="button"
+            onClick={onFillTestUser}
+            className="w-full text-xs text-muted-foreground border border-dashed border-muted-foreground/40 rounded-lg py-2 px-3 hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all duration-200 flex items-center justify-center gap-2"
+          >
+            <span>{t("auth.fillTestUser")}</span>
+          </button>
+        </motion.div>
+      )}
+
+      <motion.div custom={4} variants={inputVariants}>
         <Button
           type="submit"
           className="w-full rounded-lg h-11 sm:h-10 text-sm sm:text-base font-semibold relative group overflow-hidden shadow-md hover:shadow-lg transition-all duration-300"
@@ -102,7 +115,7 @@ export function AuthForm({
       </motion.div>
 
       <motion.div
-        custom={3}
+        custom={5}
         variants={inputVariants}
         className="text-center text-xs sm:text-sm text-muted-foreground leading-relaxed pt-2"
       >

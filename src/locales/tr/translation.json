@@ -461,7 +461,8 @@
       "resendError": "Doğrulama e-postası gönderilemedi."
     },
     "termsText": "Devam ederek",
-    "termsLink": "Kullanım Şartları"
+    "termsLink": "Kullanım Şartları",
+    "fillTestUser": "Test kullanıcısı olarak doldur"
   },
   "emptyState": {
     "defaultTitle": "Henüz içerik yok",

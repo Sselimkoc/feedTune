@@ -462,7 +462,8 @@
       "resendError": "Failed to resend verification email."
     },
     "termsText": "By continuing, you agree to our",
-    "termsLink": "Terms of Service"
+    "termsLink": "Terms of Service",
+    "fillTestUser": "Fill as test user"
   },
   "emptyState": {
     "defaultTitle": "Nothing here yet",
