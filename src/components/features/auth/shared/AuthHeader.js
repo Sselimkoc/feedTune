@@ -42,9 +42,10 @@ export function AuthHeader({ particles }) {
           <Image
             src="/images/logo.png"
             alt="FeedTune Logo"
-            layout="fill"
-            objectFit="contain"
+            fill
+            style={{ objectFit: "contain" }}
             className="text-primary-foreground"
+            loading="eager"
           />
           <div className="absolute inset-0 opacity-60">{particles}</div>
         </div>

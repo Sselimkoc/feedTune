@@ -1,16 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import {
-  BookOpen,
-  RefreshCw,
-  Share2,
-  Smartphone,
-  Moon,
-  Palette,
-  Globe2,
-  Shield,
-} from "lucide-react";
+import { BookOpen, RefreshCw, Smartphone, Shield } from "lucide-react";
 import { SectionHeader, FeatureCard } from "./shared";
 
 export function HomeAbout() {
@@ -28,29 +19,9 @@ export function HomeAbout() {
       description: t("home.about.sync.description"),
     },
     {
-      icon: <Share2 className="w-6 h-6 text-primary" />,
-      title: t("home.about.share.title"),
-      description: t("home.about.share.description"),
-    },
-    {
       icon: <Smartphone className="w-6 h-6 text-primary" />,
       title: t("home.about.responsive.title"),
       description: t("home.about.responsive.description"),
-    },
-    {
-      icon: <Moon className="w-6 h-6 text-primary" />,
-      title: t("home.about.theme.title"),
-      description: t("home.about.theme.description"),
-    },
-    {
-      icon: <Palette className="w-6 h-6 text-primary" />,
-      title: t("home.about.ui.title"),
-      description: t("home.about.ui.description"),
-    },
-    {
-      icon: <Globe2 className="w-6 h-6 text-primary" />,
-      title: t("home.about.language.title"),
-      description: t("home.about.language.description"),
     },
     {
       icon: <Shield className="w-6 h-6 text-primary" />,
@@ -60,14 +31,17 @@ export function HomeAbout() {
   ];
 
   return (
-    <section className="py-16 bg-muted/60" id="about">
-      <div className="container mx-auto px-4">
+    <section id="about" className="relative py-16 md:py-24 overflow-hidden">
+      {/* subtle background tint that fades in and out */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.04] to-transparent pointer-events-none" />
+
+      <div className="container mx-auto px-4 relative z-10">
         <SectionHeader
           title={t("home.about.title")}
           subtitle={t("home.about.subtitle")}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {details.map((detail, index) => (
             <FeatureCard
               key={index}

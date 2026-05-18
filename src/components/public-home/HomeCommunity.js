@@ -3,24 +3,17 @@
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Button } from "@/components/core/ui/button";
-import {
-  GithubIcon,
-  HeartIcon,
-  UsersIcon,
-  RssIcon,
-  StarIcon,
-  Quote,
-} from "lucide-react";
+import { UsersIcon, RssIcon, StarIcon, Quote, ArrowRight } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 24 },
+  initial: { opacity: 0, y: 36 },
   whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] },
+  viewport: { once: true, margin: "-60px" },
+  transition: { duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] },
 });
 
-export function HomeCommunity() {
+export function HomeCommunity({ onAuthClick }) {
   const { t } = useTranslation();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
@@ -78,7 +71,7 @@ export function HomeCommunity() {
       <div className="relative container mx-auto px-4">
         {/* Header */}
         <motion.div className="text-center mb-16 md:mb-20" {...fadeUp(0)}>
-          <div className="w-10 h-1 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full mx-auto mb-4" />
+          <div className="w-10 h-1 bg-gradient-to-r from-primary/80 to-primary/40 rounded-full mx-auto mb-4" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
             {t("home.community.title")}
           </h2>
@@ -135,28 +128,20 @@ export function HomeCommunity() {
 
         {/* Join CTA */}
         <motion.div className="text-center" {...fadeUp(0.2)}>
-          <h3 className="text-xl md:text-2xl font-bold mb-6">
+          <h3 className="text-xl md:text-2xl font-bold mb-3">
             {t("home.community.join.title")}
           </h3>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button
-              variant="outline"
-              size={isMobile ? "default" : "lg"}
-              className="w-full sm:w-auto gap-2 border-border/60 hover:border-border"
-              onClick={() => window.open("https://github.com/Sselimkoc/feedTune", "_blank")}
-            >
-              <GithubIcon className="w-4 h-4" />
-              {t("home.community.join.github")}
-            </Button>
-            <Button
-              variant="default"
-              size={isMobile ? "default" : "lg"}
-              className="w-full sm:w-auto gap-2"
-            >
-              <HeartIcon className="w-4 h-4" />
-              {t("home.community.join.support")}
-            </Button>
-          </div>
+          <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto mb-6">
+            {t("home.community.join.subtitle")}
+          </p>
+          <Button
+            size={isMobile ? "default" : "lg"}
+            className="rounded-full shadow-md hover:shadow-lg transition-all duration-300 px-8 gap-2"
+            onClick={onAuthClick}
+          >
+            {t("home.community.join.cta")}
+            <ArrowRight className="w-4 h-4" />
+          </Button>
         </motion.div>
       </div>
     </section>

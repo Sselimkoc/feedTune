@@ -4,8 +4,8 @@ import enTranslations from "@/locales/en/translation.json";
 import trTranslations from "@/locales/tr/translation.json";
 
 const getInitialLanguage = () => {
-  if (typeof window === "undefined") return "en";
-  return document.cookie.match(/language=([^;]+)/)?.[1] || "en";
+  if (typeof window === "undefined") return "tr";
+  return document.cookie.match(/language=([^;]+)/)?.[1] || "tr";
 };
 
 i18n.use(initReactI18next).init({

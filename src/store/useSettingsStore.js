@@ -10,7 +10,7 @@ export const useSettingsStore = create(
         autoMarkAsRead: false,
         pushNotifications: false,
         emailNotifications: false,
-        language: "en",
+        language: "tr",
         categoryColors: {
           youtube: {
             light: "#f87171",

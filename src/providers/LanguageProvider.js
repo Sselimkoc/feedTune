@@ -5,15 +5,19 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
+const detectBrowserLanguage = () => {
+  const lang = navigator.language || navigator.languages?.[0] || "";
+  return lang.toLowerCase().startsWith("tr") ? "tr" : "en";
+};
+
 export function LanguageProvider({ children, initialLanguage }) {
   const [mounted, setMounted] = useState(false);
-  const zustandLanguage = useSettingsStore((state) => state.settings.language);
+  const { settings, setLanguage: setStoreLang } = useSettingsStore();
+  const zustandLanguage = settings.language;
 
-  // Before mount: use cookie language so client matches server render
-  // After mount: use Zustand value loaded from localStorage
   const resolvedLanguage = mounted
-    ? (zustandLanguage || initialLanguage || "en")
-    : (initialLanguage || "en");
+    ? (zustandLanguage || initialLanguage || "tr")
+    : (initialLanguage || "tr");
 
   if (i18n.language !== resolvedLanguage) {
     i18n.changeLanguage(resolvedLanguage);
@@ -21,7 +25,17 @@ export function LanguageProvider({ children, initialLanguage }) {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    // First-ever visit: no cookie saved yet → auto-detect from browser
+    const hasCookie = document.cookie.includes("language=");
+    if (!hasCookie) {
+      const detected = detectBrowserLanguage();
+      if (detected !== zustandLanguage) {
+        setStoreLang(detected);
+        i18n.changeLanguage(detected);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     document.cookie = `language=${resolvedLanguage}; path=/; max-age=31536000; SameSite=Lax`;

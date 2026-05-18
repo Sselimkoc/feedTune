@@ -104,7 +104,7 @@
     "keepFavorites": "Favori öğeleri koru",
     "keepReadLater": "Daha sonra oku öğelerini koru",
     "dryRun": "Sadece önizleme (silme)",
-    "runCleanup": "Temizleme Çalıştır",
+    "runCleanup": "Temizle",
     "previewCleanup": "Temizleme Önizle"
   },
   "demo": {
@@ -302,10 +302,25 @@
         "rating": "Puan"
       },
       "join": {
-        "title": "Bize Katılın!",
-        "github": "GitHub'da Yıldızla",
-        "twitter": "Twitter'da Takip Et",
-        "support": "Bize Destek Ol"
+        "title": "Hemen Başlayın",
+        "subtitle": "Ücretsiz hesap oluşturun, dakikalar içinde tüm içeriklerinizi takip etmeye başlayın.",
+        "cta": "Ücretsiz Kaydol"
+      }
+    },
+    "howItWorks": {
+      "title": "Nasıl Çalışır?",
+      "subtitle": "Üç adımda içeriklerinizi tek yerden takip edin.",
+      "step1": {
+        "title": "Besleme Ekle",
+        "description": "RSS kaynağı veya YouTube kanal URL'sini yapıştır, otomatik tanısın."
+      },
+      "step2": {
+        "title": "Otomatik Güncellenir",
+        "description": "İçerikler arka planda güncellenir, sen sadece okursun."
+      },
+      "step3": {
+        "title": "Organize Et",
+        "description": "Beğendiklerini favorile, sonra okumak istediklerini listeye ekle."
       }
     },
     "technology": {
@@ -467,7 +482,44 @@
     },
     "termsText": "Devam ederek",
     "termsLink": "Kullanım Şartları",
+    "termsTextAfter": "'nı kabul etmiş olursunuz.",
     "fillTestUser": "Test kullanıcısı olarak doldur"
+  },
+  "terms": {
+    "title": "Kullanım Şartları",
+    "lastUpdated": "Son güncelleme",
+    "intro": "FeedTune'u kullanarak aşağıdaki kullanım şartlarını kabul etmiş sayılırsınız. Lütfen dikkatlice okuyunuz.",
+    "service": {
+      "title": "Hizmet Tanımı",
+      "description": "FeedTune, RSS beslemeleri ve YouTube kanallarını tek bir platformda takip etmenizi sağlayan bir içerik okuyucu uygulamasıdır.",
+      "items": [
+        "RSS ve Atom besleme formatlarını destekler",
+        "YouTube kanal videolarını takip etmenize olanak tanır",
+        "İçeriklerinizi favoriler ve sonra oku listesinde saklayabilirsiniz",
+        "Hizmet kesintisiz erişim garantisi verilmeksizin sunulmaktadır"
+      ]
+    },
+    "account": {
+      "title": "Hesap ve Gizlilik",
+      "description": "Hesabınızı oluşturarak ve kullanarak aşağıdaki koşulları kabul edersiniz:",
+      "items": [
+        "E-posta adresiniz ve şifreniz güvenli biçimde saklanır; şifreniz asla düz metin olarak tutulmaz",
+        "Hesap güvenliğinizden siz sorumlusunuz; şifrenizi kimseyle paylaşmayın",
+        "Kişisel verileriniz (e-posta, tercihler) yalnızca hizmetin işleyişi için kullanılır ve üçüncü taraflarla paylaşılmaz",
+        "Hesabınızı istediğiniz zaman kalıcı olarak silebilirsiniz"
+      ]
+    },
+    "usage": {
+      "title": "Kullanım Kuralları",
+      "description": "Aşağıdaki faaliyetler kesinlikle yasaktır:",
+      "items": [
+        "Başkalarının hesabına yetkisiz erişim girişimi",
+        "Hizmetin otomatik araçlarla kötüye kullanılması veya aşırı yüklenmesi",
+        "Yasadışı veya zararlı içeriklerin sisteme eklenmesi",
+        "Telif hakkı ihlali oluşturan materyallerin paylaşılması"
+      ]
+    },
+    "contact": "Sorularınız için iletişim:"
   },
   "emptyState": {
     "defaultTitle": "Henüz içerik yok",

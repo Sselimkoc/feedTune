@@ -105,7 +105,7 @@
     "keepFavorites": "Keep favorite items",
     "keepReadLater": "Keep read later items",
     "dryRun": "Preview only (don't delete)",
-    "runCleanup": "Run Cleanup",
+    "runCleanup": "Cleanup",
     "previewCleanup": "Preview Cleanup"
   },
   "demo": {
@@ -303,10 +303,25 @@
         "rating": "Rating"
       },
       "join": {
-        "title": "Join Us!",
-        "github": "Star on GitHub",
-        "twitter": "Follow on Twitter",
-        "support": "Support Us"
+        "title": "Get Started Today",
+        "subtitle": "Create a free account and start tracking all your content in minutes.",
+        "cta": "Sign Up for Free"
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "subtitle": "Track all your content from one place in three steps.",
+      "step1": {
+        "title": "Add a Feed",
+        "description": "Paste an RSS source or YouTube channel URL and it's detected automatically."
+      },
+      "step2": {
+        "title": "Auto-Updated",
+        "description": "Content updates in the background — you just read."
+      },
+      "step3": {
+        "title": "Organize",
+        "description": "Favorite what you love, add the rest to your read-later list."
       }
     },
     "technology": {
@@ -468,7 +483,44 @@
     },
     "termsText": "By continuing, you agree to our",
     "termsLink": "Terms of Service",
+    "termsTextAfter": ".",
     "fillTestUser": "Fill as test user"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated",
+    "intro": "By using FeedTune, you agree to the following terms of service. Please read them carefully.",
+    "service": {
+      "title": "Service Description",
+      "description": "FeedTune is a content reader application that lets you follow RSS feeds and YouTube channels in one place.",
+      "items": [
+        "Supports RSS and Atom feed formats",
+        "Allows you to track YouTube channel videos",
+        "Save content to favorites and read-later lists",
+        "The service is provided without any guarantee of uninterrupted access"
+      ]
+    },
+    "account": {
+      "title": "Account & Privacy",
+      "description": "By creating and using an account, you agree to the following:",
+      "items": [
+        "Your email and password are stored securely; your password is never stored in plain text",
+        "You are responsible for your account security; do not share your password with anyone",
+        "Your personal data (email, preferences) is used solely for the operation of the service and is not shared with third parties",
+        "You can permanently delete your account at any time"
+      ]
+    },
+    "usage": {
+      "title": "Usage Rules",
+      "description": "The following activities are strictly prohibited:",
+      "items": [
+        "Unauthorized access attempts to other users' accounts",
+        "Abusing or overloading the service with automated tools",
+        "Adding illegal or harmful content to the system",
+        "Sharing materials that infringe copyright"
+      ]
+    },
+    "contact": "For questions, contact us at:"
   },
   "emptyState": {
     "defaultTitle": "Nothing here yet",

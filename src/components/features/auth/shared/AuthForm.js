@@ -134,6 +134,7 @@ export function AuthForm({
             <ExternalLink className="h-3 w-3" />
           </Link>
         </Button>
+        <span>{t("auth.termsTextAfter", "")}</span>
       </motion.div>
     </motion.form>
   );

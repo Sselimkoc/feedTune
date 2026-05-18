@@ -55,7 +55,7 @@ export function AppLayout({ children }) {
         {/* Main Content */}
         <main
           className={`flex-1 transition-all duration-300 ${
-            showNav ? "lg:pl-64 pt-14 lg:pt-16" : "pt-14 lg:pt-16"
+            showNav ? "lg:pl-64 pt-14 lg:pt-16" : ""
           }`}
         >
           <div className="w-full px-0 pt-0 pb-4 md:py-8">{children}</div>

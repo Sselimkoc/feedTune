@@ -14,13 +14,16 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata = {
   title: "FeedTune - RSS & YouTube Feed Reader",
   description: "Modern RSS and YouTube feed reader with a sleek interface and powerful features.",
-  metadataBase: new URL("http://localhost:3000"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+  ),
   icons: { icon: "/logo.png" },
 };
 
 export default async function RootLayout({ children }) {
   const cookieStore = await cookies();
-  const language = cookieStore.get("language")?.value || "en";
+  const language = cookieStore.get("language")?.value || "tr";
 
   return (
     <html

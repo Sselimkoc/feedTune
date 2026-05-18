@@ -5,9 +5,9 @@ import { useSession } from "@/hooks/auth/useSession";
 import { useSearchParams } from "next/navigation";
 import HomeHero from "@/components/public-home/HomeHero";
 import { HomeAbout } from "@/components/public-home/HomeAbout";
-import { HomeTechnology } from "@/components/public-home/HomeTechnology";
-import { HomeShowcase } from "@/components/public-home/HomeShowcase";
+import { HomeHowItWorks } from "@/components/public-home/HomeHowItWorks";
 import { HomeCommunity } from "@/components/public-home/HomeCommunity";
+import { LandingControls } from "@/components/public-home/LandingControls";
 import { AuthModal } from "@/components/features/auth/AuthModal";
 import { DashboardLoadingState } from "@/components/home/states/DashboardLoadingState";
 import DashboardContent from "@/components/home/DashboardContent";
@@ -26,39 +26,29 @@ export function HomeContent({ initialSession }) {
   }, [searchParams]);
 
   const handleAuthClick = () => {
-    setAuthModalTab("login");
+    setAuthModalTab("signup");
     setShowAuthModal(true);
   };
 
   const renderContent = () => {
     // Sunucu session yok diyorsa loading göstermeden direkt public sayfa
-    if (isSessionLoading && initialSession === null) {
-      return (
-        <>
-          <HomeHero onAuthClick={handleAuthClick} />
-          <HomeAbout />
-          <HomeTechnology />
-          <HomeShowcase />
-          <HomeCommunity />
-        </>
-      );
-    }
+    const publicPage = (
+      <>
+        <LandingControls />
+        <HomeHero onAuthClick={handleAuthClick} />
+        <HomeHowItWorks />
+        <HomeAbout />
+        <HomeCommunity onAuthClick={handleAuthClick} />
+      </>
+    );
+
+    if (isSessionLoading && initialSession === null) return publicPage;
 
     if (isSessionLoading) {
       return <DashboardLoadingState />;
     }
 
-    if (!user) {
-      return (
-        <>
-          <HomeHero onAuthClick={handleAuthClick} />
-          <HomeAbout />
-          <HomeTechnology />
-          <HomeShowcase />
-          <HomeCommunity />
-        </>
-      );
-    }
+    if (!user) return publicPage;
 
     return <DashboardContent />;
   };

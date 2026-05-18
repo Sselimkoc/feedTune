@@ -5,47 +5,10 @@ import { Button } from "@/components/core/ui/button";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Zap, Moon, Sun } from "lucide-react";
+import { ArrowRight, Zap } from "lucide-react";
 import Image from "next/image";
-import { AnimatedParticle, LanguageSwitcher } from "./shared";
-import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
+import { AnimatedParticle } from "./shared";
 import { generateParticles } from "./utils/particleUtils";
-
-function HeroThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
-  const isDark = resolvedTheme === "dark";
-  return (
-    <div className="flex items-center gap-2 text-sm">
-      <button
-        type="button"
-        onClick={() => setTheme("light")}
-        className={`flex items-center gap-1.5 px-1 py-0.5 font-medium transition-colors ${
-          !isDark
-            ? "text-foreground border-b border-foreground"
-            : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        <Sun className="w-3.5 h-3.5" /> Light Mode
-      </button>
-      <span className="text-muted-foreground">·</span>
-      <button
-        type="button"
-        onClick={() => setTheme("dark")}
-        className={`flex items-center gap-1.5 px-1 py-0.5 font-medium transition-colors ${
-          isDark
-            ? "text-foreground border-b border-foreground"
-            : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        <Moon className="w-3.5 h-3.5" /> Dark Mode
-      </button>
-    </div>
-  );
-}
 
 export default function HomeHero({ onAuthClick }) {
   const { t } = useTranslation();
@@ -74,12 +37,10 @@ export default function HomeHero({ onAuthClick }) {
           <Button className="w-full" size="sm" onClick={onAuthClick}>
             {t("home.hero.getStarted")}
           </Button>
-          <Button className="w-full" size="sm" variant="outline">
-            {t("home.hero.learnMore")}
+          <Button className="w-full" size="sm" variant="outline" asChild>
+            <Link href="#about">{t("home.hero.learnMore")}</Link>
           </Button>
         </div>
-        <LanguageSwitcher isMobile />
-        <HeroThemeToggle />
       </div>
     </section>
   );
@@ -90,12 +51,9 @@ export default function HomeHero({ onAuthClick }) {
         <Image
           src="/images/logo.png"
           alt="FeedTune Background Logo"
-          layout="fill"
-          objectFit="contain"
+          fill
+          style={{ objectFit: "contain", filter: "grayscale(100%) invert(var(--tw-invert-opacity))" }}
           className="opacity-5 dark:opacity-3 z-0"
-          style={{
-            filter: "grayscale(100%) invert(var(--tw-invert-opacity))",
-          }}
         />
         <div
           className="absolute top-1/4 right-1/3 w-72 h-72 bg-primary/15 dark:bg-primary/10 rounded-full blur-3xl animate-pulse"
@@ -192,8 +150,6 @@ export default function HomeHero({ onAuthClick }) {
               <Link href="#about">{t("home.hero.learnMore")}</Link>
             </Button>
           </motion.div>
-          <LanguageSwitcher />
-          <HeroThemeToggle />
         </div>
       </div>
     </section>
