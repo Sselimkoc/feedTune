@@ -29,7 +29,7 @@ function normalizeUrl(url) {
 // ============================================================================
 
 export function useFeedService() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const isAuthenticated = !!user;
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -430,6 +430,7 @@ export function useFeedService() {
     readLaterItems: readLaterQuery.data || [],
     stats,
     isLoading:
+      isAuthLoading ||
       feedsQuery.isLoading ||
       itemsQuery.isLoading ||
       favoritesQuery.isLoading ||
