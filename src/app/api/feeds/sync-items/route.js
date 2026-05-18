@@ -1,11 +1,26 @@
 ﻿import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
+import { enrichItemsWithOgImages } from "@/lib/feed/imageUtils";
 import Parser from "rss-parser";
 
 export const dynamic = "force-dynamic";
 
-const feedParser = new Parser();
+function extractImgFromHtml(html) {
+  const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return match?.[1] || null;
+}
+
+const feedParser = new Parser({
+  customFields: {
+    item: [
+      ["media:content", "media"],
+      ["media:thumbnail", "mediaThumbnail"],
+      ["enclosure", "enclosure"],
+      ["content:encoded", "contentEncoded"],
+    ],
+  },
+});
 
 const BATCH_SIZE = 20;
 
@@ -51,16 +66,29 @@ export const POST = withAuth(async (request, { user }) => {
 
   const items = rssFeed.items
     .filter((item) => item.link || item.guid)
-    .map((item) => ({
-      feed_id: feedId,
-      title: item.title || "Untitled",
-      url: item.link || item.guid,
-      description: item.contentSnippet || item.description || item.summary || "",
-      thumbnail: item.thumbnail || item.image?.url || "",
-      published_at: item.pubDate || item.isoDate || new Date().toISOString(),
-      guid: item.guid || item.link,
-      created_at: new Date().toISOString(),
-    }));
+    .map((item) => {
+      const thumbnail =
+        item.mediaThumbnail?.url ||
+        (Array.isArray(item.mediaThumbnail) ? item.mediaThumbnail[0]?.url : null) ||
+        item.media?.url ||
+        (Array.isArray(item.media) ? item.media[0]?.url : null) ||
+        (item.enclosure?.type?.startsWith("image/") ? item.enclosure.url : null) ||
+        item.thumbnail ||
+        item.image?.url ||
+        extractImgFromHtml(item.contentEncoded || item.description || "") ||
+        "";
+
+      return {
+        feed_id: feedId,
+        title: item.title || "Untitled",
+        url: item.link || item.guid,
+        description: item.contentSnippet || item.description || item.summary || "",
+        thumbnail,
+        published_at: item.pubDate || item.isoDate || new Date().toISOString(),
+        guid: item.guid || item.link,
+        created_at: new Date().toISOString(),
+      };
+    });
 
   const { data: existing, error: existingError } = await supabase
     .from("rss_items")
@@ -74,6 +102,8 @@ export const POST = withAuth(async (request, { user }) => {
 
   const existingUrls = new Set(existing?.map((i) => i.url) ?? []);
   const newItems = items.filter((i) => !existingUrls.has(i.url));
+
+  await enrichItemsWithOgImages(newItems);
 
   const now = new Date().toISOString();
   await supabase

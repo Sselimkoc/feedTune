@@ -11,7 +11,6 @@ export const useSettingsStore = create(
         pushNotifications: false,
         emailNotifications: false,
         language: "en",
-        theme: "system",
         categoryColors: {
           youtube: {
             light: "#f87171",
@@ -30,24 +29,6 @@ export const useSettingsStore = create(
       setLanguage: (language) =>
         set((state) => ({
           settings: { ...state.settings, language },
-        })),
-      toggleTheme: () =>
-        set((state) => {
-          const currentTheme = state.settings.theme;
-          const nextTheme =
-            currentTheme === "dark"
-              ? "light"
-              : currentTheme === "light"
-              ? "system"
-              : "dark";
-
-          return {
-            settings: { ...state.settings, theme: nextTheme },
-          };
-        }),
-      setTheme: (theme) =>
-        set((state) => ({
-          settings: { ...state.settings, theme },
         })),
     }),
     {

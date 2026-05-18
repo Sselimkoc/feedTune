@@ -1,6 +1,7 @@
 ﻿import { createServiceRoleClient } from "@/lib/supabase-server";
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
+import { fetchFeedFavicon } from "@/lib/feed/imageUtils";
 
 export const POST = withAuth(async (request, { user }) => {
   const supabase = createServiceRoleClient();
@@ -105,6 +106,12 @@ export const POST = withAuth(async (request, { user }) => {
     categoryId = defaultCategory?.id ?? null;
   }
 
+  let feedIcon = extraData.icon || feedInfo.feed?.icon || null;
+  if (!feedIcon) {
+    const siteUrl = feedInfo.feed?.link || normalizedUrl;
+    feedIcon = await fetchFeedFavicon(siteUrl);
+  }
+
   const { data: newFeed, error: insertError } = await supabase
     .from("feeds")
     .insert({
@@ -113,7 +120,7 @@ export const POST = withAuth(async (request, { user }) => {
       type: feedType,
       title: extraData.title || feedInfo.feed?.title || normalizedUrl,
       description: extraData.description || feedInfo.feed?.description || "",
-      icon: extraData.icon || feedInfo.feed?.icon || null,
+      icon: feedIcon,
       category_id: categoryId,
     })
     .select()

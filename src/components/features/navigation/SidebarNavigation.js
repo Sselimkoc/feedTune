@@ -111,36 +111,35 @@ export function SidebarNavigation() {
   }
 
   return (
-    <ScrollArea className="h-full py-6 bg-white dark:bg-[#151c29] shadow border-r border-blue-900">
-      <div className="space-y-4 py-4">
+    <div className="flex flex-col h-full bg-white dark:bg-[#151c29] shadow border-r border-blue-900">
+      {/* Nav links - scrollable */}
+      <ScrollArea className="flex-1 py-6">
         <div className="px-3 py-2">
-          <div className="space-y-1">
-            <nav className="grid gap-2 px-2">
-              {items.map((item, index) => (
-                <Link
-                  key={index}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300",
-                    "border border-transparent",
-                    pathname === item.href
-                      ? "bg-blue-500/10 border-blue-500 text-blue-600 shadow"
-                      : "text-foreground hover:bg-blue-500/10 hover:border-blue-500/30",
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.title}
-                </Link>
-              ))}
-            </nav>
-          </div>
+          <nav className="grid gap-2 px-2">
+            {items.map((item, index) => (
+              <Link
+                key={index}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300",
+                  "border border-transparent",
+                  pathname === item.href
+                    ? "bg-blue-500/10 border-blue-500 text-blue-600 shadow"
+                    : "text-foreground hover:bg-blue-500/10 hover:border-blue-500/30",
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.title}
+              </Link>
+            ))}
+          </nav>
         </div>
-        <div className="flex-1">
-          {/* This div will push content to the bottom */}
-        </div>
-        <Separator className="my-4" />
-        {/* User Info Section and Sign Out Button */}
-        <div className="grid gap-4 px-5 pb-4">
+      </ScrollArea>
+
+      {/* User section - pinned to bottom */}
+      <div className="shrink-0">
+        <Separator />
+        <div className="grid gap-4 px-5 py-4">
           {userId ? (
             <>
               <div className="flex items-center space-x-3 rounded-lg bg-muted/50 p-2">
@@ -169,19 +168,13 @@ export function SidebarNavigation() {
           ) : (
             <div className="flex flex-col gap-2">
               <Link href="/auth/login" passHref>
-                <Button
-                  variant="default"
-                  className="w-full justify-start gap-3"
-                >
+                <Button variant="default" className="w-full justify-start gap-3">
                   <LogInIcon className="h-4 w-4" />
                   {t("nav.login")}
                 </Button>
               </Link>
               <Link href="/auth/register" passHref>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-3"
-                >
+                <Button variant="outline" className="w-full justify-start gap-3">
                   <UserPlusIcon className="h-4 w-4" />
                   {t("nav.register")}
                 </Button>
@@ -190,6 +183,6 @@ export function SidebarNavigation() {
           )}
         </div>
       </div>
-    </ScrollArea>
+    </div>
   );
 }
