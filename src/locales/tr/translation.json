@@ -483,7 +483,20 @@
     "termsText": "Devam ederek",
     "termsLink": "Kullanım Şartları",
     "termsTextAfter": "'nı kabul etmiş olursunuz.",
-    "fillTestUser": "Test kullanıcısı olarak doldur"
+    "fillTestUser": "Test kullanıcısı olarak doldur",
+    "validation": {
+      "emailRequired": "E-posta adresi gereklidir",
+      "emailInvalid": "Geçerli bir e-posta adresi girin",
+      "passwordRequired": "Şifre gereklidir",
+      "passwordTooShort": "Şifre en az 6 karakter olmalıdır",
+      "passwordWeak": "Şifre en az harf ve rakam içermelidir"
+    },
+    "strength": {
+      "weak": "Zayıf",
+      "fair": "Orta",
+      "good": "İyi",
+      "strong": "Güçlü"
+    }
   },
   "terms": {
     "title": "Kullanım Şartları",

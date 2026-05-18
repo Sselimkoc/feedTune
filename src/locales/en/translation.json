@@ -484,7 +484,20 @@
     "termsText": "By continuing, you agree to our",
     "termsLink": "Terms of Service",
     "termsTextAfter": ".",
-    "fillTestUser": "Fill as test user"
+    "fillTestUser": "Fill as test user",
+    "validation": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Password is required",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "passwordWeak": "Password must contain at least letters and numbers"
+    },
+    "strength": {
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong"
+    }
   },
   "terms": {
     "title": "Terms of Service",

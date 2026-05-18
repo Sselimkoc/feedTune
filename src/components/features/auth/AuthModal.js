@@ -42,7 +42,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
   const { handleSignIn, handleSignUp } = useAuthActions();
   const { toast } = useToast();
   const particles = generateAuthParticles();
-  const passwordStrengthText = getPasswordStrengthText(passwordStrength);
+  const passwordStrengthText = getPasswordStrengthText(passwordStrength, t);
   const passwordStrengthColor = getPasswordStrengthColor(passwordStrength);
 
   useEffect(() => {
@@ -56,7 +56,8 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
     if (email || password) {
       const validation = validateAuthForm(
         { email, password },
-        mode === "signup"
+        mode === "signup",
+        t
       );
       setValidationErrors(validation.errors);
       setPasswordStrength(validation.strength);
@@ -72,7 +73,7 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
     if (isSubmitting) return;
 
     // Validate form before submission
-    const validation = validateAuthForm({ email, password }, mode === "signup");
+    const validation = validateAuthForm({ email, password }, mode === "signup", t);
     if (!validation.isValid) {
       setValidationErrors(validation.errors);
       return;
