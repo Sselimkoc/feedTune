@@ -16,7 +16,9 @@ export async function POST(request) {
 
   const adminClient = createServiceRoleClient();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
   const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
     type: "signup",
     email,
