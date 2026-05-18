@@ -35,7 +35,7 @@ export function useFeedService() {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
 
-  const LAST_SYNC_KEY = "feedtune-last-auto-sync";
+  const LAST_SYNC_KEY = `feedtune-last-auto-sync-${user?.id ?? "guest"}`;
   const SYNC_COOLDOWN = 30 * 60 * 1000; // 30 minutes
 
   // ============================================================================
