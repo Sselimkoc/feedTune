@@ -2,6 +2,7 @@
 
 import { useTheme } from "next-themes";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/core/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -14,6 +15,7 @@ const LANGS = {
 export function LandingControls() {
   const { resolvedTheme, setTheme } = useTheme();
   const { language, changeLanguage } = useLanguage();
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -49,9 +51,9 @@ export function LandingControls() {
         title={isDark ? "Açık tema" : "Koyu tema"}
       >
         {isDark ? (
-          <><Moon className="h-3.5 w-3.5" /><span className="hidden sm:inline">Koyu</span></>
+          <><Moon className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t("settings.theme.dark")}</span></>
         ) : (
-          <><Sun className="h-3.5 w-3.5" /><span className="hidden sm:inline">Açık</span></>
+          <><Sun className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t("settings.theme.light")}</span></>
         )}
       </Button>
     </div>
