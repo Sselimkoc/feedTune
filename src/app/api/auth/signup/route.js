@@ -28,13 +28,14 @@ export async function POST(request) {
   });
 
   if (error) {
+    console.error("[signup] createUser error:", JSON.stringify(error));
     if (
       error.message?.includes("already registered") ||
       error.message?.includes("User already exists")
     ) {
       return ApiResponse.conflict("This email is already registered");
     }
-    return ApiResponse.error("Failed to create account");
+    return ApiResponse.error(error.message || "Failed to create account");
   }
 
   if (data.user && data.user.identities?.length === 0) {
