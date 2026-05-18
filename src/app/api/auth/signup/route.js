@@ -45,7 +45,6 @@ export async function POST(request) {
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-  console.log("[signup] appUrl:", appUrl);
   const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
     type: "signup",
     email,
