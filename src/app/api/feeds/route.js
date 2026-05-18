@@ -50,7 +50,7 @@ export const GET = withAuth(async (_request, { user }) => {
 
   const { data: interactions } = await serviceSupabase
     .from("user_interactions")
-    .select("is_read, is_favorite, is_read_later")
+    .select("item_id, item_type, is_read, is_favorite, is_read_later")
     .eq("user_id", user.id);
 
   const stats = {
@@ -60,9 +60,19 @@ export const GET = withAuth(async (_request, { user }) => {
     totalReadLater: interactions?.filter((i) => i.is_read_later).length ?? 0,
   };
 
+  const interactionMap = new Map(
+    (interactions ?? []).map((i) => [i.item_id, i])
+  );
+
   const recentItems = [
-    ...(recentRssItems ?? []).map((item) => ({ ...item, type: "rss" })),
-    ...(recentYoutubeItems ?? []).map((item) => ({ ...item, type: "youtube" })),
+    ...(recentRssItems ?? []).map((item) => {
+      const ia = interactionMap.get(item.id) ?? {};
+      return { ...item, type: "rss", is_favorite: ia.is_favorite ?? false, is_read_later: ia.is_read_later ?? false };
+    }),
+    ...(recentYoutubeItems ?? []).map((item) => {
+      const ia = interactionMap.get(item.id) ?? {};
+      return { ...item, type: "youtube", is_favorite: ia.is_favorite ?? false, is_read_later: ia.is_read_later ?? false };
+    }),
   ]
     .sort((a, b) => new Date(b.published_at) - new Date(a.published_at))
     .slice(0, 100);

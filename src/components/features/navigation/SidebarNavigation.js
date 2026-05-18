@@ -55,14 +55,14 @@ export function SidebarNavigation() {
         icon: Rss,
       },
       {
-        title: t("navigation.readLater"),
-        href: "/read-later",
-        icon: BookmarkIcon,
-      },
-      {
         title: t("navigation.favorites"),
         href: "/favorites",
         icon: StarIcon,
+      },
+      {
+        title: t("navigation.readLater"),
+        href: "/read-later",
+        icon: BookmarkIcon,
       },
       {
         title: t("navigation.settings"),
@@ -70,7 +70,7 @@ export function SidebarNavigation() {
         icon: SettingsIcon,
       },
     ],
-    [t]
+    [t],
   );
 
   const handleSignOutClick = useCallback(async () => {
@@ -125,7 +125,7 @@ export function SidebarNavigation() {
                     "border border-transparent",
                     pathname === item.href
                       ? "bg-blue-500/10 border-blue-500 text-blue-600 shadow"
-                      : "text-foreground hover:bg-blue-500/10 hover:border-blue-500/30"
+                      : "text-foreground hover:bg-blue-500/10 hover:border-blue-500/30",
                   )}
                 >
                   <item.icon className="h-4 w-4" />

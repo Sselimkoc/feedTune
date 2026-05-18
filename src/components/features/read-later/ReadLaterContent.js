@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { BookmarkCheck } from "lucide-react";
+import { Bookmark } from "lucide-react";
 import { Button } from "@/components/core/ui/button";
 import { FavoriteDetailCard } from "../favorites/FavoriteDetailCard";
 import { useFeedService } from "@/hooks/features/useFeedService";
@@ -85,7 +85,7 @@ export function ReadLaterContent() {
         {/* Header */}
         <header className="w-full max-w-screen-2xl mx-auto px-2 md:px-6 mt-8 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <BookmarkCheck className="h-7 w-7 text-blue-600" />
+            <Bookmark className="h-7 w-7 text-blue-600" />
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-blue-500 drop-shadow-sm">
                 {t("readLater.title")}

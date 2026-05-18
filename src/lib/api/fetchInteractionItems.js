@@ -60,6 +60,8 @@ export async function fetchInteractionItems(supabase, userId, flag) {
         thumbnail: item.thumbnail,
         published_at: item.published_at,
         feed_id: item.feed_id,
+        feed_title: item.feeds?.title ?? "",
+        feed_type: interaction.item_type,
         channelName: item.feeds?.title ?? "",
         channelLogo: item.feeds?.icon ?? "",
         type: interaction.item_type,

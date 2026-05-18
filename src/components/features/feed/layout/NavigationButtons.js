@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/core/ui/button";
-import { ExternalLink, Bookmark, Clock, Share2 } from "lucide-react";
+import { ExternalLink, Heart, Bookmark, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "@/components/core/ui/use-toast";
@@ -36,7 +36,7 @@ export function NavigationButtons({
     e.stopPropagation();
 
     if (onFavorite && item) {
-      onFavorite(item.id, !item.is_favorite);
+      onFavorite(item);
     }
   };
 
@@ -46,7 +46,7 @@ export function NavigationButtons({
     e.stopPropagation();
 
     if (onReadLater && item) {
-      onReadLater(item.id, !item.is_read_later);
+      onReadLater(item);
     }
   };
 
@@ -99,7 +99,7 @@ export function NavigationButtons({
           item.is_favorite ? t("feeds.removeFavorite") : t("feeds.addFavorite")
         }
       >
-        <Bookmark
+        <Heart
           className={cn(iconSize, item.is_favorite && "fill-current")}
         />
       </Button>
@@ -120,7 +120,7 @@ export function NavigationButtons({
             : t("feeds.addReadLater")
         }
       >
-        <Clock className={cn(iconSize, item.is_read_later && "fill-current")} />
+        <Bookmark className={cn(iconSize, item.is_read_later && "fill-current")} />
       </Button>
 
       <Button
