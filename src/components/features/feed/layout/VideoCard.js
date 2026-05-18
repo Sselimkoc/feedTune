@@ -1,20 +1,32 @@
 import React from "react";
+import Link from "next/link";
 import { Heart, Bookmark } from "lucide-react";
 import { t } from "i18next";
 
 const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
   if (!video) return null;
 
-  const handleFavoriteClick = () => {
+  const handleFavoriteClick = (e) => {
+    e.preventDefault();
     if (onToggleFavorite) onToggleFavorite(video);
   };
 
-  const handleWatchLaterClick = () => {
+  const handleWatchLaterClick = (e) => {
+    e.preventDefault();
     if (onToggleReadLater) onToggleReadLater(video);
   };
 
+  const videoUrl = video.url || video.link || "#";
+
   return (
-    <div className="bg-white dark:bg-[#181C2A] rounded-lg overflow-hidden shadow-lg flex flex-col text-gray-900 dark:text-white transition-transform duration-200 ease-in-out cursor-pointer hover:-translate-y-1 hover:shadow-xl max-w-sm">
+    <div className="relative bg-white dark:bg-[#181C2A] rounded-lg overflow-hidden shadow-lg flex flex-col text-gray-900 dark:text-white transition-transform duration-200 ease-in-out hover:-translate-y-1 hover:shadow-xl max-w-sm">
+      <Link
+        href={videoUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute inset-0 z-0"
+        aria-label={video.title}
+      />
       {/* Video Thumbnail Container */}
       <div
         className="relative w-full bg-gray-100 dark:bg-gray-900"
@@ -27,7 +39,7 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
         {video.thumbnail ? (
           <img
             src={video.thumbnail}
-            alt={video.title || "Video Thumbnail"}
+            alt={video.title}
             className="absolute top-0 left-0 w-full h-full object-cover"
             onError={(e) => {
               e.target.style.display = "none";
@@ -35,7 +47,7 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
           />
         ) : (
           <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-primary/5">
-            <span className="text-primary/40 text-sm font-semibold">FeedTune</span>
+            <span className="text-primary/40 text-sm font-semibold">{video.channelName}</span>
           </div>
         )}
       </div>
@@ -74,7 +86,7 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
           </div>
 
           {/* Video Actions */}
-          <div className="flex gap-2 ml-4">
+          <div className="relative z-10 flex gap-2 ml-4">
             <button
               className={`flex items-center justify-center bg-transparent border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-white cursor-pointer w-9 h-9 rounded text-base transition-colors duration-200 hover:bg-blue-50 dark:hover:bg-white/10 hover:text-blue-600 dark:hover:text-blue-400 ${
                 video.is_read_later
