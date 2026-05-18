@@ -12,6 +12,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createBrowserClient } from "@supabase/ssr";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -68,54 +69,45 @@ export const useAuthStore = create(
         try {
           set({ isLoading: true, error: null });
 
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
           if (error) throw error;
 
-          set({
-            user: data.user,
-            session: data.session,
-            isLoading: false,
-            error: null,
-          });
-
+          set({ user: data.user, session: data.session, isLoading: false, error: null });
           if (toastSuccess) toastSuccess("auth.loginSuccess");
-
-          return { success: true, error: null };
+          return { success: true };
         } catch (error) {
-          const errorMessage = error.message || "Login failed";
-          set({ isLoading: false, error: errorMessage });
+          const code = error.code || "";
+          const msg = error.message || "";
+          set({ isLoading: false, error: msg });
 
-          // Check if error is due to unconfirmed email
-          if (
-            error.code === "email_not_confirmed" ||
-            errorMessage.includes("Email not confirmed")
-          ) {
-            return {
-              success: false,
-              error: errorMessage,
-              status: "email_not_verified",
-            };
+          if (code === "email_not_confirmed" || msg.includes("Email not confirmed")) {
+            return { success: false, status: "email_not_verified" };
           }
-
-          // Check if error is due to rate limit
           if (
-            errorMessage.includes("rate limit") ||
-            errorMessage.includes("429")
+            code === "invalid_credentials" ||
+            code === "user_not_found" ||
+            msg.includes("Invalid login credentials") ||
+            msg.includes("User not found")
           ) {
+            if (toastError) toastError("auth.invalidCredentials");
+            return { success: false, status: "invalid_credentials" };
+          }
+          if (code === "user_banned" || msg.includes("banned")) {
+            if (toastError) toastError("auth.userBanned");
+            return { success: false, status: "user_banned" };
+          }
+          if (code === "over_request_rate_limit" || msg.includes("rate limit") || msg.includes("429")) {
             if (toastError) toastError("auth.rateLimitError");
-            return {
-              success: false,
-              error: errorMessage,
-              status: "rate_limit",
-            };
+            return { success: false, status: "rate_limit" };
+          }
+          if (msg.includes("fetch") || msg.includes("network") || msg.includes("Failed to fetch")) {
+            if (toastError) toastError("auth.networkError");
+            return { success: false, status: "network_error" };
           }
 
           if (toastError) toastError("auth.loginError");
-          return { success: false, error: errorMessage };
+          return { success: false, status: "unknown" };
         }
       },
 
@@ -126,10 +118,12 @@ export const useAuthStore = create(
         try {
           set({ isLoading: true, error: null });
 
+          const lang = useSettingsStore.getState().settings.language || "tr";
+
           const res = await fetch("/api/auth/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password, displayName }),
+            body: JSON.stringify({ email, password, displayName, lang }),
           });
 
           const data = await res.json();
@@ -181,8 +175,6 @@ export const useAuthStore = create(
        */
       signOut: async ({ toastSuccess, toastError } = {}) => {
         try {
-          set({ isLoading: true });
-
           const { error } = await supabase.auth.signOut();
 
           if (error) throw error;
@@ -198,7 +190,7 @@ export const useAuthStore = create(
 
           return { success: true, error: null };
         } catch (error) {
-          set({ isLoading: false, error });
+          set({ error });
           if (toastError) toastError("auth.logoutError");
           return { success: false, error };
         }

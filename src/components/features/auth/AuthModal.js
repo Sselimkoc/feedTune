@@ -130,6 +130,17 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
       return true;
     } catch (error) {
       console.error("Error resending verification email:", error);
+      if (error.message === "already_confirmed") {
+        toast({
+          title: t("common.success"),
+          description: t("auth.alreadyVerified", "Email already verified. You can log in."),
+        });
+        setVerifyingEmail(false);
+        setMode("login");
+        setEmail(registeredEmail);
+        setPassword("");
+        return false;
+      }
       toast({
         title: t("common.error"),
         description: error.message || t("auth.verification.resendError"),

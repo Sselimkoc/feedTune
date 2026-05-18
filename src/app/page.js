@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { HomeContent } from "@/components/home/HomeContent";
 import { getSecureUser } from "@/lib/auth/serverAuth";
 
@@ -29,8 +30,8 @@ export default async function HomePage() {
   const session = await getSecureSession();
 
   return (
-    <HomeContent
-      initialSession={session}
-    />
+    <Suspense>
+      <HomeContent initialSession={session} />
+    </Suspense>
   );
 }

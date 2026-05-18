@@ -35,6 +35,23 @@ export async function createServerSupabaseClient() {
 }
 
 /**
+ * Anon key ile server-side Supabase client — auth email flow'ları için
+ * (signUp, resend confirmation vb.) cookie bağımsız çalışır
+ */
+export function createAnonClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    },
+  );
+}
+
+/**
  * Service role ile Supabase admin client oluşturucu
  * Backend operasyonları için (RLS bypass'i)
  * UYARI: Service role key hiçbir zaman client-side'da expose edilmemelidir

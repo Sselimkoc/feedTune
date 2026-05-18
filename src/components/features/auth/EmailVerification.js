@@ -26,17 +26,12 @@ export function EmailVerification({
 }) {
   const { t } = useTranslation();
   const [isResending, setIsResending] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
 
-  // Handle email resend action
   const handleResendEmail = async () => {
     if (isResending) return;
-
     setIsResending(true);
     try {
       await onResendEmail();
-      setShowConfirmation(true);
-      setTimeout(() => setShowConfirmation(false), 3000);
     } finally {
       setIsResending(false);
     }
@@ -171,21 +166,6 @@ export function EmailVerification({
           </Button>
         </div>
 
-        {/* Confirmation message */}
-        {showConfirmation && (
-          <div className="absolute bottom-4 left-0 right-0 mx-auto w-5/6 bg-blue-500 text-white py-2 px-4 rounded-lg">
-            <div className="flex items-center">
-              <Check className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
-              <span className="text-xs sm:text-sm">
-                {safeTranslate(
-                  t,
-                  "auth.verification.emailResent",
-                  "Verification email has been resent"
-                )}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

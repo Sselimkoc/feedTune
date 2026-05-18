@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "@/hooks/auth/useSession";
-import { useFeedService } from "@/hooks/features/useFeedService";
-import { useFeedsSummary } from "@/hooks/features/useFeedsQuery";
+import { useSearchParams } from "next/navigation";
 import HomeHero from "@/components/public-home/HomeHero";
 import { HomeAbout } from "@/components/public-home/HomeAbout";
 import { HomeTechnology } from "@/components/public-home/HomeTechnology";
@@ -16,8 +15,20 @@ import DashboardContent from "@/components/home/DashboardContent";
 export function HomeContent({ initialSession }) {
   const { user, isLoading: isSessionLoading } = useSession();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState("login");
+  const searchParams = useSearchParams();
 
-  const handleAuthClick = () => setShowAuthModal(true);
+  useEffect(() => {
+    if (searchParams.get("verified") === "1") {
+      setAuthModalTab("login");
+      setShowAuthModal(true);
+    }
+  }, [searchParams]);
+
+  const handleAuthClick = () => {
+    setAuthModalTab("login");
+    setShowAuthModal(true);
+  };
 
   const renderContent = () => {
     // Sunucu session yok diyorsa loading göstermeden direkt public sayfa
@@ -55,7 +66,7 @@ export function HomeContent({ initialSession }) {
   return (
     <>
       {renderContent()}
-      <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
+      <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} defaultTab={authModalTab} />
     </>
   );
 }

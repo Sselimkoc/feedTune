@@ -1,33 +1,27 @@
-import { createBrowserClient } from "@supabase/ssr";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
-// Global supabase instance
-let supabaseInstance = null;
-
-function getSupabaseClient() {
-  if (!supabaseInstance) {
-    supabaseInstance = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
+function getLang() {
+  try {
+    return useSettingsStore.getState().settings.language || "tr";
+  } catch {
+    return "tr";
   }
-  return supabaseInstance;
 }
 
 export async function resendVerificationEmail(email) {
-  try {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+  const res = await fetch("/api/auth/resend-verification", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, lang: getLang() }),
+  });
 
-    if (error) throw error;
-    return { success: true };
-  } catch (error) {
-    console.error("Error resending verification email:", error);
-    throw error;
+  if (!res.ok) {
+    const data = await res.json();
+    if (data.error === "already_confirmed") {
+      throw new Error("already_confirmed");
+    }
+    throw new Error(data.error || "Failed to resend verification email");
   }
+
+  return { success: true };
 }

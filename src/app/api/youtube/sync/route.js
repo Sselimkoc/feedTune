@@ -151,7 +151,7 @@ export const POST = withAuth(async (request, { user }) => {
     const batch = newItems.slice(i, i + BATCH_SIZE);
     const { data, error } = await supabase
       .from("youtube_items")
-      .insert(batch)
+      .upsert(batch, { onConflict: "feed_id,video_id", ignoreDuplicates: true })
       .select("id");
 
     if (error) {

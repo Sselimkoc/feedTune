@@ -122,7 +122,7 @@ export const POST = withAuth(async (request, { user }) => {
     const batch = newItems.slice(i, i + BATCH_SIZE);
     const { data, error } = await supabase
       .from("rss_items")
-      .insert(batch)
+      .upsert(batch, { onConflict: "feed_id,url", ignoreDuplicates: true })
       .select("id");
 
     if (error) {

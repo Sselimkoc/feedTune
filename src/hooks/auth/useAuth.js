@@ -37,14 +37,10 @@ export function useAuthActions() {
 
       if (success) {
         router.push("/");
-        return { success, error };
+        return { success };
       }
 
-      if (status === "email_not_verified") {
-        return { success: false, error, status: "email_not_verified", email: credentials.email };
-      }
-
-      return { success, error };
+      return { success: false, status };
     } catch (error) {
       toast({ title: t("common.error"), description: error.message || t("auth.loginError"), variant: "destructive" });
       return { success: false, error };

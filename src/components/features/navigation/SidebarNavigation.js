@@ -15,7 +15,6 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWindowSize } from "@/hooks/useWindowSize";
 import { useToast } from "@/components/core/ui/use-toast";
 import { useRouter } from "next/navigation";
-import { LoadingState } from "@/components/core/states/LoadingState";
 import {
   Avatar,
   AvatarFallback,
@@ -36,7 +35,7 @@ import {
 
 export function SidebarNavigation() {
   const { t } = useTranslation();
-  const { user, signOut, isLoggingOut } = useAuthStore();
+  const { user, signOut } = useAuthStore();
   const userId = user?.id;
   const pathname = usePathname();
   const router = useRouter();
@@ -104,11 +103,6 @@ export function SidebarNavigation() {
       });
     }
   }, [signOut, router, toast, t]);
-
-  // Show loading overlay during sign out
-  if (isLoggingOut) {
-    return <LoadingState message={t("auth.loggingOut")} />;
-  }
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-[#151c29] shadow border-r border-blue-900">

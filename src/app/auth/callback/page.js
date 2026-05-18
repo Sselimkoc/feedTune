@@ -19,21 +19,23 @@ export default function AuthCallback() {
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         );
 
-        // Try to get the session from the URL
-        const { error } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
 
-        // If there's no error, the email has been verified
-        if (!error) {
+        if (!error && data?.session) {
+          // Already has a session — go directly to app
           toast({
             title: t("common.success"),
-            description: t("auth.emailVerified"),
+            description: t("auth.emailVerified", "Email verified! Welcome."),
           });
+          router.replace("/");
+        } else {
+          // Verified but no active session yet — send to login
+          toast({
+            title: t("common.success"),
+            description: t("auth.emailVerifiedLogin", "Email verified! Please log in."),
+          });
+          router.replace("/?verified=1");
         }
-
-        // Redirect to home page after a short delay
-        setTimeout(() => {
-          router.push("/");
-        }, 1500);
       } catch (error) {
         console.error("Error during email verification:", error);
         toast({
@@ -41,11 +43,7 @@ export default function AuthCallback() {
           description: t("auth.verificationError"),
           variant: "destructive",
         });
-
-        // Redirect to home page after error
-        setTimeout(() => {
-          router.push("/");
-        }, 1500);
+        router.replace("/");
       }
     };
 
