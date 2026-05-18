@@ -7,7 +7,7 @@ import Image from "next/image";
 
 export function HeaderNav() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-[#151c29] shadow border-b border-blue-900">
+    <header className="hidden lg:block fixed top-0 left-0 right-0 z-40 bg-white dark:bg-[#151c29] shadow border-b border-blue-900">
       <div className="max-w-8xl mx-auto px-10 h-16 flex items-center gap-4">
         <Link href="/" className="flex items-center gap-2 h-full">
           <Image

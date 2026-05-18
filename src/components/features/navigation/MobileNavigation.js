@@ -11,7 +11,6 @@ import {
   Clock,
   Rss,
   Menu,
-  X,
   Moon,
   Sun,
   LogOut,
@@ -23,7 +22,7 @@ import {
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/core/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/core/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/core/ui/sheet";
 import { Separator } from "@/components/core/ui/separator";
 import { useState, useCallback } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -183,10 +182,11 @@ export function MobileNavigation() {
             <span className="sr-only">{t("common.menu")}</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-[280px] p-0">
+        <SheetContent side="right" className="w-[280px] p-0">
+          <SheetTitle className="sr-only">{t("common.menu")}</SheetTitle>
           <div className="flex flex-col h-full">
-            {/* Top Section - Logo and Close */}
-            <div className="p-4 flex items-center justify-between">
+            {/* Top Section - Logo */}
+            <div className="p-4 flex items-center">
               <Link
                 href="/"
                 className="flex items-center gap-2"
@@ -201,15 +201,6 @@ export function MobileNavigation() {
                 />
                 <span className="font-bold text-lg">FeedTune</span>
               </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-8 h-8 p-0 rounded-full flex items-center justify-center"
-                onClick={() => setOpen(false)}
-              >
-                <X className="w-4 h-4" />
-                <span className="sr-only">{t("common.close")}</span>
-              </Button>
             </div>
 
             <Separator />
@@ -257,7 +248,7 @@ export function MobileNavigation() {
                 </div>
               )}
               {/* Theme Change */}
-              <div className="flex flex-col p-3 rounded-md bg-muted/40">
+              {/* <div className="flex flex-col p-3 rounded-md bg-muted/40">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {getThemeIcon()}
@@ -274,7 +265,7 @@ export function MobileNavigation() {
                     <Moon className="w-4 h-4" />
                   </Button>
                 </div>
-              </div>
+              </div> */}
 
               {/* Sign Out */}
               {userId && (

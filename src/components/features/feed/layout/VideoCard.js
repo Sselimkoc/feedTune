@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Heart, Bookmark } from "lucide-react";
 import { t } from "i18next";
 
 const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   if (!video) return null;
 
   const handleFavoriteClick = (e) => {
@@ -19,7 +21,11 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
   const videoUrl = video.url || video.link || "#";
 
   return (
-    <div className="relative bg-white dark:bg-[#181C2A] rounded-lg overflow-hidden shadow-lg flex flex-col text-gray-900 dark:text-white transition-transform duration-200 ease-in-out hover:-translate-y-1 hover:shadow-xl max-w-sm">
+    <div
+      className="relative bg-white dark:bg-[#181C2A] rounded-lg overflow-hidden flex flex-col text-gray-900 dark:text-white max-w-sm border border-border/40 hover:border-primary/40 transition-colors duration-300"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <Link
         href={videoUrl}
         target="_blank"
@@ -40,7 +46,7 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
           <img
             src={video.thumbnail}
             alt={video.title}
-            className="absolute top-0 left-0 w-full h-full object-cover"
+            className={`absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 ${isHovered ? "scale-105" : ""}`}
             onError={(e) => {
               e.target.style.display = "none";
             }}
@@ -54,7 +60,7 @@ const VideoCard = ({ video, onToggleFavorite, onToggleReadLater }) => {
 
       {/* Video Content */}
       <div className="p-4 flex flex-col flex-grow">
-        <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white leading-tight line-clamp-2">
+        <h3 className={`text-lg font-semibold mb-2 leading-tight line-clamp-2 transition-colors duration-200 ${isHovered ? "text-primary" : "text-gray-900 dark:text-white"}`}>
           {video.title || t("feeds.noTitle")}
         </h3>
 

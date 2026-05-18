@@ -91,8 +91,8 @@ export function NavigationButtons({
         className={cn(
           "rounded-full",
           item.is_favorite
-            ? "text-yellow-500 bg-yellow-500/10"
-            : "text-muted-foreground hover:text-yellow-500"
+            ? "text-red-500 bg-red-500/10"
+            : "text-muted-foreground hover:text-red-500"
         )}
         onClick={handleFavorite}
         aria-label={
@@ -133,7 +133,7 @@ export function NavigationButtons({
         <Share2 className={iconSize} />
       </Button>
 
-      <Button
+      {/* <Button
         variant="ghost"
         size={buttonSize}
         className="rounded-full text-muted-foreground hover:text-primary"
@@ -141,7 +141,7 @@ export function NavigationButtons({
         aria-label={t("feeds.openItem")}
       >
         <ExternalLink className={iconSize} />
-      </Button>
+      </Button> */}
     </div>
   );
 }

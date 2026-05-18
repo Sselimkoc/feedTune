@@ -83,16 +83,16 @@ export function FavoriteDetailCard({
       {/* Content */}
       <CardContent className="p-4 pb-2 flex-1 flex flex-col">
         <div className="flex items-center gap-2 mb-2">
-          {video.feed_type && (
-            <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
-              {video.feed_type}
-            </span>
-          )}
 
           {video.feed_title && (
             <p className="text-xs text-muted-foreground truncate">
               {video.feed_title}
             </p>
+          )}
+          {video.feed_type && (
+            <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+              {video.feed_type}
+            </span>
           )}
         </div>
 
@@ -117,7 +117,7 @@ export function FavoriteDetailCard({
       <CardFooter className="px-4 py-3 border-t border-border/30 justify-between">
         <NavigationButtons
           item={video}
-          onClick={onClick || handleItemClick}
+          // onClick={onClick || handleItemClick}
           onFavorite={onToggleFavorite}
           onReadLater={onToggleReadLater}
           onShare={onShare}
