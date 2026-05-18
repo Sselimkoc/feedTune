@@ -141,25 +141,27 @@ export function useFeedService() {
       }
     },
     onSuccess: async (feed) => {
-      if (feed?.id) {
-        const syncEndpoint =
-          feed.type === "youtube" ? "/api/youtube/sync" : "/api/feeds/sync-items";
-        try {
-          await fetch(syncEndpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ feedId: feed.id }),
-          });
-        } catch (e) {
-          console.error("[addFeed] sync error:", e);
-        }
-      }
+      // Immediately update feeds list so the new feed appears right away
       await Promise.all([
         queryClient.refetchQueries({ queryKey: ["feeds", user?.id], exact: true }),
-        queryClient.refetchQueries({ queryKey: ["items", user?.id], exact: true }),
         queryClient.refetchQueries({ queryKey: ["feedsSummary", user?.id], exact: true }),
       ]);
       toast({ title: t("common.success"), description: t("feeds.addSuccess") });
+
+      // Sync items in background — don't block the UI update
+      if (feed?.id) {
+        const syncEndpoint =
+          feed.type === "youtube" ? "/api/youtube/sync" : "/api/feeds/sync-items";
+        fetch(syncEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ feedId: feed.id }),
+        })
+          .then(() =>
+            queryClient.refetchQueries({ queryKey: ["items", user?.id], exact: true })
+          )
+          .catch((e) => console.error("[addFeed] sync error:", e));
+      }
     },
     onError: (error) => {
       let errorMessage = error.message || t("feeds.addError");
@@ -295,18 +297,45 @@ export function useFeedService() {
       toast({ title: t("common.error"), description: t("auth.authenticationError"), variant: "destructive" });
       return;
     }
+
+    // Optimistically remove feed and its items from cache immediately
+    const previousFeeds = queryClient.getQueryData(["feeds", user.id]);
+    const previousItems = queryClient.getQueryData(["items", user.id]);
+    const previousFavorites = queryClient.getQueryData(["favorites", user.id]);
+    const previousReadLater = queryClient.getQueryData(["read_later", user.id]);
+
+    queryClient.setQueryData(["feeds", user.id], (old) =>
+      old?.filter((f) => f.id !== feedId) ?? []
+    );
+    queryClient.setQueryData(["items", user.id], (old) =>
+      old?.filter((item) => item.feed_id !== feedId) ?? []
+    );
+    queryClient.setQueryData(["favorites", user.id], (old) =>
+      old?.filter((item) => item.feed_id !== feedId) ?? []
+    );
+    queryClient.setQueryData(["read_later", user.id], (old) =>
+      old?.filter((item) => item.feed_id !== feedId) ?? []
+    );
+
     try {
       const response = await fetch(`/api/feeds/delete?feedId=${feedId}`, { method: "DELETE" });
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || "Failed to delete feed");
       }
-      await queryClient.refetchQueries({ queryKey: ["feeds", user.id], exact: true });
-      await queryClient.refetchQueries({ queryKey: ["items", user.id], exact: true });
-      await queryClient.refetchQueries({ queryKey: ["favorites", user.id], exact: true });
-      await queryClient.refetchQueries({ queryKey: ["read_later", user.id], exact: true });
+      // Sync cache with server state in parallel
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["feeds", user.id], exact: true }),
+        queryClient.refetchQueries({ queryKey: ["items", user.id], exact: true }),
+        queryClient.refetchQueries({ queryKey: ["feedsSummary", user.id], exact: true }),
+      ]);
       toast({ title: t("common.success"), description: t("feeds.deleteSuccess") });
     } catch {
+      // Rollback optimistic updates on error
+      queryClient.setQueryData(["feeds", user.id], previousFeeds);
+      queryClient.setQueryData(["items", user.id], previousItems);
+      queryClient.setQueryData(["favorites", user.id], previousFavorites);
+      queryClient.setQueryData(["read_later", user.id], previousReadLater);
       toast({ title: t("common.error"), description: t("feeds.deleteError"), variant: "destructive" });
     }
   };
