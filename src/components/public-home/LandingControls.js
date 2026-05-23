@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/core/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 const LANGS = {
   tr: { flag: "fi fi-tr", label: "TR" },
@@ -26,8 +27,8 @@ export function LandingControls() {
   const targetLang = language === "tr" ? "en" : "tr";
   const { flag, label } = LANGS[language] ?? LANGS["tr"];
 
-  return (
-    <div className="fixed top-4 right-5 z-50 flex items-center gap-1.5 bg-background/75 backdrop-blur-md border border-border/50 rounded-full px-2.5 py-1.5 shadow-md">
+  return createPortal(
+    <div className="fixed bottom-4 right-4 z-[9999] flex items-center gap-1.5 bg-background/75 backdrop-blur-md border border-border/50 rounded-full px-2.5 py-1.5 shadow-md">
       {/* Language toggle — shows target language to switch to */}
       <Button
         variant="ghost"
@@ -56,6 +57,7 @@ export function LandingControls() {
           <><Sun className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t("settings.theme.light")}</span></>
         )}
       </Button>
-    </div>
+    </div>,
+    document.body
   );
 }

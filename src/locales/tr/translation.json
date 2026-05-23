@@ -133,7 +133,14 @@
       "getStarted": "Başla",
       "learnMore": "Daha Fazla Bilgi",
       "availableIn": "Kullanılabilir diller:",
-      "newFeature": "Yeni! Son özelliklerimizi deneyin"
+      "newFeature": "Yeni! Son özelliklerimizi deneyin",
+      "badges": {
+        "rss": "RSS Feeds",
+        "youtube": "YouTube",
+        "darkMode": "Karanlık Mod",
+        "free": "Ücretsiz",
+        "multiLang": "Çoklu Dil"
+      }
     },
     "stats": {
       "title": "İstatistikler",

@@ -134,7 +134,14 @@
       "getStarted": "Get Started",
       "learnMore": "Learn More",
       "availableIn": "Available in:",
-      "newFeature": "New! Try our latest features"
+      "newFeature": "New! Try our latest features",
+      "badges": {
+        "rss": "RSS Feeds",
+        "youtube": "YouTube",
+        "darkMode": "Dark Mode",
+        "free": "Free",
+        "multiLang": "Multi-Language"
+      }
     },
     "stats": {
       "title": "Statistics",
