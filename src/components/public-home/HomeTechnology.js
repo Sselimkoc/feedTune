@@ -54,7 +54,7 @@ export function HomeTechnology() {
   ];
 
   return (
-    <section className="py-16 md:py-20 bg-background">
+    <section className="py-16 md:py-20">
       <div className="container mx-auto px-4">
         <SectionHeader
           title={t("home.technology.title")}

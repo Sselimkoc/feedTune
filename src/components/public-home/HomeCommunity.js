@@ -110,9 +110,8 @@ export function HomeCommunity({ onAuthClick }) {
 
   return (
     <section className="relative py-16 md:py-28 overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/50 to-background pointer-events-none" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full bg-primary/10 dark:bg-primary/5 blur-3xl pointer-events-none" />
+      {/* Subtle center glow — arka planı örtmeden sadece derinlik */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] rounded-full bg-primary/8 dark:bg-primary/4 blur-3xl pointer-events-none" />
 
       <div className="relative container mx-auto px-4">
         {/* Header */}

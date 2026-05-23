@@ -15,7 +15,6 @@ export function HomeHowItWorks() {
 
   return (
     <section className="py-14 md:py-28 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.07] dark:via-primary/[0.03] to-transparent pointer-events-none" />
 
       <div className="container mx-auto px-4">
         {/* Header */}
@@ -82,15 +81,6 @@ export function HomeHowItWorks() {
 
         {/* ── DESKTOP ── */}
         <div className="hidden md:block relative max-w-5xl mx-auto">
-          {/* Connector */}
-          <div className="absolute top-[52px] left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)] h-px overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-primary/20 via-primary/50 to-primary/20" />
-            <motion.div
-              className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-primary/60 to-transparent"
-              animate={{ x: ["0%", "300%"] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
-            />
-          </div>
 
           <div className="grid grid-cols-3 gap-8 items-stretch">
             {steps.map(({ icon: Icon, key }, i) => (

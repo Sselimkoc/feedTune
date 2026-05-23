@@ -8,6 +8,7 @@ import { HomeAbout } from "@/components/public-home/HomeAbout";
 import { HomeHowItWorks } from "@/components/public-home/HomeHowItWorks";
 import { HomeCommunity } from "@/components/public-home/HomeCommunity";
 import { LandingControls } from "@/components/public-home/LandingControls";
+import { AnimatedGrid } from "@/components/public-home/shared/AnimatedGrid";
 import { AuthModal } from "@/components/features/auth/AuthModal";
 import { DashboardLoadingState } from "@/components/home/states/DashboardLoadingState";
 import DashboardContent from "@/components/home/DashboardContent";
@@ -34,6 +35,7 @@ export function HomeContent({ initialSession }) {
     // Sunucu session yok diyorsa loading göstermeden direkt public sayfa
     const publicPage = (
       <>
+        <AnimatedGrid />
         <LandingControls />
         <HomeHero onAuthClick={handleAuthClick} />
         <HomeHowItWorks />

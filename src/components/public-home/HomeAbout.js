@@ -17,16 +17,6 @@ export function HomeAbout() {
 
   return (
     <section id="about" className="relative py-16 md:py-28 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.08] dark:via-primary/[0.04] to-transparent pointer-events-none" />
-      {/* Subtle grid */}
-      <div
-        className="absolute inset-0 opacity-[0.04] dark:opacity-[0.015] pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
-      />
 
       <div className="container mx-auto px-4 relative z-10">
         <SectionHeader
