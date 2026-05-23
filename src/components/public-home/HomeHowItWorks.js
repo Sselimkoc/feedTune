@@ -15,7 +15,7 @@ export function HomeHowItWorks() {
 
   return (
     <section className="py-14 md:py-28 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.03] to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.07] dark:via-primary/[0.03] to-transparent pointer-events-none" />
 
       <div className="container mx-auto px-4">
         {/* Header */}
@@ -102,7 +102,7 @@ export function HomeHowItWorks() {
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ duration: 0.65, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="relative h-full w-full rounded-2xl bg-primary/[0.04] border border-primary/10 p-8 flex flex-col items-center text-center gap-5 backdrop-blur-sm shadow-sm group-hover:shadow-lg group-hover:shadow-primary/10 group-hover:border-primary/25 group-hover:bg-primary/[0.07] transition-all duration-300">
+                <div className="relative h-full w-full rounded-2xl bg-primary/[0.05] dark:bg-primary/[0.04] border border-primary/15 dark:border-primary/10 p-8 flex flex-col items-center text-center gap-5 backdrop-blur-sm shadow-sm group-hover:shadow-lg group-hover:shadow-primary/15 group-hover:border-primary/30 dark:group-hover:border-primary/25 group-hover:bg-primary/[0.09] dark:group-hover:bg-primary/[0.07] transition-all duration-300">
                   {/* Top accent */}
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 

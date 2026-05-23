@@ -20,15 +20,15 @@ export default function HomeHero({ onAuthClick }) {
       {/* Animated glow blobs */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
         <div
-          className="absolute top-[-60px] left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-primary/20 blur-3xl animate-pulse"
+          className="absolute top-[-60px] left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-primary/35 dark:bg-primary/20 blur-3xl animate-pulse"
           style={{ animationDuration: "6s" }}
         />
         <div
-          className="absolute bottom-1/4 right-[-40px] w-52 h-52 rounded-full bg-cyan-500/15 blur-3xl animate-pulse"
+          className="absolute bottom-1/4 right-[-40px] w-52 h-52 rounded-full bg-primary/25 dark:bg-primary/15 blur-3xl animate-pulse"
           style={{ animationDuration: "9s" }}
         />
         <div
-          className="absolute bottom-[-20px] left-[-20px] w-48 h-48 rounded-full bg-indigo-500/10 blur-3xl animate-pulse"
+          className="absolute bottom-[-20px] left-[-20px] w-48 h-48 rounded-full bg-primary/20 dark:bg-primary/10 blur-3xl animate-pulse"
           style={{ animationDuration: "11s" }}
         />
       </div>
@@ -137,13 +137,13 @@ export default function HomeHero({ onAuthClick }) {
     <section className="min-h-[90vh] flex flex-col justify-center py-16 lg:py-24 overflow-hidden relative">
       {/* Glow blobs */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 right-1/3 w-80 h-80 bg-primary/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: "8s" }} />
-        <div className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: "10s" }} />
-        <div className="absolute top-1/2 left-2/3 w-64 h-64 bg-cyan-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: "12s" }} />
+        <div className="absolute top-1/4 right-1/3 w-80 h-80 bg-primary/30 dark:bg-primary/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: "8s" }} />
+        <div className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-primary/20 dark:bg-primary/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: "10s" }} />
+        <div className="absolute top-1/2 left-2/3 w-64 h-64 bg-primary/15 dark:bg-primary/8 rounded-full blur-3xl animate-pulse" style={{ animationDuration: "12s" }} />
       </div>
 
       {/* Particles */}
-      <div className="absolute inset-0 pointer-events-none opacity-40 -z-10">
+      <div className="absolute inset-0 pointer-events-none opacity-60 dark:opacity-40 -z-10">
         {particles.map((particle) => (
           <AnimatedParticle key={particle.id} particle={particle} />
         ))}

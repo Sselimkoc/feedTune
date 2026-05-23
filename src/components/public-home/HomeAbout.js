@@ -17,10 +17,10 @@ export function HomeAbout() {
 
   return (
     <section id="about" className="relative py-16 md:py-28 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.04] to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.08] dark:via-primary/[0.04] to-transparent pointer-events-none" />
       {/* Subtle grid */}
       <div
-        className="absolute inset-0 opacity-[0.015] pointer-events-none"
+        className="absolute inset-0 opacity-[0.04] dark:opacity-[0.015] pointer-events-none"
         style={{
           backgroundImage:
             "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
@@ -45,7 +45,7 @@ export function HomeAbout() {
               transition={{ duration: 0.6, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -5, transition: { duration: 0.22 } }}
             >
-              <div className="relative h-full rounded-2xl bg-primary/[0.04] border border-primary/10 p-5 md:p-6 flex flex-col gap-4 transition-all duration-300 shadow-sm group-hover:shadow-xl group-hover:shadow-primary/10 group-hover:border-primary/25 group-hover:bg-primary/[0.07] overflow-hidden">
+              <div className="relative h-full rounded-2xl bg-primary/[0.05] dark:bg-primary/[0.04] border border-primary/15 dark:border-primary/10 p-5 md:p-6 flex flex-col gap-4 transition-all duration-300 shadow-sm group-hover:shadow-xl group-hover:shadow-primary/15 group-hover:border-primary/30 dark:group-hover:border-primary/25 group-hover:bg-primary/[0.09] dark:group-hover:bg-primary/[0.07] overflow-hidden">
                 {/* Top accent */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
