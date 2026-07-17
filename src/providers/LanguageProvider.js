@@ -19,9 +19,18 @@ export function LanguageProvider({ children, initialLanguage }) {
     ? (zustandLanguage || initialLanguage || "tr")
     : (initialLanguage || "tr");
 
-  if (i18n.language !== resolvedLanguage) {
+  // SSR: sync synchronously during render so the HTML matches the request's cookie.
+  // Client: never mutate the shared i18n singleton during render (unsafe under Strict
+  // Mode's double-invoke and can desync from the server-rendered HTML) — use an effect.
+  if (typeof window === "undefined" && i18n.language !== resolvedLanguage) {
     i18n.changeLanguage(resolvedLanguage);
   }
+
+  useEffect(() => {
+    if (i18n.language !== resolvedLanguage) {
+      i18n.changeLanguage(resolvedLanguage);
+    }
+  }, [resolvedLanguage]);
 
   useEffect(() => {
     setMounted(true);
