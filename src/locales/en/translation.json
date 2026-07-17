@@ -17,6 +17,9 @@
   "feeds": {
     "title": "Feeds",
     "description": "Manage your RSS feeds and subscriptions",
+    "noItemsInSelection": "No items in this feed yet",
+    "noItemsInSelectionDescription": "This feed hasn't synced any items yet. Try refreshing or check back later.",
+    "showAllFeeds": "Show all feeds",
     "navigation": "Feed Navigation",
     "search": "Search feeds...",
     "add": "Add Feed",

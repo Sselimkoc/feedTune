@@ -1,4 +1,4 @@
-const logoSrc = "https://glnuiaeqecdotykrergc.supabase.co/storage/v1/object/public/assets/email/logo.png";
+const logoSrc = "https://feed-tune.vercel.app/images/logo.png";
 
 const strings = {
   tr: {

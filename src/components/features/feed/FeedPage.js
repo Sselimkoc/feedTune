@@ -77,7 +77,10 @@ export function FeedPage() {
         />
 
         {/* Main Content */}
-        <FeedMain feeds={itemsWithFeedTitle} />
+        <FeedMain
+          feeds={itemsWithFeedTitle}
+          onShowAll={() => setSelectedFeedIds([])}
+        />
       </div>
     </div>
   );

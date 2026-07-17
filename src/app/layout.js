@@ -18,7 +18,7 @@ export const metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
   ),
-  icons: { icon: "/logo.png" },
+  icons: { icon: "/images/logo.png" },
 };
 
 export default async function RootLayout({ children }) {

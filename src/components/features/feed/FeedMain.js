@@ -6,9 +6,9 @@ import { useTranslation } from "react-i18next";
 import VideoCard from "./layout/VideoCard";
 import { useFeedService } from "@/hooks/features/useFeedService";
 
-const FeedMain = ({ feeds }) => {
+const FeedMain = ({ feeds, onShowAll }) => {
   const { addInteraction, removeInteraction } = useFeedService();
-  const t = useTranslation();
+  const { t } = useTranslation();
   const handleToggleFavorite = async (video) => {
     if (!video) return;
     const itemType =
@@ -45,7 +45,7 @@ const FeedMain = ({ feeds }) => {
             </p>
             <Button
               onClick={() => {
-                setSelectedFeedIds([]);
+                onShowAll?.();
                 window.scrollTo({ top: 0, behavior: "instant" });
               }}
               variant="outline"

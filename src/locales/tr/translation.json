@@ -17,6 +17,9 @@
   "feeds": {
     "title": "Beslemeler",
     "description": "RSS beslemelerinizi ve aboneliklerinizi yönetin",
+    "noItemsInSelection": "Bu beslemede henüz içerik yok",
+    "noItemsInSelectionDescription": "Bu besleme henüz içerik senkronize etmedi. Yenilemeyi deneyin veya daha sonra tekrar kontrol edin.",
+    "showAllFeeds": "Tüm beslemeleri göster",
     "navigation": "Besleme Gezinmesi",
     "search": "Beslemelerde ara...",
     "add": "Besleme Ekle",
