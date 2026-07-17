@@ -11,6 +11,13 @@ function extractImgFromHtml(html) {
   return match?.[1] || null;
 }
 
+// pubDate formats vary wildly across feeds; only pass Postgres a valid ISO string
+function toIsoDate(item) {
+  if (item.isoDate) return item.isoDate;
+  const parsed = Date.parse(item.pubDate || "");
+  return Number.isNaN(parsed) ? new Date().toISOString() : new Date(parsed).toISOString();
+}
+
 const feedParser = new Parser({
   customFields: {
     item: [
@@ -84,7 +91,7 @@ export const POST = withAuth(async (request, { user }) => {
         url: item.link || item.guid,
         description: item.contentSnippet || item.description || item.summary || "",
         thumbnail,
-        published_at: item.pubDate || item.isoDate || new Date().toISOString(),
+        published_at: toIsoDate(item),
         guid: item.guid || item.link,
         created_at: new Date().toISOString(),
       };
@@ -122,7 +129,7 @@ export const POST = withAuth(async (request, { user }) => {
     const batch = newItems.slice(i, i + BATCH_SIZE);
     const { data, error } = await supabase
       .from("rss_items")
-      .upsert(batch, { onConflict: "feed_id,url", ignoreDuplicates: true })
+      .upsert(batch, { onConflict: "feed_id,guid", ignoreDuplicates: true })
       .select("id");
 
     if (error) {

@@ -39,6 +39,13 @@ async function parseRssFeed(feedUrl) {
   return await feedParser.parseURL(feedUrl);
 }
 
+// pubDate formats vary wildly across feeds; only pass Postgres a valid ISO string
+function toIsoDate(item) {
+  if (item.isoDate) return item.isoDate;
+  const parsed = Date.parse(item.pubDate || "");
+  return Number.isNaN(parsed) ? new Date().toISOString() : new Date(parsed).toISOString();
+}
+
 export const POST = withAuth(async (request, { user }) => {
   let body;
   try {
@@ -110,7 +117,7 @@ export const POST = withAuth(async (request, { user }) => {
         description: item.mediaGroup?.["media:description"]?.[0] || item.description || item.summary || "",
         thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
         channel_title: feed.title || rssFeed.title,
-        published_at: item.pubDate || item.isoDate || new Date().toISOString(),
+        published_at: toIsoDate(item),
         created_at: new Date().toISOString(),
       };
     })

@@ -2,6 +2,13 @@
 import { ApiResponse } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/withAuth";
 import { fetchFeedFavicon } from "@/lib/feed/imageUtils";
+import Parser from "rss-parser";
+
+const feedParser = new Parser({
+  requestOptions: {
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; FeedTune/1.0)" },
+  },
+});
 
 export const POST = withAuth(async (request, { user }) => {
   const supabase = createServiceRoleClient();
@@ -68,20 +75,20 @@ export const POST = withAuth(async (request, { user }) => {
     return ApiResponse.ok({ feed: restoredFeed }, 201);
   }
 
-  // Parse feed metadata
+  // Parse feed metadata directly (no self-HTTP call — avoids APP_URL dependency)
   let feedInfo = {};
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/rss-preview`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: normalizedUrl, skipCache: true }),
+    const parsed = await feedParser.parseURL(normalizedUrl);
+    feedInfo = {
+      feed: {
+        title: parsed.title || "",
+        description: parsed.description || "",
+        link: parsed.link || "",
+        icon:
+          parsed.image?.url ||
+          (typeof parsed.image === "string" ? parsed.image : null),
       },
-    );
-    if (response.ok) {
-      feedInfo = await response.json();
-    }
+    };
   } catch (error) {
     console.error("Feed parsing error:", error);
     return ApiResponse.badRequest(`Failed to parse feed: ${error.message}`);
@@ -94,6 +101,7 @@ export const POST = withAuth(async (request, { user }) => {
       .from("categories")
       .select("id")
       .eq("name", extraData.category)
+      .eq("user_id", user.id)
       .maybeSingle();
     categoryId = category?.id ?? null;
   }
@@ -102,6 +110,7 @@ export const POST = withAuth(async (request, { user }) => {
       .from("categories")
       .select("id")
       .eq("name", "general")
+      .eq("user_id", user.id)
       .maybeSingle();
     categoryId = defaultCategory?.id ?? null;
   }

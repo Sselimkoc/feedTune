@@ -16,9 +16,19 @@ export const PATCH = withAuth(async (request, { user }) => {
 
   if (!id) return ApiResponse.badRequest("Feed ID is required");
 
+  // Only allow editing known-safe columns (never user_id, id, timestamps)
+  const ALLOWED_FIELDS = ["title", "description", "icon", "category_id", "url"];
+  const updates = Object.fromEntries(
+    Object.entries(feedData).filter(([key]) => ALLOWED_FIELDS.includes(key)),
+  );
+  if (Object.keys(updates).length === 0) {
+    return ApiResponse.badRequest("No editable fields provided");
+  }
+  updates.updated_at = new Date().toISOString();
+
   const { data, error } = await supabase
     .from("feeds")
-    .update(feedData)
+    .update(updates)
     .eq("id", id)
     .eq("user_id", user.id)
     .select()
