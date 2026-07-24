@@ -220,35 +220,3 @@ export const useAuthStore = create(
     }
   )
 );
-
-/**
- * useAuth Hook
- * Access current user and auth state
- */
-export function useAuth() {
-  const { user, session, isLoading } = useAuthStore();
-
-  return {
-    user,
-    session,
-    isLoading,
-    isAuthenticated: !!session,
-  };
-}
-
-/**
- * useAuthActions Hook
- * Access auth action methods
- */
-export function useAuthActions() {
-  const { signIn, signUp, signOut, initialize, clearError, updateProfile } = useAuthStore();
-
-  return {
-    signIn,
-    signUp,
-    signOut,
-    initialize,
-    clearError,
-    updateProfile,
-  };
-}

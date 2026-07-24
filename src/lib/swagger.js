@@ -101,41 +101,6 @@ export const swaggerSpec = {
         },
       },
     },
-    "/api/auth/check-email": {
-      post: {
-        tags: ["Auth"],
-        summary: "Check if an email already exists",
-        security: [],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                required: ["email"],
-                properties: { email: { type: "string", format: "email" } },
-              },
-            },
-          },
-        },
-        responses: {
-          200: {
-            description: "Email lookup result",
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  properties: {
-                    exists: { type: "boolean" },
-                    verified: { type: "boolean" },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
     "/api/auth/ensure-user": {
       post: {
         tags: ["Auth"],
