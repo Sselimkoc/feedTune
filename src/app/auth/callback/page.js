@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/core/ui/use-toast";
 import { useTranslation } from "react-i18next";
 
@@ -14,22 +14,37 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleEmailVerification = async () => {
       try {
-        const supabase = createBrowserClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-        );
+  
+        const hashParams = new URLSearchParams(window.location.hash.slice(1));
+        const access_token = hashParams.get("access_token");
+        const refresh_token = hashParams.get("refresh_token");
 
+        if (access_token && refresh_token) {
+          const { data, error } = await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+
+          if (!error && data?.session) {
+            toast({
+              title: t("common.success"),
+              description: t("auth.emailVerified", "Email verified! Welcome."),
+            });
+            router.replace("/");
+            return;
+          }
+        }
+
+        // No usable tokens in the hash, or setSession failed — check for an existing session
         const { data, error } = await supabase.auth.getSession();
 
         if (!error && data?.session) {
-          // Already has a session — go directly to app
           toast({
             title: t("common.success"),
             description: t("auth.emailVerified", "Email verified! Welcome."),
           });
           router.replace("/");
         } else {
-          // Verified but no active session yet — send to login
           toast({
             title: t("common.success"),
             description: t("auth.emailVerifiedLogin", "Email verified! Please log in."),

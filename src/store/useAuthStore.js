@@ -11,13 +11,8 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { createBrowserClient } from "@supabase/ssr";
+import { supabase } from "@/lib/supabase";
 import { useSettingsStore } from "@/store/useSettingsStore";
-
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
 
 /**
  * Auth Store - Minimal and clean
