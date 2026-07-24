@@ -443,6 +443,10 @@
     "info": "Bilgi",
     "warning": "Uyarı"
   },
+  "errors": {
+    "authRequired": "Bu işlem için giriş yapmış olmanız gerekir.",
+    "general": "Bir şeyler ters gitti. Lütfen tekrar deneyin."
+  },
   "auth": {
     "email" : "E-posta",
     "password" : "Şifre",
@@ -475,6 +479,7 @@
     "sessionExpired": "Oturum süresi doldu. Lütfen tekrar giriş yapın.",
     "networkError": "Ağ hatası. Lütfen bağlantınızı kontrol edin.",
     "verificationEmailSent": "Doğrulama e-postası gönderildi! Lütfen gelen kutunuzu kontrol edin.",
+    "passwordsDontMatch": "Şifreler eşleşmiyor.",
     "verification": {
       "title": "E-postanızı Doğrulayın",
       "description": "Hesabınızı kullanmaya başlamadan önce lütfen e-posta adresinizi doğrulayın.",

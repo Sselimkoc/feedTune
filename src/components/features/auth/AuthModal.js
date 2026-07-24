@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  DialogDescription,
 } from "@/components/core/ui/dialog";
 import { useTranslation } from "react-i18next";
 import { useAuth, useAuthActions } from "@/hooks/auth/useAuth";
@@ -206,6 +207,9 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }) {
         <DialogTitle className="sr-only">
           {mode === "login" ? t("auth.login") : t("auth.register")}
         </DialogTitle>
+        <DialogDescription className="sr-only">
+          {mode === "login" ? t("auth.login") : t("auth.register")}
+        </DialogDescription>
         <div className="bg-gradient-to-br from-primary/10 via-background to-background pb-6 overflow-hidden flex-1 flex flex-col">
           {verifyingEmail ? (
             <EmailVerification

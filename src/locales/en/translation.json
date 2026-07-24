@@ -444,6 +444,10 @@
     "info": "Information",
     "warning": "Warning"
   },
+  "errors": {
+    "authRequired": "You must be logged in to do this.",
+    "general": "Something went wrong. Please try again."
+  },
   "auth": {
     "email" : "Email",
     "password" : "Password",
@@ -476,6 +480,7 @@
     "sessionExpired": "Session expired. Please log in again.",
     "networkError": "Network error. Please check your connection.",
     "verificationEmailSent": "Verification email sent! Please check your inbox.",
+    "passwordsDontMatch": "Passwords do not match.",
     "verification": {
       "title": "Verify Your Email",
       "description": "Please verify your email address before you can start using your account.",

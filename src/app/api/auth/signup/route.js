@@ -53,18 +53,23 @@ export async function POST(request) {
 
   if (linkError || !linkData?.properties?.action_link) {
     console.error("[signup] generateLink error:", linkError);
-    return ApiResponse.ok({ success: true, needsVerification: true, userId: data.user?.id }, 201);
+    return ApiResponse.error("Account created, but failed to send verification email. Please try resending it.");
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   const name = displayName || email.split("@")[0];
 
-  await resend.emails.send({
+  const { error: sendError } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL || "FeedTune <noreply@feedtune.app>",
     to: email,
     subject: getEmailSubject("signup", lang),
     html: buildVerificationEmail(name, linkData.properties.action_link, { lang }),
   });
+
+  if (sendError) {
+    console.error("[signup] send error:", sendError);
+    return ApiResponse.error("Account created, but failed to send verification email. Please try resending it.");
+  }
 
   return ApiResponse.ok({ success: true, needsVerification: true, userId: data.user?.id }, 201);
 }
