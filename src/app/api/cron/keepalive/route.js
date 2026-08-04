@@ -16,19 +16,25 @@ export async function GET(request) {
     }
   }
 
-  const supabase = createServiceRoleClient();
-  const { count, error } = await supabase
-    .from("feeds")
-    .select("id", { count: "exact", head: true });
+  try {
+    const supabase = createServiceRoleClient();
+    const { count, error } = await supabase
+      .from("feeds")
+      .select("id", { count: "exact", head: true });
 
-  if (error) {
-    console.error("[cron/keepalive] DB ping error:", error);
+    if (error) {
+      console.error("[cron/keepalive] DB ping error:", error);
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    }
+
+    console.log(`[cron/keepalive] DB ping ok, feeds=${count}`);
+    return NextResponse.json({
+      ok: true,
+      feeds: count,
+      pingedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("[cron/keepalive] Fatal error before DB ping:", error);
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
-
-  return NextResponse.json({
-    ok: true,
-    feeds: count,
-    pingedAt: new Date().toISOString(),
-  });
 }
