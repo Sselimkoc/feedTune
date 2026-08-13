@@ -13,6 +13,7 @@ export const metadata = {
     description: "Save content to read later from your RSS feeds and YouTube subscriptions.",
     type: "website",
   },
+  robots: { index: false, follow: false },
 };
 
 export default function ReadLaterPage() {

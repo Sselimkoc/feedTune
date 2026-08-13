@@ -11,14 +11,36 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+const title = "FeedTune - RSS & YouTube Feed Reader";
+const description =
+  "Modern RSS and YouTube feed reader with a sleek interface and powerful features.";
+
 export const metadata = {
-  title: "FeedTune - RSS & YouTube Feed Reader",
-  description: "Modern RSS and YouTube feed reader with a sleek interface and powerful features.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
-  ),
+  title: {
+    default: title,
+    template: "%s | FeedTune",
+  },
+  description,
+  metadataBase: new URL(siteUrl),
   icons: { icon: "/images/logo.png" },
+  robots: { index: true, follow: true },
+  openGraph: {
+    title,
+    description,
+    url: siteUrl,
+    siteName: "FeedTune",
+    images: [{ url: "/images/logo.png" }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title,
+    description,
+    images: ["/images/logo.png"],
+  },
 };
 
 export default async function RootLayout({ children }) {

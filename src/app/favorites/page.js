@@ -15,6 +15,7 @@ export async function generateMetadata() {
       description: "View and manage your favorite content from RSS feeds and YouTube channels.",
       type: "website",
     },
+    robots: { index: false, follow: false },
   };
 }
 

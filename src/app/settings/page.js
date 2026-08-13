@@ -9,6 +9,7 @@ export const metadata = {
     description: "Customize your FeedTune experience with theme, language, and account settings.",
     type: "website",
   },
+  robots: { index: false, follow: false },
 };
 
 export default function SettingsPage() {

@@ -3,6 +3,7 @@ import { FeedPage } from "@/components/features/feed/FeedPage";
 export const metadata = {
   title: "Feeds | FeedTune",
   description: "Manage your RSS feeds and subscriptions",
+  robots: { index: false, follow: false },
 };
 
 export default function FeedsPage() {
